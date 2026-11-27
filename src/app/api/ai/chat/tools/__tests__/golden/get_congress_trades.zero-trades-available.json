@@ -1,0 +1,50 @@
+{
+    "tool": "get_congress_trades",
+    "case": "zero-trades-available",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "congress trades (FMP)",
+            "symbol": "GLDNX",
+            "available": true,
+            "stats": {
+                "buyCount": 0,
+                "sellCount": 0,
+                "unknownCount": 0,
+                "direction": "no_trades",
+                "uniqueMembers": 0,
+                "senateCount": 0,
+                "houseCount": 0
+            },
+            "trades": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "congress trades (FMP)",
+            "symbol": "GLDNX",
+            "available": true,
+            "stats": {
+                "buyCount": 0,
+                "sellCount": 0,
+                "unknownCount": 0,
+                "direction": "no_trades",
+                "uniqueMembers": 0,
+                "senateCount": 0,
+                "houseCount": 0
+            },
+            "trades": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

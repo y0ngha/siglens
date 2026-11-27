@@ -1,0 +1,262 @@
+{
+    "tool": "get_congress_trades",
+    "case": "us-twenty-two-trades-capped",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "congress trades (FMP)",
+            "symbol": "GLDNX",
+            "available": true,
+            "stats": {
+                "buyCount": 15,
+                "sellCount": 7,
+                "unknownCount": 0,
+                "direction": "net_buying",
+                "uniqueMembers": 4,
+                "senateCount": 6,
+                "houseCount": 16
+            },
+            "trades": [
+                {
+                    "transactionDate": "2026-10-30",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-10-24",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-10-18",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-10-12",
+                    "member": "Lena Castellano",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-10-06",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-09-30",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-09-24",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-09-18",
+                    "member": "Lena Castellano",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-09-12",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-09-06",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-08-31",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-08-25",
+                    "member": "Lena Castellano",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-08-19",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-08-13",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-08-07",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "congress trades (FMP)",
+            "symbol": "GLDNX",
+            "available": true,
+            "stats": {
+                "buyCount": 15,
+                "sellCount": 7,
+                "unknownCount": 0,
+                "direction": "net_buying",
+                "uniqueMembers": 4,
+                "senateCount": 6,
+                "houseCount": 16
+            },
+            "trades": [
+                {
+                    "transactionDate": "2026-10-30",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-10-24",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-10-18",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-10-12",
+                    "member": "Lena Castellano",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-10-06",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-09-30",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-09-24",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-09-18",
+                    "member": "Lena Castellano",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-09-12",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-09-06",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-08-31",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-08-25",
+                    "member": "Lena Castellano",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                },
+                {
+                    "transactionDate": "2026-08-19",
+                    "member": "Daniel Whitcombe",
+                    "chamber": "house",
+                    "side": "buy",
+                    "amount": "$1,001 - $15,000"
+                },
+                {
+                    "transactionDate": "2026-08-13",
+                    "member": "Maria Okafor",
+                    "chamber": "senate",
+                    "side": "buy",
+                    "amount": "$15,001 - $50,000"
+                },
+                {
+                    "transactionDate": "2026-08-07",
+                    "member": "Jonah Breckridge",
+                    "chamber": "house",
+                    "side": "sell",
+                    "amount": "$100,001 - $250,000"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

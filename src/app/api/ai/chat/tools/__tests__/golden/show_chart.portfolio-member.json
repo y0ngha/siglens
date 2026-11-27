@@ -1,0 +1,144 @@
+{
+    "tool": "show_chart",
+    "case": "portfolio-member",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "portfolio"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "portfolio",
+            "summary": {
+                "holdingsCount": 5,
+                "weightScope": "per currency (not a blend)",
+                "groups": [
+                    {
+                        "currency": "USD",
+                        "holdings": [
+                            {
+                                "symbol": "QRTZ",
+                                "name": "Quartzline Holdings",
+                                "weightPct": 57.069,
+                                "pnlPct": -7.10971
+                            },
+                            {
+                                "symbol": "GLDNX",
+                                "name": "Goldenrod Systems Inc.",
+                                "weightPct": 29.1831,
+                                "pnlPct": 23.3976
+                            },
+                            {
+                                "symbol": "VLMR",
+                                "name": "Velmora Therapeutics",
+                                "weightPct": 13.7479,
+                                "pnlPct": -24.1007
+                            }
+                        ]
+                    },
+                    {
+                        "currency": "KRW",
+                        "holdings": [
+                            {
+                                "symbol": "900220.KQ",
+                                "name": "다온바이오",
+                                "weightPct": 87.0753,
+                                "pnlPct": 119.548
+                            },
+                            {
+                                "symbol": "900110.KS",
+                                "name": "한빛정밀",
+                                "weightPct": 12.9247,
+                                "pnlPct": 22.6697
+                            }
+                        ]
+                    }
+                ],
+                "totals": [
+                    {
+                        "currency": "USD",
+                        "marketValue": 31462.98,
+                        "costBasis": 32469.79,
+                        "pnl": -1006.81,
+                        "pnlPct": -3.10077
+                    },
+                    {
+                        "currency": "KRW",
+                        "marketValue": 13987495,
+                        "costBasis": 7021350,
+                        "pnl": 6966145,
+                        "pnlPct": 99.2138
+                    }
+                ]
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "portfolio"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "portfolio",
+                    "asOf": "2026-11-19T02:00:00.000Z",
+                    "groups": [
+                        {
+                            "currency": "USD",
+                            "holdings": [
+                                {
+                                    "symbol": "QRTZ",
+                                    "name": "Quartzline Holdings",
+                                    "weightPct": 57.069,
+                                    "pnlPct": -7.10971
+                                },
+                                {
+                                    "symbol": "GLDNX",
+                                    "name": "Goldenrod Systems Inc.",
+                                    "weightPct": 29.1831,
+                                    "pnlPct": 23.3976
+                                },
+                                {
+                                    "symbol": "VLMR",
+                                    "name": "Velmora Therapeutics",
+                                    "weightPct": 13.7479,
+                                    "pnlPct": -24.1007
+                                }
+                            ]
+                        },
+                        {
+                            "currency": "KRW",
+                            "holdings": [
+                                {
+                                    "symbol": "900220.KQ",
+                                    "name": "다온바이오",
+                                    "weightPct": 87.0753,
+                                    "pnlPct": 119.548
+                                },
+                                {
+                                    "symbol": "900110.KS",
+                                    "name": "한빛정밀",
+                                    "weightPct": 12.9247,
+                                    "pnlPct": 22.6697
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

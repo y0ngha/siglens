@@ -1,0 +1,30 @@
+{
+    "tool": "get_guide",
+    "case": "no-match",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "query": "피보나치 되돌림"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "siglens-guide",
+            "found": false,
+            "others": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "siglens-guide",
+            "found": false,
+            "others": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

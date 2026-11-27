@@ -1,0 +1,544 @@
+{
+    "tool": "get_market_overview",
+    "case": "us-session-open-full-size",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "market": "us"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "market dashboard cache (1h)",
+            "market": "us",
+            "fearGreed": {
+                "score": 63.48,
+                "label": "greed",
+                "factors": [
+                    {
+                        "key": "momentum",
+                        "percentile": 78.3
+                    },
+                    {
+                        "key": "strength",
+                        "percentile": 69.1
+                    },
+                    {
+                        "key": "breadth",
+                        "percentile": 58.4
+                    },
+                    {
+                        "key": "putCall",
+                        "percentile": 61.9
+                    },
+                    {
+                        "key": "volatility",
+                        "percentile": 66.7
+                    },
+                    {
+                        "key": "safeHaven",
+                        "percentile": 55.2
+                    },
+                    {
+                        "key": "junkBond",
+                        "percentile": 54.9
+                    }
+                ],
+                "comparisons": [
+                    {
+                        "key": "now",
+                        "date": "2026-11-17",
+                        "score": 63,
+                        "label": "greed"
+                    },
+                    {
+                        "key": "1w",
+                        "date": "2026-11-10",
+                        "score": 57,
+                        "label": "greed"
+                    },
+                    {
+                        "key": "1m",
+                        "date": "2026-10-17",
+                        "score": 41,
+                        "label": "fear"
+                    },
+                    {
+                        "key": "1y",
+                        "date": "2025-11-17",
+                        "score": 48,
+                        "label": "neutral"
+                    }
+                ]
+            },
+            "indices": [
+                {
+                    "symbol": "GSPC",
+                    "price": 4812.37,
+                    "changesPercentage": 0.83,
+                    "lastClose": 8361.61,
+                    "lastCloseDate": "2026-11-17"
+                },
+                {
+                    "symbol": "DJI",
+                    "price": 6592.95,
+                    "changesPercentage": 0.42,
+                    "lastClose": 9252.86,
+                    "lastCloseDate": "2026-11-17"
+                },
+                {
+                    "symbol": "IXIC",
+                    "price": 8373.52,
+                    "changesPercentage": 0.01,
+                    "lastClose": 11525.68,
+                    "lastCloseDate": "2026-11-17"
+                },
+                {
+                    "symbol": "VIX",
+                    "price": 10154.1,
+                    "changesPercentage": -0.4,
+                    "lastClose": 15394.98,
+                    "lastCloseDate": "2026-11-17"
+                }
+            ],
+            "sectors": [
+                {
+                    "symbol": "XLK",
+                    "name": "기술",
+                    "price": 48.91,
+                    "changesPercentage": 1.94,
+                    "rank": 1
+                },
+                {
+                    "symbol": "XLF",
+                    "name": "금융",
+                    "price": 60.28,
+                    "changesPercentage": 1.57,
+                    "rank": 2
+                },
+                {
+                    "symbol": "XLE",
+                    "name": "에너지",
+                    "price": 71.65,
+                    "changesPercentage": 1.2,
+                    "rank": 3
+                },
+                {
+                    "symbol": "XLY",
+                    "name": "경기소비재",
+                    "price": 94.39,
+                    "changesPercentage": 0.46,
+                    "rank": 4
+                },
+                {
+                    "symbol": "XLP",
+                    "name": "필수소비재",
+                    "price": 105.76,
+                    "changesPercentage": 0.09,
+                    "rank": 5
+                },
+                {
+                    "symbol": "XLI",
+                    "name": "산업재",
+                    "price": 117.13,
+                    "changesPercentage": -0.28,
+                    "rank": 6
+                },
+                {
+                    "symbol": "XLB",
+                    "name": "소재",
+                    "price": 128.5,
+                    "changesPercentage": -0.65,
+                    "rank": 7
+                },
+                {
+                    "symbol": "XLU",
+                    "name": "유틸리티",
+                    "price": 139.87,
+                    "changesPercentage": -1.02,
+                    "rank": 8
+                },
+                {
+                    "symbol": "XLRE",
+                    "name": "부동산",
+                    "price": 151.24,
+                    "changesPercentage": -1.39,
+                    "rank": 9
+                },
+                {
+                    "symbol": "XLC",
+                    "name": "통신서비스",
+                    "price": 162.61,
+                    "changesPercentage": -1.76,
+                    "rank": 10
+                },
+                {
+                    "symbol": "XLV",
+                    "name": "헬스케어",
+                    "price": 0,
+                    "changesPercentage": 0,
+                    "rank": null
+                }
+            ],
+            "sectorBreadth": {
+                "up": 5,
+                "down": 5,
+                "flat": 0
+            },
+            "bestWorstSpreadPp": 3.7,
+            "sectorSignals": {
+                "computedAt": "2026-11-18T14:05:00.000Z",
+                "countsBySector": {
+                    "XLK": 1,
+                    "XLF": 1,
+                    "XLE": 1,
+                    "XLV": 1,
+                    "XLY": 1,
+                    "XLP": 1,
+                    "XLI": 1
+                },
+                "topSignals": [
+                    {
+                        "symbol": "SIGAQ",
+                        "sectorSymbol": "XLK",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGAQ",
+                        "sectorSymbol": "XLK",
+                        "type": "rsi_overbought",
+                        "direction": "bearish"
+                    },
+                    {
+                        "symbol": "SIGBQ",
+                        "sectorSymbol": "XLF",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGBQ",
+                        "sectorSymbol": "XLF",
+                        "type": "rsi_oversold",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGCQ",
+                        "sectorSymbol": "XLE",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGCQ",
+                        "sectorSymbol": "XLE",
+                        "type": "rsi_overbought",
+                        "direction": "bearish"
+                    },
+                    {
+                        "symbol": "SIGDQ",
+                        "sectorSymbol": "XLV",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGDQ",
+                        "sectorSymbol": "XLV",
+                        "type": "rsi_oversold",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGEQ",
+                        "sectorSymbol": "XLY",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGEQ",
+                        "sectorSymbol": "XLY",
+                        "type": "rsi_overbought",
+                        "direction": "bearish"
+                    }
+                ]
+            },
+            "briefing": {
+                "summary": "기술주가 반등을 이끌며 지수가 고점 부근을 지키고 있습니다.",
+                "dominantThemes": [
+                    "반도체 강세",
+                    "금리 인하 기대",
+                    "에너지 약세"
+                ],
+                "riskSentiment": "risk-on"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "market dashboard cache (1h)",
+            "market": "us",
+            "fearGreed": {
+                "score": 63.48,
+                "label": "greed",
+                "factors": [
+                    {
+                        "key": "momentum",
+                        "percentile": 78.3
+                    },
+                    {
+                        "key": "strength",
+                        "percentile": 69.1
+                    },
+                    {
+                        "key": "breadth",
+                        "percentile": 58.4
+                    },
+                    {
+                        "key": "putCall",
+                        "percentile": 61.9
+                    },
+                    {
+                        "key": "volatility",
+                        "percentile": 66.7
+                    },
+                    {
+                        "key": "safeHaven",
+                        "percentile": 55.2
+                    },
+                    {
+                        "key": "junkBond",
+                        "percentile": 54.9
+                    }
+                ],
+                "comparisons": [
+                    {
+                        "key": "now",
+                        "date": "2026-11-17",
+                        "score": 63,
+                        "label": "greed"
+                    },
+                    {
+                        "key": "1w",
+                        "date": "2026-11-10",
+                        "score": 57,
+                        "label": "greed"
+                    },
+                    {
+                        "key": "1m",
+                        "date": "2026-10-17",
+                        "score": 41,
+                        "label": "fear"
+                    },
+                    {
+                        "key": "1y",
+                        "date": "2025-11-17",
+                        "score": 48,
+                        "label": "neutral"
+                    }
+                ]
+            },
+            "indices": [
+                {
+                    "symbol": "GSPC",
+                    "price": 4812.37,
+                    "changesPercentage": 0.83,
+                    "lastClose": 8361.61,
+                    "lastCloseDate": "2026-11-17"
+                },
+                {
+                    "symbol": "DJI",
+                    "price": 6592.95,
+                    "changesPercentage": 0.42,
+                    "lastClose": 9252.86,
+                    "lastCloseDate": "2026-11-17"
+                },
+                {
+                    "symbol": "IXIC",
+                    "price": 8373.52,
+                    "changesPercentage": 0.01,
+                    "lastClose": 11525.68,
+                    "lastCloseDate": "2026-11-17"
+                },
+                {
+                    "symbol": "VIX",
+                    "price": 10154.1,
+                    "changesPercentage": -0.4,
+                    "lastClose": 15394.98,
+                    "lastCloseDate": "2026-11-17"
+                }
+            ],
+            "sectors": [
+                {
+                    "symbol": "XLK",
+                    "name": "기술",
+                    "price": 48.91,
+                    "changesPercentage": 1.94,
+                    "rank": 1
+                },
+                {
+                    "symbol": "XLF",
+                    "name": "금융",
+                    "price": 60.28,
+                    "changesPercentage": 1.57,
+                    "rank": 2
+                },
+                {
+                    "symbol": "XLE",
+                    "name": "에너지",
+                    "price": 71.65,
+                    "changesPercentage": 1.2,
+                    "rank": 3
+                },
+                {
+                    "symbol": "XLY",
+                    "name": "경기소비재",
+                    "price": 94.39,
+                    "changesPercentage": 0.46,
+                    "rank": 4
+                },
+                {
+                    "symbol": "XLP",
+                    "name": "필수소비재",
+                    "price": 105.76,
+                    "changesPercentage": 0.09,
+                    "rank": 5
+                },
+                {
+                    "symbol": "XLI",
+                    "name": "산업재",
+                    "price": 117.13,
+                    "changesPercentage": -0.28,
+                    "rank": 6
+                },
+                {
+                    "symbol": "XLB",
+                    "name": "소재",
+                    "price": 128.5,
+                    "changesPercentage": -0.65,
+                    "rank": 7
+                },
+                {
+                    "symbol": "XLU",
+                    "name": "유틸리티",
+                    "price": 139.87,
+                    "changesPercentage": -1.02,
+                    "rank": 8
+                },
+                {
+                    "symbol": "XLRE",
+                    "name": "부동산",
+                    "price": 151.24,
+                    "changesPercentage": -1.39,
+                    "rank": 9
+                },
+                {
+                    "symbol": "XLC",
+                    "name": "통신서비스",
+                    "price": 162.61,
+                    "changesPercentage": -1.76,
+                    "rank": 10
+                },
+                {
+                    "symbol": "XLV",
+                    "name": "헬스케어",
+                    "price": 0,
+                    "changesPercentage": 0,
+                    "rank": null
+                }
+            ],
+            "sectorBreadth": {
+                "up": 5,
+                "down": 5,
+                "flat": 0
+            },
+            "bestWorstSpreadPp": 3.7,
+            "sectorSignals": {
+                "computedAt": "2026-11-18T14:05:00.000Z",
+                "countsBySector": {
+                    "XLK": 1,
+                    "XLF": 1,
+                    "XLE": 1,
+                    "XLV": 1,
+                    "XLY": 1,
+                    "XLP": 1,
+                    "XLI": 1
+                },
+                "topSignals": [
+                    {
+                        "symbol": "SIGAQ",
+                        "sectorSymbol": "XLK",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGAQ",
+                        "sectorSymbol": "XLK",
+                        "type": "rsi_overbought",
+                        "direction": "bearish"
+                    },
+                    {
+                        "symbol": "SIGBQ",
+                        "sectorSymbol": "XLF",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGBQ",
+                        "sectorSymbol": "XLF",
+                        "type": "rsi_oversold",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGCQ",
+                        "sectorSymbol": "XLE",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGCQ",
+                        "sectorSymbol": "XLE",
+                        "type": "rsi_overbought",
+                        "direction": "bearish"
+                    },
+                    {
+                        "symbol": "SIGDQ",
+                        "sectorSymbol": "XLV",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGDQ",
+                        "sectorSymbol": "XLV",
+                        "type": "rsi_oversold",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGEQ",
+                        "sectorSymbol": "XLY",
+                        "type": "golden_cross",
+                        "direction": "bullish"
+                    },
+                    {
+                        "symbol": "SIGEQ",
+                        "sectorSymbol": "XLY",
+                        "type": "rsi_overbought",
+                        "direction": "bearish"
+                    }
+                ]
+            },
+            "briefing": {
+                "summary": "기술주가 반등을 이끌며 지수가 고점 부근을 지키고 있습니다.",
+                "dominantThemes": [
+                    "반도체 강세",
+                    "금리 인하 기대",
+                    "에너지 약세"
+                ],
+                "riskSentiment": "risk-on"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

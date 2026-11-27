@@ -1,0 +1,76 @@
+{
+    "tool": "get_quote",
+    "case": "kr-session-suffix-corrected",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbols": ["900110.KQ"]
+    },
+    "agent": {
+        "result": {
+            "symbolCorrections": [
+                {
+                    "from": "900110.KQ",
+                    "to": "900110.KS"
+                }
+            ],
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "market data provider (60s in-session cache)",
+            "quotes": [
+                {
+                    "symbol": "900110.KS",
+                    "resolvedName": "Hanbit Precision",
+                    "found": true,
+                    "price": 120523,
+                    "changesPercentage": 0.4442,
+                    "currency": "KRW",
+                    "marketProfile": "kr-equity",
+                    "quoteDelayMinutes": 20,
+                    "asOf": "2026-11-19T01:59:30.000Z",
+                    "freshness": {
+                        "asOf": "2026-11-19T01:59:30.000Z",
+                        "ageMinutes": 1,
+                        "stale": false,
+                        "maxAgeMinutes": 20160
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbolCorrections": [
+                {
+                    "from": "900110.KQ",
+                    "to": "900110.KS"
+                }
+            ],
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "market data provider (60s in-session cache)",
+            "quotes": [
+                {
+                    "symbol": "900110.KS",
+                    "resolvedName": "Hanbit Precision",
+                    "found": true,
+                    "price": 120523,
+                    "changesPercentage": 0.4442,
+                    "currency": "KRW",
+                    "marketProfile": "kr-equity",
+                    "quoteDelayMinutes": 20,
+                    "asOf": "2026-11-19T01:59:30.000Z",
+                    "freshness": {
+                        "asOf": "2026-11-19T01:59:30.000Z",
+                        "ageMinutes": 1,
+                        "stale": false,
+                        "maxAgeMinutes": 20160
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

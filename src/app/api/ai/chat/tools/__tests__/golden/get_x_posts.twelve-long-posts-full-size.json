@@ -1,0 +1,314 @@
+{
+    "tool": "get_x_posts",
+    "case": "twelve-long-posts-full-size",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:12:00.000Z",
+            "source": "X",
+            "symbol": "GLDNX",
+            "available": true,
+            "accounts": [
+                {
+                    "handle": "goldenrodsys",
+                    "name": "Goldenrod Systems",
+                    "role": "company",
+                    "followers": 1284311,
+                    "loaded": true,
+                    "postsInWindow": 9,
+                    "moreInWindow": true
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "name": "Ava Lindqvist",
+                    "role": "ceo",
+                    "followers": 402118,
+                    "loaded": true,
+                    "postsInWindow": 5,
+                    "moreInWindow": false
+                }
+            ],
+            "posts": [
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-17T21:00:00.000Z",
+                    "text": "1. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678901234",
+                    "likes": 14200,
+                    "reposts": 2310
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-17T12:00:00.000Z",
+                    "text": "2. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678909153",
+                    "likes": 13287,
+                    "reposts": 2163
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-17T03:00:00.000Z",
+                    "text": "3. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678917072",
+                    "likes": 12374,
+                    "reposts": 2016
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-16T18:00:00.000Z",
+                    "text": "4. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678924991",
+                    "likes": 11461,
+                    "reposts": 1869
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-16T09:00:00.000Z",
+                    "text": "5. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678932910",
+                    "likes": 10548,
+                    "reposts": 1722
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-16T00:00:00.000Z",
+                    "text": "6. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678940829",
+                    "likes": 9635,
+                    "reposts": 1575
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-15T15:00:00.000Z",
+                    "text": "7. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678948748",
+                    "likes": 8722,
+                    "reposts": 1428
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-15T06:00:00.000Z",
+                    "text": "8. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678956667",
+                    "likes": 7809,
+                    "reposts": 1281
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-14T21:00:00.000Z",
+                    "text": "9. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678964586",
+                    "likes": 6896,
+                    "reposts": 1134
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-14T12:00:00.000Z",
+                    "text": "10. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in t",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678972505",
+                    "likes": 5983,
+                    "reposts": 987
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-14T03:00:00.000Z",
+                    "text": "11. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in t",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678980424",
+                    "likes": 5070,
+                    "reposts": 840
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-13T18:00:00.000Z",
+                    "text": "12. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in t",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678988343",
+                    "likes": 4157,
+                    "reposts": 693
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:12:00.000Z",
+            "source": "X",
+            "symbol": "GLDNX",
+            "available": true,
+            "accounts": [
+                {
+                    "handle": "goldenrodsys",
+                    "name": "Goldenrod Systems",
+                    "role": "company",
+                    "followers": 1284311,
+                    "loaded": true,
+                    "postsInWindow": 9,
+                    "moreInWindow": true
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "name": "Ava Lindqvist",
+                    "role": "ceo",
+                    "followers": 402118,
+                    "loaded": true,
+                    "postsInWindow": 5,
+                    "moreInWindow": false
+                }
+            ],
+            "posts": [
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-17T21:00:00.000Z",
+                    "text": "1. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678901234",
+                    "likes": 14200,
+                    "reposts": 2310
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-17T12:00:00.000Z",
+                    "text": "2. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678909153",
+                    "likes": 13287,
+                    "reposts": 2163
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-17T03:00:00.000Z",
+                    "text": "3. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678917072",
+                    "likes": 12374,
+                    "reposts": 2016
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-16T18:00:00.000Z",
+                    "text": "4. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678924991",
+                    "likes": 11461,
+                    "reposts": 1869
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-16T09:00:00.000Z",
+                    "text": "5. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678932910",
+                    "likes": 10548,
+                    "reposts": 1722
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-16T00:00:00.000Z",
+                    "text": "6. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678940829",
+                    "likes": 9635,
+                    "reposts": 1575
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-15T15:00:00.000Z",
+                    "text": "7. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678948748",
+                    "likes": 8722,
+                    "reposts": 1428
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-15T06:00:00.000Z",
+                    "text": "8. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678956667",
+                    "likes": 7809,
+                    "reposts": 1281
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-14T21:00:00.000Z",
+                    "text": "9. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in th",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678964586",
+                    "likes": 6896,
+                    "reposts": 1134
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-14T12:00:00.000Z",
+                    "text": "10. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in t",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678972505",
+                    "likes": 5983,
+                    "reposts": 987
+                },
+                {
+                    "handle": "goldenrodsys",
+                    "role": "company",
+                    "postedAt": "2026-11-14T03:00:00.000Z",
+                    "text": "11. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in t",
+                    "truncated": true,
+                    "url": "https://x.com/goldenrodsys/status/198812345678980424",
+                    "likes": 5070,
+                    "reposts": 840
+                },
+                {
+                    "handle": "ava_goldenrod",
+                    "role": "ceo",
+                    "postedAt": "2026-11-13T18:00:00.000Z",
+                    "text": "12. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in the deck. Shipped the \"Lumen\" controller update to every fab partner today.\nThroughput up again this quarter; details in t",
+                    "truncated": true,
+                    "url": "https://x.com/ava_goldenrod/status/198812345678988343",
+                    "likes": 4157,
+                    "reposts": 693
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

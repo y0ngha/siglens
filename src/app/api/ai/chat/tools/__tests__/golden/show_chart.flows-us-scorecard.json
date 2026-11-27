@@ -1,0 +1,209 @@
+{
+    "tool": "show_chart",
+    "case": "flows-us-scorecard",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "flows",
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "flows",
+            "summary": {
+                "symbol": "GLDNX",
+                "market": "us",
+                "source": "SEC 13F (quarterly) and Form 4 via FMP",
+                "institutionalQuarters": [
+                    {
+                        "period": "2025-12-31",
+                        "complete": true,
+                        "holders": 5110,
+                        "netShareChange": 95000000
+                    },
+                    {
+                        "period": "2026-03-31",
+                        "complete": true,
+                        "holders": 5160,
+                        "netShareChange": -48000000
+                    },
+                    {
+                        "period": "2026-06-30",
+                        "complete": true,
+                        "holders": 5240,
+                        "netShareChange": 142000000
+                    },
+                    {
+                        "period": "2026-09-30",
+                        "complete": false,
+                        "holders": 1480,
+                        "netShareChange": 38000000
+                    }
+                ],
+                "insiderNetValueUsd12m": 828000,
+                "insiderNetValueByMonth": [
+                    {
+                        "month": "2025-11",
+                        "value": 0
+                    },
+                    {
+                        "month": "2025-12",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-01",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-02",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-03",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-04",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-05",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-06",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-07",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-08",
+                        "value": 0
+                    },
+                    {
+                        "month": "2026-09",
+                        "value": -2532000
+                    },
+                    {
+                        "month": "2026-10",
+                        "value": 3360000
+                    }
+                ],
+                "latestInstitutional": {
+                    "period": "2026-06-30",
+                    "complete": true,
+                    "holders": 5240,
+                    "netShareChange": 142000000
+                }
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "flows",
+                        "symbol": "GLDNX"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "flows",
+                    "market": "us",
+                    "asOf": "2026-10-16T03:00:00.000Z",
+                    "symbol": "GLDNX",
+                    "institutional": [
+                        {
+                            "period": "2025-12-31",
+                            "complete": true,
+                            "holders": 5110,
+                            "netShareChange": 95000000
+                        },
+                        {
+                            "period": "2026-03-31",
+                            "complete": true,
+                            "holders": 5160,
+                            "netShareChange": -48000000
+                        },
+                        {
+                            "period": "2026-06-30",
+                            "complete": true,
+                            "holders": 5240,
+                            "netShareChange": 142000000
+                        },
+                        {
+                            "period": "2026-09-30",
+                            "complete": false,
+                            "holders": 1480,
+                            "netShareChange": 38000000
+                        }
+                    ],
+                    "insiderNetValue": [
+                        {
+                            "month": "2025-11",
+                            "value": 0
+                        },
+                        {
+                            "month": "2025-12",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-01",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-02",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-03",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-04",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-05",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-06",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-07",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-08",
+                            "value": 0
+                        },
+                        {
+                            "month": "2026-09",
+                            "value": -2532000
+                        },
+                        {
+                            "month": "2026-10",
+                            "value": 3360000
+                        }
+                    ],
+                    "name": "골든로드 시스템즈"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "tool": "get_my_watchlist",
+    "case": "guest-login-required",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "guest",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "error": "login_required"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "login_required"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

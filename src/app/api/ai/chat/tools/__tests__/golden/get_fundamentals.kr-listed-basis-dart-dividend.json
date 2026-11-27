@@ -1,0 +1,279 @@
+{
+    "tool": "get_fundamentals",
+    "case": "kr-listed-basis-dart-dividend",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "900110.KS"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "asOfIsFetchTime": true,
+            "cachedSectionsMaxAgeHours": 24,
+            "source": "fundamental data provider (cached)",
+            "symbol": "900110.KS",
+            "available": true,
+            "price": 120523,
+            "profile": {
+                "name": "Hanbit Precision Co., Ltd.",
+                "sector": "Technology",
+                "industry": "Semiconductor Equipment & Materials",
+                "marketCap": 7369785800000,
+                "currency": "KRW",
+                "sharesBasis": "krx_listed",
+                "sharesOutstanding": 61420000,
+                "marketCapCloseDate": "2026-11-18"
+            },
+            "valuation": {
+                "pe": 18.41,
+                "pb": 11.3042,
+                "ps": 8.41274,
+                "evToEbitda": null,
+                "epsTtm": 6521,
+                "bps": null,
+                "basis": {
+                    "source": "provider",
+                    "statements": null,
+                    "ttmEnd": null,
+                    "equityAsOf": null,
+                    "epsShares": "provider_implied",
+                    "bpsShares": "provider_implied",
+                    "sharesAsOf": null,
+                    "sharesSource": null,
+                    "priceDate": null,
+                    "note": "DART could not be read, so P/E and P/B are the data provider values (trailing four quarters, provider-implied share count)."
+                }
+            },
+            "profitability": {
+                "roePct": 41.8373,
+                "roaPct": 19.2736,
+                "operatingMarginPct": 30.1483,
+                "netMarginPct": 24.7194
+            },
+            "growth": {
+                "revenueGrowthPct": 11.8373,
+                "epsGrowthPct": 16.4183
+            },
+            "dividends": {
+                "latestExDate": "2025-12-29",
+                "latestAmount": 1450,
+                "currency": "KRW",
+                "payDate": null,
+                "trailing12mAmount": 1450,
+                "trailingYieldPct": 1.2,
+                "source": "Yahoo Finance dividend history",
+                "annualReported": {
+                    "fiscalYear": 2025,
+                    "dpsCommon": 1450,
+                    "dartYieldPct": 1.2,
+                    "yieldOnLastClosePct": 1.2,
+                    "source": "DART"
+                }
+            },
+            "recentQuarters": null,
+            "earningsReactions": [
+                {
+                    "date": "2026-10-28",
+                    "movePct": 0.551975
+                },
+                {
+                    "date": "2026-07-29",
+                    "movePct": -1.88252
+                },
+                {
+                    "date": "2026-04-29",
+                    "movePct": 2.26
+                }
+            ],
+            "earningsReactionTally": {
+                "measured": 3,
+                "up": 2,
+                "down": 1,
+                "flat": 0,
+                "largestRise": {
+                    "date": "2026-04-29",
+                    "movePct": 2.26
+                },
+                "largestFall": {
+                    "date": "2026-07-29",
+                    "movePct": -1.88252
+                },
+                "medianAbsMovePct": 1.88,
+                "summary": "3 reports measured: 2 up, 1 down; largest rise +2.26% (2026-04-29), largest fall -1.88252% (2026-07-29); median move size 1.88%"
+            },
+            "indexMemberships": null,
+            "health": {
+                "altmanZScore": 11.284,
+                "piotroskiScore": 7,
+                "debtRatio": 0.4127,
+                "currentRatio": 2.31847,
+                "operatingCashFlow": 14281000000
+            },
+            "analyst": {
+                "consensus": {
+                    "strongBuy": 9,
+                    "buy": 24,
+                    "hold": 11,
+                    "sell": 2,
+                    "strongSell": 1
+                },
+                "consensusAnalysts": 47,
+                "consensusSource": "yahoo",
+                "analystBuySharePct": 70.2128,
+                "priceTarget": {
+                    "targetHigh": 330,
+                    "targetLow": 190,
+                    "targetMedian": 262,
+                    "targetConsensus": 259.873
+                },
+                "priceTargetSource": "yahoo",
+                "priceTargetYahoo": null,
+                "targetSourcesDisagree": false,
+                "targetUpsidePct": -99.7844,
+                "analystEstimate": {
+                    "estimatedEpsAvg": 9.4183,
+                    "estimatedRevenueAvg": 61827000000,
+                    "period": "current_quarter"
+                },
+                "nextEarningsDate": null,
+                "daysToEarnings": null
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "asOfIsFetchTime": true,
+            "cachedSectionsMaxAgeHours": 24,
+            "source": "fundamental data provider (cached)",
+            "symbol": "900110.KS",
+            "available": true,
+            "price": 120523,
+            "profile": {
+                "name": "Hanbit Precision Co., Ltd.",
+                "sector": "Technology",
+                "industry": "Semiconductor Equipment & Materials",
+                "marketCap": 7369785800000,
+                "currency": "KRW",
+                "sharesBasis": "krx_listed",
+                "sharesOutstanding": 61420000,
+                "marketCapCloseDate": "2026-11-18"
+            },
+            "valuation": {
+                "pe": 18.41,
+                "pb": 11.3042,
+                "ps": 8.41274,
+                "evToEbitda": null,
+                "epsTtm": 6521,
+                "bps": null,
+                "basis": {
+                    "source": "provider",
+                    "statements": null,
+                    "ttmEnd": null,
+                    "equityAsOf": null,
+                    "epsShares": "provider_implied",
+                    "bpsShares": "provider_implied",
+                    "sharesAsOf": null,
+                    "sharesSource": null,
+                    "priceDate": null,
+                    "note": "DART could not be read, so P/E and P/B are the data provider values (trailing four quarters, provider-implied share count)."
+                }
+            },
+            "profitability": {
+                "roePct": 41.8373,
+                "roaPct": 19.2736,
+                "operatingMarginPct": 30.1483,
+                "netMarginPct": 24.7194
+            },
+            "growth": {
+                "revenueGrowthPct": 11.8373,
+                "epsGrowthPct": 16.4183
+            },
+            "dividends": {
+                "latestExDate": "2025-12-29",
+                "latestAmount": 1450,
+                "currency": "KRW",
+                "payDate": null,
+                "trailing12mAmount": 1450,
+                "trailingYieldPct": 1.2,
+                "source": "Yahoo Finance dividend history",
+                "annualReported": {
+                    "fiscalYear": 2025,
+                    "dpsCommon": 1450,
+                    "dartYieldPct": 1.2,
+                    "yieldOnLastClosePct": 1.2,
+                    "source": "DART"
+                }
+            },
+            "recentQuarters": null,
+            "earningsReactions": [
+                {
+                    "date": "2026-10-28",
+                    "movePct": 0.551975
+                },
+                {
+                    "date": "2026-07-29",
+                    "movePct": -1.88252
+                },
+                {
+                    "date": "2026-04-29",
+                    "movePct": 2.26
+                }
+            ],
+            "earningsReactionTally": {
+                "measured": 3,
+                "up": 2,
+                "down": 1,
+                "flat": 0,
+                "largestRise": {
+                    "date": "2026-04-29",
+                    "movePct": 2.26
+                },
+                "largestFall": {
+                    "date": "2026-07-29",
+                    "movePct": -1.88252
+                },
+                "medianAbsMovePct": 1.88,
+                "summary": "3 reports measured: 2 up, 1 down; largest rise +2.26% (2026-04-29), largest fall -1.88252% (2026-07-29); median move size 1.88%"
+            },
+            "indexMemberships": null,
+            "health": {
+                "altmanZScore": 11.284,
+                "piotroskiScore": 7,
+                "debtRatio": 0.4127,
+                "currentRatio": 2.31847,
+                "operatingCashFlow": 14281000000
+            },
+            "analyst": {
+                "consensus": {
+                    "strongBuy": 9,
+                    "buy": 24,
+                    "hold": 11,
+                    "sell": 2,
+                    "strongSell": 1
+                },
+                "analystBuySharePct": 70.2128,
+                "priceTarget": {
+                    "targetHigh": 330,
+                    "targetLow": 190,
+                    "targetMedian": 262,
+                    "targetConsensus": 259.873
+                },
+                "targetUpsidePct": -99.7844,
+                "analystEstimate": {
+                    "estimatedEpsAvg": 9.4183,
+                    "estimatedRevenueAvg": 61827000000,
+                    "period": "current_quarter"
+                },
+                "nextEarningsDate": null,
+                "daysToEarnings": null
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

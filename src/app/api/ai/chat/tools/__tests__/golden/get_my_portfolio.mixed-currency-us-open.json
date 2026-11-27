@@ -1,0 +1,204 @@
+{
+    "tool": "get_my_portfolio",
+    "case": "mixed-currency-us-open",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS portfolio",
+            "count": 5,
+            "holdings": [
+                {
+                    "symbol": "GLDNX",
+                    "companyName": "Goldenrod Systems Inc.",
+                    "quantity": 37.5,
+                    "averagePrice": 198.42371,
+                    "currency": "USD",
+                    "price": 244.85,
+                    "dayChangePct": -0.77805,
+                    "marketValue": 9181.88,
+                    "costBasis": 7440.89,
+                    "pnl": 1740.99,
+                    "pnlPct": 23.3976,
+                    "weightPct": 29.1831
+                },
+                {
+                    "symbol": "QRTZ",
+                    "companyName": "Quartzline Holdings",
+                    "quantity": 120,
+                    "averagePrice": 161.0825,
+                    "currency": "USD",
+                    "price": 149.63,
+                    "dayChangePct": -2.01048,
+                    "marketValue": 17955.6,
+                    "costBasis": 19329.9,
+                    "pnl": -1374.3,
+                    "pnlPct": -7.10971,
+                    "weightPct": 57.069
+                },
+                {
+                    "symbol": "VLMR",
+                    "companyName": "Velmora Therapeutics",
+                    "quantity": 410,
+                    "averagePrice": 13.9,
+                    "currency": "USD",
+                    "price": 10.55,
+                    "dayChangePct": 0.09488,
+                    "marketValue": 4325.5,
+                    "costBasis": 5699,
+                    "pnl": -1373.5,
+                    "pnlPct": -24.1007,
+                    "weightPct": 13.7479
+                },
+                {
+                    "symbol": "900110.KS",
+                    "companyName": "한빛정밀",
+                    "quantity": 15,
+                    "averagePrice": 98250,
+                    "currency": "KRW",
+                    "price": 119990,
+                    "dayChangePct": 0.51939,
+                    "marketValue": 1799850,
+                    "costBasis": 1473750,
+                    "pnl": 326100,
+                    "pnlPct": 22.1272,
+                    "weightPct": 12.6665
+                },
+                {
+                    "symbol": "900220.KQ",
+                    "companyName": "다온바이오",
+                    "quantity": 230,
+                    "averagePrice": 24120,
+                    "currency": "KRW",
+                    "price": 53955,
+                    "dayChangePct": 0.33659,
+                    "marketValue": 12409650,
+                    "costBasis": 5547600,
+                    "pnl": 6862050,
+                    "pnlPct": 123.694,
+                    "weightPct": 87.3335
+                }
+            ],
+            "totals": [
+                {
+                    "currency": "USD",
+                    "marketValue": 31462.98,
+                    "costBasis": 32469.79,
+                    "pnl": -1006.81,
+                    "pnlPct": -3.10077
+                },
+                {
+                    "currency": "KRW",
+                    "marketValue": 14209500,
+                    "costBasis": 7021350,
+                    "pnl": 7188150,
+                    "pnlPct": 102.376
+                }
+            ],
+            "weightScope": "currency"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS portfolio",
+            "count": 5,
+            "holdings": [
+                {
+                    "symbol": "GLDNX",
+                    "companyName": "Goldenrod Systems Inc.",
+                    "quantity": 37.5,
+                    "averagePrice": 198.42371,
+                    "currency": "USD",
+                    "price": 244.85,
+                    "dayChangePct": -0.77805,
+                    "marketValue": 9181.88,
+                    "costBasis": 7440.89,
+                    "pnl": 1740.99,
+                    "pnlPct": 23.3976,
+                    "weightPct": 29.1831
+                },
+                {
+                    "symbol": "QRTZ",
+                    "companyName": "Quartzline Holdings",
+                    "quantity": 120,
+                    "averagePrice": 161.0825,
+                    "currency": "USD",
+                    "price": 149.63,
+                    "dayChangePct": -2.01048,
+                    "marketValue": 17955.6,
+                    "costBasis": 19329.9,
+                    "pnl": -1374.3,
+                    "pnlPct": -7.10971,
+                    "weightPct": 57.069
+                },
+                {
+                    "symbol": "VLMR",
+                    "companyName": "Velmora Therapeutics",
+                    "quantity": 410,
+                    "averagePrice": 13.9,
+                    "currency": "USD",
+                    "price": 10.55,
+                    "dayChangePct": 0.09488,
+                    "marketValue": 4325.5,
+                    "costBasis": 5699,
+                    "pnl": -1373.5,
+                    "pnlPct": -24.1007,
+                    "weightPct": 13.7479
+                },
+                {
+                    "symbol": "900110.KS",
+                    "companyName": "한빛정밀",
+                    "quantity": 15,
+                    "averagePrice": 98250,
+                    "currency": "KRW",
+                    "price": 119990,
+                    "dayChangePct": 0.51939,
+                    "marketValue": 1799850,
+                    "costBasis": 1473750,
+                    "pnl": 326100,
+                    "pnlPct": 22.1272,
+                    "weightPct": 12.6665
+                },
+                {
+                    "symbol": "900220.KQ",
+                    "companyName": "다온바이오",
+                    "quantity": 230,
+                    "averagePrice": 24120,
+                    "currency": "KRW",
+                    "price": 53955,
+                    "dayChangePct": 0.33659,
+                    "marketValue": 12409650,
+                    "costBasis": 5547600,
+                    "pnl": 6862050,
+                    "pnlPct": 123.694,
+                    "weightPct": 87.3335
+                }
+            ],
+            "totals": [
+                {
+                    "currency": "USD",
+                    "marketValue": 31462.98,
+                    "costBasis": 32469.79,
+                    "pnl": -1006.81,
+                    "pnlPct": -3.10077
+                },
+                {
+                    "currency": "KRW",
+                    "marketValue": 14209500,
+                    "costBasis": 7021350,
+                    "pnl": 7188150,
+                    "pnlPct": 102.376
+                }
+            ],
+            "weightScope": "currency"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

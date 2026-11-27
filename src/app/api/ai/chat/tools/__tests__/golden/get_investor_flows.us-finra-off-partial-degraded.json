@@ -1,0 +1,505 @@
+{
+    "tool": "get_investor_flows",
+    "case": "us-finra-off-partial-degraded",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-10-16T03:00:00.000Z",
+            "source": "SEC 13F (institutions and their put/call options, quarterly, filed up to ~45 days after quarter end), Form 4 and 13D/13G via FMP, SEC Form 144, registration/offering filings and fails-to-deliver; ownership shares: Yahoo Finance aggregate",
+            "symbol": "GLDNX",
+            "available": true,
+            "noData": false,
+            "dataStatus": {
+                "institutional": "collecting",
+                "note": "Initial collection is still running for the sources marked collecting. Empty or insufficient data there means not collected yet, not that the stock has no such activity - say the data is still being collected."
+            },
+            "temporarilyUnavailable": {
+                "parts": ["largeHolders", "float"],
+                "note": "These parts could not be loaded right now because of a temporary data-provider error (largeHolders = 13D/13G filings, float = shares float, so short interest as % of float). They are unavailable at the moment, not absent - never say the stock has no such filings or no data; say they could not be loaded right now."
+            },
+            "composite": {
+                "score": 47.85,
+                "label": "bullish",
+                "axesUsed": ["institutional", "insider", "largeHolders"]
+            },
+            "axes": {
+                "institutional": {
+                    "label": "bullish",
+                    "score": 45,
+                    "sufficiency": "sufficient"
+                },
+                "insider": {
+                    "label": "strong_bullish",
+                    "score": 80,
+                    "sufficiency": "sufficient"
+                },
+                "largeHolders": {
+                    "label": "neutral",
+                    "score": 0,
+                    "sufficiency": "sufficient"
+                },
+                "short": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                },
+                "dilution": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                }
+            },
+            "signals": [
+                {
+                    "id": "insider_open_market_buying",
+                    "axis": "insider",
+                    "direction": "bullish",
+                    "strength": "strong",
+                    "evidence": {
+                        "buyValueUsd": 3360000,
+                        "weightedBuyValueUsd": 3360000,
+                        "buyers": 4,
+                        "buyCount": 4
+                    }
+                },
+                {
+                    "id": "insider_cluster_buy",
+                    "axis": "insider",
+                    "direction": "bullish",
+                    "strength": "moderate",
+                    "evidence": {
+                        "insiders": 4,
+                        "windowDays": 30,
+                        "buyValueUsd": 3360000
+                    }
+                },
+                {
+                    "id": "institutional_holder_count_change",
+                    "axis": "institutional",
+                    "direction": "bullish",
+                    "strength": "weak",
+                    "evidence": {
+                        "holders": 5240,
+                        "priorHolders": 5110,
+                        "changePct": 2.54
+                    },
+                    "subject": "2026-06-30"
+                },
+                {
+                    "id": "institutional_net_share_change",
+                    "axis": "institutional",
+                    "direction": "bullish",
+                    "strength": "weak",
+                    "evidence": {
+                        "netShareChange": 142000000,
+                        "pctOfSharesOutstanding": 0.95
+                    },
+                    "subject": "2026-06-30"
+                },
+                {
+                    "id": "institutional_new_vs_exited",
+                    "axis": "institutional",
+                    "direction": "bullish",
+                    "strength": "weak",
+                    "evidence": {
+                        "newHolders": 310,
+                        "exited": 180,
+                        "balance": 0.27
+                    }
+                }
+            ],
+            "freshness": {
+                "asOf": "2026-10-16",
+                "institutionalPeriod": "2026-06-30",
+                "latestInstitutionalPeriod": "2026-09-30",
+                "latestInstitutionalPeriodComplete": false,
+                "shortInterestSettlementDate": null,
+                "shortVolumeLatestDate": null,
+                "insiderWindow": {
+                    "from": "2026-07-18",
+                    "to": "2026-10-16",
+                    "days": 90
+                },
+                "insiderTransactionsInWindow": 6,
+                "largeHolderWindow": {
+                    "from": "2026-07-18",
+                    "to": "2026-10-16",
+                    "days": 90
+                },
+                "failsToDeliverLatestDate": null,
+                "thresholdListAsOf": null,
+                "thresholdListStale": null,
+                "dilutionWindow": {
+                    "from": "2026-04-19",
+                    "to": "2026-10-16",
+                    "days": 180
+                },
+                "krDisclosureLatestDate": null
+            },
+            "institutional": {
+                "quarters": [],
+                "topHoldersPeriod": null,
+                "topHolders": [],
+                "putCall": null
+            },
+            "insider": {
+                "metrics": {
+                    "buyCount": 4,
+                    "buyerCount": 4,
+                    "buyValueUsd": 3360000,
+                    "sellCount": 1,
+                    "sellerCount": 1,
+                    "sellValueUsd": 2532000,
+                    "netValueUsd": 828000,
+                    "weightedBuyValueUsd": 3360000,
+                    "largestBuyCluster": 4,
+                    "clusterBuy": true,
+                    "largeSellCount": 0,
+                    "proposedSaleCount": 0,
+                    "proposedSaleFilerCount": 0,
+                    "proposedSaleValueUsd": 0,
+                    "proposedSaleShares": 0,
+                    "proposedSalePctOutstanding": 0,
+                    "proposedSalePlannedValueUsd": 0
+                },
+                "recentTransactions": [
+                    {
+                        "date": "2026-10-10",
+                        "name": "Fixture Director A",
+                        "role": "director",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-10-07",
+                        "name": "Fixture Officer B",
+                        "role": "officer: CFO",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-10-04",
+                        "name": "Fixture Director C",
+                        "role": "director",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-10-01",
+                        "name": "Fixture Officer D",
+                        "role": "officer: COO",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-09-25",
+                        "name": "Fixture Officer E",
+                        "role": "officer: SVP",
+                        "type": "sell",
+                        "valueUsd": 2532000
+                    },
+                    {
+                        "date": "2026-09-02",
+                        "name": "Fixture Officer G",
+                        "role": "director",
+                        "type": "other",
+                        "valueUsd": null
+                    }
+                ],
+                "proposedSales": null,
+                "proposedSalesCounts": null
+            },
+            "largeHolders": [
+                {
+                    "filingDate": "2026-09-01",
+                    "filer": "Fixture Activist Partners",
+                    "form": "SC 13D/A",
+                    "percentOfClass": 5.4
+                }
+            ],
+            "offerings": null,
+            "short": {
+                "interest": {
+                    "settlementDate": "2026-09-15",
+                    "shortQty": 128000000,
+                    "pctOfFloat": null,
+                    "daysToCover": null,
+                    "changeVsPrevious": {
+                        "previousDate": "2026-08-15",
+                        "sharesChange": 6000000,
+                        "pct": 4.92
+                    },
+                    "recentChangePct": null,
+                    "recentChangeFromDate": null,
+                    "recentChangeToDate": null,
+                    "trend": null
+                },
+                "offExchangeVolume": {
+                    "date": "2026-10-15",
+                    "shortRatio": null,
+                    "zScore": null
+                },
+                "squeezeRisk": false,
+                "note": "FINRA short volume covers off-exchange (TRF) trades only."
+            },
+            "failsToDeliver": null,
+            "thresholdList": null,
+            "squeezeRisk": null,
+            "ownershipShares": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-10-16T03:00:00.000Z",
+            "source": "SEC 13F (institutions and their put/call options, quarterly, filed up to ~45 days after quarter end), Form 4 and 13D/13G via FMP, SEC Form 144, registration/offering filings and fails-to-deliver",
+            "symbol": "GLDNX",
+            "available": true,
+            "noData": false,
+            "dataStatus": {
+                "institutional": "collecting",
+                "note": "Initial collection is still running for the sources marked collecting. Empty or insufficient data there means not collected yet, not that the stock has no such activity - say the data is still being collected."
+            },
+            "temporarilyUnavailable": {
+                "parts": ["largeHolders", "float"],
+                "note": "These parts could not be loaded right now because of a temporary data-provider error (largeHolders = 13D/13G filings, float = shares float, so short interest as % of float). They are unavailable at the moment, not absent - never say the stock has no such filings or no data; say they could not be loaded right now."
+            },
+            "composite": {
+                "score": 47.85,
+                "label": "bullish",
+                "axesUsed": ["institutional", "insider", "largeHolders"]
+            },
+            "axes": {
+                "institutional": {
+                    "label": "bullish",
+                    "score": 45,
+                    "sufficiency": "sufficient"
+                },
+                "insider": {
+                    "label": "strong_bullish",
+                    "score": 80,
+                    "sufficiency": "sufficient"
+                },
+                "largeHolders": {
+                    "label": "neutral",
+                    "score": 0,
+                    "sufficiency": "sufficient"
+                },
+                "short": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                },
+                "dilution": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                }
+            },
+            "signals": [
+                {
+                    "id": "insider_open_market_buying",
+                    "axis": "insider",
+                    "direction": "bullish",
+                    "strength": "strong",
+                    "evidence": {
+                        "buyValueUsd": 3360000,
+                        "weightedBuyValueUsd": 3360000,
+                        "buyers": 4,
+                        "buyCount": 4
+                    }
+                },
+                {
+                    "id": "insider_cluster_buy",
+                    "axis": "insider",
+                    "direction": "bullish",
+                    "strength": "moderate",
+                    "evidence": {
+                        "insiders": 4,
+                        "windowDays": 30,
+                        "buyValueUsd": 3360000
+                    }
+                },
+                {
+                    "id": "institutional_holder_count_change",
+                    "axis": "institutional",
+                    "direction": "bullish",
+                    "strength": "weak",
+                    "evidence": {
+                        "holders": 5240,
+                        "priorHolders": 5110,
+                        "changePct": 2.54
+                    },
+                    "subject": "2026-06-30"
+                },
+                {
+                    "id": "institutional_net_share_change",
+                    "axis": "institutional",
+                    "direction": "bullish",
+                    "strength": "weak",
+                    "evidence": {
+                        "netShareChange": 142000000,
+                        "pctOfSharesOutstanding": 0.95
+                    },
+                    "subject": "2026-06-30"
+                },
+                {
+                    "id": "institutional_new_vs_exited",
+                    "axis": "institutional",
+                    "direction": "bullish",
+                    "strength": "weak",
+                    "evidence": {
+                        "newHolders": 310,
+                        "exited": 180,
+                        "balance": 0.27
+                    }
+                }
+            ],
+            "freshness": {
+                "asOf": "2026-10-16",
+                "institutionalPeriod": "2026-06-30",
+                "latestInstitutionalPeriod": "2026-09-30",
+                "latestInstitutionalPeriodComplete": false,
+                "shortInterestSettlementDate": null,
+                "shortVolumeLatestDate": null,
+                "insiderWindow": {
+                    "from": "2026-07-18",
+                    "to": "2026-10-16",
+                    "days": 90
+                },
+                "insiderTransactionsInWindow": 6,
+                "largeHolderWindow": {
+                    "from": "2026-07-18",
+                    "to": "2026-10-16",
+                    "days": 90
+                },
+                "failsToDeliverLatestDate": null,
+                "thresholdListAsOf": null,
+                "thresholdListStale": null,
+                "dilutionWindow": {
+                    "from": "2026-04-19",
+                    "to": "2026-10-16",
+                    "days": 180
+                },
+                "krDisclosureLatestDate": null
+            },
+            "institutional": {
+                "quarters": [],
+                "topHoldersPeriod": null,
+                "topHolders": [],
+                "putCall": null
+            },
+            "insider": {
+                "metrics": {
+                    "buyCount": 4,
+                    "buyerCount": 4,
+                    "buyValueUsd": 3360000,
+                    "sellCount": 1,
+                    "sellerCount": 1,
+                    "sellValueUsd": 2532000,
+                    "netValueUsd": 828000,
+                    "weightedBuyValueUsd": 3360000,
+                    "largestBuyCluster": 4,
+                    "clusterBuy": true,
+                    "largeSellCount": 0,
+                    "proposedSaleCount": 0,
+                    "proposedSaleFilerCount": 0,
+                    "proposedSaleValueUsd": 0,
+                    "proposedSaleShares": 0,
+                    "proposedSalePctOutstanding": 0,
+                    "proposedSalePlannedValueUsd": 0
+                },
+                "recentTransactions": [
+                    {
+                        "date": "2026-10-10",
+                        "name": "Fixture Director A",
+                        "role": "director",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-10-07",
+                        "name": "Fixture Officer B",
+                        "role": "officer: CFO",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-10-04",
+                        "name": "Fixture Director C",
+                        "role": "director",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-10-01",
+                        "name": "Fixture Officer D",
+                        "role": "officer: COO",
+                        "type": "buy",
+                        "valueUsd": 840000
+                    },
+                    {
+                        "date": "2026-09-25",
+                        "name": "Fixture Officer E",
+                        "role": "officer: SVP",
+                        "type": "sell",
+                        "valueUsd": 2532000
+                    },
+                    {
+                        "date": "2026-09-02",
+                        "name": "Fixture Officer G",
+                        "role": "director",
+                        "type": "other",
+                        "valueUsd": null
+                    }
+                ],
+                "proposedSales": null,
+                "proposedSalesCounts": null
+            },
+            "largeHolders": [
+                {
+                    "filingDate": "2026-09-01",
+                    "filer": "Fixture Activist Partners",
+                    "form": "SC 13D/A",
+                    "percentOfClass": 5.4
+                }
+            ],
+            "offerings": null,
+            "short": {
+                "interest": {
+                    "settlementDate": "2026-09-15",
+                    "shortQty": 128000000,
+                    "pctOfFloat": null,
+                    "daysToCover": null,
+                    "changeVsPrevious": {
+                        "previousDate": "2026-08-15",
+                        "sharesChange": 6000000,
+                        "pct": 4.92
+                    },
+                    "recentChangePct": null,
+                    "recentChangeFromDate": null,
+                    "recentChangeToDate": null,
+                    "trend": null
+                },
+                "offExchangeVolume": {
+                    "date": "2026-10-15",
+                    "shortRatio": null,
+                    "zScore": null
+                },
+                "squeezeRisk": false,
+                "note": "FINRA short volume covers off-exchange (TRF) trades only."
+            },
+            "failsToDeliver": null,
+            "thresholdList": null,
+            "squeezeRisk": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

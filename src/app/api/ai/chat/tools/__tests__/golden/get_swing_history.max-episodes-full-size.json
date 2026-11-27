@@ -1,0 +1,1177 @@
+{
+    "tool": "get_swing_history",
+    "case": "max-episodes-full-size",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "QRTZ",
+        "minSwingPct": 3
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-20",
+            "source": "SIGLENS daily closes (price only)",
+            "symbol": "QRTZ",
+            "resolvedName": "Quartzline Holdings",
+            "minSwingPct": 3,
+            "firstDate": "2020-01-02",
+            "lastDate": "2026-11-20",
+            "sessions": 1732,
+            "windowHigh": {
+                "date": "2026-11-04",
+                "close": 160.49,
+                "fromHighPct": -6.47
+            },
+            "declines": {
+                "summary": {
+                    "episodes": 40,
+                    "days": {
+                        "samples": 40,
+                        "medianDays": 27,
+                        "avgDays": 27.25,
+                        "minDays": 12,
+                        "maxDays": 42
+                    },
+                    "sessionsMedian": 18.5,
+                    "change": {
+                        "medianPct": -9.18,
+                        "avgPct": -10.04,
+                        "extremePct": -17.79
+                    },
+                    "recovered": 40,
+                    "daysToRecover": {
+                        "samples": 40,
+                        "medianDays": 18,
+                        "avgDays": 39.53,
+                        "minDays": 11,
+                        "maxDays": 93
+                    },
+                    "peakToRecoveryDays": {
+                        "samples": 40,
+                        "medianDays": 43.5,
+                        "avgDays": 66.78,
+                        "minDays": 28,
+                        "maxDays": 126
+                    }
+                },
+                "bySize": [
+                    {
+                        "fromPct": 3,
+                        "toPct": 10,
+                        "episodes": 24,
+                        "medianDays": 23,
+                        "recovered": 24,
+                        "medianDaysToRecover": 17
+                    },
+                    {
+                        "fromPct": 10,
+                        "toPct": 20,
+                        "episodes": 16,
+                        "medianDays": 35,
+                        "recovered": 16,
+                        "medianDaysToRecover": 84
+                    },
+                    {
+                        "fromPct": 20,
+                        "toPct": 30,
+                        "episodes": 0,
+                        "medianDays": null,
+                        "recovered": 0,
+                        "medianDaysToRecover": null
+                    },
+                    {
+                        "fromPct": 30,
+                        "toPct": 50,
+                        "episodes": 0,
+                        "medianDays": null,
+                        "recovered": 0,
+                        "medianDaysToRecover": null
+                    },
+                    {
+                        "fromPct": 50,
+                        "toPct": null,
+                        "episodes": 0,
+                        "medianDays": null,
+                        "recovered": 0,
+                        "medianDaysToRecover": null
+                    }
+                ],
+                "episodes": [
+                    {
+                        "peakDate": "2026-09-11",
+                        "peakClose": 152.06,
+                        "troughDate": "2026-10-08",
+                        "troughClose": 145.22,
+                        "changePct": -4.5,
+                        "days": 27,
+                        "sessions": 19,
+                        "recoveryDate": "2026-10-22",
+                        "daysToRecover": 14
+                    },
+                    {
+                        "peakDate": "2026-07-08",
+                        "peakClose": 130.87,
+                        "troughDate": "2026-08-04",
+                        "troughClose": 119.16,
+                        "changePct": -8.95,
+                        "days": 27,
+                        "sessions": 19,
+                        "recoveryDate": "2026-08-20",
+                        "daysToRecover": 16
+                    },
+                    {
+                        "peakDate": "2026-05-04",
+                        "peakClose": 146.52,
+                        "troughDate": "2026-06-08",
+                        "troughClose": 120.66,
+                        "changePct": -17.65,
+                        "days": 35,
+                        "sessions": 24,
+                        "recoveryDate": "2026-09-02",
+                        "daysToRecover": 86
+                    },
+                    {
+                        "peakDate": "2026-03-11",
+                        "peakClose": 138.03,
+                        "troughDate": "2026-04-07",
+                        "troughClose": 132.31,
+                        "changePct": -4.14,
+                        "days": 27,
+                        "sessions": 18,
+                        "recoveryDate": "2026-04-20",
+                        "daysToRecover": 13
+                    },
+                    {
+                        "peakDate": "2026-01-08",
+                        "peakClose": 119.28,
+                        "troughDate": "2026-01-29",
+                        "troughClose": 108.92,
+                        "changePct": -8.69,
+                        "days": 21,
+                        "sessions": 14,
+                        "recoveryDate": "2026-02-18",
+                        "daysToRecover": 20
+                    },
+                    {
+                        "peakDate": "2025-11-03",
+                        "peakClose": 133.43,
+                        "troughDate": "2025-12-08",
+                        "troughClose": 110.3,
+                        "changePct": -17.33,
+                        "days": 35,
+                        "sessions": 24,
+                        "recoveryDate": "2026-03-02",
+                        "daysToRecover": 84
+                    },
+                    {
+                        "peakDate": "2025-09-10",
+                        "peakClose": 126.06,
+                        "troughDate": "2025-10-02",
+                        "troughClose": 120.97,
+                        "changePct": -4.04,
+                        "days": 22,
+                        "sessions": 16,
+                        "recoveryDate": "2025-10-20",
+                        "daysToRecover": 18
+                    },
+                    {
+                        "peakDate": "2025-07-08",
+                        "peakClose": 108.59,
+                        "troughDate": "2025-08-01",
+                        "troughClose": 98.99,
+                        "changePct": -8.84,
+                        "days": 24,
+                        "sessions": 18,
+                        "recoveryDate": "2025-08-19",
+                        "daysToRecover": 18
+                    },
+                    {
+                        "peakDate": "2025-05-01",
+                        "peakClose": 122.35,
+                        "troughDate": "2025-06-12",
+                        "troughClose": 100.59,
+                        "changePct": -17.79,
+                        "days": 42,
+                        "sessions": 29,
+                        "recoveryDate": "2025-09-02",
+                        "daysToRecover": 82
+                    },
+                    {
+                        "peakDate": "2025-03-18",
+                        "peakClose": 114.98,
+                        "troughDate": "2025-04-03",
+                        "troughClose": 109.66,
+                        "changePct": -4.63,
+                        "days": 16,
+                        "sessions": 12,
+                        "recoveryDate": "2025-04-16",
+                        "daysToRecover": 13
+                    },
+                    {
+                        "peakDate": "2025-01-06",
+                        "peakClose": 99.37,
+                        "troughDate": "2025-01-31",
+                        "troughClose": 90.15,
+                        "changePct": -9.28,
+                        "days": 25,
+                        "sessions": 17,
+                        "recoveryDate": "2025-02-18",
+                        "daysToRecover": 18
+                    },
+                    {
+                        "peakDate": "2024-11-06",
+                        "peakClose": 111.27,
+                        "troughDate": "2024-12-10",
+                        "troughClose": 92.34,
+                        "changePct": -17.01,
+                        "days": 34,
+                        "sessions": 23,
+                        "recoveryDate": "2025-03-03",
+                        "daysToRecover": 83
+                    },
+                    {
+                        "peakDate": "2024-09-06",
+                        "peakClose": 104.11,
+                        "troughDate": "2024-10-01",
+                        "troughClose": 99.96,
+                        "changePct": -3.99,
+                        "days": 25,
+                        "sessions": 17,
+                        "recoveryDate": "2024-10-14",
+                        "daysToRecover": 13
+                    },
+                    {
+                        "peakDate": "2024-07-02",
+                        "peakClose": 90.59,
+                        "troughDate": "2024-07-30",
+                        "troughClose": 82.56,
+                        "changePct": -8.86,
+                        "days": 28,
+                        "sessions": 19,
+                        "recoveryDate": "2024-08-20",
+                        "daysToRecover": 21
+                    },
+                    {
+                        "peakDate": "2024-05-07",
+                        "peakClose": 101.81,
+                        "troughDate": "2024-06-13",
+                        "troughClose": 84.48,
+                        "changePct": -17.02,
+                        "days": 37,
+                        "sessions": 26,
+                        "recoveryDate": "2024-09-03",
+                        "daysToRecover": 82
+                    },
+                    {
+                        "peakDate": "2024-03-13",
+                        "peakClose": 95.63,
+                        "troughDate": "2024-04-01",
+                        "troughClose": 91.3,
+                        "changePct": -4.53,
+                        "days": 19,
+                        "sessions": 12,
+                        "recoveryDate": "2024-04-18",
+                        "daysToRecover": 17
+                    },
+                    {
+                        "peakDate": "2024-01-03",
+                        "peakClose": 83.19,
+                        "troughDate": "2024-01-26",
+                        "troughClose": 75.64,
+                        "changePct": -9.08,
+                        "days": 23,
+                        "sessions": 16,
+                        "recoveryDate": "2024-02-20",
+                        "daysToRecover": 25
+                    },
+                    {
+                        "peakDate": "2023-10-31",
+                        "peakClose": 93.18,
+                        "troughDate": "2023-12-12",
+                        "troughClose": 76.97,
+                        "changePct": -17.4,
+                        "days": 42,
+                        "sessions": 29,
+                        "recoveryDate": "2024-03-05",
+                        "daysToRecover": 84
+                    },
+                    {
+                        "peakDate": "2023-09-13",
+                        "peakClose": 87.14,
+                        "troughDate": "2023-10-05",
+                        "troughClose": 83.37,
+                        "changePct": -4.33,
+                        "days": 22,
+                        "sessions": 16,
+                        "recoveryDate": "2023-10-16",
+                        "daysToRecover": 11
+                    },
+                    {
+                        "peakDate": "2023-07-03",
+                        "peakClose": 75.86,
+                        "troughDate": "2023-07-31",
+                        "troughClose": 68.36,
+                        "changePct": -9.89,
+                        "days": 28,
+                        "sessions": 19,
+                        "recoveryDate": "2023-08-21",
+                        "daysToRecover": 21
+                    }
+                ],
+                "notListed": 20
+            },
+            "rallies": {
+                "summary": {
+                    "episodes": 41,
+                    "days": {
+                        "samples": 41,
+                        "medianDays": 35,
+                        "avgDays": 33.56,
+                        "minDays": 18,
+                        "maxDays": 47
+                    },
+                    "sessionsMedian": 24,
+                    "change": {
+                        "medianPct": 11.85,
+                        "avgPct": 15.49,
+                        "extremePct": 27.61
+                    }
+                },
+                "bySize": [
+                    {
+                        "fromPct": 3,
+                        "toPct": 10,
+                        "episodes": 13,
+                        "medianDays": 26
+                    },
+                    {
+                        "fromPct": 10,
+                        "toPct": 20,
+                        "episodes": 14,
+                        "medianDays": 34.5
+                    },
+                    {
+                        "fromPct": 20,
+                        "toPct": 30,
+                        "episodes": 14,
+                        "medianDays": 41.5
+                    },
+                    {
+                        "fromPct": 30,
+                        "toPct": 50,
+                        "episodes": 0,
+                        "medianDays": null
+                    },
+                    {
+                        "fromPct": 50,
+                        "toPct": 100,
+                        "episodes": 0,
+                        "medianDays": null
+                    },
+                    {
+                        "fromPct": 100,
+                        "toPct": null,
+                        "episodes": 0,
+                        "medianDays": null
+                    }
+                ],
+                "episodes": [
+                    {
+                        "troughDate": "2026-10-08",
+                        "troughClose": 145.22,
+                        "peakDate": "2026-11-04",
+                        "peakClose": 160.49,
+                        "changePct": 10.52,
+                        "days": 27,
+                        "sessions": 19
+                    },
+                    {
+                        "troughDate": "2026-08-04",
+                        "troughClose": 119.16,
+                        "peakDate": "2026-09-11",
+                        "peakClose": 152.06,
+                        "changePct": 27.61,
+                        "days": 38,
+                        "sessions": 27
+                    },
+                    {
+                        "troughDate": "2026-06-08",
+                        "troughClose": 120.66,
+                        "peakDate": "2026-07-08",
+                        "peakClose": 130.87,
+                        "changePct": 8.46,
+                        "days": 30,
+                        "sessions": 20
+                    },
+                    {
+                        "troughDate": "2026-04-07",
+                        "troughClose": 132.31,
+                        "peakDate": "2026-05-04",
+                        "peakClose": 146.52,
+                        "changePct": 10.74,
+                        "days": 27,
+                        "sessions": 19
+                    },
+                    {
+                        "troughDate": "2026-01-29",
+                        "troughClose": 108.92,
+                        "peakDate": "2026-03-11",
+                        "peakClose": 138.03,
+                        "changePct": 26.73,
+                        "days": 41,
+                        "sessions": 28
+                    },
+                    {
+                        "troughDate": "2025-12-08",
+                        "troughClose": 110.3,
+                        "peakDate": "2026-01-08",
+                        "peakClose": 119.28,
+                        "changePct": 8.14,
+                        "days": 31,
+                        "sessions": 21
+                    },
+                    {
+                        "troughDate": "2025-10-02",
+                        "troughClose": 120.97,
+                        "peakDate": "2025-11-03",
+                        "peakClose": 133.43,
+                        "changePct": 10.3,
+                        "days": 32,
+                        "sessions": 22
+                    },
+                    {
+                        "troughDate": "2025-08-01",
+                        "troughClose": 98.99,
+                        "peakDate": "2025-09-10",
+                        "peakClose": 126.06,
+                        "changePct": 27.35,
+                        "days": 40,
+                        "sessions": 27
+                    },
+                    {
+                        "troughDate": "2025-06-12",
+                        "troughClose": 100.59,
+                        "peakDate": "2025-07-08",
+                        "peakClose": 108.59,
+                        "changePct": 7.95,
+                        "days": 26,
+                        "sessions": 16
+                    },
+                    {
+                        "troughDate": "2025-04-03",
+                        "troughClose": 109.66,
+                        "peakDate": "2025-05-01",
+                        "peakClose": 122.35,
+                        "changePct": 11.57,
+                        "days": 28,
+                        "sessions": 19
+                    },
+                    {
+                        "troughDate": "2025-01-31",
+                        "troughClose": 90.15,
+                        "peakDate": "2025-03-18",
+                        "peakClose": 114.98,
+                        "changePct": 27.54,
+                        "days": 46,
+                        "sessions": 31
+                    },
+                    {
+                        "troughDate": "2024-12-10",
+                        "troughClose": 92.34,
+                        "peakDate": "2025-01-06",
+                        "peakClose": 99.37,
+                        "changePct": 7.61,
+                        "days": 27,
+                        "sessions": 17
+                    },
+                    {
+                        "troughDate": "2024-10-01",
+                        "troughClose": 99.96,
+                        "peakDate": "2024-11-06",
+                        "peakClose": 111.27,
+                        "changePct": 11.31,
+                        "days": 36,
+                        "sessions": 26
+                    },
+                    {
+                        "troughDate": "2024-07-30",
+                        "troughClose": 82.56,
+                        "peakDate": "2024-09-06",
+                        "peakClose": 104.11,
+                        "changePct": 26.1,
+                        "days": 38,
+                        "sessions": 27
+                    },
+                    {
+                        "troughDate": "2024-06-13",
+                        "troughClose": 84.48,
+                        "peakDate": "2024-07-02",
+                        "peakClose": 90.59,
+                        "changePct": 7.23,
+                        "days": 19,
+                        "sessions": 12
+                    },
+                    {
+                        "troughDate": "2024-04-01",
+                        "troughClose": 91.3,
+                        "peakDate": "2024-05-07",
+                        "peakClose": 101.81,
+                        "changePct": 11.51,
+                        "days": 36,
+                        "sessions": 26
+                    },
+                    {
+                        "troughDate": "2024-01-26",
+                        "troughClose": 75.64,
+                        "peakDate": "2024-03-13",
+                        "peakClose": 95.63,
+                        "changePct": 26.43,
+                        "days": 47,
+                        "sessions": 32
+                    },
+                    {
+                        "troughDate": "2023-12-12",
+                        "troughClose": 76.97,
+                        "peakDate": "2024-01-03",
+                        "peakClose": 83.19,
+                        "changePct": 8.08,
+                        "days": 22,
+                        "sessions": 14
+                    },
+                    {
+                        "troughDate": "2023-10-05",
+                        "troughClose": 83.37,
+                        "peakDate": "2023-10-31",
+                        "peakClose": 93.18,
+                        "changePct": 11.77,
+                        "days": 26,
+                        "sessions": 18
+                    },
+                    {
+                        "troughDate": "2023-07-31",
+                        "troughClose": 68.36,
+                        "peakDate": "2023-09-13",
+                        "peakClose": 87.14,
+                        "changePct": 27.47,
+                        "days": 44,
+                        "sessions": 31
+                    }
+                ],
+                "notListed": 21
+            },
+            "current": {
+                "state": "in_decline",
+                "startDate": "2026-11-04",
+                "startClose": 160.49,
+                "extremeDate": "2026-11-19",
+                "extremeClose": 149.32,
+                "extremePct": -6.96,
+                "lastClose": 150.1,
+                "changePct": -6.47,
+                "daysSinceStart": 16,
+                "daysToExtreme": 15,
+                "pastEpisodes": 40,
+                "pastBiggerThanNow": 26,
+                "afterThisAge": {
+                    "ageDays": 16,
+                    "unendedAtThisAge": 34,
+                    "extremeAlreadyIn": 4,
+                    "extraDaysToExtreme": {
+                        "samples": 30,
+                        "medianDays": 12,
+                        "p25Days": 8,
+                        "p75Days": 19,
+                        "maxDays": 26
+                    }
+                },
+                "endsAtClose": 153.8
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-20",
+            "source": "SIGLENS daily closes (price only)",
+            "symbol": "QRTZ",
+            "resolvedName": "Quartzline Holdings",
+            "minSwingPct": 3,
+            "firstDate": "2020-01-02",
+            "lastDate": "2026-11-20",
+            "sessions": 1732,
+            "windowHigh": {
+                "date": "2026-11-04",
+                "close": 160.49,
+                "fromHighPct": -6.47
+            },
+            "declines": {
+                "summary": {
+                    "episodes": 40,
+                    "days": {
+                        "samples": 40,
+                        "medianDays": 27,
+                        "avgDays": 27.25,
+                        "minDays": 12,
+                        "maxDays": 42
+                    },
+                    "sessionsMedian": 18.5,
+                    "change": {
+                        "medianPct": -9.18,
+                        "avgPct": -10.04,
+                        "extremePct": -17.79
+                    },
+                    "recovered": 40,
+                    "daysToRecover": {
+                        "samples": 40,
+                        "medianDays": 18,
+                        "avgDays": 39.53,
+                        "minDays": 11,
+                        "maxDays": 93
+                    },
+                    "peakToRecoveryDays": {
+                        "samples": 40,
+                        "medianDays": 43.5,
+                        "avgDays": 66.78,
+                        "minDays": 28,
+                        "maxDays": 126
+                    }
+                },
+                "bySize": [
+                    {
+                        "fromPct": 3,
+                        "toPct": 10,
+                        "episodes": 24,
+                        "medianDays": 23,
+                        "recovered": 24,
+                        "medianDaysToRecover": 17
+                    },
+                    {
+                        "fromPct": 10,
+                        "toPct": 20,
+                        "episodes": 16,
+                        "medianDays": 35,
+                        "recovered": 16,
+                        "medianDaysToRecover": 84
+                    },
+                    {
+                        "fromPct": 20,
+                        "toPct": 30,
+                        "episodes": 0,
+                        "medianDays": null,
+                        "recovered": 0,
+                        "medianDaysToRecover": null
+                    },
+                    {
+                        "fromPct": 30,
+                        "toPct": 50,
+                        "episodes": 0,
+                        "medianDays": null,
+                        "recovered": 0,
+                        "medianDaysToRecover": null
+                    },
+                    {
+                        "fromPct": 50,
+                        "toPct": null,
+                        "episodes": 0,
+                        "medianDays": null,
+                        "recovered": 0,
+                        "medianDaysToRecover": null
+                    }
+                ],
+                "episodes": [
+                    {
+                        "peakDate": "2026-09-11",
+                        "peakClose": 152.06,
+                        "troughDate": "2026-10-08",
+                        "troughClose": 145.22,
+                        "changePct": -4.5,
+                        "days": 27,
+                        "sessions": 19,
+                        "recoveryDate": "2026-10-22",
+                        "daysToRecover": 14
+                    },
+                    {
+                        "peakDate": "2026-07-08",
+                        "peakClose": 130.87,
+                        "troughDate": "2026-08-04",
+                        "troughClose": 119.16,
+                        "changePct": -8.95,
+                        "days": 27,
+                        "sessions": 19,
+                        "recoveryDate": "2026-08-20",
+                        "daysToRecover": 16
+                    },
+                    {
+                        "peakDate": "2026-05-04",
+                        "peakClose": 146.52,
+                        "troughDate": "2026-06-08",
+                        "troughClose": 120.66,
+                        "changePct": -17.65,
+                        "days": 35,
+                        "sessions": 24,
+                        "recoveryDate": "2026-09-02",
+                        "daysToRecover": 86
+                    },
+                    {
+                        "peakDate": "2026-03-11",
+                        "peakClose": 138.03,
+                        "troughDate": "2026-04-07",
+                        "troughClose": 132.31,
+                        "changePct": -4.14,
+                        "days": 27,
+                        "sessions": 18,
+                        "recoveryDate": "2026-04-20",
+                        "daysToRecover": 13
+                    },
+                    {
+                        "peakDate": "2026-01-08",
+                        "peakClose": 119.28,
+                        "troughDate": "2026-01-29",
+                        "troughClose": 108.92,
+                        "changePct": -8.69,
+                        "days": 21,
+                        "sessions": 14,
+                        "recoveryDate": "2026-02-18",
+                        "daysToRecover": 20
+                    },
+                    {
+                        "peakDate": "2025-11-03",
+                        "peakClose": 133.43,
+                        "troughDate": "2025-12-08",
+                        "troughClose": 110.3,
+                        "changePct": -17.33,
+                        "days": 35,
+                        "sessions": 24,
+                        "recoveryDate": "2026-03-02",
+                        "daysToRecover": 84
+                    },
+                    {
+                        "peakDate": "2025-09-10",
+                        "peakClose": 126.06,
+                        "troughDate": "2025-10-02",
+                        "troughClose": 120.97,
+                        "changePct": -4.04,
+                        "days": 22,
+                        "sessions": 16,
+                        "recoveryDate": "2025-10-20",
+                        "daysToRecover": 18
+                    },
+                    {
+                        "peakDate": "2025-07-08",
+                        "peakClose": 108.59,
+                        "troughDate": "2025-08-01",
+                        "troughClose": 98.99,
+                        "changePct": -8.84,
+                        "days": 24,
+                        "sessions": 18,
+                        "recoveryDate": "2025-08-19",
+                        "daysToRecover": 18
+                    },
+                    {
+                        "peakDate": "2025-05-01",
+                        "peakClose": 122.35,
+                        "troughDate": "2025-06-12",
+                        "troughClose": 100.59,
+                        "changePct": -17.79,
+                        "days": 42,
+                        "sessions": 29,
+                        "recoveryDate": "2025-09-02",
+                        "daysToRecover": 82
+                    },
+                    {
+                        "peakDate": "2025-03-18",
+                        "peakClose": 114.98,
+                        "troughDate": "2025-04-03",
+                        "troughClose": 109.66,
+                        "changePct": -4.63,
+                        "days": 16,
+                        "sessions": 12,
+                        "recoveryDate": "2025-04-16",
+                        "daysToRecover": 13
+                    },
+                    {
+                        "peakDate": "2025-01-06",
+                        "peakClose": 99.37,
+                        "troughDate": "2025-01-31",
+                        "troughClose": 90.15,
+                        "changePct": -9.28,
+                        "days": 25,
+                        "sessions": 17,
+                        "recoveryDate": "2025-02-18",
+                        "daysToRecover": 18
+                    },
+                    {
+                        "peakDate": "2024-11-06",
+                        "peakClose": 111.27,
+                        "troughDate": "2024-12-10",
+                        "troughClose": 92.34,
+                        "changePct": -17.01,
+                        "days": 34,
+                        "sessions": 23,
+                        "recoveryDate": "2025-03-03",
+                        "daysToRecover": 83
+                    },
+                    {
+                        "peakDate": "2024-09-06",
+                        "peakClose": 104.11,
+                        "troughDate": "2024-10-01",
+                        "troughClose": 99.96,
+                        "changePct": -3.99,
+                        "days": 25,
+                        "sessions": 17,
+                        "recoveryDate": "2024-10-14",
+                        "daysToRecover": 13
+                    },
+                    {
+                        "peakDate": "2024-07-02",
+                        "peakClose": 90.59,
+                        "troughDate": "2024-07-30",
+                        "troughClose": 82.56,
+                        "changePct": -8.86,
+                        "days": 28,
+                        "sessions": 19,
+                        "recoveryDate": "2024-08-20",
+                        "daysToRecover": 21
+                    },
+                    {
+                        "peakDate": "2024-05-07",
+                        "peakClose": 101.81,
+                        "troughDate": "2024-06-13",
+                        "troughClose": 84.48,
+                        "changePct": -17.02,
+                        "days": 37,
+                        "sessions": 26,
+                        "recoveryDate": "2024-09-03",
+                        "daysToRecover": 82
+                    },
+                    {
+                        "peakDate": "2024-03-13",
+                        "peakClose": 95.63,
+                        "troughDate": "2024-04-01",
+                        "troughClose": 91.3,
+                        "changePct": -4.53,
+                        "days": 19,
+                        "sessions": 12,
+                        "recoveryDate": "2024-04-18",
+                        "daysToRecover": 17
+                    },
+                    {
+                        "peakDate": "2024-01-03",
+                        "peakClose": 83.19,
+                        "troughDate": "2024-01-26",
+                        "troughClose": 75.64,
+                        "changePct": -9.08,
+                        "days": 23,
+                        "sessions": 16,
+                        "recoveryDate": "2024-02-20",
+                        "daysToRecover": 25
+                    },
+                    {
+                        "peakDate": "2023-10-31",
+                        "peakClose": 93.18,
+                        "troughDate": "2023-12-12",
+                        "troughClose": 76.97,
+                        "changePct": -17.4,
+                        "days": 42,
+                        "sessions": 29,
+                        "recoveryDate": "2024-03-05",
+                        "daysToRecover": 84
+                    },
+                    {
+                        "peakDate": "2023-09-13",
+                        "peakClose": 87.14,
+                        "troughDate": "2023-10-05",
+                        "troughClose": 83.37,
+                        "changePct": -4.33,
+                        "days": 22,
+                        "sessions": 16,
+                        "recoveryDate": "2023-10-16",
+                        "daysToRecover": 11
+                    },
+                    {
+                        "peakDate": "2023-07-03",
+                        "peakClose": 75.86,
+                        "troughDate": "2023-07-31",
+                        "troughClose": 68.36,
+                        "changePct": -9.89,
+                        "days": 28,
+                        "sessions": 19,
+                        "recoveryDate": "2023-08-21",
+                        "daysToRecover": 21
+                    }
+                ],
+                "notListed": 20
+            },
+            "rallies": {
+                "summary": {
+                    "episodes": 41,
+                    "days": {
+                        "samples": 41,
+                        "medianDays": 35,
+                        "avgDays": 33.56,
+                        "minDays": 18,
+                        "maxDays": 47
+                    },
+                    "sessionsMedian": 24,
+                    "change": {
+                        "medianPct": 11.85,
+                        "avgPct": 15.49,
+                        "extremePct": 27.61
+                    }
+                },
+                "bySize": [
+                    {
+                        "fromPct": 3,
+                        "toPct": 10,
+                        "episodes": 13,
+                        "medianDays": 26
+                    },
+                    {
+                        "fromPct": 10,
+                        "toPct": 20,
+                        "episodes": 14,
+                        "medianDays": 34.5
+                    },
+                    {
+                        "fromPct": 20,
+                        "toPct": 30,
+                        "episodes": 14,
+                        "medianDays": 41.5
+                    },
+                    {
+                        "fromPct": 30,
+                        "toPct": 50,
+                        "episodes": 0,
+                        "medianDays": null
+                    },
+                    {
+                        "fromPct": 50,
+                        "toPct": 100,
+                        "episodes": 0,
+                        "medianDays": null
+                    },
+                    {
+                        "fromPct": 100,
+                        "toPct": null,
+                        "episodes": 0,
+                        "medianDays": null
+                    }
+                ],
+                "episodes": [
+                    {
+                        "troughDate": "2026-10-08",
+                        "troughClose": 145.22,
+                        "peakDate": "2026-11-04",
+                        "peakClose": 160.49,
+                        "changePct": 10.52,
+                        "days": 27,
+                        "sessions": 19
+                    },
+                    {
+                        "troughDate": "2026-08-04",
+                        "troughClose": 119.16,
+                        "peakDate": "2026-09-11",
+                        "peakClose": 152.06,
+                        "changePct": 27.61,
+                        "days": 38,
+                        "sessions": 27
+                    },
+                    {
+                        "troughDate": "2026-06-08",
+                        "troughClose": 120.66,
+                        "peakDate": "2026-07-08",
+                        "peakClose": 130.87,
+                        "changePct": 8.46,
+                        "days": 30,
+                        "sessions": 20
+                    },
+                    {
+                        "troughDate": "2026-04-07",
+                        "troughClose": 132.31,
+                        "peakDate": "2026-05-04",
+                        "peakClose": 146.52,
+                        "changePct": 10.74,
+                        "days": 27,
+                        "sessions": 19
+                    },
+                    {
+                        "troughDate": "2026-01-29",
+                        "troughClose": 108.92,
+                        "peakDate": "2026-03-11",
+                        "peakClose": 138.03,
+                        "changePct": 26.73,
+                        "days": 41,
+                        "sessions": 28
+                    },
+                    {
+                        "troughDate": "2025-12-08",
+                        "troughClose": 110.3,
+                        "peakDate": "2026-01-08",
+                        "peakClose": 119.28,
+                        "changePct": 8.14,
+                        "days": 31,
+                        "sessions": 21
+                    },
+                    {
+                        "troughDate": "2025-10-02",
+                        "troughClose": 120.97,
+                        "peakDate": "2025-11-03",
+                        "peakClose": 133.43,
+                        "changePct": 10.3,
+                        "days": 32,
+                        "sessions": 22
+                    },
+                    {
+                        "troughDate": "2025-08-01",
+                        "troughClose": 98.99,
+                        "peakDate": "2025-09-10",
+                        "peakClose": 126.06,
+                        "changePct": 27.35,
+                        "days": 40,
+                        "sessions": 27
+                    },
+                    {
+                        "troughDate": "2025-06-12",
+                        "troughClose": 100.59,
+                        "peakDate": "2025-07-08",
+                        "peakClose": 108.59,
+                        "changePct": 7.95,
+                        "days": 26,
+                        "sessions": 16
+                    },
+                    {
+                        "troughDate": "2025-04-03",
+                        "troughClose": 109.66,
+                        "peakDate": "2025-05-01",
+                        "peakClose": 122.35,
+                        "changePct": 11.57,
+                        "days": 28,
+                        "sessions": 19
+                    },
+                    {
+                        "troughDate": "2025-01-31",
+                        "troughClose": 90.15,
+                        "peakDate": "2025-03-18",
+                        "peakClose": 114.98,
+                        "changePct": 27.54,
+                        "days": 46,
+                        "sessions": 31
+                    },
+                    {
+                        "troughDate": "2024-12-10",
+                        "troughClose": 92.34,
+                        "peakDate": "2025-01-06",
+                        "peakClose": 99.37,
+                        "changePct": 7.61,
+                        "days": 27,
+                        "sessions": 17
+                    },
+                    {
+                        "troughDate": "2024-10-01",
+                        "troughClose": 99.96,
+                        "peakDate": "2024-11-06",
+                        "peakClose": 111.27,
+                        "changePct": 11.31,
+                        "days": 36,
+                        "sessions": 26
+                    },
+                    {
+                        "troughDate": "2024-07-30",
+                        "troughClose": 82.56,
+                        "peakDate": "2024-09-06",
+                        "peakClose": 104.11,
+                        "changePct": 26.1,
+                        "days": 38,
+                        "sessions": 27
+                    },
+                    {
+                        "troughDate": "2024-06-13",
+                        "troughClose": 84.48,
+                        "peakDate": "2024-07-02",
+                        "peakClose": 90.59,
+                        "changePct": 7.23,
+                        "days": 19,
+                        "sessions": 12
+                    },
+                    {
+                        "troughDate": "2024-04-01",
+                        "troughClose": 91.3,
+                        "peakDate": "2024-05-07",
+                        "peakClose": 101.81,
+                        "changePct": 11.51,
+                        "days": 36,
+                        "sessions": 26
+                    },
+                    {
+                        "troughDate": "2024-01-26",
+                        "troughClose": 75.64,
+                        "peakDate": "2024-03-13",
+                        "peakClose": 95.63,
+                        "changePct": 26.43,
+                        "days": 47,
+                        "sessions": 32
+                    },
+                    {
+                        "troughDate": "2023-12-12",
+                        "troughClose": 76.97,
+                        "peakDate": "2024-01-03",
+                        "peakClose": 83.19,
+                        "changePct": 8.08,
+                        "days": 22,
+                        "sessions": 14
+                    },
+                    {
+                        "troughDate": "2023-10-05",
+                        "troughClose": 83.37,
+                        "peakDate": "2023-10-31",
+                        "peakClose": 93.18,
+                        "changePct": 11.77,
+                        "days": 26,
+                        "sessions": 18
+                    },
+                    {
+                        "troughDate": "2023-07-31",
+                        "troughClose": 68.36,
+                        "peakDate": "2023-09-13",
+                        "peakClose": 87.14,
+                        "changePct": 27.47,
+                        "days": 44,
+                        "sessions": 31
+                    }
+                ],
+                "notListed": 21
+            },
+            "current": {
+                "state": "in_decline",
+                "startDate": "2026-11-04",
+                "startClose": 160.49,
+                "extremeDate": "2026-11-19",
+                "extremeClose": 149.32,
+                "extremePct": -6.96,
+                "lastClose": 150.1,
+                "changePct": -6.47,
+                "daysSinceStart": 16,
+                "daysToExtreme": 15,
+                "pastEpisodes": 40,
+                "pastBiggerThanNow": 26,
+                "afterThisAge": {
+                    "ageDays": 16,
+                    "unendedAtThisAge": 34,
+                    "extremeAlreadyIn": 4,
+                    "extraDaysToExtreme": {
+                        "samples": 30,
+                        "medianDays": 12,
+                        "p25Days": 8,
+                        "p75Days": 19,
+                        "maxDays": 26
+                    }
+                },
+                "endsAtClose": 153.8
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

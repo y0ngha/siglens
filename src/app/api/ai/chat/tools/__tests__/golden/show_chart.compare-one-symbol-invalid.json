@@ -1,0 +1,27 @@
+{
+    "tool": "show_chart",
+    "case": "compare-one-symbol-invalid",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "compare",
+        "symbols": ["GLDNX", "gldnx"]
+    },
+    "agent": {
+        "result": {
+            "error": "invalid_args",
+            "reason": "compare needs 2-5 distinct symbols"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

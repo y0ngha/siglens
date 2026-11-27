@@ -1,0 +1,37 @@
+{
+    "tool": "run_fresh_analysis",
+    "case": "unknown-kind-invalid-args",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "kind": "sentiment"
+    },
+    "agent": {
+        "result": {
+            "error": "invalid_args",
+            "issues": [
+                {
+                    "path": "kind",
+                    "message": "unknown kind"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "invalid_args",
+            "issues": [
+                {
+                    "path": "kind",
+                    "message": "unknown kind"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

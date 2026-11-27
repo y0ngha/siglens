@@ -1,0 +1,26 @@
+{
+    "tool": "propose_price_alert",
+    "case": "crypto-unsupported",
+    "now": "2026-11-22T03:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "ZETAUSD",
+        "basis": "price_below",
+        "price": 90000
+    },
+    "agent": {
+        "result": {
+            "error": "unsupported_symbol"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

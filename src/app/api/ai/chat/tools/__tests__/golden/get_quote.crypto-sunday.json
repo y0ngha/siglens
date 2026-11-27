@@ -1,0 +1,64 @@
+{
+    "tool": "get_quote",
+    "case": "crypto-sunday",
+    "now": "2026-11-22T03:00:00.000Z",
+    "caller": "guest",
+    "locale": "ko",
+    "args": {
+        "symbols": ["ZETAUSD"]
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-22T03:00:00.000Z",
+            "source": "market data provider (60s in-session cache)",
+            "quotes": [
+                {
+                    "symbol": "ZETAUSD",
+                    "resolvedName": "Zeta Coin USD",
+                    "found": true,
+                    "price": 122021.81,
+                    "changesPercentage": -0.00611,
+                    "currency": "USD",
+                    "marketProfile": "crypto",
+                    "quoteDelayMinutes": 0,
+                    "asOf": "2026-11-22T02:59:30.000Z",
+                    "freshness": {
+                        "asOf": "2026-11-22T02:59:30.000Z",
+                        "ageMinutes": 1,
+                        "stale": false,
+                        "maxAgeMinutes": 20160
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-22T03:00:00.000Z",
+            "source": "market data provider (60s in-session cache)",
+            "quotes": [
+                {
+                    "symbol": "ZETAUSD",
+                    "resolvedName": "Zeta Coin USD",
+                    "found": true,
+                    "price": 122021.81,
+                    "changesPercentage": -0.00611,
+                    "currency": "USD",
+                    "marketProfile": "crypto",
+                    "quoteDelayMinutes": 0,
+                    "asOf": "2026-11-22T02:59:30.000Z",
+                    "freshness": {
+                        "asOf": "2026-11-22T02:59:30.000Z",
+                        "ageMinutes": 1,
+                        "stale": false,
+                        "maxAgeMinutes": 20160
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

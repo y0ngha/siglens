@@ -1,0 +1,26 @@
+{
+    "tool": "propose_price_alert",
+    "case": "same-alert-exists",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "basis": "price_below",
+        "price": 229.5
+    },
+    "agent": {
+        "result": {
+            "error": "exists"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "tool": "run_fresh_analysis",
+    "case": "guest-kr-news-refreshes-symbol",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "guest",
+    "locale": "ko",
+    "args": {
+        "symbol": "900110.KS",
+        "kind": "news"
+    },
+    "agent": {
+        "result": {
+            "found": true,
+            "source": "fresh",
+            "tab": "news",
+            "generatedAt": "2026-11-19T02:00:00.000Z",
+            "stale": false,
+            "analysis": {
+                "currentDriverKo": "수주 공시와 증설 발표가 매수세를 이끌고 있습니다.",
+                "keyEventsKo": [
+                    "대형 수주 공시",
+                    "2공장 증설",
+                    "외국인 순매수 전환"
+                ],
+                "upcomingEventsKo": ["다음 달 실적 발표"],
+                "overallSentiment": "bullish",
+                "analyzedAt": "2026-11-19T01:40:00.000Z"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": ["900110.KS"]
+    },
+    "publicApi": {
+        "result": {
+            "found": true,
+            "source": "fresh",
+            "tab": "news",
+            "generatedAt": "2026-11-19T02:00:00.000Z",
+            "stale": false,
+            "analysis": {
+                "currentDriverKo": "수주 공시와 증설 발표가 매수세를 이끌고 있습니다.",
+                "keyEventsKo": [
+                    "대형 수주 공시",
+                    "2공장 증설",
+                    "외국인 순매수 전환"
+                ],
+                "upcomingEventsKo": ["다음 달 실적 발표"],
+                "overallSentiment": "bullish",
+                "analyzedAt": "2026-11-19T01:40:00.000Z"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

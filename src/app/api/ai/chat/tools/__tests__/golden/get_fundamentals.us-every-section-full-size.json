@@ -1,0 +1,474 @@
+{
+    "tool": "get_fundamentals",
+    "case": "us-every-section-full-size",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "asOfIsFetchTime": true,
+            "cachedSectionsMaxAgeHours": 24,
+            "source": "fundamental data provider (cached)",
+            "symbol": "GLDNX",
+            "available": true,
+            "price": 244.85,
+            "profile": {
+                "name": "Goldenrod Systems Inc.",
+                "sector": "Technology",
+                "industry": "Semiconductor Equipment & Materials",
+                "marketCap": 412384000000,
+                "currency": "USD"
+            },
+            "valuation": {
+                "pe": 31.2847,
+                "pb": 11.3042,
+                "ps": 8.41274,
+                "evToEbitda": 24.9184
+            },
+            "profitability": {
+                "roePct": 41.8373,
+                "roaPct": 19.2736,
+                "operatingMarginPct": 30.1483,
+                "netMarginPct": 24.7194
+            },
+            "growth": {
+                "revenueGrowthPct": 11.8373,
+                "epsGrowthPct": 16.4183
+            },
+            "dividends": {
+                "latestExDate": "2026-11-06",
+                "latestAmount": 0.26,
+                "currency": "USD",
+                "payDate": "2026-11-13",
+                "trailing12mAmount": 1.04,
+                "trailingYieldPct": 0.42,
+                "source": "FMP dividends history"
+            },
+            "recentQuarters": [
+                {
+                    "periodEnd": "2026-09-27",
+                    "fiscalYear": "2026",
+                    "period": "Q3",
+                    "form": "10-Q",
+                    "filingDate": "2026-10-30",
+                    "epsDiluted": 2.74,
+                    "revenue": 17116000000,
+                    "revenueYoYPct": 10.65,
+                    "currency": "USD",
+                    "sec": null
+                },
+                {
+                    "periodEnd": "2026-06-28",
+                    "fiscalYear": "2026",
+                    "period": "Q2",
+                    "form": "10-K",
+                    "filingDate": "2026-07-31",
+                    "epsDiluted": 2.67,
+                    "revenue": 16704000000,
+                    "revenueYoYPct": 10.95,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-K",
+                        "epsDiluted": null,
+                        "revenue": 1876600000,
+                        "revenueYoYPct": null,
+                        "filed": "2026-08-13",
+                        "accn": "0001116132-26-000018"
+                    }
+                },
+                {
+                    "periodEnd": "2026-03-29",
+                    "fiscalYear": "2026",
+                    "period": "Q1",
+                    "form": "10-Q",
+                    "filingDate": "2026-05-01",
+                    "epsDiluted": 2.6,
+                    "revenue": 16292000000,
+                    "revenueYoYPct": 21.2,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-Q",
+                        "epsDiluted": 1.65,
+                        "revenue": 1920600000,
+                        "revenueYoYPct": 21.2,
+                        "filed": "2026-05-07",
+                        "accn": "0001116132-26-000011"
+                    }
+                },
+                {
+                    "periodEnd": "2025-12-28",
+                    "fiscalYear": "2025",
+                    "period": "Q4",
+                    "form": "10-Q",
+                    "filingDate": "2026-01-30",
+                    "epsDiluted": 2.53,
+                    "revenue": 15880000000,
+                    "revenueYoYPct": 11.58,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-Q",
+                        "epsDiluted": 2.68,
+                        "revenue": 2502400000,
+                        "revenueYoYPct": null,
+                        "filed": "2026-02-05",
+                        "accn": "0001116132-26-000005"
+                    }
+                },
+                {
+                    "periodEnd": "2025-09-28",
+                    "fiscalYear": "2025",
+                    "period": "Q3",
+                    "form": "10-Q",
+                    "filingDate": "2025-10-31",
+                    "epsDiluted": 2.46,
+                    "revenue": 15468000000,
+                    "revenueYoYPct": null,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-Q",
+                        "epsDiluted": 1.28,
+                        "revenue": 1704600000,
+                        "revenueYoYPct": null,
+                        "filed": "2025-11-06",
+                        "accn": "0001116132-25-000025"
+                    }
+                }
+            ],
+            "earningsReactions": [
+                {
+                    "date": "2026-10-29",
+                    "movePct": 0.208537
+                },
+                {
+                    "date": "2026-07-30",
+                    "movePct": -0.872472
+                },
+                {
+                    "date": "2026-04-30",
+                    "movePct": 0.747748
+                },
+                {
+                    "date": "2026-01-29",
+                    "movePct": 0.701573
+                },
+                {
+                    "date": "2025-10-30",
+                    "movePct": 0.932379
+                },
+                {
+                    "date": "2025-07-31",
+                    "movePct": -0.9645
+                },
+                {
+                    "date": "2025-05-01",
+                    "movePct": 1.28476
+                },
+                {
+                    "date": "2025-01-30",
+                    "movePct": -1.88912
+                }
+            ],
+            "earningsReactionTally": {
+                "measured": 8,
+                "up": 5,
+                "down": 3,
+                "flat": 0,
+                "largestRise": {
+                    "date": "2025-05-01",
+                    "movePct": 1.28476
+                },
+                "largestFall": {
+                    "date": "2025-01-30",
+                    "movePct": -1.88912
+                },
+                "medianAbsMovePct": 0.9,
+                "summary": "8 reports measured: 5 up, 3 down; largest rise +1.28476% (2025-05-01), largest fall -1.88912% (2025-01-30); median move size 0.9%"
+            },
+            "indexMemberships": {
+                "sp500": true,
+                "nasdaq100": true,
+                "dowJones": false,
+                "asOf": "2026-11-18",
+                "source": "wikipedia"
+            },
+            "health": {
+                "altmanZScore": 11.284,
+                "piotroskiScore": 7,
+                "debtRatio": 0.4127,
+                "currentRatio": 2.31847,
+                "operatingCashFlow": 14281000000
+            },
+            "analyst": {
+                "consensus": {
+                    "strongBuy": 9,
+                    "buy": 24,
+                    "hold": 11,
+                    "sell": 2,
+                    "strongSell": 1
+                },
+                "consensusAnalysts": 47,
+                "consensusSource": "yahoo",
+                "analystBuySharePct": 70.2128,
+                "priceTarget": {
+                    "targetHigh": 330,
+                    "targetLow": 190,
+                    "targetMedian": 262,
+                    "targetConsensus": 259.873
+                },
+                "priceTargetSource": "fmp",
+                "priceTargetYahoo": {
+                    "mean": 268.437,
+                    "analysts": 41
+                },
+                "targetSourcesDisagree": false,
+                "targetUpsidePct": 6.13573,
+                "analystEstimate": {
+                    "estimatedEpsAvg": 9.4183,
+                    "estimatedRevenueAvg": 61827000000,
+                    "period": "current_fiscal_year"
+                },
+                "nextEarningsDate": "2027-01-28",
+                "earningsDateConfirmed": false,
+                "earningsDateNote": "Provider marks this date as an estimate; it may move. Session timing has not been announced while the date itself is unsettled; say so and do not search for it.",
+                "daysToEarnings": 71
+            },
+            "notes": [
+                "A figure field of a recentQuarters row `sec` is null in this result: SIGLENS has no filed value for that figure. When the answer needs that figure, say it is not in the filing data SIGLENS has (for a fiscal Q4 derived from the 10-K, sec.epsDiluted is null: the quarterly EPS is not in the filing); never take it from the row fields and never compute it."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "asOfIsFetchTime": true,
+            "cachedSectionsMaxAgeHours": 24,
+            "source": "fundamental data provider (cached)",
+            "symbol": "GLDNX",
+            "available": true,
+            "price": 244.85,
+            "profile": {
+                "name": "Goldenrod Systems Inc.",
+                "sector": "Technology",
+                "industry": "Semiconductor Equipment & Materials",
+                "marketCap": 412384000000,
+                "currency": "USD"
+            },
+            "valuation": {
+                "pe": 31.2847,
+                "pb": 11.3042,
+                "ps": 8.41274,
+                "evToEbitda": 24.9184
+            },
+            "profitability": {
+                "roePct": 41.8373,
+                "roaPct": 19.2736,
+                "operatingMarginPct": 30.1483,
+                "netMarginPct": 24.7194
+            },
+            "growth": {
+                "revenueGrowthPct": 11.8373,
+                "epsGrowthPct": 16.4183
+            },
+            "dividends": {
+                "latestExDate": "2026-11-06",
+                "latestAmount": 0.26,
+                "currency": "USD",
+                "payDate": "2026-11-13",
+                "trailing12mAmount": 1.04,
+                "trailingYieldPct": 0.42,
+                "source": "FMP dividends history"
+            },
+            "recentQuarters": [
+                {
+                    "periodEnd": "2026-09-27",
+                    "fiscalYear": "2026",
+                    "period": "Q3",
+                    "form": "10-Q",
+                    "filingDate": "2026-10-30",
+                    "epsDiluted": 2.74,
+                    "revenue": 17116000000,
+                    "revenueYoYPct": 10.65,
+                    "currency": "USD",
+                    "sec": null
+                },
+                {
+                    "periodEnd": "2026-06-28",
+                    "fiscalYear": "2026",
+                    "period": "Q2",
+                    "form": "10-K",
+                    "filingDate": "2026-07-31",
+                    "epsDiluted": 2.67,
+                    "revenue": 16704000000,
+                    "revenueYoYPct": 10.95,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-K",
+                        "epsDiluted": null,
+                        "revenue": 1876600000,
+                        "revenueYoYPct": null,
+                        "filed": "2026-08-13",
+                        "accn": "0001116132-26-000018"
+                    }
+                },
+                {
+                    "periodEnd": "2026-03-29",
+                    "fiscalYear": "2026",
+                    "period": "Q1",
+                    "form": "10-Q",
+                    "filingDate": "2026-05-01",
+                    "epsDiluted": 2.6,
+                    "revenue": 16292000000,
+                    "revenueYoYPct": 21.2,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-Q",
+                        "epsDiluted": 1.65,
+                        "revenue": 1920600000,
+                        "revenueYoYPct": 21.2,
+                        "filed": "2026-05-07",
+                        "accn": "0001116132-26-000011"
+                    }
+                },
+                {
+                    "periodEnd": "2025-12-28",
+                    "fiscalYear": "2025",
+                    "period": "Q4",
+                    "form": "10-Q",
+                    "filingDate": "2026-01-30",
+                    "epsDiluted": 2.53,
+                    "revenue": 15880000000,
+                    "revenueYoYPct": 11.58,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-Q",
+                        "epsDiluted": 2.68,
+                        "revenue": 2502400000,
+                        "revenueYoYPct": null,
+                        "filed": "2026-02-05",
+                        "accn": "0001116132-26-000005"
+                    }
+                },
+                {
+                    "periodEnd": "2025-09-28",
+                    "fiscalYear": "2025",
+                    "period": "Q3",
+                    "form": "10-Q",
+                    "filingDate": "2025-10-31",
+                    "epsDiluted": 2.46,
+                    "revenue": 15468000000,
+                    "revenueYoYPct": null,
+                    "currency": "USD",
+                    "sec": {
+                        "form": "10-Q",
+                        "epsDiluted": 1.28,
+                        "revenue": 1704600000,
+                        "revenueYoYPct": null,
+                        "filed": "2025-11-06",
+                        "accn": "0001116132-25-000025"
+                    }
+                }
+            ],
+            "earningsReactions": [
+                {
+                    "date": "2026-10-29",
+                    "movePct": 0.208537
+                },
+                {
+                    "date": "2026-07-30",
+                    "movePct": -0.872472
+                },
+                {
+                    "date": "2026-04-30",
+                    "movePct": 0.747748
+                },
+                {
+                    "date": "2026-01-29",
+                    "movePct": 0.701573
+                },
+                {
+                    "date": "2025-10-30",
+                    "movePct": 0.932379
+                },
+                {
+                    "date": "2025-07-31",
+                    "movePct": -0.9645
+                },
+                {
+                    "date": "2025-05-01",
+                    "movePct": 1.28476
+                },
+                {
+                    "date": "2025-01-30",
+                    "movePct": -1.88912
+                }
+            ],
+            "earningsReactionTally": {
+                "measured": 8,
+                "up": 5,
+                "down": 3,
+                "flat": 0,
+                "largestRise": {
+                    "date": "2025-05-01",
+                    "movePct": 1.28476
+                },
+                "largestFall": {
+                    "date": "2025-01-30",
+                    "movePct": -1.88912
+                },
+                "medianAbsMovePct": 0.9,
+                "summary": "8 reports measured: 5 up, 3 down; largest rise +1.28476% (2025-05-01), largest fall -1.88912% (2025-01-30); median move size 0.9%"
+            },
+            "indexMemberships": {
+                "sp500": true,
+                "nasdaq100": true,
+                "dowJones": false,
+                "asOf": "2026-11-18",
+                "source": "wikipedia"
+            },
+            "health": {
+                "altmanZScore": 11.284,
+                "piotroskiScore": 7,
+                "debtRatio": 0.4127,
+                "currentRatio": 2.31847,
+                "operatingCashFlow": 14281000000
+            },
+            "analyst": {
+                "consensus": {
+                    "strongBuy": 7,
+                    "buy": 21,
+                    "hold": 13,
+                    "sell": 1,
+                    "strongSell": 0
+                },
+                "analystBuySharePct": 66.6667,
+                "priceTarget": {
+                    "targetHigh": 330,
+                    "targetLow": 190,
+                    "targetMedian": 262,
+                    "targetConsensus": 259.873
+                },
+                "targetUpsidePct": 6.13573,
+                "analystEstimate": {
+                    "estimatedEpsAvg": 9.4183,
+                    "estimatedRevenueAvg": 61827000000,
+                    "period": "current_fiscal_year"
+                },
+                "nextEarningsDate": "2027-01-28",
+                "earningsDateConfirmed": false,
+                "earningsDateNote": "Provider marks this date as an estimate; it may move. Session timing has not been announced while the date itself is unsettled; say so and do not search for it.",
+                "daysToEarnings": 71
+            },
+            "notes": [
+                "A figure field of a recentQuarters row `sec` is null in this result: SIGLENS has no filed value for that figure. When the answer needs that figure, say it is not in the filing data SIGLENS has (for a fiscal Q4 derived from the 10-K, sec.epsDiluted is null: the quarterly EPS is not in the filing); never take it from the row fields and never compute it."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

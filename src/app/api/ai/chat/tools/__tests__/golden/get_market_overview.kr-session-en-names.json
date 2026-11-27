@@ -1,0 +1,200 @@
+{
+    "tool": "get_market_overview",
+    "case": "kr-session-en-names",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "en",
+    "args": {
+        "market": "kr"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "market dashboard cache (1h)",
+            "market": "kr",
+            "fearGreed": {
+                "score": 38.2,
+                "label": "fear",
+                "factors": [
+                    {
+                        "key": "momentum",
+                        "percentile": 31.4
+                    }
+                ],
+                "comparisons": []
+            },
+            "indices": [
+                {
+                    "symbol": "KS11",
+                    "price": 4812.37,
+                    "changesPercentage": 0.83,
+                    "lastClose": 8214.79,
+                    "lastCloseDate": "2026-11-18"
+                },
+                {
+                    "symbol": "KQ11",
+                    "price": 6592.95,
+                    "changesPercentage": 0.42,
+                    "lastClose": 9300.48,
+                    "lastCloseDate": "2026-11-18"
+                },
+                {
+                    "symbol": "USDKRW",
+                    "price": 8373.52,
+                    "changesPercentage": 0.01,
+                    "lastClose": 11698.07,
+                    "lastCloseDate": "2026-11-18"
+                }
+            ],
+            "sectors": [
+                {
+                    "symbol": "091160.KS",
+                    "name": "Semiconductor",
+                    "price": 48.91,
+                    "changesPercentage": 1.94,
+                    "rank": 1
+                },
+                {
+                    "symbol": "305720.KS",
+                    "name": "Battery",
+                    "price": 60.28,
+                    "changesPercentage": 1.57,
+                    "rank": 2
+                },
+                {
+                    "symbol": "266360.KS",
+                    "name": "IT Software",
+                    "price": 71.65,
+                    "changesPercentage": 1.2,
+                    "rank": 3
+                },
+                {
+                    "symbol": "091170.KS",
+                    "name": "Banks",
+                    "price": 94.39,
+                    "changesPercentage": 0.46,
+                    "rank": 4
+                },
+                {
+                    "symbol": "244580.KS",
+                    "name": "Biotech",
+                    "price": 105.76,
+                    "changesPercentage": 0.09,
+                    "rank": 5
+                },
+                {
+                    "symbol": "091180.KS",
+                    "name": "Autos",
+                    "price": 0,
+                    "changesPercentage": 0,
+                    "rank": null
+                }
+            ],
+            "sectorBreadth": {
+                "up": 5,
+                "down": 0,
+                "flat": 0
+            },
+            "bestWorstSpreadPp": 1.85,
+            "sectorSignals": null,
+            "briefing": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "market dashboard cache (1h)",
+            "market": "kr",
+            "fearGreed": {
+                "score": 38.2,
+                "label": "fear",
+                "factors": [
+                    {
+                        "key": "momentum",
+                        "percentile": 31.4
+                    }
+                ],
+                "comparisons": []
+            },
+            "indices": [
+                {
+                    "symbol": "KS11",
+                    "price": 4812.37,
+                    "changesPercentage": 0.83,
+                    "lastClose": 8214.79,
+                    "lastCloseDate": "2026-11-18"
+                },
+                {
+                    "symbol": "KQ11",
+                    "price": 6592.95,
+                    "changesPercentage": 0.42,
+                    "lastClose": 9300.48,
+                    "lastCloseDate": "2026-11-18"
+                },
+                {
+                    "symbol": "USDKRW",
+                    "price": 8373.52,
+                    "changesPercentage": 0.01,
+                    "lastClose": 11698.07,
+                    "lastCloseDate": "2026-11-18"
+                }
+            ],
+            "sectors": [
+                {
+                    "symbol": "091160.KS",
+                    "name": "Semiconductor",
+                    "price": 48.91,
+                    "changesPercentage": 1.94,
+                    "rank": 1
+                },
+                {
+                    "symbol": "305720.KS",
+                    "name": "Battery",
+                    "price": 60.28,
+                    "changesPercentage": 1.57,
+                    "rank": 2
+                },
+                {
+                    "symbol": "266360.KS",
+                    "name": "IT Software",
+                    "price": 71.65,
+                    "changesPercentage": 1.2,
+                    "rank": 3
+                },
+                {
+                    "symbol": "091170.KS",
+                    "name": "Banks",
+                    "price": 94.39,
+                    "changesPercentage": 0.46,
+                    "rank": 4
+                },
+                {
+                    "symbol": "244580.KS",
+                    "name": "Biotech",
+                    "price": 105.76,
+                    "changesPercentage": 0.09,
+                    "rank": 5
+                },
+                {
+                    "symbol": "091180.KS",
+                    "name": "Autos",
+                    "price": 0,
+                    "changesPercentage": 0,
+                    "rank": null
+                }
+            ],
+            "sectorBreadth": {
+                "up": 5,
+                "down": 0,
+                "flat": 0
+            },
+            "bestWorstSpreadPp": 1.85,
+            "sectorSignals": null,
+            "briefing": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

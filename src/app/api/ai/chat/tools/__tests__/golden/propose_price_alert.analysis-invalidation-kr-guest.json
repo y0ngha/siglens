@@ -1,0 +1,72 @@
+{
+    "tool": "propose_price_alert",
+    "case": "analysis-invalidation-kr-guest",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "guest",
+    "locale": "en",
+    "args": {
+        "symbol": "900110.KS",
+        "basis": "analysis_invalidation"
+    },
+    "agent": {
+        "result": {
+            "status": "proposed",
+            "symbol": "900110.KS",
+            "condition": "close_below",
+            "level": 109800,
+            "firesWhen": "a daily close at or below the level",
+            "basis": "analysis_invalidation",
+            "analysisAt": "2026-11-18T07:10:00.000Z",
+            "currentPrice": 120523,
+            "lastClose": 119990,
+            "quoteAt": "2026-11-19T01:59:30.000Z",
+            "lastCheckedSession": "2026-12-18",
+            "requiresUserConfirmation": true,
+            "notes": [
+                "Nothing is created yet: the user creates it with the button under this answer. Tell them that in one sentence. Never say the alert is set."
+            ]
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "propose_price_alert",
+                    "args": {
+                        "symbol": "900110.KS",
+                        "basis": "analysis_invalidation"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "price_alert_proposal",
+                    "proposal": {
+                        "proposalId": "00000000-0000-4000-8000-00000000a1e7",
+                        "subject": "VmgumcyKiROy2doG1oxOpbQxlFWMdT-Vo0OXgc_Fu74",
+                        "symbol": "900110.KS",
+                        "market": "kr",
+                        "condition": {
+                            "kind": "close_below",
+                            "level": 109800
+                        },
+                        "basis": "analysis_invalidation",
+                        "analysisAt": "2026-11-18T07:10:00.000Z",
+                        "referenceClose": 119990,
+                        "quoteAt": "2026-11-19T01:59:30.000Z",
+                        "startsAfterSession": "2026-11-18",
+                        "expiresOn": "2026-12-18",
+                        "exp": 1795140000
+                    },
+                    "token": "eyJwcm9wb3NhbElkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDBhMWU3Iiwic3ViamVjdCI6IlZtZ3VtY3lLaVJPeTJkb0cxb3hPcGJReGxGV01kVC1WbzBPWGdjX0Z1NzQiLCJzeW1ib2wiOiI5MDAxMTAuS1MiLCJtYXJrZXQiOiJrciIsImNvbmRpdGlvbiI6eyJraW5kIjoiY2xvc2VfYmVsb3ciLCJsZXZlbCI6MTA5ODAwfSwiYmFzaXMiOiJhbmFseXNpc19pbnZhbGlkYXRpb24iLCJhbmFseXNpc0F0IjoiMjAyNi0xMS0xOFQwNzoxMDowMC4wMDBaIiwicmVmZXJlbmNlQ2xvc2UiOjExOTk5MCwicXVvdGVBdCI6IjIwMjYtMTEtMTlUMDE6NTk6MzAuMDAwWiIsInN0YXJ0c0FmdGVyU2Vzc2lvbiI6IjIwMjYtMTEtMTgiLCJleHBpcmVzT24iOiIyMDI2LTEyLTE4IiwiZXhwIjoxNzk1MTQwMDAwfQ.-rA3VrpiDVybDz2Xa2vtLMIJFJfUZ00EVpO3rKS5qPM",
+                    "name": "Hanbit Precision"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

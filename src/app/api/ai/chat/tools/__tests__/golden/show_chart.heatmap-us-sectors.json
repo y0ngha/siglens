@@ -1,0 +1,133 @@
+{
+    "tool": "show_chart",
+    "case": "heatmap-us-sectors",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "en",
+    "args": {
+        "kind": "heatmap",
+        "market": "us"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "heatmap",
+            "summary": {
+                "market": "us",
+                "scope": "sectors",
+                "unit": "day change %",
+                "sectors": [
+                    {
+                        "label": "Technology",
+                        "changePct": 1.94
+                    },
+                    {
+                        "label": "Financials",
+                        "changePct": 1.57
+                    },
+                    {
+                        "label": "Energy",
+                        "changePct": 1.2
+                    },
+                    {
+                        "label": "Cons. Disc.",
+                        "changePct": 0.46
+                    },
+                    {
+                        "label": "Cons. Staples",
+                        "changePct": 0.09
+                    },
+                    {
+                        "label": "Industrials",
+                        "changePct": -0.28
+                    },
+                    {
+                        "label": "Materials",
+                        "changePct": -0.65
+                    },
+                    {
+                        "label": "Utilities",
+                        "changePct": -1.02
+                    },
+                    {
+                        "label": "Real Estate",
+                        "changePct": -1.39
+                    },
+                    {
+                        "label": "Comm. Svc.",
+                        "changePct": -1.76
+                    }
+                ]
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "heatmap",
+                        "market": "us"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "heatmap",
+                    "asOf": "2026-11-18T15:30:00.000Z",
+                    "scope": "sectors",
+                    "market": "us",
+                    "sectors": [
+                        {
+                            "label": "Technology",
+                            "changePct": 1.94
+                        },
+                        {
+                            "label": "Financials",
+                            "changePct": 1.57
+                        },
+                        {
+                            "label": "Energy",
+                            "changePct": 1.2
+                        },
+                        {
+                            "label": "Cons. Disc.",
+                            "changePct": 0.46
+                        },
+                        {
+                            "label": "Cons. Staples",
+                            "changePct": 0.09
+                        },
+                        {
+                            "label": "Industrials",
+                            "changePct": -0.28
+                        },
+                        {
+                            "label": "Materials",
+                            "changePct": -0.65
+                        },
+                        {
+                            "label": "Utilities",
+                            "changePct": -1.02
+                        },
+                        {
+                            "label": "Real Estate",
+                            "changePct": -1.39
+                        },
+                        {
+                            "label": "Comm. Svc.",
+                            "changePct": -1.76
+                        }
+                    ]
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

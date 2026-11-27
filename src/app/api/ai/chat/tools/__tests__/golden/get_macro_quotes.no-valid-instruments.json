@@ -1,0 +1,24 @@
+{
+    "tool": "get_macro_quotes",
+    "case": "no-valid-instruments",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "instruments": ["bitcoin"]
+    },
+    "agent": {
+        "result": {
+            "error": "no_instruments"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_instruments"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

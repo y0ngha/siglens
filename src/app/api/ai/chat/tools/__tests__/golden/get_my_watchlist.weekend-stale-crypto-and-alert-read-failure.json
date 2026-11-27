@@ -1,0 +1,142 @@
+{
+    "tool": "get_my_watchlist",
+    "case": "weekend-stale-crypto-and-alert-read-failure",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 6,
+            "stalePriceCount": 1,
+            "items": [
+                {
+                    "symbol": "QRTZ",
+                    "name": "Quartzline Holdings",
+                    "addedAt": "2026-10-28",
+                    "currency": "USD",
+                    "price": 150.1,
+                    "dayChangePct": 0.52237
+                },
+                {
+                    "symbol": "NOPEQ",
+                    "name": null,
+                    "addedAt": "2026-10-23",
+                    "currency": "USD",
+                    "price": null,
+                    "dayChangePct": null
+                },
+                {
+                    "symbol": "900110.KS",
+                    "name": "한빛정밀",
+                    "addedAt": "2026-10-19",
+                    "currency": "KRW",
+                    "price": 118247,
+                    "dayChangePct": -1.88844
+                },
+                {
+                    "symbol": "VLMR",
+                    "name": "Velmora Therapeutics — a clinical-stage company with a very lon…",
+                    "addedAt": "2026-10-11",
+                    "currency": "USD",
+                    "price": 10.52,
+                    "dayChangePct": 0.19048
+                },
+                {
+                    "symbol": "ZETAUSD",
+                    "name": "Zeta Coin USD",
+                    "addedAt": "2026-10-07",
+                    "currency": "USD",
+                    "price": 103002.57,
+                    "dayChangePct": 0.76201,
+                    "priceFreshness": {
+                        "asOf": "2026-10-20T23:59:59.000Z",
+                        "ageMinutes": 45600,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "GLDNX",
+                    "name": "Goldenrod Systems Inc.",
+                    "addedAt": "2026-10-02",
+                    "currency": "USD",
+                    "price": 241.96,
+                    "dayChangePct": -1.10357
+                }
+            ],
+            "priceAlerts": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 6,
+            "stalePriceCount": 1,
+            "items": [
+                {
+                    "symbol": "QRTZ",
+                    "name": "Quartzline Holdings",
+                    "addedAt": "2026-10-28",
+                    "currency": "USD",
+                    "price": 150.1,
+                    "dayChangePct": 0.52237
+                },
+                {
+                    "symbol": "NOPEQ",
+                    "name": null,
+                    "addedAt": "2026-10-23",
+                    "currency": "USD",
+                    "price": null,
+                    "dayChangePct": null
+                },
+                {
+                    "symbol": "900110.KS",
+                    "name": "한빛정밀",
+                    "addedAt": "2026-10-19",
+                    "currency": "KRW",
+                    "price": 118247,
+                    "dayChangePct": -1.88844
+                },
+                {
+                    "symbol": "VLMR",
+                    "name": "Velmora Therapeutics — a clinical-stage company with a very lon…",
+                    "addedAt": "2026-10-11",
+                    "currency": "USD",
+                    "price": 10.52,
+                    "dayChangePct": 0.19048
+                },
+                {
+                    "symbol": "ZETAUSD",
+                    "name": "Zeta Coin USD",
+                    "addedAt": "2026-10-07",
+                    "currency": "USD",
+                    "price": 103002.57,
+                    "dayChangePct": 0.76201,
+                    "priceFreshness": {
+                        "asOf": "2026-10-20T23:59:59.000Z",
+                        "ageMinutes": 45600,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "GLDNX",
+                    "name": "Goldenrod Systems Inc.",
+                    "addedAt": "2026-10-02",
+                    "currency": "USD",
+                    "price": 241.96,
+                    "dayChangePct": -1.10357
+                }
+            ],
+            "priceAlerts": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

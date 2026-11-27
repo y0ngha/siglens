@@ -1,0 +1,130 @@
+{
+    "tool": "get_news",
+    "case": "kr-symbol-untranslated-no-price-moves",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "en",
+    "args": {
+        "symbol": "900110.KS"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS news",
+            "count": 4,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 3,
+                "bearish": 1,
+                "neutral": 0,
+                "highImpact": 1
+            },
+            "digest": null,
+            "priceMoves": null,
+            "items": [
+                {
+                    "title": "Goldenrod Systems beats quarterly estimates as controller demand climbs",
+                    "summary": null,
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-18T23:00:00.000Z",
+                    "ageHours": 3,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-0"
+                },
+                {
+                    "title": "Analyst lifts Goldenrod target, citing fab capacity additions",
+                    "summary": null,
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-18T01:43:00.000Z",
+                    "ageHours": 24,
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "Goldenrod shares slip after supplier warns on lead times",
+                    "summary": null,
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-17T04:26:00.000Z",
+                    "ageHours": 46,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-2"
+                },
+                {
+                    "title": "Goldenrod announces $2 billion buyback program",
+                    "summary": null,
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-16T07:09:00.000Z",
+                    "ageHours": 67,
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-3"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": ["900110.KS"]
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS news",
+            "count": 4,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 3,
+                "bearish": 1,
+                "neutral": 0,
+                "highImpact": 1
+            },
+            "digest": null,
+            "priceMoves": null,
+            "items": [
+                {
+                    "title": "Goldenrod Systems beats quarterly estimates as controller demand climbs",
+                    "summary": null,
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-18T23:00:00.000Z",
+                    "ageHours": 3,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-0"
+                },
+                {
+                    "title": "Analyst lifts Goldenrod target, citing fab capacity additions",
+                    "summary": null,
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-18T01:43:00.000Z",
+                    "ageHours": 24,
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "Goldenrod shares slip after supplier warns on lead times",
+                    "summary": null,
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-17T04:26:00.000Z",
+                    "ageHours": 46,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-2"
+                },
+                {
+                    "title": "Goldenrod announces $2 billion buyback program",
+                    "summary": null,
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-16T07:09:00.000Z",
+                    "ageHours": 67,
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-3"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

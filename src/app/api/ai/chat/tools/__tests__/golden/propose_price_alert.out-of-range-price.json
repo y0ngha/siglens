@@ -1,0 +1,26 @@
+{
+    "tool": "propose_price_alert",
+    "case": "out-of-range-price",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "basis": "price_above",
+        "price": 990
+    },
+    "agent": {
+        "result": {
+            "error": "out_of_range"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

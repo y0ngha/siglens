@@ -1,0 +1,76 @@
+{
+    "tool": "get_analyst_views",
+    "case": "kr-yahoo-only-quote-failed",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "900110.KS"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-17T12:04:11.000Z",
+            "source": "analyst views (Yahoo Finance, FMP)",
+            "symbol": "900110.KS",
+            "available": true,
+            "price": null,
+            "currency": "KRW",
+            "targets": {
+                "yahoo": {
+                    "mean": 131250,
+                    "median": 130000,
+                    "low": 98000,
+                    "high": 160000,
+                    "analysts": 17,
+                    "upsidePct": null
+                },
+                "fmp": null,
+                "gapPct": null,
+                "sourcesDisagree": false
+            },
+            "ratings": null,
+            "actions": {
+                "available": false,
+                "rows": [],
+                "tally": null
+            },
+            "estimates": null,
+            "degraded": ["fmp"]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-17T12:04:11.000Z",
+            "source": "analyst views (Yahoo Finance, FMP)",
+            "symbol": "900110.KS",
+            "available": true,
+            "price": null,
+            "currency": "KRW",
+            "targets": {
+                "yahoo": {
+                    "mean": 131250,
+                    "median": 130000,
+                    "low": 98000,
+                    "high": 160000,
+                    "analysts": 17,
+                    "upsidePct": null
+                },
+                "fmp": null,
+                "gapPct": null,
+                "sourcesDisagree": false
+            },
+            "ratings": null,
+            "actions": {
+                "available": false,
+                "rows": [],
+                "tally": null
+            },
+            "estimates": null,
+            "degraded": ["fmp"]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,547 @@
+{
+    "tool": "get_price_stats",
+    "case": "three-subjects-five-dates-full-size",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbols": ["GLDNX", "VLMR"],
+        "index": "sp500",
+        "period": "3y",
+        "dates": [
+            "2024-08-05",
+            "2025-04-08",
+            "2025-12-24",
+            "2026-03-15",
+            "2026-11-18"
+        ]
+    },
+    "agent": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2026-11-17",
+            "window": {
+                "kind": "period",
+                "period": "3y"
+            },
+            "subjects": [
+                {
+                    "subject": "GLDNX",
+                    "window": {
+                        "baseDate": "2023-11-17",
+                        "baseClose": 162.65,
+                        "endDate": "2026-11-17",
+                        "endClose": 246.77,
+                        "sessions": 751,
+                        "calendarDays": 1096
+                    },
+                    "returnPct": 51.72,
+                    "cagrPct": 14.9,
+                    "highestClose": {
+                        "date": "2026-09-22",
+                        "close": 268.55
+                    },
+                    "lowestClose": {
+                        "date": "2023-12-19",
+                        "close": 136.33
+                    },
+                    "fromHighestClosePct": -8.11,
+                    "maxDrawdown": {
+                        "pct": -23.14,
+                        "peakDate": "2026-03-24",
+                        "peakClose": 250.68,
+                        "troughDate": "2026-06-25",
+                        "troughClose": 192.68,
+                        "recoveredDate": "2026-09-08"
+                    },
+                    "closes": [
+                        {
+                            "requestedDate": "2024-08-05",
+                            "date": "2024-08-05",
+                            "close": 170.72,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-04-08",
+                            "date": "2025-04-08",
+                            "close": 204.47,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-12-24",
+                            "date": "2025-12-24",
+                            "close": 184.27,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2026-03-15",
+                            "date": "2026-03-13",
+                            "close": 237.47,
+                            "status": "previous_session"
+                        },
+                        {
+                            "requestedDate": "2026-11-18",
+                            "date": null,
+                            "close": null,
+                            "status": "after_last_close"
+                        }
+                    ],
+                    "summary": "GLDNX 2023-11-17 → 2026-11-17 (751 sessions): close 162.65 → 246.77, +51.72% (annual rate +14.9%); highest close 268.55 (2026-09-22), -8.11% from it; max drawdown -23.14% from 2026-03-24 to 2026-06-25, recovered 2026-09-08 | GLDNX closes: 2024-08-05 170.72; 2025-04-08 204.47; 2025-12-24 184.27; 2026-03-15 → 2026-03-13 (no session that day) 237.47; 2026-11-18 (not in the data yet) no close",
+                    "currency": "USD",
+                    "resolvedName": "Goldenrod Systems Inc."
+                },
+                {
+                    "subject": "VLMR",
+                    "window": {
+                        "baseDate": "2023-11-17",
+                        "baseClose": 13.12,
+                        "endDate": "2026-11-17",
+                        "endClose": 10.54,
+                        "sessions": 751,
+                        "calendarDays": 1096
+                    },
+                    "returnPct": -19.66,
+                    "cagrPct": -7.04,
+                    "highestClose": {
+                        "date": "2024-03-19",
+                        "close": 15.08
+                    },
+                    "lowestClose": {
+                        "date": "2026-06-16",
+                        "close": 9.68
+                    },
+                    "fromHighestClosePct": -30.11,
+                    "maxDrawdown": {
+                        "pct": -35.81,
+                        "peakDate": "2024-03-19",
+                        "peakClose": 15.08,
+                        "troughDate": "2026-06-16",
+                        "troughClose": 9.68,
+                        "recoveredDate": null
+                    },
+                    "closes": [
+                        {
+                            "requestedDate": "2024-08-05",
+                            "date": "2024-08-05",
+                            "close": 13.38,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-04-08",
+                            "date": "2025-04-08",
+                            "close": 12.32,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-12-24",
+                            "date": "2025-12-24",
+                            "close": 10.26,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2026-03-15",
+                            "date": "2026-03-13",
+                            "close": 12.92,
+                            "status": "previous_session"
+                        },
+                        {
+                            "requestedDate": "2026-11-18",
+                            "date": null,
+                            "close": null,
+                            "status": "after_last_close"
+                        }
+                    ],
+                    "summary": "VLMR 2023-11-17 → 2026-11-17 (751 sessions): close 13.12 → 10.54, -19.66% (annual rate -7.04%); highest close 15.08 (2024-03-19), -30.11% from it; max drawdown -35.81% from 2024-03-19 to 2026-06-16, not recovered by 2026-11-17 | VLMR closes: 2024-08-05 13.38; 2025-04-08 12.32; 2025-12-24 10.26; 2026-03-15 → 2026-03-13 (no session that day) 12.92; 2026-11-18 (not in the data yet) no close",
+                    "currency": "USD",
+                    "resolvedName": "Velmora Therapeutics"
+                },
+                {
+                    "subject": "sp500",
+                    "window": {
+                        "baseDate": "2023-11-17",
+                        "baseClose": 5392.64,
+                        "endDate": "2026-11-17",
+                        "endClose": 7528.25,
+                        "sessions": 751,
+                        "calendarDays": 1096
+                    },
+                    "returnPct": 39.6,
+                    "cagrPct": 11.76,
+                    "highestClose": {
+                        "date": "2026-11-10",
+                        "close": 7757.46
+                    },
+                    "lowestClose": {
+                        "date": "2024-02-08",
+                        "close": 4405.49
+                    },
+                    "fromHighestClosePct": -2.95,
+                    "maxDrawdown": {
+                        "pct": -21.39,
+                        "peakDate": "2026-05-12",
+                        "peakClose": 7331.95,
+                        "troughDate": "2026-08-10",
+                        "troughClose": 5763.45,
+                        "recoveredDate": "2026-10-28"
+                    },
+                    "closes": [
+                        {
+                            "requestedDate": "2024-08-05",
+                            "date": "2024-08-05",
+                            "close": 4728.05,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-04-08",
+                            "date": "2025-04-08",
+                            "close": 5506.25,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-12-24",
+                            "date": "2025-12-24",
+                            "close": 6668.77,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2026-03-15",
+                            "date": "2026-03-13",
+                            "close": 6215.03,
+                            "status": "previous_session"
+                        },
+                        {
+                            "requestedDate": "2026-11-18",
+                            "date": null,
+                            "close": null,
+                            "status": "after_last_close"
+                        }
+                    ],
+                    "summary": "sp500 2023-11-17 → 2026-11-17 (751 sessions): close 5392.64 → 7528.25, +39.6% (annual rate +11.76%); highest close 7757.46 (2026-11-10), -2.95% from it; max drawdown -21.39% from 2026-05-12 to 2026-08-10, recovered 2026-10-28 | sp500 closes: 2024-08-05 4728.05; 2025-04-08 5506.25; 2025-12-24 6668.77; 2026-03-15 → 2026-03-13 (no session that day) 6215.03; 2026-11-18 (not in the data yet) no close",
+                    "name": "S&P 500",
+                    "currency": null
+                }
+            ],
+            "correlation": [
+                {
+                    "subjects": ["GLDNX", "VLMR"],
+                    "daily": {
+                        "coefficient": 0.33,
+                        "observations": 751,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    },
+                    "weekly": {
+                        "coefficient": 0.79,
+                        "observations": 157,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    }
+                },
+                {
+                    "subjects": ["GLDNX", "sp500"],
+                    "daily": {
+                        "coefficient": -0.11,
+                        "observations": 751,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    },
+                    "weekly": {
+                        "coefficient": -0.17,
+                        "observations": 157,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    }
+                },
+                {
+                    "subjects": ["VLMR", "sp500"],
+                    "daily": {
+                        "coefficient": -0.07,
+                        "observations": 751,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    },
+                    "weekly": {
+                        "coefficient": -0.17,
+                        "observations": 157,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    }
+                }
+            ],
+            "notes": [
+                "GLDNX: closes with status previous_session (2026-03-15 → 2026-03-13): the requested date had no session, so the close is from the last session before it. Name both dates.",
+                "GLDNX: the data has no close for 2026-11-18 yet (status after_last_close); the latest close is from 2026-11-17. Say the data has no close for that date yet and name 2026-11-17; never say there was no session, and never use a live price as a close.",
+                "VLMR: closes with status previous_session (2026-03-15 → 2026-03-13): the requested date had no session, so the close is from the last session before it. Name both dates.",
+                "VLMR: the data has no close for 2026-11-18 yet (status after_last_close); the latest close is from 2026-11-17. Say the data has no close for that date yet and name 2026-11-17; never say there was no session, and never use a live price as a close.",
+                "sp500: closes with status previous_session (2026-03-15 → 2026-03-13): the requested date had no session, so the close is from the last session before it. Name both dates.",
+                "sp500: the data has no close for 2026-11-18 yet (status after_last_close); the latest close is from 2026-11-17. Say the data has no close for that date yet and name 2026-11-17; never say there was no session, and never use a live price as a close."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2026-11-17",
+            "window": {
+                "kind": "period",
+                "period": "3y"
+            },
+            "subjects": [
+                {
+                    "subject": "GLDNX",
+                    "window": {
+                        "baseDate": "2023-11-17",
+                        "baseClose": 162.65,
+                        "endDate": "2026-11-17",
+                        "endClose": 246.77,
+                        "sessions": 751,
+                        "calendarDays": 1096
+                    },
+                    "returnPct": 51.72,
+                    "cagrPct": 14.9,
+                    "highestClose": {
+                        "date": "2026-09-22",
+                        "close": 268.55
+                    },
+                    "lowestClose": {
+                        "date": "2023-12-19",
+                        "close": 136.33
+                    },
+                    "fromHighestClosePct": -8.11,
+                    "maxDrawdown": {
+                        "pct": -23.14,
+                        "peakDate": "2026-03-24",
+                        "peakClose": 250.68,
+                        "troughDate": "2026-06-25",
+                        "troughClose": 192.68,
+                        "recoveredDate": "2026-09-08"
+                    },
+                    "closes": [
+                        {
+                            "requestedDate": "2024-08-05",
+                            "date": "2024-08-05",
+                            "close": 170.72,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-04-08",
+                            "date": "2025-04-08",
+                            "close": 204.47,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-12-24",
+                            "date": "2025-12-24",
+                            "close": 184.27,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2026-03-15",
+                            "date": "2026-03-13",
+                            "close": 237.47,
+                            "status": "previous_session"
+                        },
+                        {
+                            "requestedDate": "2026-11-18",
+                            "date": null,
+                            "close": null,
+                            "status": "after_last_close"
+                        }
+                    ],
+                    "summary": "GLDNX 2023-11-17 → 2026-11-17 (751 sessions): close 162.65 → 246.77, +51.72% (annual rate +14.9%); highest close 268.55 (2026-09-22), -8.11% from it; max drawdown -23.14% from 2026-03-24 to 2026-06-25, recovered 2026-09-08 | GLDNX closes: 2024-08-05 170.72; 2025-04-08 204.47; 2025-12-24 184.27; 2026-03-15 → 2026-03-13 (no session that day) 237.47; 2026-11-18 (not in the data yet) no close",
+                    "currency": "USD",
+                    "resolvedName": "Goldenrod Systems Inc."
+                },
+                {
+                    "subject": "VLMR",
+                    "window": {
+                        "baseDate": "2023-11-17",
+                        "baseClose": 13.12,
+                        "endDate": "2026-11-17",
+                        "endClose": 10.54,
+                        "sessions": 751,
+                        "calendarDays": 1096
+                    },
+                    "returnPct": -19.66,
+                    "cagrPct": -7.04,
+                    "highestClose": {
+                        "date": "2024-03-19",
+                        "close": 15.08
+                    },
+                    "lowestClose": {
+                        "date": "2026-06-16",
+                        "close": 9.68
+                    },
+                    "fromHighestClosePct": -30.11,
+                    "maxDrawdown": {
+                        "pct": -35.81,
+                        "peakDate": "2024-03-19",
+                        "peakClose": 15.08,
+                        "troughDate": "2026-06-16",
+                        "troughClose": 9.68,
+                        "recoveredDate": null
+                    },
+                    "closes": [
+                        {
+                            "requestedDate": "2024-08-05",
+                            "date": "2024-08-05",
+                            "close": 13.38,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-04-08",
+                            "date": "2025-04-08",
+                            "close": 12.32,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-12-24",
+                            "date": "2025-12-24",
+                            "close": 10.26,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2026-03-15",
+                            "date": "2026-03-13",
+                            "close": 12.92,
+                            "status": "previous_session"
+                        },
+                        {
+                            "requestedDate": "2026-11-18",
+                            "date": null,
+                            "close": null,
+                            "status": "after_last_close"
+                        }
+                    ],
+                    "summary": "VLMR 2023-11-17 → 2026-11-17 (751 sessions): close 13.12 → 10.54, -19.66% (annual rate -7.04%); highest close 15.08 (2024-03-19), -30.11% from it; max drawdown -35.81% from 2024-03-19 to 2026-06-16, not recovered by 2026-11-17 | VLMR closes: 2024-08-05 13.38; 2025-04-08 12.32; 2025-12-24 10.26; 2026-03-15 → 2026-03-13 (no session that day) 12.92; 2026-11-18 (not in the data yet) no close",
+                    "currency": "USD",
+                    "resolvedName": "Velmora Therapeutics"
+                },
+                {
+                    "subject": "sp500",
+                    "window": {
+                        "baseDate": "2023-11-17",
+                        "baseClose": 5392.64,
+                        "endDate": "2026-11-17",
+                        "endClose": 7528.25,
+                        "sessions": 751,
+                        "calendarDays": 1096
+                    },
+                    "returnPct": 39.6,
+                    "cagrPct": 11.76,
+                    "highestClose": {
+                        "date": "2026-11-10",
+                        "close": 7757.46
+                    },
+                    "lowestClose": {
+                        "date": "2024-02-08",
+                        "close": 4405.49
+                    },
+                    "fromHighestClosePct": -2.95,
+                    "maxDrawdown": {
+                        "pct": -21.39,
+                        "peakDate": "2026-05-12",
+                        "peakClose": 7331.95,
+                        "troughDate": "2026-08-10",
+                        "troughClose": 5763.45,
+                        "recoveredDate": "2026-10-28"
+                    },
+                    "closes": [
+                        {
+                            "requestedDate": "2024-08-05",
+                            "date": "2024-08-05",
+                            "close": 4728.05,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-04-08",
+                            "date": "2025-04-08",
+                            "close": 5506.25,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2025-12-24",
+                            "date": "2025-12-24",
+                            "close": 6668.77,
+                            "status": "exact"
+                        },
+                        {
+                            "requestedDate": "2026-03-15",
+                            "date": "2026-03-13",
+                            "close": 6215.03,
+                            "status": "previous_session"
+                        },
+                        {
+                            "requestedDate": "2026-11-18",
+                            "date": null,
+                            "close": null,
+                            "status": "after_last_close"
+                        }
+                    ],
+                    "summary": "sp500 2023-11-17 → 2026-11-17 (751 sessions): close 5392.64 → 7528.25, +39.6% (annual rate +11.76%); highest close 7757.46 (2026-11-10), -2.95% from it; max drawdown -21.39% from 2026-05-12 to 2026-08-10, recovered 2026-10-28 | sp500 closes: 2024-08-05 4728.05; 2025-04-08 5506.25; 2025-12-24 6668.77; 2026-03-15 → 2026-03-13 (no session that day) 6215.03; 2026-11-18 (not in the data yet) no close",
+                    "name": "S&P 500",
+                    "currency": null
+                }
+            ],
+            "correlation": [
+                {
+                    "subjects": ["GLDNX", "VLMR"],
+                    "daily": {
+                        "coefficient": 0.33,
+                        "observations": 751,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    },
+                    "weekly": {
+                        "coefficient": 0.79,
+                        "observations": 157,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    }
+                },
+                {
+                    "subjects": ["GLDNX", "sp500"],
+                    "daily": {
+                        "coefficient": -0.11,
+                        "observations": 751,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    },
+                    "weekly": {
+                        "coefficient": -0.17,
+                        "observations": 157,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    }
+                },
+                {
+                    "subjects": ["VLMR", "sp500"],
+                    "daily": {
+                        "coefficient": -0.07,
+                        "observations": 751,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    },
+                    "weekly": {
+                        "coefficient": -0.17,
+                        "observations": 157,
+                        "from": "2023-11-17",
+                        "to": "2026-11-17"
+                    }
+                }
+            ],
+            "notes": [
+                "GLDNX: closes with status previous_session (2026-03-15 → 2026-03-13): the requested date had no session, so the close is from the last session before it. Name both dates.",
+                "GLDNX: the data has no close for 2026-11-18 yet (status after_last_close); the latest close is from 2026-11-17. Say the data has no close for that date yet and name 2026-11-17; never say there was no session, and never use a live price as a close.",
+                "VLMR: closes with status previous_session (2026-03-15 → 2026-03-13): the requested date had no session, so the close is from the last session before it. Name both dates.",
+                "VLMR: the data has no close for 2026-11-18 yet (status after_last_close); the latest close is from 2026-11-17. Say the data has no close for that date yet and name 2026-11-17; never say there was no session, and never use a live price as a close.",
+                "sp500: closes with status previous_session (2026-03-15 → 2026-03-13): the requested date had no session, so the close is from the last session before it. Name both dates.",
+                "sp500: the data has no close for 2026-11-18 yet (status after_last_close); the latest close is from 2026-11-17. Say the data has no close for that date yet and name 2026-11-17; never say there was no session, and never use a live price as a close."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

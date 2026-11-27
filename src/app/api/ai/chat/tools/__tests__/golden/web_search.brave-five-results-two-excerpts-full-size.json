@@ -1,0 +1,99 @@
+{
+    "tool": "web_search",
+    "case": "brave-five-results-two-excerpts-full-size",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "query": "Goldenrod Systems third quarter results",
+        "freshness": "week"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "Brave Search",
+            "results": [
+                {
+                    "title": "Goldenrod Systems Q3 2026 results: revenue up 11%",
+                    "url": "https://news.example.com/goldenrod-q3-results",
+                    "snippet": "Goldenrod Systems reported third-quarter revenue of $17.1 billion, up 11% year over year, beating estimates.",
+                    "age": "2 days ago",
+                    "excerpt": "Paragraph 1: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 2: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 3: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 4: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 5: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 6: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 7: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year…",
+                    "publishedAt": "2026-11-16T13:05:00.000Z"
+                },
+                {
+                    "title": "Goldenrod raises full-year outlook",
+                    "url": "https://markets.example.org/articles/goldenrod-outlook",
+                    "snippet": "The company lifted its full-year revenue guidance on strong controller demand from fab partners.",
+                    "age": "November 16, 2026",
+                    "excerpt": "Paragraph 1: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 2: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 3: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 4: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 5: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 6: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 7: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year…",
+                    "publishedAt": "2026-11-16T13:05:00.000Z"
+                },
+                {
+                    "title": "Goldenrod Systems 10-Q filing (PDF)",
+                    "url": "https://ir.example.com/static/gldnx-10q.pdf",
+                    "snippet": "Quarterly report on Form 10-Q for the period ended September 27, 2026.",
+                    "age": "3 weeks ago"
+                },
+                {
+                    "title": "What analysts say about Goldenrod after earnings",
+                    "url": "https://blog.example.net/goldenrod-analysts",
+                    "snippet": "Price targets were raised by several firms after the print; the median target now sits near $262.",
+                    "age": "1 day ago"
+                },
+                {
+                    "title": "Goldenrod Systems stock quote and history",
+                    "url": "https://quotes.example.com/GLDNX",
+                    "snippet": "Real-time quote, historical prices and charts for Goldenrod Systems.",
+                    "age": null
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "Brave Search",
+            "results": [
+                {
+                    "title": "Goldenrod Systems Q3 2026 results: revenue up 11%",
+                    "url": "https://news.example.com/goldenrod-q3-results",
+                    "snippet": "Goldenrod Systems reported third-quarter revenue of $17.1 billion, up 11% year over year, beating estimates.",
+                    "age": "2 days ago",
+                    "excerpt": "Paragraph 1: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 2: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 3: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 4: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 5: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 6: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 7: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year…",
+                    "publishedAt": "2026-11-16T13:05:00.000Z"
+                },
+                {
+                    "title": "Goldenrod raises full-year outlook",
+                    "url": "https://markets.example.org/articles/goldenrod-outlook",
+                    "snippet": "The company lifted its full-year revenue guidance on strong controller demand from fab partners.",
+                    "age": "November 16, 2026",
+                    "excerpt": "Paragraph 1: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 2: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 3: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 4: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 5: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 6: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year outlook, citing demand from fab partners and a steady backlog.\nParagraph 7: Goldenrod Systems said third-quarter revenue rose 11% to $17.1 billion as \"Lumen\" controller shipments grew in every region; gross margin reached 46.2% and the company raised its full-year…",
+                    "publishedAt": "2026-11-16T13:05:00.000Z"
+                },
+                {
+                    "title": "Goldenrod Systems 10-Q filing (PDF)",
+                    "url": "https://ir.example.com/static/gldnx-10q.pdf",
+                    "snippet": "Quarterly report on Form 10-Q for the period ended September 27, 2026.",
+                    "age": "3 weeks ago"
+                },
+                {
+                    "title": "What analysts say about Goldenrod after earnings",
+                    "url": "https://blog.example.net/goldenrod-analysts",
+                    "snippet": "Price targets were raised by several firms after the print; the median target now sits near $262.",
+                    "age": "1 day ago"
+                },
+                {
+                    "title": "Goldenrod Systems stock quote and history",
+                    "url": "https://quotes.example.com/GLDNX",
+                    "snippet": "Real-time quote, historical prices and charts for Goldenrod Systems.",
+                    "age": null
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "tool": "get_my_portfolio",
+    "case": "empty-portfolio-weekend",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS portfolio",
+            "count": 0,
+            "holdings": [],
+            "totals": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS portfolio",
+            "count": 0,
+            "holdings": [],
+            "totals": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

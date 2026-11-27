@@ -1,0 +1,654 @@
+{
+    "tool": "get_analyst_views",
+    "case": "us-forty-actions-truncation",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-17T12:04:11.000Z",
+            "source": "analyst views (Yahoo Finance, FMP)",
+            "symbol": "GLDNX",
+            "available": true,
+            "price": 244.85,
+            "currency": "USD",
+            "targets": {
+                "yahoo": {
+                    "mean": 268.437,
+                    "median": 270,
+                    "low": 182.5,
+                    "high": 345,
+                    "analysts": 41,
+                    "upsidePct": 9.63333
+                },
+                "fmp": {
+                    "consensus": 259.873,
+                    "median": 262,
+                    "low": 190,
+                    "high": 330,
+                    "lastMonth": {
+                        "count": 6,
+                        "avg": 263.017
+                    },
+                    "lastQuarter": {
+                        "count": 19,
+                        "avg": 251.442
+                    },
+                    "upsidePct": 6.13573
+                },
+                "gapPct": 3.29,
+                "sourcesDisagree": false
+            },
+            "ratings": {
+                "strongBuy": 9,
+                "buy": 24,
+                "hold": 11,
+                "sell": 2,
+                "strongSell": 1,
+                "analysts": 47,
+                "source": "yahoo"
+            },
+            "actions": {
+                "available": true,
+                "rows": [
+                    {
+                        "date": "2026-11-16",
+                        "firm": "Morgan Stanley",
+                        "action": "upgrade",
+                        "fromGrade": "Overweight",
+                        "toGrade": "Market Perform",
+                        "priorTarget": 231.5,
+                        "target": 248.75,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-11-13",
+                        "firm": "B of A Securities",
+                        "action": "downgrade",
+                        "fromGrade": "Equal-Weight",
+                        "toGrade": "Buy",
+                        "priorTarget": 232.75,
+                        "target": 250.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-11-10",
+                        "firm": "Goldman Sachs",
+                        "action": "maintain",
+                        "fromGrade": "Market Perform",
+                        "toGrade": "Neutral",
+                        "priorTarget": 234,
+                        "target": 251.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-11-07",
+                        "firm": "JP Morgan",
+                        "action": "initiate",
+                        "fromGrade": "Buy",
+                        "toGrade": "Overweight",
+                        "priorTarget": 235.25,
+                        "target": 253.25,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-11-04",
+                        "firm": "Wells Fargo",
+                        "action": "upgrade",
+                        "fromGrade": "Neutral",
+                        "toGrade": "Equal-Weight",
+                        "priorTarget": 236.5,
+                        "target": 254.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-11-01",
+                        "firm": "Truist Securities",
+                        "action": "downgrade",
+                        "fromGrade": "Overweight",
+                        "toGrade": "Market Perform",
+                        "priorTarget": 237.75,
+                        "target": 256.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-29",
+                        "firm": "Rosenblatt",
+                        "action": "maintain",
+                        "fromGrade": "Equal-Weight",
+                        "toGrade": "Buy",
+                        "priorTarget": 239,
+                        "target": 257.75,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-10-26",
+                        "firm": "Craig-Hallum",
+                        "action": "initiate",
+                        "fromGrade": "Market Perform",
+                        "toGrade": "Neutral",
+                        "priorTarget": 240.25,
+                        "target": 259.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-23",
+                        "firm": "Needham",
+                        "action": "upgrade",
+                        "fromGrade": "Buy",
+                        "toGrade": "Overweight",
+                        "priorTarget": 241.5,
+                        "target": 260.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-20",
+                        "firm": "Piper Sandler",
+                        "action": "downgrade",
+                        "fromGrade": "Neutral",
+                        "toGrade": "Equal-Weight",
+                        "priorTarget": 242.75,
+                        "target": 262.25,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-10-17",
+                        "firm": "Morgan Stanley",
+                        "action": "maintain",
+                        "fromGrade": "Overweight",
+                        "toGrade": "Market Perform",
+                        "priorTarget": 244,
+                        "target": 263.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-14",
+                        "firm": "B of A Securities",
+                        "action": "initiate",
+                        "fromGrade": "Equal-Weight",
+                        "toGrade": "Buy",
+                        "priorTarget": 245.25,
+                        "target": 265.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-11",
+                        "firm": "Goldman Sachs",
+                        "action": "upgrade",
+                        "fromGrade": "Market Perform",
+                        "toGrade": "Neutral",
+                        "priorTarget": 246.5,
+                        "target": 266.75,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-10-08",
+                        "firm": "JP Morgan",
+                        "action": "downgrade",
+                        "fromGrade": "Buy",
+                        "toGrade": "Overweight",
+                        "priorTarget": 247.75,
+                        "target": 268.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-05",
+                        "firm": "Wells Fargo",
+                        "action": "maintain",
+                        "fromGrade": "Neutral",
+                        "toGrade": "Equal-Weight",
+                        "priorTarget": 249,
+                        "target": 269.75,
+                        "targetAction": "raise"
+                    }
+                ],
+                "tally": {
+                    "last30d": {
+                        "upgrades": 3,
+                        "downgrades": 2,
+                        "initiations": 1,
+                        "targetRaises": 7,
+                        "targetCuts": 2
+                    },
+                    "last90d": {
+                        "upgrades": 6,
+                        "downgrades": 5,
+                        "initiations": 2,
+                        "targetRaises": 14,
+                        "targetCuts": 6
+                    }
+                }
+            },
+            "estimates": [
+                {
+                    "period": "0q",
+                    "endDate": "2026-12-31",
+                    "eps": {
+                        "avg": 2.3471,
+                        "analysts": 31,
+                        "ago7d": 2.3402,
+                        "ago30d": 2.3118,
+                        "ago60d": 2.2894,
+                        "ago90d": 2.2577,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 41278330000,
+                        "analysts": 28,
+                        "growthPct": 11.84
+                    }
+                },
+                {
+                    "period": "+1q",
+                    "endDate": "2027-03-31",
+                    "eps": {
+                        "avg": 2.7654,
+                        "analysts": 30,
+                        "ago7d": 2.7585,
+                        "ago30d": 2.7301,
+                        "ago60d": 2.7077,
+                        "ago90d": 2.676,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 44396330000,
+                        "analysts": 27,
+                        "growthPct": 12.57
+                    }
+                },
+                {
+                    "period": "0y",
+                    "endDate": "2026-12-31",
+                    "eps": {
+                        "avg": 3.1837,
+                        "analysts": 29,
+                        "ago7d": 3.1768,
+                        "ago30d": 3.1484,
+                        "ago60d": 3.126,
+                        "ago90d": 3.0943,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 47514330000,
+                        "analysts": 26,
+                        "growthPct": 13.3
+                    }
+                },
+                {
+                    "period": "+1y",
+                    "endDate": "2027-12-31",
+                    "eps": {
+                        "avg": 3.602,
+                        "analysts": 28,
+                        "ago7d": 3.5951,
+                        "ago30d": 3.5667,
+                        "ago60d": 3.5443,
+                        "ago90d": 3.5126,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 50632330000,
+                        "analysts": 25,
+                        "growthPct": 14.03
+                    }
+                }
+            ],
+            "degraded": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-17T12:04:11.000Z",
+            "source": "analyst views (Yahoo Finance, FMP)",
+            "symbol": "GLDNX",
+            "available": true,
+            "price": 244.85,
+            "currency": "USD",
+            "targets": {
+                "yahoo": {
+                    "mean": 268.437,
+                    "median": 270,
+                    "low": 182.5,
+                    "high": 345,
+                    "analysts": 41,
+                    "upsidePct": 9.63333
+                },
+                "fmp": {
+                    "consensus": 259.873,
+                    "median": 262,
+                    "low": 190,
+                    "high": 330,
+                    "lastMonth": {
+                        "count": 6,
+                        "avg": 263.017
+                    },
+                    "lastQuarter": {
+                        "count": 19,
+                        "avg": 251.442
+                    },
+                    "upsidePct": 6.13573
+                },
+                "gapPct": 3.29,
+                "sourcesDisagree": false
+            },
+            "ratings": {
+                "strongBuy": 9,
+                "buy": 24,
+                "hold": 11,
+                "sell": 2,
+                "strongSell": 1,
+                "analysts": 47,
+                "source": "yahoo"
+            },
+            "actions": {
+                "available": true,
+                "rows": [
+                    {
+                        "date": "2026-11-16",
+                        "firm": "Morgan Stanley",
+                        "action": "upgrade",
+                        "fromGrade": "Overweight",
+                        "toGrade": "Market Perform",
+                        "priorTarget": 231.5,
+                        "target": 248.75,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-11-13",
+                        "firm": "B of A Securities",
+                        "action": "downgrade",
+                        "fromGrade": "Equal-Weight",
+                        "toGrade": "Buy",
+                        "priorTarget": 232.75,
+                        "target": 250.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-11-10",
+                        "firm": "Goldman Sachs",
+                        "action": "maintain",
+                        "fromGrade": "Market Perform",
+                        "toGrade": "Neutral",
+                        "priorTarget": 234,
+                        "target": 251.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-11-07",
+                        "firm": "JP Morgan",
+                        "action": "initiate",
+                        "fromGrade": "Buy",
+                        "toGrade": "Overweight",
+                        "priorTarget": 235.25,
+                        "target": 253.25,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-11-04",
+                        "firm": "Wells Fargo",
+                        "action": "upgrade",
+                        "fromGrade": "Neutral",
+                        "toGrade": "Equal-Weight",
+                        "priorTarget": 236.5,
+                        "target": 254.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-11-01",
+                        "firm": "Truist Securities",
+                        "action": "downgrade",
+                        "fromGrade": "Overweight",
+                        "toGrade": "Market Perform",
+                        "priorTarget": 237.75,
+                        "target": 256.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-29",
+                        "firm": "Rosenblatt",
+                        "action": "maintain",
+                        "fromGrade": "Equal-Weight",
+                        "toGrade": "Buy",
+                        "priorTarget": 239,
+                        "target": 257.75,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-10-26",
+                        "firm": "Craig-Hallum",
+                        "action": "initiate",
+                        "fromGrade": "Market Perform",
+                        "toGrade": "Neutral",
+                        "priorTarget": 240.25,
+                        "target": 259.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-23",
+                        "firm": "Needham",
+                        "action": "upgrade",
+                        "fromGrade": "Buy",
+                        "toGrade": "Overweight",
+                        "priorTarget": 241.5,
+                        "target": 260.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-20",
+                        "firm": "Piper Sandler",
+                        "action": "downgrade",
+                        "fromGrade": "Neutral",
+                        "toGrade": "Equal-Weight",
+                        "priorTarget": 242.75,
+                        "target": 262.25,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-10-17",
+                        "firm": "Morgan Stanley",
+                        "action": "maintain",
+                        "fromGrade": "Overweight",
+                        "toGrade": "Market Perform",
+                        "priorTarget": 244,
+                        "target": 263.75,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-14",
+                        "firm": "B of A Securities",
+                        "action": "initiate",
+                        "fromGrade": "Equal-Weight",
+                        "toGrade": "Buy",
+                        "priorTarget": 245.25,
+                        "target": 265.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-11",
+                        "firm": "Goldman Sachs",
+                        "action": "upgrade",
+                        "fromGrade": "Market Perform",
+                        "toGrade": "Neutral",
+                        "priorTarget": 246.5,
+                        "target": 266.75,
+                        "targetAction": "lower"
+                    },
+                    {
+                        "date": "2026-10-08",
+                        "firm": "JP Morgan",
+                        "action": "downgrade",
+                        "fromGrade": "Buy",
+                        "toGrade": "Overweight",
+                        "priorTarget": 247.75,
+                        "target": 268.25,
+                        "targetAction": "raise"
+                    },
+                    {
+                        "date": "2026-10-05",
+                        "firm": "Wells Fargo",
+                        "action": "maintain",
+                        "fromGrade": "Neutral",
+                        "toGrade": "Equal-Weight",
+                        "priorTarget": 249,
+                        "target": 269.75,
+                        "targetAction": "raise"
+                    }
+                ],
+                "tally": {
+                    "last30d": {
+                        "upgrades": 3,
+                        "downgrades": 2,
+                        "initiations": 1,
+                        "targetRaises": 7,
+                        "targetCuts": 2
+                    },
+                    "last90d": {
+                        "upgrades": 6,
+                        "downgrades": 5,
+                        "initiations": 2,
+                        "targetRaises": 14,
+                        "targetCuts": 6
+                    }
+                }
+            },
+            "estimates": [
+                {
+                    "period": "0q",
+                    "endDate": "2026-12-31",
+                    "eps": {
+                        "avg": 2.3471,
+                        "analysts": 31,
+                        "ago7d": 2.3402,
+                        "ago30d": 2.3118,
+                        "ago60d": 2.2894,
+                        "ago90d": 2.2577,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 41278330000,
+                        "analysts": 28,
+                        "growthPct": 11.84
+                    }
+                },
+                {
+                    "period": "+1q",
+                    "endDate": "2027-03-31",
+                    "eps": {
+                        "avg": 2.7654,
+                        "analysts": 30,
+                        "ago7d": 2.7585,
+                        "ago30d": 2.7301,
+                        "ago60d": 2.7077,
+                        "ago90d": 2.676,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 44396330000,
+                        "analysts": 27,
+                        "growthPct": 12.57
+                    }
+                },
+                {
+                    "period": "0y",
+                    "endDate": "2026-12-31",
+                    "eps": {
+                        "avg": 3.1837,
+                        "analysts": 29,
+                        "ago7d": 3.1768,
+                        "ago30d": 3.1484,
+                        "ago60d": 3.126,
+                        "ago90d": 3.0943,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 47514330000,
+                        "analysts": 26,
+                        "growthPct": 13.3
+                    }
+                },
+                {
+                    "period": "+1y",
+                    "endDate": "2027-12-31",
+                    "eps": {
+                        "avg": 3.602,
+                        "analysts": 28,
+                        "ago7d": 3.5951,
+                        "ago30d": 3.5667,
+                        "ago60d": 3.5443,
+                        "ago90d": 3.5126,
+                        "change30d": 0.0353,
+                        "change90d": 0.0894
+                    },
+                    "revisions": {
+                        "up7d": 3,
+                        "down7d": 1,
+                        "up30d": 9,
+                        "down30d": 4
+                    },
+                    "revenue": {
+                        "avg": 50632330000,
+                        "analysts": 25,
+                        "growthPct": 14.03
+                    }
+                }
+            ],
+            "degraded": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "tool": "get_theme_snapshot",
+    "case": "every-member-failing-provider-failed",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "theme": "nuclear"
+    },
+    "agent": {
+        "result": {
+            "theme": "nuclear",
+            "available": false,
+            "reason": "provider_failed"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "theme": "nuclear",
+            "available": false,
+            "reason": "provider_failed"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

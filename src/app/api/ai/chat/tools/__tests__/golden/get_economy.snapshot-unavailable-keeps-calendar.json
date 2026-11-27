@@ -1,0 +1,150 @@
+{
+    "tool": "get_economy",
+    "case": "snapshot-unavailable-keeps-calendar",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "available": false,
+            "reason": "snapshot_unavailable",
+            "calendar": {
+                "coverage": {
+                    "from": "2026-11-18",
+                    "to": "2027-01-27"
+                },
+                "events": [
+                    {
+                        "date": "2026-11-18T22:30:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 0
+                    },
+                    {
+                        "date": "2026-11-19T17:30:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 19
+                    },
+                    {
+                        "date": "2026-11-20T12:30:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 38
+                    },
+                    {
+                        "date": "2026-11-21T07:30:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 57
+                    },
+                    {
+                        "date": "2026-11-22T02:30:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 76
+                    }
+                ],
+                "omitted": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                }
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "available": false,
+            "reason": "snapshot_unavailable",
+            "calendar": {
+                "coverage": {
+                    "from": "2026-11-18",
+                    "to": "2027-01-27"
+                },
+                "events": [
+                    {
+                        "date": "2026-11-18T22:30:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 0
+                    },
+                    {
+                        "date": "2026-11-19T17:30:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 19
+                    },
+                    {
+                        "date": "2026-11-20T12:30:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 38
+                    },
+                    {
+                        "date": "2026-11-21T07:30:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 57
+                    },
+                    {
+                        "date": "2026-11-22T02:30:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 76
+                    }
+                ],
+                "omitted": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                }
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

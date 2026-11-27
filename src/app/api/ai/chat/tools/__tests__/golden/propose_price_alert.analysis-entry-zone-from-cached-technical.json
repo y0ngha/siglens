@@ -1,0 +1,75 @@
+{
+    "tool": "propose_price_alert",
+    "case": "analysis-entry-zone-from-cached-technical",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "basis": "analysis_entry_zone"
+    },
+    "agent": {
+        "result": {
+            "status": "proposed",
+            "symbol": "GLDNX",
+            "condition": "enter_zone",
+            "low": 239.7,
+            "high": 240.63,
+            "firesWhen": "a daily close at or below the top of the zone (it reaches the zone or passes below it)",
+            "basis": "analysis_entry_zone",
+            "analysisAt": "2026-11-17T21:40:00.000Z",
+            "currentPrice": 244.85,
+            "lastClose": 244.85,
+            "quoteAt": "2026-11-18T21:00:00.000Z",
+            "lastCheckedSession": "2026-12-18",
+            "requiresUserConfirmation": true,
+            "notes": [
+                "Nothing is created yet: the user creates it with the button under this answer. Tell them that in one sentence. Never say the alert is set."
+            ]
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "propose_price_alert",
+                    "args": {
+                        "symbol": "GLDNX",
+                        "basis": "analysis_entry_zone"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "price_alert_proposal",
+                    "proposal": {
+                        "proposalId": "00000000-0000-4000-8000-00000000a1e7",
+                        "subject": "GxwLvBFtxmNjtkHV91wsMQFaAJM7iqBSDzZjGorkVjY",
+                        "symbol": "GLDNX",
+                        "market": "us",
+                        "condition": {
+                            "kind": "enter_zone",
+                            "low": 239.7,
+                            "high": 240.63,
+                            "approach": "from_above"
+                        },
+                        "basis": "analysis_entry_zone",
+                        "analysisAt": "2026-11-17T21:40:00.000Z",
+                        "referenceClose": 244.85,
+                        "quoteAt": "2026-11-18T21:00:00.000Z",
+                        "startsAfterSession": "2026-11-18",
+                        "expiresOn": "2026-12-18",
+                        "exp": 1795127400
+                    },
+                    "token": "eyJwcm9wb3NhbElkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDBhMWU3Iiwic3ViamVjdCI6Ikd4d0x2QkZ0eG1OanRrSFY5MXdzTVFGYUFKTTdpcUJTRHpaakdvcmtWalkiLCJzeW1ib2wiOiJHTEROWCIsIm1hcmtldCI6InVzIiwiY29uZGl0aW9uIjp7ImtpbmQiOiJlbnRlcl96b25lIiwibG93IjoyMzkuNywiaGlnaCI6MjQwLjYzLCJhcHByb2FjaCI6ImZyb21fYWJvdmUifSwiYmFzaXMiOiJhbmFseXNpc19lbnRyeV96b25lIiwiYW5hbHlzaXNBdCI6IjIwMjYtMTEtMTdUMjE6NDA6MDAuMDAwWiIsInJlZmVyZW5jZUNsb3NlIjoyNDQuODUsInF1b3RlQXQiOiIyMDI2LTExLTE4VDIxOjAwOjAwLjAwMFoiLCJzdGFydHNBZnRlclNlc3Npb24iOiIyMDI2LTExLTE4IiwiZXhwaXJlc09uIjoiMjAyNi0xMi0xOCIsImV4cCI6MTc5NTEyNzQwMH0.ukWnGYup3jDX241jqfXKMImJkgZQ4heMm6K2dfmSy6o",
+                    "name": "골든로드 시스템즈"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

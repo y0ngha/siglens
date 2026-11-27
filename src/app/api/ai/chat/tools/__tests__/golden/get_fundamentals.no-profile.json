@@ -1,0 +1,28 @@
+{
+    "tool": "get_fundamentals",
+    "case": "no-profile",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "QRTZ"
+    },
+    "agent": {
+        "result": {
+            "symbol": "QRTZ",
+            "available": false,
+            "reason": "no_profile"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "QRTZ",
+            "available": false,
+            "reason": "no_profile"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

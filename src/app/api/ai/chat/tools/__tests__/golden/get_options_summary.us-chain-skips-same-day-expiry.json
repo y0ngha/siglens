@@ -1,0 +1,212 @@
+{
+    "tool": "get_options_summary",
+    "case": "us-chain-skips-same-day-expiry",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:25:00.000Z",
+            "source": "options snapshot (cached)",
+            "symbol": "GLDNX",
+            "available": true,
+            "currency": "USD",
+            "underlyingPrice": 244.85,
+            "expiration": "2026-11-20",
+            "daysToExpiration": 2,
+            "metrics": {
+                "expirationDate": "2026-11-20",
+                "daysToExpiration": 2,
+                "maxPain": 245,
+                "maxPainDistancePct": 0.06,
+                "putCallRatio": 0.997015,
+                "atmImpliedVolatility": 0.314,
+                "topOpenInterestStrikes": [
+                    {
+                        "strike": 240,
+                        "callOpenInterest": 11911,
+                        "putOpenInterest": 14068,
+                        "distancePct": -1.98,
+                        "side": "below"
+                    },
+                    {
+                        "strike": 235,
+                        "callOpenInterest": 13548,
+                        "putOpenInterest": 8104,
+                        "distancePct": -4.02,
+                        "side": "below"
+                    },
+                    {
+                        "strike": 250,
+                        "callOpenInterest": 12701,
+                        "putOpenInterest": 7932,
+                        "distancePct": 2.1,
+                        "side": "above"
+                    }
+                ],
+                "impliedMovePercent": 2.32433,
+                "impliedMoveRange": {
+                    "low": 239.16,
+                    "high": 250.54
+                },
+                "topVolumeStrikes": [
+                    {
+                        "strike": 245,
+                        "callVolume": 2192,
+                        "putVolume": 2483
+                    },
+                    {
+                        "strike": 250,
+                        "callVolume": 1590,
+                        "putVolume": 1927
+                    },
+                    {
+                        "strike": 240,
+                        "callVolume": 1362,
+                        "putVolume": 1130
+                    }
+                ],
+                "topOiBidAskSummary": [
+                    {
+                        "strike": 240,
+                        "callMidPrice": 6.87,
+                        "callSpread": 0.24,
+                        "putMidPrice": 2.03,
+                        "putSpread": 0.07,
+                        "callSpreadPct": 3.49,
+                        "putSpreadPct": 3.46
+                    },
+                    {
+                        "strike": 235,
+                        "callMidPrice": 11.66,
+                        "callSpread": 0.41,
+                        "putMidPrice": 1.8,
+                        "putSpread": 0.06,
+                        "callSpreadPct": 3.52,
+                        "putSpreadPct": 3.33
+                    },
+                    {
+                        "strike": 250,
+                        "callMidPrice": 2.01,
+                        "callSpread": 0.07,
+                        "putMidPrice": 7.17,
+                        "putSpread": 0.25,
+                        "callSpreadPct": 3.49,
+                        "putSpreadPct": 3.49
+                    }
+                ],
+                "putCallReading": {
+                    "side": "more_calls",
+                    "text": "0.997015 puts per call by open interest: more call contracts open than put contracts"
+                }
+            },
+            "otherExpirations": ["2026-11-18", "2026-11-27", "2026-12-18"]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:25:00.000Z",
+            "source": "options snapshot (cached)",
+            "symbol": "GLDNX",
+            "available": true,
+            "currency": "USD",
+            "underlyingPrice": 244.85,
+            "expiration": "2026-11-20",
+            "daysToExpiration": 2,
+            "metrics": {
+                "expirationDate": "2026-11-20",
+                "daysToExpiration": 2,
+                "maxPain": 245,
+                "maxPainDistancePct": 0.06,
+                "putCallRatio": 0.997015,
+                "atmImpliedVolatility": 0.314,
+                "topOpenInterestStrikes": [
+                    {
+                        "strike": 240,
+                        "callOpenInterest": 11911,
+                        "putOpenInterest": 14068,
+                        "distancePct": -1.98,
+                        "side": "below"
+                    },
+                    {
+                        "strike": 235,
+                        "callOpenInterest": 13548,
+                        "putOpenInterest": 8104,
+                        "distancePct": -4.02,
+                        "side": "below"
+                    },
+                    {
+                        "strike": 250,
+                        "callOpenInterest": 12701,
+                        "putOpenInterest": 7932,
+                        "distancePct": 2.1,
+                        "side": "above"
+                    }
+                ],
+                "impliedMovePercent": 2.32433,
+                "impliedMoveRange": {
+                    "low": 239.16,
+                    "high": 250.54
+                },
+                "topVolumeStrikes": [
+                    {
+                        "strike": 245,
+                        "callVolume": 2192,
+                        "putVolume": 2483
+                    },
+                    {
+                        "strike": 250,
+                        "callVolume": 1590,
+                        "putVolume": 1927
+                    },
+                    {
+                        "strike": 240,
+                        "callVolume": 1362,
+                        "putVolume": 1130
+                    }
+                ],
+                "topOiBidAskSummary": [
+                    {
+                        "strike": 240,
+                        "callMidPrice": 6.87,
+                        "callSpread": 0.24,
+                        "putMidPrice": 2.03,
+                        "putSpread": 0.07,
+                        "callSpreadPct": 3.49,
+                        "putSpreadPct": 3.46
+                    },
+                    {
+                        "strike": 235,
+                        "callMidPrice": 11.66,
+                        "callSpread": 0.41,
+                        "putMidPrice": 1.8,
+                        "putSpread": 0.06,
+                        "callSpreadPct": 3.52,
+                        "putSpreadPct": 3.33
+                    },
+                    {
+                        "strike": 250,
+                        "callMidPrice": 2.01,
+                        "callSpread": 0.07,
+                        "putMidPrice": 7.17,
+                        "putSpread": 0.25,
+                        "callSpreadPct": 3.49,
+                        "putSpreadPct": 3.49
+                    }
+                ],
+                "putCallReading": {
+                    "side": "more_calls",
+                    "text": "0.997015 puts per call by open interest: more call contracts open than put contracts"
+                }
+            },
+            "otherExpirations": ["2026-11-18", "2026-11-27", "2026-12-18"]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "tool": "get_investor_flows",
+    "case": "provider-degraded",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "QRTZ"
+    },
+    "agent": {
+        "result": {
+            "symbol": "QRTZ",
+            "available": false,
+            "reason": "provider_failed"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "QRTZ",
+            "available": false,
+            "reason": "provider_failed"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

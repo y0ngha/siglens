@@ -1,0 +1,74 @@
+{
+    "tool": "propose_price_alert",
+    "case": "price-below-member-us-open",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "basis": "price_below",
+        "price": 229.5
+    },
+    "agent": {
+        "result": {
+            "status": "proposed",
+            "symbol": "GLDNX",
+            "condition": "close_below",
+            "level": 229.5,
+            "firesWhen": "a daily close at or below the level",
+            "basis": "price_level",
+            "analysisAt": null,
+            "currentPrice": 244.85,
+            "lastClose": 246.77,
+            "quoteAt": "2026-11-18T15:29:30.000Z",
+            "lastCheckedSession": "2026-12-17",
+            "requiresUserConfirmation": true,
+            "notes": [
+                "Nothing is created yet: the user creates it with the button under this answer. Tell them that in one sentence. Never say the alert is set."
+            ]
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "propose_price_alert",
+                    "args": {
+                        "symbol": "GLDNX",
+                        "basis": "price_below",
+                        "price": 229.5
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "price_alert_proposal",
+                    "proposal": {
+                        "proposalId": "00000000-0000-4000-8000-00000000a1e7",
+                        "subject": "GxwLvBFtxmNjtkHV91wsMQFaAJM7iqBSDzZjGorkVjY",
+                        "symbol": "GLDNX",
+                        "market": "us",
+                        "condition": {
+                            "kind": "close_below",
+                            "level": 229.5
+                        },
+                        "basis": "price_level",
+                        "analysisAt": null,
+                        "referenceClose": 246.77,
+                        "quoteAt": "2026-11-18T15:29:30.000Z",
+                        "startsAfterSession": "2026-11-17",
+                        "expiresOn": "2026-12-17",
+                        "exp": 1795102200
+                    },
+                    "token": "eyJwcm9wb3NhbElkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDBhMWU3Iiwic3ViamVjdCI6Ikd4d0x2QkZ0eG1OanRrSFY5MXdzTVFGYUFKTTdpcUJTRHpaakdvcmtWalkiLCJzeW1ib2wiOiJHTEROWCIsIm1hcmtldCI6InVzIiwiY29uZGl0aW9uIjp7ImtpbmQiOiJjbG9zZV9iZWxvdyIsImxldmVsIjoyMjkuNX0sImJhc2lzIjoicHJpY2VfbGV2ZWwiLCJhbmFseXNpc0F0IjpudWxsLCJyZWZlcmVuY2VDbG9zZSI6MjQ2Ljc3LCJxdW90ZUF0IjoiMjAyNi0xMS0xOFQxNToyOTozMC4wMDBaIiwic3RhcnRzQWZ0ZXJTZXNzaW9uIjoiMjAyNi0xMS0xNyIsImV4cGlyZXNPbiI6IjIwMjYtMTItMTciLCJleHAiOjE3OTUxMDIyMDB9.Sg4S7uYdwWv5Dye9KI9Ww9giAhDv4S-cER3EULWqmLU",
+                    "name": "골든로드 시스템즈"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

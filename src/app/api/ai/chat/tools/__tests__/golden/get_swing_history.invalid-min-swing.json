@@ -1,0 +1,25 @@
+{
+    "tool": "get_swing_history",
+    "case": "invalid-min-swing",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "minSwingPct": 2
+    },
+    "agent": {
+        "result": {
+            "error": "invalid_args"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "invalid_args"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}
