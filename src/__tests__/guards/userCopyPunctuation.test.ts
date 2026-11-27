@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { LOCALES, type Locale } from '@/shared/i18n/locales';
+import { LOCALES, isLocale, type Locale } from '@/shared/i18n/locales';
 
 /**
  * **사용자 카피 문장부호 가드.**
@@ -61,43 +61,38 @@ function hasBannedPunctuation(text: string, locale: Locale): boolean {
 function localeOfFile(file: string): Locale {
     const name = path.basename(file, '.md');
     const tag = name.includes('.') ? name.split('.').at(-1) : name;
-    if (LOCALES.includes(tag as Locale)) return tag as Locale;
+    if (tag !== undefined && isLocale(tag)) return tag;
     if (/^v\d+$/.test(name)) return 'ko';
     throw new Error(`로케일을 알 수 없는 파일: ${file}`);
 }
 
-function flattenValues(
-    node: unknown,
-    prefix: string,
-    out: Array<{ key: string; value: string }>
-): void {
-    if (typeof node === 'string') {
-        out.push({ key: prefix, value: node });
-        return;
-    }
-    if (Array.isArray(node)) {
-        node.forEach((item, index) =>
-            flattenValues(item, `${prefix}[${index}]`, out)
-        );
-        return;
-    }
-    if (typeof node === 'object' && node !== null) {
-        for (const [key, value] of Object.entries(node)) {
-            flattenValues(value, prefix ? `${prefix}.${key}` : key, out);
-        }
-    }
+interface CatalogEntry {
+    readonly key: string;
+    readonly value: string;
 }
 
-function catalogEntries(locale: string): Array<{ key: string; value: string }> {
-    const out: Array<{ key: string; value: string }> = [];
-    flattenValues(
+function flattenValues(node: unknown, prefix: string): CatalogEntry[] {
+    if (typeof node === 'string') return [{ key: prefix, value: node }];
+    if (Array.isArray(node)) {
+        return node.flatMap((item, index) =>
+            flattenValues(item, `${prefix}[${index}]`)
+        );
+    }
+    if (typeof node === 'object' && node !== null) {
+        return Object.entries(node).flatMap(([key, value]) =>
+            flattenValues(value, prefix ? `${prefix}.${key}` : key)
+        );
+    }
+    return [];
+}
+
+function catalogEntries(locale: Locale): CatalogEntry[] {
+    return flattenValues(
         JSON.parse(
             readFileSync(path.join(MESSAGES_DIR, `${locale}.json`), 'utf8')
         ),
-        '',
-        out
+        ''
     );
-    return out;
 }
 
 function markdownFilesUnder(dir: string): string[] {

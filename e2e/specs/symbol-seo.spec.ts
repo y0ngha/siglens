@@ -134,7 +134,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         // the count variant interpolates digits, which React SSR splits with
         // comment nodes.)
         expect(normalizedHtml).toMatch(
-            /최근 뉴스 데이터는 아직 준비되지 않았습니다|현재 서버가 확인한 최근 뉴스는 \d+건/
+            /최근 뉴스 데이터는 아직 준비되지 않았습니다|현재 확인된 최근 뉴스는 \d+건/
         );
     });
 
