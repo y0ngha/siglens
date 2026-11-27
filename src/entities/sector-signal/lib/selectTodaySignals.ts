@@ -31,6 +31,8 @@ const SIGNAL_PRIORITY: readonly SignalType[] = [
     'new_52w_high',
     'death_cross',
     'new_52w_low',
+    'short_ma_bullish_cross',
+    'short_ma_bearish_cross',
     'rsi_oversold',
     'rsi_overbought',
     'macd_bullish_cross',
