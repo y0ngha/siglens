@@ -16,6 +16,8 @@ import {
     buildGuideBreadcrumbJsonLd,
     buildGuideFaqJsonLd,
 } from '@/views/guide/lib/guideJsonLd';
+import { SignalBaseRateTable } from '@/views/signal-record/SignalBaseRateTable';
+import { hubsForGuide } from '@/views/signal-record/lib/hubsForGuide';
 import {
     guideEntryMetadata,
     renderGuideUnavailable,
@@ -84,6 +86,10 @@ export default async function GuideEntryRoute({
         loadGuideLiveSymbols(entry, catalog.entries),
     ]);
     const faqJsonLd = buildGuideFaqJsonLd(entry.faq);
+    // 이 항목을 설명 문서로 삼는 신호 페이지마다 과거 기록 표를 한 장씩(이동평균선은 골든·데드크로스 둘).
+    // 항목 자신만 본다: howto 글이 `about`으로 언급할 뿐인 신호의 표까지 달면, 읽는 법을 설명하는 글마다
+    // 같은 표가 반복되고 글의 초점이 흐려진다. 그런 글에서는 신호 페이지 링크(`hubSlugsFor`)로 이어진다.
+    const signalHubs = hubsForGuide(entry);
     return (
         <>
             <JsonLd data={buildGuideArticleJsonLd({ locale, entry })} />
@@ -102,6 +108,14 @@ export default async function GuideEntryRoute({
                 entry={entry}
                 catalog={catalog.entries}
                 liveSymbols={liveSymbols}
+                signalRecords={signalHubs.map(hub => (
+                    <SignalBaseRateTable
+                        key={hub.slug}
+                        signalType={hub.signalType}
+                        locale={locale}
+                        className="mt-6"
+                    />
+                ))}
             />
         </>
     );

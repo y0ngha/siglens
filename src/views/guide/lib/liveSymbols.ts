@@ -8,7 +8,10 @@ import type {
     StockSignalResult,
 } from '@y0ngha/siglens-core';
 import type { GuideEntry } from '@/entities/guide/types';
-import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
+import {
+    isHubGuide,
+    SIGNAL_HUBS,
+} from '@/entities/signal-history/lib/signalHubs';
 import type { SignalLatestEpisodeRow } from '@/entities/signal-history/types';
 import { GUIDE_PATH_BY_TRIGGER } from '@/shared/config/guideLinks.generated';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
@@ -134,11 +137,7 @@ export function hubSlugsFor(
 ): string[] {
     const sources = liveSources(entry, catalog);
     return SIGNAL_HUBS.filter(hub =>
-        sources.some(
-            source =>
-                source.category === hub.guide.category &&
-                source.slug === hub.guide.slug
-        )
+        sources.some(source => isHubGuide(hub, source))
     ).map(hub => hub.slug);
 }
 
