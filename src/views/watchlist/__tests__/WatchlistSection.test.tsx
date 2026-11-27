@@ -27,7 +27,12 @@ vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
     TickerAutocomplete: () => <input aria-label="종목 티커 검색" />,
 }));
 
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import {
+    render as rtlRender,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import userEvent from '@testing-library/user-event';
@@ -133,6 +138,15 @@ async function convertRow(
     await user.type(within(row).getByLabelText('수량'), '10');
     await user.type(within(row).getByLabelText('평단'), '150');
     await user.click(within(row).getByRole('button', { name: '추가' }));
+}
+
+/**
+ * 포커스는 effect에서 옮겨진다. 회원 삭제는 `await remove` 뒤 상태 갱신이라 act 밖에서 커밋되고,
+ * 그 effect는 `user.click`이 돌려준 뒤 스케줄러 틱에 실행된다 — 부하가 걸리면 동기 단언이 앞선다.
+ * 그래서 포커스가 실제로 도착할 때까지 기다린다(고정 지연이 아니라 조건을 기다린다).
+ */
+async function expectFocus(find: () => HTMLElement) {
+    await waitFor(() => expect(find()).toHaveFocus());
 }
 
 describe('WatchlistSection', () => {
@@ -315,11 +329,11 @@ describe('WatchlistSection', () => {
         await user.click(
             screen.getByRole('button', { name: 'AAPL 보유로 전환' })
         );
-        expect(screen.getByLabelText('수량')).toHaveFocus();
+        await expectFocus(() => screen.getByLabelText('수량'));
         await user.click(screen.getByRole('button', { name: '취소' }));
-        expect(
+        await expectFocus(() =>
             screen.getByRole('button', { name: 'AAPL 보유로 전환' })
-        ).toHaveFocus();
+        );
     });
 
     it('회원: 보유는 저장됐는데 관심 항목 삭제가 실패하면 구체적인 토스트를 띄운다', async () => {
@@ -346,7 +360,7 @@ describe('WatchlistSection', () => {
             const user = userEvent.setup();
             render(<WatchlistSection />);
             await convertRow(user, 'AAPL');
-            expect(screen.getByRole('link', { name: 'ZZZQ' })).toHaveFocus();
+            await expectFocus(() => screen.getByRole('link', { name: 'ZZZQ' }));
         });
 
         it('마지막 행이었으면 이전 행의 종목 링크로 포커스를 옮긴다', async () => {
@@ -366,9 +380,9 @@ describe('WatchlistSection', () => {
             const user = userEvent.setup();
             render(<WatchlistSection />);
             await convertRow(user, 'ZZZQ');
-            expect(
+            await expectFocus(() =>
                 screen.getByRole('link', { name: '애플 (AAPL)' })
-            ).toHaveFocus();
+            );
         });
 
         it('목록이 비면 빈 상태 안내로 포커스를 옮긴다', async () => {
@@ -376,7 +390,9 @@ describe('WatchlistSection', () => {
             const user = userEvent.setup();
             render(<WatchlistSection />);
             await convertRow(user, 'AAPL');
-            expect(screen.getByText('아직 담은 종목이 없어요')).toHaveFocus();
+            await expectFocus(() =>
+                screen.getByText('아직 담은 종목이 없어요')
+            );
         });
     });
 
@@ -387,7 +403,7 @@ describe('WatchlistSection', () => {
         await user.click(
             screen.getByRole('button', { name: 'AAPL 관심종목 삭제' })
         );
-        expect(screen.getByRole('link', { name: 'ZZZQ' })).toHaveFocus();
+        await expectFocus(() => screen.getByRole('link', { name: 'ZZZQ' }));
     });
 
     it('회원 판정은 useWatchlist의 isMember를 따른다(힌트만 있어도 전환 버튼)', () => {

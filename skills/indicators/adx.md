@@ -7,8 +7,9 @@ confidence_weight: 0.85
 usage_roles: [confirmation, regime]
 gating:
   tier: always_on
-token_cost: 428
+token_cost: 436
 digest_hash: "261be0f6"
+digest_text_hash: "689ea6d0"
 ---
 
 ## Overview
@@ -58,7 +59,7 @@ Level bands:
 - 0–20: no meaningful trend / ranging — trend-following poor; use oscillator/mean-reversion.
 - 20–25: trend forming — wait for DI crossover confirmation before committing.
 - 25–40: clear trend in progress — trend-following (momentum entries, pullback buys) appropriate.
-- 40–60: strong established trend — MACD/price-structure continuation signals highly reliable.
+- 40–60: strong established trend — MACD/price-structure continuation signals are more dependable than in low-ADX conditions.
 - >60: extreme strength; exhaustion risk elevated — scale in carefully, watch for reversal signals.
 
 Slope (rising vs falling):

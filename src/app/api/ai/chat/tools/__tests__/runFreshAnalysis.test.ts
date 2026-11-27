@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChartAnalysisSource } from '@/app/api/ai/chat/tools/chartBlock';
 
 const m = vi.hoisted(() => ({
@@ -1429,4 +1429,116 @@ describe('runFreshAnalysisTool — 회원 실패 시 공개 분석 폴백', () =
         expect(r).toEqual({ error: 'analysis_failed', code: 'error' });
         expect(m.findBySymbol).not.toHaveBeenCalled();
     });
+});
+
+describe('runFreshAnalysisTool — E2E 전용 보류 시험 이음매', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.unstubAllEnvs();
+        m.profile.mockResolvedValue('us-equity');
+        m.assetInfo.mockResolvedValue({ name: 'Apple', fmpSymbol: 'AAPL' });
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: TECHNICAL_FIXTURE,
+        });
+        __resetFreshSemaphoreForTests();
+        __resetActiveStreamsForTests();
+        vi.useFakeTimers();
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllEnvs();
+    });
+
+    const call = () =>
+        runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, rt);
+
+    it('E2E fake 모드에서 지정한 시간만큼 슬롯을 쥔 뒤 고정 결과를 돌려주고 core는 부르지 않는다', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', '90000');
+        const pending = call();
+        await vi.advanceTimersByTimeAsync(89_999);
+        expect(__activeStreamCount()).toBe(1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(await pending).toEqual({
+            status: 'done',
+            result: { e2e: true, symbol: 'AAPL', kind: 'technical' },
+        });
+        expect(m.runAnalysis).not.toHaveBeenCalled();
+        expect(__activeStreamCount()).toBe(0);
+    });
+
+    it('상한(180초)을 넘는 값은 잘린다', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', '99999999');
+        const pending = call();
+        await vi.advanceTimersByTimeAsync(180_000);
+        await expect(pending).resolves.toMatchObject({ status: 'done' });
+    });
+
+    it('E2E가 아니면 값이 있어도 영향이 없다 — 실제 경로로 core를 부른다', async () => {
+        vi.stubEnv('E2E_TEST', '0');
+        vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', '90000');
+        const pending = call();
+        await vi.advanceTimersByTimeAsync(0);
+        await pending;
+        expect(m.runAnalysis).toHaveBeenCalledTimes(1);
+    });
+
+    it('AGENT_REAL_PROVIDER=1(실제 provider로 돌아간 E2E)에서도 영향이 없다', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        vi.stubEnv('AGENT_REAL_PROVIDER', '1');
+        vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', '90000');
+        const pending = call();
+        await vi.advanceTimersByTimeAsync(0);
+        await pending;
+        expect(m.runAnalysis).toHaveBeenCalledTimes(1);
+    });
+
+    it('턴이 중단되면 보류를 끊고 슬롯을 바로 돌려준다', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', '90000');
+        const abort = new AbortController();
+        const pending = runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            { ...ctx, signal: abort.signal },
+            rt
+        );
+        await vi.advanceTimersByTimeAsync(1_000);
+        expect(__activeStreamCount()).toBe(1);
+
+        abort.abort();
+        await vi.advanceTimersByTimeAsync(0);
+        await pending;
+        expect(__activeStreamCount()).toBe(0);
+        // 보류 타이머도 남지 않는다.
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('이미 중단된 턴은 보류하지 않는다', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', '90000');
+        const abort = new AbortController();
+        abort.abort();
+        const pending = runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            { ...ctx, signal: abort.signal },
+            rt
+        );
+        await vi.advanceTimersByTimeAsync(0);
+        await pending;
+        expect(__activeStreamCount()).toBe(0);
+    });
+
+    it.each(['', '0', '-5', 'abc'])(
+        'E2E fake 모드여도 값이 %j이면 보류하지 않는다',
+        async value => {
+            vi.stubEnv('E2E_TEST', '1');
+            vi.stubEnv('E2E_FAKE_FRESH_ANALYSIS_MS', value);
+            const pending = call();
+            await vi.advanceTimersByTimeAsync(0);
+            await pending;
+            expect(m.runAnalysis).toHaveBeenCalledTimes(1);
+        }
+    );
 });

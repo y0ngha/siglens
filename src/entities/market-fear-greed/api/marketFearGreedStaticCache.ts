@@ -7,7 +7,7 @@ import {
     getCachedMarketFearGreed,
     MARKET_FEAR_GREED_CONFIG_FINGERPRINT,
 } from './marketFearGreedCache';
-import type { MarketFearGreedView } from '../model';
+import type { MarketFearGreedHubView } from '../model';
 
 /**
  * ISR-safe 미국 시장 공포·탐욕 판독값. Redis 계층을 Next 데이터 캐시로 감싸, 아래층
@@ -31,7 +31,7 @@ import type { MarketFearGreedView } from '../model';
  * 불리므로 일부러 `React.cache`를 두지 않는다.
  */
 export const getMarketFearGreedStatic = cache(
-    (): Promise<MarketFearGreedView> =>
+    (): Promise<MarketFearGreedHubView> =>
         unstable_cache(
             // 렌더 예산: FMP가 느리면 짧게 실패해 degrade한다(`renderBudget.ts`).
             () => runWithRenderBudget(() => getCachedMarketFearGreed()),

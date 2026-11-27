@@ -4,18 +4,21 @@ import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { getTranslations } from 'next-intl/server';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { getDatabaseClient } from '@/shared/db/client';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
- * 재설정 메일 발송을 요청한다. 형식 오류만 `errorCode`로 알리고, 그 밖의
- * 모든 결과(미가입·Redis 미설정·예외)는 계정 열거를 막기 위해 똑같이
- * `submitted: true`다.
+ * 재설정 메일 발송을 요청한다. 형식 오류와 한도 초과(`rate_limited`)만
+ * `errorCode`로 알리고, 그 밖의 모든 결과(미가입·Redis 미설정·예외)는 계정
+ * 열거를 막기 위해 똑같이 `submitted: true`다. 한도는 입력 주소와 IP로만
+ * 정해지고 계정을 조회하기 전에 세므로 열거 신호가 아니다.
  */
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
@@ -49,10 +52,16 @@ export async function requestPasswordResetAction(
             namespace: 'entities.email-token.email',
         });
 
-        // 코어 위임 — 토큰 발급·이메일 발송까지 처리, ok: true 고정 (enumeration 회피), Server Action 블로킹 의도됨.
-        await requestPasswordReset(
+        // 코어 위임 — 토큰 저장·메일 발송은 응답 뒤(afterWithDrain)에 돈다. 응답 경로가 계정 유무와 무관하게 같아야 한다(N69).
+        const result = await requestPasswordReset(
             { email },
-            { users: repo, emailTokens, emailDispatcher },
+            {
+                users: repo,
+                emailTokens,
+                emailDispatcher,
+                deferDispatch: afterWithDrain,
+                ...createAuthRateLimitGuards('passwordResetRateLimit'),
+            },
             {
                 buildMessage: token =>
                     buildPasswordResetEmail({
@@ -64,6 +73,12 @@ export async function requestPasswordResetAction(
             }
         );
 
+        if (!result.ok) {
+            return { submitted: false, errorCode: result.reason };
+        }
+
+        // 가입 코드 요청과 달리 발송 실패를 알리지 않는다(알 수도 없다 — 발송은 응답 뒤에 돈다):
+        // 발송은 계정이 있는 주소에서만 일어나므로 실패를 드러내면 계정 존재 여부가 열거된다. 항상 submitted: true다.
         return { submitted: true };
     } catch (err) {
         console.error(

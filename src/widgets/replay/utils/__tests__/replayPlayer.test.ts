@@ -85,6 +85,15 @@ describe('replayPlayer', () => {
     });
 
     describe('playScenario', () => {
+        it('rejects with a named error for a scenario index that does not exist', async () => {
+            const { ctx, frames } = makeContext([makeScenario('x', 'Hi?')]);
+
+            await expect(playScenario(ctx, 3, true)).rejects.toThrow(
+                'unknown replay scenario index: 3'
+            );
+            expect(frames).toEqual([]);
+        });
+
         it('emits frames in order: typing, tool pending/done, summary streaming, then complete', async () => {
             const scenario = makeScenario('x', 'Hi?');
             const { ctx, frames } = makeContext([scenario]);

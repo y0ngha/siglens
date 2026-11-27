@@ -102,12 +102,12 @@ export interface InvestorFlowsSnapshotDeps {
     fmp: InvestorFlowsFmpProvider;
     /**
      * FINRA 꺼짐이면 공매도 필드는 DB를 읽지 않고 `null`이다. FINRA 데이터는 비상업 전용 약관이라
-     * 상업화 전에 꺼야 한다 — `shared/api/finra/finraShortDataEnabled.ts`, 이슈 #1042.
+     * 상업화 전에 꺼야 한다 — `shared/api/finra/finraShortDataEnabled.ts`.
      */
     isFinraEnabled: () => boolean;
     /**
      * Reg SHO 과열 목록 플래그. 꺼짐이면 DB를 읽지 않고 `thresholdList: null`이다(거래소 데이터 비상업 라이선스 —
-     * `shared/api/exchange/regShoThresholdDataEnabled.ts`, 이슈 #1042).
+     * `shared/api/exchange/regShoThresholdDataEnabled.ts`).
      */
     isRegShoEnabled: () => boolean;
     now: () => Date;

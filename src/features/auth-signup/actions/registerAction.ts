@@ -1,7 +1,6 @@
 'use server';
 
 import { localeHref } from '@/shared/i18n/localeRedirect';
-import { getTranslations } from 'next-intl/server';
 
 import { redirect } from 'next/navigation';
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
@@ -12,23 +11,25 @@ import {
 import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createExpiredSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
+import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
 } from '@/entities/auth/lib/errorMessages';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import {
+    DEFAULT_SESSION_TTL_SECONDS,
+    createAuthSession,
+} from '@/entities/auth/lib/sessionCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { loginUser } from '@/entities/auth/lib/loginUser';
 import { registerUser } from '@/entities/auth/lib/registerUser';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import {
-    bcryptPasswordHasher,
-    bcryptPasswordVerifier,
-} from '@/entities/auth/lib/bcrypt';
+import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
 import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
@@ -37,6 +38,9 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { readSignupEmailReportOptIn } from '@/entities/email-report/lib/signupOptIn';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { readSignupForm } from '../lib/readSignupForm';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
@@ -50,11 +54,10 @@ export async function registerAction(
     _prev: SignupFormState,
     formData: FormData
 ): Promise<SignupFormState> {
-    // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
-    const tAuth = await getTranslations('entities.auth.error');
     try {
         const { email, password, name, next, hasRequiredConsent } =
             readSignupForm(formData);
+        const emailReportOptIn = readSignupEmailReportOptIn(formData);
 
         if (!hasRequiredConsent) {
             return {
@@ -94,6 +97,9 @@ export async function registerAction(
         }
 
         const userRepo = new DrizzleUserRepository(db);
+        const verificationBinding =
+            (await cookies()).get(SIGNUP_VERIFICATION_COOKIE_NAME)?.value ??
+            null;
 
         const registerResult = await registerUser(
             {
@@ -101,6 +107,7 @@ export async function registerAction(
                 password,
                 name,
                 agreedTermsIds: [privacyTerms.id, tosTerms.id],
+                verificationBinding,
             },
             {
                 users: userRepo,
@@ -120,34 +127,39 @@ export async function registerAction(
             };
         }
 
-        const secure = isSecureCookieEnv();
-        const loginResult = await loginUser(
-            { email, password },
-            {
-                users: userRepo,
-                sessions: new DrizzleSessionRepository(db),
-                passwordVerifier: bcryptPasswordVerifier,
-            },
-            { secureCookie: secure }
-        );
-
-        if (!loginResult.ok) {
-            return {
-                error: {
-                    code: 'auto_login_failed',
-                    message: tAuth('signupAutoLoginFailed'),
-                },
-            };
+        // 선택 사항이라 실패해도 가입은 이어 간다(결과를 쓰지 않는다). 계정이 만들어진 뒤에만
+        // 도달하므로 동의는 이 계정에 대해서만 기록된다.
+        if (emailReportOptIn.optIn) {
+            await recordSignupEmailReportOptIn(db, {
+                userId: registerResult.user.id,
+                timezone: emailReportOptIn.timezone,
+                locale: await resolveRequestLocale(),
+                source: 'signup_email',
+            });
         }
 
+        const secure = isSecureCookieEnv();
+        // 자동 로그인은 `loginUser`를 거치지 않고 세션을 직접 만든다: 비밀번호를 이 요청에서 막 정했으므로
+        // 두 번째 bcrypt 비교는 중복이고, 로그인 한도에 걸린 IP가 이미 끝난 가입을 로그인 실패로
+        // 바꾸면 안 된다.
+        const { cookie: sessionCookie } = await createAuthSession({
+            userId: registerResult.user.id,
+            sessions: new DrizzleSessionRepository(db),
+            now: new Date(),
+            secureCookie: secure,
+        });
+
         const cookieStore = await cookies();
-        cookieStore.set(applyAuthCookie(loginResult.cookie));
+        cookieStore.set(applyAuthCookie(sessionCookie));
+        // 가입이 끝나 마커가 지워졌으니 역할을 다한 바인딩 쿠키도 지운다.
+        cookieStore.set(createExpiredSignupVerificationCookie());
         cookieStore.set(
             createAuthHintCookie({
                 maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
                 secure,
             })
         );
+        setMainSessionHint(cookieStore, { secure });
         // 신규 계정 생성이 확정된 뒤에만 도달한다 — 다음 페이지의 GoogleAdsTag가
         // 이 플래그를 읽어 가입 전환을 한 번 기록하고 지운다.
         cookieStore.set(createSignupConversionCookie({ secure }));

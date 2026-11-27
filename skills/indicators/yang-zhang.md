@@ -11,15 +11,16 @@ gating:
   state:
     feature: yangZhang
     predicate: level
-token_cost: 409
-digest_hash: "a3e5d11b"
+token_cost: 410
+digest_hash: "9125357b"
+digest_text_hash: "bd514f59"
 ---
 
 ## Overview
 
 Yang-Zhang volatility was introduced by Dennis Yang and Qiang Zhang (2000, Journal of Business 73(3):477–492). It is a minimum-variance OHLC volatility estimator that is both drift-independent and consistent in the presence of opening jumps.
 
-- **Formula**: `σ²_YZ = σ²_overnight + k · σ²_open-to-close + (1 − k) · σ²_RS`, with `k = 0.34 / (1.34 + (n+1)/(n−1))`. The components are the overnight gap `ln(O / prevC)`, the open-to-close `ln(C / O)`, and the Rogers-Satchell drift-independent intraday term.
+- **Formula**: `σ²_YZ = σ²_overnight + k · σ²_open-to-close + (1 − k) · σ²_RS`, with `k = 0.34 / (1.34 + (n+1)/(n−1))`. The components are the overnight gap `ln(O / prevC)`, the open-to-close `ln(C / O)`, and the Rogers-Satchell drift-independent within-bar term.
 - **Why it exists**: it combines the three terms in minimum-variance proportions, capturing overnight jumps while remaining drift-independent — a fast, low-noise realized-volatility read from relatively few bars.
 
 ## Signal Interpretation — Measurement Only
@@ -37,7 +38,7 @@ Confidence weight **0.3** — measurement, **directional weight 0**. There is no
 ## Recommended Combinations
 
 - **Yang-Zhang + position sizing / stops**: scale risk to the YZ level; pair with the ATR-based Chandelier Exit for a coherent volatility-aware stop.
-- **Yang-Zhang vs EWMA divergence**: YZ is an efficient realized/OHLC read; EWMA is a reactive return-based forecast. A divergence between them is itself informative (intraday churn vs close-to-close drift).
+- **Yang-Zhang vs EWMA divergence**: YZ is an efficient realized/OHLC read; EWMA is a reactive return-based forecast. A divergence between them is itself informative (within-bar churn vs close-to-close drift).
 - **Yang-Zhang + any directional signal**: never as the signal — only to size the trade and judge whether the volatility backdrop supports follow-through.
 
 ## Caveats
@@ -50,7 +51,7 @@ Confidence weight **0.3** — measurement, **directional weight 0**. There is no
 ### Yang-Zhang Volatility — measurement only, NO direction
 
 Minimum-variance OHLC realized-volatility estimator; drift-independent and consistent with opening jumps.
-Formula: `σ²_YZ = σ²_overnight + k·σ²_open-to-close + (1−k)·σ²_RS`, with `k = 0.34/(1.34 + (n+1)/(n−1))`. Components: overnight gap `ln(O/prevC)`, open-to-close `ln(C/O)`, Rogers-Satchell drift-independent intraday term.
+Formula: `σ²_YZ = σ²_overnight + k·σ²_open-to-close + (1−k)·σ²_RS`, with `k = 0.34/(1.34 + (n+1)/(n−1))`. Components: overnight gap `ln(O/prevC)`, open-to-close `ln(C/O)`, Rogers-Satchell drift-independent within-bar term.
 
 **Signal (measurement):**
 - Use the level to set **stop distance** & **position size** — wider stops + smaller size when YZ high; tighter + larger when low.
@@ -59,7 +60,7 @@ Formula: `σ²_YZ = σ²_overnight + k·σ²_open-to-close + (1−k)·σ²_RS`, 
 
 **Confidence 0.3, directional weight 0** — no forward-edge t-stat (makes no directional claim); a risk/sizing input, not a signal. Best where you need a fast, low-noise vol read from few bars.
 
-**Combos:** +position sizing/stops (pair with ATR-based Chandelier Exit); +EWMA divergence (YZ = efficient realized/OHLC read, EWMA = reactive return-based forecast — divergence itself informative: intraday churn vs close-to-close drift); + any directional signal (never as the signal — only to size and judge vol backdrop).
+**Combos:** +position sizing/stops (pair with ATR-based Chandelier Exit); +EWMA divergence (YZ = efficient realized/OHLC read, EWMA = reactive return-based forecast — divergence itself informative: within-bar churn vs close-to-close drift); + any directional signal (never as the signal — only to size and judge vol backdrop).
 
 **Caveats:** NO direction — never read a vol level as bullish/bearish; no fixed multiplier ("up to ~14×" theoretical ceiling, ~7–8× typical) — don't over-claim precision; discreteness/bad-tick bias; historical estimator — lags regime breaks in fast shocks.
 <!-- PROMPT_DIGEST:END -->

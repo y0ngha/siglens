@@ -11,6 +11,7 @@ gating:
   triggers: [three_inside_up, three_inside_down, three_outside_up, three_outside_down]
 token_cost: 288
 digest_hash: "bb509f34"
+digest_text_hash: "59b5c8e0"
 ---
 
 ## Overview

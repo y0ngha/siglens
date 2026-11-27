@@ -25,6 +25,13 @@ describe('AuthCardShell', () => {
         );
     });
 
+    it('keeps the title block at the column width so unspaced titles wrap', () => {
+        render(<AuthCardShell title="Sign In">content</AuthCardShell>);
+        const heading = screen.getByRole('heading', { level: 1 });
+        expect(heading).toHaveClass('wrap-break-word');
+        expect(heading.parentElement).toHaveClass('w-full', 'min-w-0');
+    });
+
     it('renders the subtitle when provided', () => {
         render(
             <AuthCardShell title="Sign In" subtitle="Welcome back">

@@ -12,7 +12,7 @@ vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TickerCategories } from '@/widgets/home/TickerCategories';
+import { PopularTickers } from '@/widgets/home/PopularTickers';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import type { GateMode } from '@/shared/lib/types';
@@ -46,8 +46,8 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/shared/config/popular-tickers', () => ({
-    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `TickerCategories`가 한국
-    // 섹션을 렌더하지 않고, 이 파일들은 미국 그리드만 검증한다.
+    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `PopularTickers`가 한국
+    // 탭을 만들지 않고, 이 파일들은 미국 그리드만 검증한다.
     KR_CATEGORY_IDS: new Set<string>(),
     TICKER_CATEGORIES: [
         {
@@ -83,14 +83,14 @@ describe('Journey: New User', () => {
 
     describe('Step 1: Home -> Browse categories', () => {
         it('renders ticker categories on home page', () => {
-            render(<TickerCategories />);
+            render(<PopularTickers />);
             expect(screen.getByText('Mega Cap')).toBeInTheDocument();
             expect(screen.getByText('AAPL')).toBeInTheDocument();
             expect(screen.getByText('MSFT')).toBeInTheDocument();
         });
 
         it('ticker links navigate to symbol pages', () => {
-            render(<TickerCategories />);
+            render(<PopularTickers />);
             const aaplLink = screen.getByRole('link', { name: /AAPL/ });
             expect(aaplLink).toHaveAttribute('href', '/AAPL');
         });

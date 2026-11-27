@@ -31,7 +31,7 @@ function scanStoredChartPreferences(): boolean {
 let cached: boolean | null = null;
 
 function getSnapshot(): boolean {
-    cached ??= scanStoredChartPreferences();
+    if (cached === null) cached = scanStoredChartPreferences();
     return cached;
 }
 

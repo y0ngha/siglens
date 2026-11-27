@@ -1,17 +1,13 @@
+vi.mock('server-only', () => ({}));
+
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
-
 import { SNAPSHOT_MAX_BYTES } from '@/entities/feedback/lib/constants';
 import { parseAiFeedbackInput } from '@/entities/feedback/lib/validation';
 import { GUEST_RETURN_WINDOWS } from '@/entities/visitor/lib/visitHistory';
 import { ENTRY_SOURCES, type EntrySource } from '@/entities/visitor/types';
-import { OAUTH_STATE_TTL_SECONDS } from '@/features/auth-oauth/lib/state';
-import { HANDOFF_STATE_TTL_SECONDS } from '@/entities/auth/server/handoffStore';
 import { LOCALES } from '@/shared/i18n/locales';
-import { AI_SSO_PROBED_MAX_AGE_SECONDS } from '@/shared/config/cookieNames';
 import { SHARE_MARKS_MAX_CREATED } from '@/shared/lib/funnel/shareMarks';
 import * as storageKeys from '@/shared/lib/storageKeys';
 import { STORAGE_KEYS, STORAGE_PREFIX } from '@/widgets/chart/constants';
@@ -202,6 +198,8 @@ const EXPECTED_COOKIE_WRITERS = [
     'app/api/auth/handoff/logout/route.ts',
     'app/api/auth/handoff/start/route.ts',
     'entities/auth/actions/currentUserAction.ts',
+    'entities/auth/lib/mainSessionHintCookie.ts',
+    'entities/mail-alert/server/mailAlertGuestCookie.ts',
     'features/account-delete/actions/deleteAccountAction.ts',
     'features/auth-login/actions/loginAction.ts',
     'features/auth-logout/actions/logoutAction.ts',
@@ -252,25 +250,104 @@ describe(`재방문 이력 ↔ 방침 v${VERSION}`, () => {
         ).toEqual([]);
     });
 
+    /**
+     * 앱 설치 안내가 저장된 첫 방문 날짜를 읽는다(`readIsReturnVisitDay`). 저장 목적이 "집계"뿐이던
+     * 항목에 두 번째 용도가 생겼으므로, 읽기만 하고 서버로 더 보내지 않는다는 문장이 모든 로케일의 같은
+     * 항목에 있어야 한다. 문장이 사라지면 코드가 고지를 앞서 나간 것이다(CS-14).
+     */
+    const INSTALL_PROMPT_READ_PHRASE: Record<string, string> = {
+        ko: '앱 설치 안내',
+        en: 'app install prompt',
+        ja: 'アプリのインストール案内',
+        zh: '应用安装提示',
+    };
+
+    /** 약속의 뒷절: 이 읽기 때문에 서버로 더 보내는 정보는 없다. 이 절을 지우는 개정을 잡는다. */
+    const NOTHING_MORE_SENT_PHRASE: Record<string, string> = {
+        ko: '서버로 더 전송되는 정보는 없습니다',
+        en: 'Nothing more is sent to the server',
+        ja: 'サーバーへ追加で送信される情報はありません',
+        zh: '不会向服务器额外发送任何信息',
+    };
+
+    /** 비회원 안내 문구 항목(§7)을 찾는 각 로케일의 시작 문구. */
+    const GUEST_NUDGE_LINE_MARKER: Record<string, string> = {
+        ko: '- 비회원:',
+        en: '- Non-members:',
+        ja: '- 非会員:',
+        zh: '- 非会员:',
+    };
+
+    /**
+     * 비회원 가입 안내 창도 같은 첫 방문 날짜를 읽는다(`useAnonAnalysisNudge`의 `readIsReturnVisitDay`).
+     * 두 번째 읽기 용도이므로 같은 항목이 가입 안내 창을 이름으로 적어야 한다.
+     */
+    const SIGNUP_PROMPT_READ_PHRASE: Record<string, string> = {
+        ko: '회원가입 안내 창',
+        en: 'signup prompt',
+        ja: '会員登録の案内',
+        zh: '注册提示',
+    };
+
+    /** 안내 문구를 한 번씩만 보여 주는 동작(`claimNextAnonNudgeVariant`)의 고지 문구. */
+    const NUDGE_NOT_REPEATED_PHRASE: Record<string, string> = {
+        ko: '다시 띄우지 않는',
+        en: 'is not shown again',
+        ja: '再び表示しない',
+        zh: '不再显示相同',
+    };
+
+    it.each(LOCALES)(
+        '%s 방문 이력 항목이 회원가입 안내 창을 위한 첫 방문 날짜 읽기를 고지한다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l => l.includes('siglens:visit-history:v1')) ?? '';
+            expect(line).toContain(SIGNUP_PROMPT_READ_PHRASE[locale] ?? '');
+        }
+    );
+
+    it.each(LOCALES)(
+        '%s 비회원 안내 문구 항목이 같은 문구를 다시 띄우지 않는 용도를 고지한다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l =>
+                        l.includes(GUEST_NUDGE_LINE_MARKER[locale] ?? '')
+                    ) ?? '';
+            expect(line).not.toBe('');
+            expect(line).toContain(NUDGE_NOT_REPEATED_PHRASE[locale] ?? '');
+        }
+    );
+
+    it.each(LOCALES)(
+        '%s 방문 이력 항목이 앱 설치 안내를 위한 첫 방문 날짜 읽기를 고지한다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l => l.includes('siglens:visit-history:v1')) ?? '';
+            expect(line).not.toBe('');
+            expect(line).toContain(INSTALL_PROMPT_READ_PHRASE[locale] ?? '');
+            expect(line).toContain(NOTHING_MORE_SENT_PHRASE[locale] ?? '');
+        }
+    );
+
     it('원문이 재방문 창의 일수(GUEST_RETURN_WINDOWS)를 그대로 적는다', () => {
         expect(KO).toContain(`${d7.startDay}~${d7.endDay}일`);
         expect(KO).toContain(`${d30.startDay}~${d30.endDay}일`);
     });
 
     it.each(NON_KO)(
-        '%s 번역본도 같은 숫자 주장(7~13, 30~36, 400, 20, 6)을 적는다',
+        '%s 번역본도 같은 숫자 주장(7~13, 30~36, 20, 6)을 적는다',
         locale => {
             const body = readPolicy(`.${locale}`);
             const claims: Record<string, readonly RegExp[]> = {
-                en: [
-                    /7 to 13 days/,
-                    /30 to 36 days/,
-                    /400 days/,
-                    /up to 20/,
-                    /six ranges/,
-                ],
-                ja: [/7~13日/, /30~36日/, /400日/, /最大20件/, /6つの区間/],
-                zh: [/7~13天/, /30~36天/, /400天/, /最多20个/, /6个区间/],
+                en: [/7 to 13 days/, /30 to 36 days/, /up to 20/, /six ranges/],
+                ja: [/7~13日/, /30~36日/, /最大20件/, /6つの区間/],
+                zh: [/7~13天/, /30~36天/, /最多20个/, /6个区间/],
             };
             for (const pattern of claims[locale] ?? []) {
                 expect(body).toMatch(pattern);
@@ -281,8 +358,7 @@ describe(`재방문 이력 ↔ 방침 v${VERSION}`, () => {
         }
     );
 
-    it('한국어 원문의 숫자 주장(400일, 6개 구간)도 적혀 있다', () => {
-        expect(KO).toContain('최대 400일');
+    it('한국어 원문의 숫자 주장(6개 구간)도 적혀 있다', () => {
         expect(KO).toContain('6개 구간');
     });
 
@@ -393,6 +469,7 @@ describe(`쿠키 ↔ 방침 v${VERSION} §7`, () => {
                 'siglens_signup_conversion',
                 'siglens_funnel_signup',
                 'siglens_ai_sso_probed',
+                'siglens_signed_in',
                 'siglens_oauth_state',
                 'siglens_ai_sso_state',
             ])
@@ -411,12 +488,29 @@ describe(`쿠키 ↔ 방침 v${VERSION} §7`, () => {
         }
     );
 
-    it('한국어 §7의 쿠키 수명이 코드의 상수와 같다', () => {
-        expect(KO_7).toContain(`최대 ${OAUTH_STATE_TTL_SECONDS / 60}분`);
-        expect(KO_7).toContain(`최대 ${HANDOFF_STATE_TTL_SECONDS / 60}분`);
-        expect(KO_7).toContain(
-            `${AI_SSO_PROBED_MAX_AGE_SECONDS / 60}분 뒤 만료`
-        );
+    it.each(LOCALES)(
+        '%s §7의 siglens_signed_in 항목이 HttpOnly를 적는다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l => l.includes('**siglens_signed_in**')) ?? '';
+            expect(line).not.toBe('');
+            expect(line).toContain('HttpOnly');
+        }
+    );
+
+    /**
+     * `siglens_signed_in`의 약속(HttpOnly, 값 `1`)은 코드의 쿠키 서술자와 같아야 한다. 최대 수명은
+     * `privacyRetention.test.ts` 레지스트리가 세션 쿠키 상수와 묶는다.
+     */
+    it('한국어 §7의 siglens_signed_in 항목이 HttpOnly와 값 `1`을 적는다', () => {
+        const line =
+            KO_7.split('\n').find(l => l.includes('**siglens_signed_in**')) ??
+            '';
+        expect(line).not.toBe('');
+        expect(line).toContain('HttpOnly');
+        expect(line).toContain('`1`');
     });
 });
 
@@ -683,10 +777,10 @@ describe('종목 조회수 집계 ↔ 방침 §2·§4', () => {
         ).toEqual([]);
     });
 
-    it('§4 보존 기간이 90일로 적혀 있다(코드의 RETENTION_DAYS=90)', () => {
+    it('§4에 종목 조회수 집계 항목이 있다(보존 기간은 privacyRetention 레지스트리가 묶는다)', () => {
         const line =
             KO.split('\n').find(l => l.startsWith('- 종목 조회수 집계(')) ?? '';
-        expect(line).toContain('최대 90일');
+        expect(line).not.toBe('');
     });
 });
 

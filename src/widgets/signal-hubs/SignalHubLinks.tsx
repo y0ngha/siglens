@@ -1,6 +1,9 @@
 import type { ReactElement } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 export interface SignalHubLinkItem {
@@ -14,6 +17,11 @@ interface SignalHubLinksProps {
     /** 그릴 링크 — 목록·경로·문구는 호출 라우트가 만든다(위젯은 표시만 맡는다). */
     readonly links: readonly SignalHubLinkItem[];
     readonly className?: string;
+    /**
+     * 제목 단계. 기본 `h2`(`/market` 본문 끝처럼 자기 섹션일 때). 다른 카드 안에 들어가는
+     * 홈 "오늘의 시장"은 `h3`로 내려 위계를 지킨다(DS-4).
+     */
+    readonly headingLevel?: 'h2' | 'h3';
 }
 
 /**
@@ -25,12 +33,19 @@ export function SignalHubLinks({
     headingId,
     links,
     className,
+    headingLevel = 'h2',
 }: SignalHubLinksProps): ReactElement {
+    const Heading = headingLevel;
     return (
         <nav aria-labelledby={headingId} className={cn(className)}>
-            <h2 id={headingId} className={HEADING_SECTION}>
+            <Heading
+                id={headingId}
+                className={
+                    headingLevel === 'h2' ? HEADING_SECTION : HEADING_SUBSECTION
+                }
+            >
                 {heading}
-            </h2>
+            </Heading>
             <ul className="mt-3 flex flex-wrap gap-2">
                 {links.map(link => (
                     <li key={link.href}>

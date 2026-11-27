@@ -51,7 +51,7 @@ const SEEDED_SUMMARY =
 // default '최근 분석 요약'). The technical/chart tab now renders its own
 // tab-specific heading; keep this marker in sync with
 // TechnicalSnapshotProse's `title="기술적 분석 요약"` call and
-// docs/reference/CRON.md's verification curl.
+// the prewarm cron's verification curl (it checks the same marker).
 const SNAPSHOT_HEADING = '기술적 분석 요약';
 
 // Never requested by any other spec in this suite (see the ISR-caching

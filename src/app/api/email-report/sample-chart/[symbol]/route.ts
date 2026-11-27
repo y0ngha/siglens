@@ -6,6 +6,7 @@ import {
     SAMPLE_CHART_SYMBOLS,
     SAMPLE_REPORT_DATE,
 } from '@/entities/email-report/lib/sampleBars';
+import { buildSampleDrawings } from '@/entities/email-report/lib/sampleDrawings';
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
@@ -40,6 +41,7 @@ export async function GET(
         date: SAMPLE_REPORT_DATE,
         bars,
         ma: buildSampleChartMa(bars),
+        drawings: buildSampleDrawings(symbol),
         cacheControl: SAMPLE_CHART_CACHE_CONTROL,
     });
     return image ?? new Response(null, { status: HTTP_STATUS_NOT_FOUND });

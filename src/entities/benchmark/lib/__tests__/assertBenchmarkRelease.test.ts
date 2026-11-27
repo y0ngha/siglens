@@ -1,10 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { assertBenchmarkRelease } from '../assertBenchmarkRelease';
+import type { BenchmarkLabel, BenchmarkRelease } from '../../types';
 import { BENCHMARK_FIXTURE } from '../../__tests__/fixtures/benchmarkFixture';
 
+type Mutable<T> = T extends readonly (infer U)[]
+    ? Mutable<U>[]
+    : T extends object
+      ? { -readonly [K in keyof T]: Mutable<T[K]> }
+      : T;
+
+type ReleaseDraft = Mutable<BenchmarkRelease>;
+
 /** 픽스처를 깊은 복사해 한 곳만 망가뜨린 입력을 만든다. */
-function mutated(mutate: (draft: Record<string, any>) => void): unknown {
-    const draft = JSON.parse(JSON.stringify(BENCHMARK_FIXTURE));
+function mutated(mutate: (draft: ReleaseDraft) => void): unknown {
+    // 읽기 전용만 벗기는 캐스트다. 같은 모양이라 값은 그대로다.
+    const draft = structuredClone(BENCHMARK_FIXTURE) as unknown as ReleaseDraft;
     mutate(draft);
     return draft;
 }
@@ -74,7 +84,9 @@ describe('assertBenchmarkRelease', () => {
 
     it('rejects a release without the overall score row', () => {
         const input = mutated(d => {
-            delete d.breakdown.overall;
+            // 필수 키를 일부러 지우므로 같은 객체를 Partial로 본다.
+            const breakdown: Partial<ReleaseDraft['breakdown']> = d.breakdown;
+            delete breakdown.overall;
         });
         expect(() => assertBenchmarkRelease(input)).toThrow(
             'breakdown.overall'
@@ -83,7 +95,10 @@ describe('assertBenchmarkRelease', () => {
 
     it('rejects a missing partial count', () => {
         const input = mutated(d => {
-            delete d.breakdown.labelCounts.gpt.partial;
+            const counts: Partial<
+                ReleaseDraft['breakdown']['labelCounts'][string]
+            > = d.breakdown.labelCounts.gpt;
+            delete counts.partial;
         });
         expect(() => assertBenchmarkRelease(input)).toThrow(
             'breakdown.labelCounts.gpt.partial'
@@ -117,7 +132,7 @@ describe('assertBenchmarkRelease', () => {
 
     it('rejects an unknown verdict label on an item', () => {
         const input = mutated(d => {
-            d.items[0].results.gpt.label = 'maybe';
+            d.items[0].results.gpt.label = 'maybe' as unknown as BenchmarkLabel;
         });
         expect(() => assertBenchmarkRelease(input)).toThrow(
             'items[0].results.gpt.label'
@@ -167,7 +182,7 @@ describe('assertBenchmarkRelease', () => {
         );
     });
 
-    it.each(['measuredAt', 'scoredAt'])(
+    it.each(['measuredAt', 'scoredAt'] as const)(
         'rejects a %s that is not a plain YYYY-MM-DD date',
         field => {
             const input = mutated(d => {
@@ -203,13 +218,17 @@ describe('assertBenchmarkRelease', () => {
         }
     );
 
-    it.each(['zipPath', 'otsPath'])('rejects ".." segments in %s', field => {
-        const input = mutated(d => {
-            const holder = field === 'zipPath' ? d.downloads : d.prereg;
-            holder[field] = '/benchmark/2099-01/../2000-01/x.zip';
-        });
-        expect(() => assertBenchmarkRelease(input)).toThrow(field);
-    });
+    it.each(['zipPath', 'otsPath'] as const)(
+        'rejects ".." segments in %s',
+        field => {
+            const input = mutated(d => {
+                const badPath = '/benchmark/2099-01/../2000-01/x.zip';
+                if (field === 'zipPath') d.downloads.zipPath = badPath;
+                else d.prereg.otsPath = badPath;
+            });
+            expect(() => assertBenchmarkRelease(input)).toThrow(field);
+        }
+    );
 
     it.each(['http://gist.example.test/p', 'javascript:alert(1)', 'nope'])(
         'rejects the gist URL %j',
@@ -235,7 +254,7 @@ describe('assertBenchmarkRelease', () => {
         }
     );
 
-    it.each(['pool', 'template'])(
+    it.each(['pool', 'template'] as const)(
         'rejects an item %s equal to the filter sentinel',
         field => {
             const input = mutated(d => {

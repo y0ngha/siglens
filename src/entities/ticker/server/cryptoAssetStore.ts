@@ -73,7 +73,8 @@ function recordToSearchResult(r: CryptoAssetRecord): TickerSearchResult {
  */
 export async function isCryptoSymbol(symbol: string): Promise<boolean> {
     const upper = symbol.toUpperCase();
-    if (cryptoSymbolCache.has(upper)) return cryptoSymbolCache.get(upper)!;
+    const cachedClassification = cryptoSymbolCache.get(upper);
+    if (cachedClassification !== undefined) return cachedClassification;
     const repository = tryGetRepository();
     if (!repository) {
         // No DB — try FMP-list as last resort so tab guards don't 404 new coins.
@@ -151,8 +152,8 @@ export async function searchCryptoAssets(
     query: string
 ): Promise<TickerSearchResult[]> {
     const normalizedQuery = query.toLowerCase().trim();
-    if (cryptoSearchCache.has(normalizedQuery))
-        return cryptoSearchCache.get(normalizedQuery)!;
+    const cachedResults = cryptoSearchCache.get(normalizedQuery);
+    if (cachedResults !== undefined) return cachedResults;
     const repository = tryGetRepository();
     if (!repository) return [];
     try {

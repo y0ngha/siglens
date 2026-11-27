@@ -43,11 +43,11 @@ while IFS= read -r p; do
       while IFS= read -r -d '' f; do
         [ -e "$wt_root/$f" ] && continue
         mkdir -p "$(dirname "$wt_root/$f")"
-        cp -p "$main_root/$f" "$wt_root/$f"
+        cp -P -p "$main_root/$f" "$wt_root/$f"
       done
     continue
   fi
   [ -e "$dst" ] && continue                 # already present file -> skip
   mkdir -p "$(dirname "$dst")"
-  cp -R "$src" "$dst"
+  cp -RP "$src" "$dst"
 done < "$inc"

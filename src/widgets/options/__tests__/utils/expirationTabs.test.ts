@@ -1,6 +1,7 @@
 import {
     buildExpirationTabs,
     findActiveTabIndex,
+    findActiveTabValue,
 } from '@/widgets/options/utils/expirationTabs';
 import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
 
@@ -60,5 +61,20 @@ describe('findActiveTabIndex', () => {
 
     it('falls back to the first tab when nothing matches', () => {
         expect(findActiveTabIndex(tabs, '1999-01-01')).toBe(0);
+    });
+});
+
+describe('findActiveTabValue', () => {
+    const tabs = buildExpirationTabs(SLOTS, LABELS, 'All');
+
+    it('returns the matching tab value, or the first tab when nothing matches', () => {
+        expect(findActiveTabValue(tabs, '2025-07-18')).toBe('2025-07-18');
+        expect(findActiveTabValue(tabs, '1999-01-01')).toBe('2025-06-20');
+    });
+
+    it('throws a named error for an empty tab list', () => {
+        expect(() => findActiveTabValue([], 'all')).toThrow(
+            'expiration tabs are empty'
+        );
     });
 });

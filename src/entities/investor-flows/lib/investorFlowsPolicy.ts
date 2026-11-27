@@ -1,6 +1,5 @@
 /**
  * Investor Flows(기관·내부자·공매도 수급) 수집·집계 **정책 상수** — 슬라이스 소유.
- * 설계: `docs/superpowers/specs/2026-10-15-investor-flows-design.md`.
  * SEC 클라이언트 타임아웃·속도 상수는 `shared/config/investorFlows.ts`(shared 클라이언트가 쓴다).
  */
 

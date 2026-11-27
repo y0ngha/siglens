@@ -15,6 +15,7 @@ import {
     HOME_WATCHLIST_DESKTOP_COUNT,
     HOME_WATCHLIST_MOBILE_COUNT,
 } from '@/shared/config/watchlist';
+import { HOME_WATCHLIST_EMPTY_HEIGHT } from '@/features/watchlist/lib/watchlistStyles';
 import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
 
 type Watchlist = ReturnType<typeof useWatchlist>;
@@ -54,9 +55,8 @@ describe('HomeWatchlistCard', () => {
         expect(screen.queryByRole('heading')).toBeNull();
     });
 
-    it('담은 것도 본 것도 없으면 검색·인기 종목으로 안내한다', async () => {
+    it('담은 것도 본 것도 없으면 인기 종목으로 안내하고 검색 버튼은 두지 않는다', () => {
         setWatchlist([]);
-        const user = userEvent.setup();
         render(<HomeWatchlistCard />);
         expect(
             screen.getByRole('heading', { name: '내 관심종목' })
@@ -65,8 +65,24 @@ describe('HomeWatchlistCard', () => {
         expect(
             screen.getByRole('link', { name: '인기 종목 보기' })
         ).toHaveAttribute('href', `#${HOME_POPULAR_ANCHOR_ID}`);
-        await user.click(screen.getByRole('button', { name: '종목 검색' }));
-        expect(openSearch).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('button', { name: '종목 검색' })).toBeNull();
+        expect(openSearch).not.toHaveBeenCalled();
+    });
+
+    it('자리표시자와 빈 카드는 같은 높이 상수를 쓴다(첫 방문자는 하이드레이션에 밀리지 않는다)', () => {
+        const heightClasses = HOME_WATCHLIST_EMPTY_HEIGHT.split(' ');
+
+        setWatchlist([], { isHydrated: false });
+        const first = render(<HomeWatchlistCard />);
+        heightClasses.forEach(cls =>
+            expect(first.container.firstElementChild).toHaveClass(cls)
+        );
+        first.unmount();
+
+        setWatchlist([]);
+        render(<HomeWatchlistCard />);
+        const empty = screen.getByRole('region', { name: '내 관심종목' });
+        heightClasses.forEach(cls => expect(empty).toHaveClass(cls));
     });
 
     it('담은 것이 없고 최근 본 것이 있으면 최근 본 탭으로 연다', () => {

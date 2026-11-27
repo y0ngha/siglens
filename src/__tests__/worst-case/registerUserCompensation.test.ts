@@ -1,8 +1,11 @@
 import { registerUser } from '@/entities/auth/lib/registerUser';
+import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type {
     RegisterUserDependencies,
     RegisterUserInput,
 } from '@/entities/auth/lib/authUseCaseTypes';
+
+const BINDING = 'binding-nonce';
 
 function createMockDependencies(
     overrides: Partial<RegisterUserDependencies> = {}
@@ -30,7 +33,11 @@ function createMockDependencies(
             ...overrides.passwordHasher,
         } as unknown as RegisterUserDependencies['passwordHasher'],
         emailTokens: {
-            get: vi.fn().mockResolvedValue({ status: 'verified' }),
+            get: vi.fn().mockResolvedValue({
+                status: 'verified',
+                tokenHash: hashEmailToken('123456'),
+                bindingHash: hashEmailToken(BINDING),
+            }),
             delete: vi.fn().mockResolvedValue(undefined),
             ...overrides.emailTokens,
         } as unknown as RegisterUserDependencies['emailTokens'],
@@ -42,6 +49,7 @@ const VALID_INPUT: RegisterUserInput = {
     password: 'SecurePassword123!',
     name: 'Test User',
     agreedTermsIds: ['terms-v1'],
+    verificationBinding: BINDING,
 };
 
 describe('registerUser compensating transaction', () => {

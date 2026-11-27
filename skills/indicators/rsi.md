@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_oversold, rsi_overbought, rsi_bullish_divergence, rsi_bearish_divergence]
-token_cost: 344
-digest_hash: "f52ddf23"
+token_cost: 348
+digest_hash: "e66c9b20"
+digest_text_hash: "19884cb8"
 ---
 
 ## Overview
@@ -27,7 +28,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 
 ### Mid-line Crossover (50 line)
 
-- RSI crosses above 50 from below: bullish momentum shift — consider as a buy-side signal (most reliable on daily or higher timeframes).
+- RSI crosses above 50 from below: bullish momentum shift — consider as a buy-side signal (more reliable on longer bar timeframes than on short ones).
 - RSI crosses below 50 from above: bearish momentum shift.
 
 ### Divergence Signals
@@ -43,7 +44,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 
 ## Recommended Combinations
 
-- RSI + Bollinger Bands: Confirm volatility extremes. RSI < 30 near lower band = high-probability mean reversion.
+- RSI + Bollinger Bands: Confirm volatility extremes. RSI < 30 near lower band = mean reversion candidate.
 - RSI + MACD: Use RSI for overbought/oversold and MACD for trend direction confirmation.
 - RSI + Volume: Divergence between RSI and volume can confirm signal strength.
 - RSI + ADX: When ADX > 25 and RSI is in extreme zone, the trend context changes interpretation — overbought in a strong uptrend is a continuation signal, not a reversal.
@@ -63,7 +64,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 - RSI > 80 / RSI < 20: extreme in high-vol markets — confirm with other indicators.
 
 **Mid-line (50):**
-- Crosses above 50 from below: bullish momentum shift (buy-side; most reliable daily+).
+- Crosses above 50 from below: bullish momentum shift (buy-side; more reliable on longer bar timeframes).
 - Crosses below 50 from above: bearish momentum shift.
 
 **Divergence:**
@@ -75,7 +76,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 - Bearish FS: RSI fails to exceed prior peak in overbought, then breaks below prior trough — strong sell.
 - Bullish FS: RSI holds above prior trough in oversold, then breaks above prior peak — strong buy.
 
-**Combos:** +BB (RSI<30 near lower band = high-prob mean reversion); +MACD (trend direction); +Volume; +ADX (ADX>25 & RSI extreme in strong uptrend = continuation, NOT reversal).
+**Combos:** +BB (RSI<30 near lower band = mean reversion candidate); +MACD (trend direction); +Volume; +ADX (ADX>25 & RSI extreme in strong uptrend = continuation, NOT reversal).
 
 **Caveats:** trending markets keep RSI extreme many bars — don't use alone in strong trends; divergence in strong trend often false (cross-check ADX/EMA slope).
 <!-- PROMPT_DIGEST:END -->

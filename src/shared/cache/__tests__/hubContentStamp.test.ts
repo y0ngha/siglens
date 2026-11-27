@@ -23,6 +23,7 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     hashHubBody,
+    matchHubContentStamp,
     readHubContentStamp,
     recordHubContentStamp,
     STAMP_TTL_SECONDS,
@@ -32,6 +33,7 @@ type RedisLike = import('@upstash/redis').Redis;
 
 const T1 = new Date('2026-10-04T01:00:00.000Z');
 const T2 = new Date('2026-10-04T02:00:00.000Z');
+const T3 = new Date('2026-10-04T03:00:00.000Z');
 
 /**
  * 실제 Upstash처럼 **JSON을 거쳐** 저장하고 되돌려 주는 인메모리 Redis.
@@ -100,6 +102,35 @@ describe('hashHubBody', () => {
 
     it('문자열 본문도 해시한다', () => {
         expect(hashHubBody('text')).toMatch(/^[0-9a-f]{64}$/);
+    });
+});
+
+describe('matchHubContentStamp', () => {
+    const stamp = {
+        hash: 'new',
+        at: 'T2',
+        prev: { hash: 'old', at: 'T1' },
+    };
+
+    it('현재 해시면 현재 항목을 돌려준다', () => {
+        expect(matchHubContentStamp(stamp, 'new')).toEqual({
+            hash: 'new',
+            at: 'T2',
+        });
+    });
+
+    it('직전 해시면 직전 항목을 돌려준다', () => {
+        expect(matchHubContentStamp(stamp, 'old')).toEqual({
+            hash: 'old',
+            at: 'T1',
+        });
+    });
+
+    it('둘 다 아니면 null이다 — 크론이 본 적 없는 본문', () => {
+        expect(matchHubContentStamp(stamp, 'other')).toBeNull();
+        expect(
+            matchHubContentStamp({ hash: 'new', at: 'T2' }, 'old')
+        ).toBeNull();
     });
 });
 
@@ -253,6 +284,53 @@ describe('hubContentStamp', () => {
         await expect(readHubContentStamp('rss:economy')).resolves.toEqual({
             hash: hashHubBody({ a: 2 }),
             at: T2.toISOString(),
+            prev: { hash: hashHubBody({ a: 1 }), at: T1.toISOString() },
+        });
+    });
+
+    it('직전 스탬프는 한 칸만 남긴다 — 세 번째 본문이 오면 첫 본문은 사라진다', async () => {
+        useInMemoryRedis();
+
+        await recordHubContentStamp('rss:economy', { a: 1 }, T1);
+        await recordHubContentStamp('rss:economy', { a: 2 }, T2);
+        await recordHubContentStamp('rss:economy', { a: 3 }, T3);
+
+        await expect(readHubContentStamp('rss:economy')).resolves.toEqual({
+            hash: hashHubBody({ a: 3 }),
+            at: T3.toISOString(),
+            prev: { hash: hashHubBody({ a: 2 }), at: T2.toISOString() },
+        });
+    });
+
+    it('같은 본문의 TTL 갱신은 직전 스탬프를 지우지 않는다', async () => {
+        const redis = useInMemoryRedis();
+
+        await recordHubContentStamp('rss:economy', { a: 1 }, T1);
+        await recordHubContentStamp('rss:economy', { a: 2 }, T2);
+        redis.setRemainingTtl(
+            'hub-content-stamp:rss:economy',
+            STAMP_TTL_SECONDS / 4
+        );
+        await recordHubContentStamp('rss:economy', { a: 2 }, T3);
+
+        await expect(readHubContentStamp('rss:economy')).resolves.toEqual({
+            hash: hashHubBody({ a: 2 }),
+            at: T2.toISOString(),
+            prev: { hash: hashHubBody({ a: 1 }), at: T1.toISOString() },
+        });
+    });
+
+    it('모양이 틀린 prev는 버리고 현재 스탬프는 살린다', async () => {
+        const redis = useInMemoryRedis();
+        redis.store.set('hub-content-stamp:rss:economy', {
+            hash: 'h',
+            at: T1.toISOString(),
+            prev: { hash: 1 },
+        });
+
+        await expect(readHubContentStamp('rss:economy')).resolves.toEqual({
+            hash: 'h',
+            at: T1.toISOString(),
         });
     });
 

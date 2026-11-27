@@ -74,6 +74,8 @@ export interface IndexTarget {
  *
  *  - Form 144: 같은 accession이 발행사 CIK와 보고자 CIK로 두 줄 나온다 → 한 대상으로 합쳐진다.
  *  - 증자 공시: 공동 등록인(모회사·자회사)이 각자 한 줄 → 유니버스 발행사만 남는다.
+ *
+ * CONVENTIONS.md#CP-6 예외: 공시 항목 수만 건을 접수번호별 Map에 한 번에 모은다. 항목마다 Map을 복사하면 O(N²)다.
  */
 export function selectIndexTargets(
     entries: readonly SecFormIndexEntry[],

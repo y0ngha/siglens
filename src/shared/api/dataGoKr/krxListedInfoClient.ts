@@ -133,6 +133,8 @@ interface RawItem {
     mrktCtg?: string;
     isinCd?: string;
     corpNm?: string;
+    /** 기준일(`YYYYMMDD`). 범위 조회는 행마다 날짜가 다르다. */
+    basDt?: string;
     /** 명세는 number지만 공공데이터포털은 숫자를 문자열로 주기도 한다(`clpr` 실측). */
     lstgStCnt?: number | string;
 }
@@ -408,6 +410,74 @@ export async function fetchStockPriceItems(
         basDt,
         Date.now() + STOCK_PRICE_SOURCE.budgetMs
     );
+}
+
+/** 기준일 `YYYYMMDD`에 `days`일을 더한(뺀) `YYYYMMDD`. */
+function shiftBasDt(basDt: string, days: number): string {
+    const date = new Date(
+        Date.UTC(
+            Number(basDt.slice(0, 4)),
+            Number(basDt.slice(4, 6)) - 1,
+            Number(basDt.slice(6, 8)) + days
+        )
+    );
+    return toUtcIsoDate(date).replace(/-/g, '');
+}
+
+/** 기간말 조회가 거슬러 올라가는 일수. 연휴·임시 휴장을 덮고도 한 번의 범위 조회로 끝나게 한다. */
+const LISTED_SHARES_LOOKBACK_DAYS = 10;
+
+/**
+ * 종목코드 접두사(앞 5자)를 쓰는 상장 종목(보통주 + 우선주)의 **`basDt` 이하 가장 최근 거래일** 시세 행을 한 번의 범위 조회로 받는다 —
+ * 주식시세 V2의 상장주식수(`lstgStCnt`)가 결산일 시점에 몇 주였는지 알기 위해서다. `likeSrtnCd`로 종목을, `beginBasDt`·`endBasDt`로 기간을
+ * 좁힌다. `endBasDt`가 포함인지 미포함인지는 명세 표현("작은")이 모호해 하루 늦춰 보내고, 응답은 `basDt` 이하로 다시 거른다.
+ *
+ * 데이터가 있는 가장 늦은 날의 행만 돌려준다. 키가 없거나 그 기간에 행이 없으면 빈 배열이다. 네트워크·API 오류는 던진다 — 호출부
+ * (`entities/kr-valuation`)가 잡아 DART 값만으로 내려간다.
+ */
+export async function fetchKrxListedItemsOnOrBefore(
+    prefix: string,
+    basDt: string,
+    timeoutMs: number = PAGE_TIMEOUT_MS
+): Promise<KrxListedItem[]> {
+    const key = serviceKey();
+    if (!key) return [];
+    const params = new URLSearchParams({
+        serviceKey: key,
+        resultType: 'json',
+        numOfRows: String(MAX_ROWS_PER_PAGE),
+        pageNo: '1',
+        likeSrtnCd: prefix,
+        beginBasDt: shiftBasDt(basDt, -LISTED_SHARES_LOOKBACK_DAYS),
+        endBasDt: shiftBasDt(basDt, 1),
+    });
+    const res = await fetch(`${STOCK_PRICE_ENDPOINT}?${params}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!res.ok) {
+        throw new Error(`${STOCK_PRICE_SOURCE.tag} HTTP ${res.status}`);
+    }
+    const body = (await res.json()) as RawResponse;
+    const code = body.response?.header?.resultCode;
+    if (code !== undefined && code !== RESULT_CODE_OK) {
+        throw new Error(
+            `${STOCK_PRICE_SOURCE.tag} resultCode=${code} ${body.response?.header?.resultMsg ?? ''}`
+        );
+    }
+    const items = unwrapItems(body.response?.body?.items).flatMap(raw =>
+        typeof raw.basDt === 'string'
+            ? toItem(raw, raw.basDt).filter(
+                  item =>
+                      item.shortCode.startsWith(prefix) && item.basDt <= basDt
+              )
+            : []
+    );
+    const latest = items.reduce(
+        (max, item) => (item.basDt > max ? item.basDt : max),
+        ''
+    );
+    return items.filter(item => item.basDt === latest);
 }
 
 /**

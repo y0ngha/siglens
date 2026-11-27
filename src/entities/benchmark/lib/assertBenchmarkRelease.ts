@@ -133,19 +133,23 @@ type BaselineById = ReadonlyMap<string, boolean>;
 function checkTargets(raw: unknown): BaselineById {
     const targets = arr(raw, 'targets');
     if (targets.length === 0) fail('targets', 'at least one target');
-    const ids = new Map<string, boolean>();
-    targets.forEach((entry, i) => {
+    const parsed = targets.map((entry, i) => {
         const path = `targets[${i}]`;
         const target = rec(entry, path);
         const id = str(target.id, `${path}.id`);
-        if (ids.has(id)) fail(`${path}.id`, 'unique id');
         str(target.label, `${path}.label`);
         str(target.model, `${path}.model`);
         if (typeof target.isBaseline !== 'boolean') {
             fail(`${path}.isBaseline`, 'boolean');
         }
-        ids.set(id, target.isBaseline);
+        return [id, target.isBaseline] as const;
     });
+    parsed.forEach(([id], i) => {
+        if (parsed.findIndex(([other]) => other === id) !== i) {
+            fail(`targets[${i}].id`, 'unique id');
+        }
+    });
+    const ids = new Map(parsed);
     if (!ids.has(BENCHMARK_SUBJECT_ID)) {
         fail('targets', `a target with id ${BENCHMARK_SUBJECT_ID}`);
     }
@@ -156,6 +160,8 @@ function checkTargets(raw: unknown): BaselineById {
  * 경쟁 모델은 검정한 비교라 Holm p값이 숫자여야 하고, 기준선은 검정하지 않으므로 null이어야 한다.
  * 같은 대상의 비교가 둘이면 헤드라인 개수가 부풀고, 경쟁 모델 비교가 빠지면 조용히 줄어든다 —
  * 주체를 뺀 비기준선 대상마다 정확히 하나, 기준선은 많아야 하나만 받는다.
+ *
+ * CONVENTIONS.md#CP-6 예외: 대조 대상별 중복을 만나는 즉시 던지는 단일 패스(O(N))다. 항목마다 Set을 복사하면 O(N²)다.
  */
 function checkHeadline(raw: unknown, baselineById: BaselineById): void {
     const seen = new Set<string>();
@@ -261,6 +267,7 @@ function checkLabelScore(
     }
 }
 
+// CONVENTIONS.md#CP-6 예외: 문항 수천 개의 qid 중복을 즉시 던지며 Set 하나에 모으는 단일 패스(O(N))다. 문항마다 Set을 복사하면 O(N²)다.
 function checkItems(
     raw: unknown,
     targetIds: ReadonlySet<string>,

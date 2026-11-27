@@ -78,8 +78,13 @@ export function controlOpeningTags(
  * 3배로 상한을 둔다. 최적화 전에는 같은 조건에서 21~39초까지 나와 이 상한을
  * 넘었다. 참고로 스캔 가드만 한꺼번에 돌리는 인위적 최악 부하에선 최적화 뒤에도
  * 25초까지 나왔다 — 여유가 다시 줄면 상한보다 비용부터 의심할 것.
+ *
+ * 주간 커버리지 실행(`.github/workflows/coverage-weekly.yml`, `COVERAGE_RUN=1`)만
+ * 120초를 쓴다. 계측이 파스·순회를 느리게 해 첫 실행(2026-11-21)에서
+ * `sourceScanParity`가 30초를 넘겼다. 이 비용은 계측 탓이라 PR CI 상한은 그대로 둔다.
  */
-export const SCAN_TIMEOUT_MS = 30_000;
+export const SCAN_TIMEOUT_MS =
+    process.env.COVERAGE_RUN === '1' ? 120_000 : 30_000;
 
 /**
  * 워크 결과 캐시. 가드 9개가 이 함수를 부르고 일부는 한 파일에서 두 번

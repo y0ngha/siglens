@@ -10,6 +10,7 @@ import {
     GUEST_RETURN_WINDOWS,
     VISIT_DAYS_CAP,
     advanceVisitHistory,
+    isReturnVisitDay,
     parseVisitHistory,
     parseVisitSignals,
     visitSignalsOf,
@@ -356,5 +357,44 @@ describe('GUEST_RETURN_WINDOWS', () => {
 
     it('d1은 첫 방문 다음 날 하루다', () => {
         expect(GUEST_RETURN_WINDOWS.d1).toEqual({ startDay: 1, endDay: 1 });
+    });
+});
+
+describe('isReturnVisitDay', () => {
+    const history: VisitHistory = {
+        first: '2026-11-20',
+        prev: null,
+        last: '2026-11-20',
+        days: 1,
+    };
+
+    it('이력이 없으면(첫 방문 전) false다', () => {
+        expect(isReturnVisitDay(null, '2026-11-20')).toBe(false);
+    });
+
+    it('첫 방문일 당일은 false다', () => {
+        expect(isReturnVisitDay(history, '2026-11-20')).toBe(false);
+    });
+
+    it('첫 방문 다음 KST 날부터 true다', () => {
+        expect(isReturnVisitDay(history, '2026-11-21')).toBe(true);
+    });
+
+    it('기기 시계가 첫 방문일보다 과거로 가면 false다', () => {
+        expect(isReturnVisitDay(history, '2026-11-19')).toBe(false);
+    });
+
+    it('오늘 방문이 이력에 반영된 뒤에도 같은 답이다(first는 그대로라 반영 순서와 무관)', () => {
+        const today = '2026-11-21';
+        const before = isReturnVisitDay(history, today);
+        const advanced = advanceVisitHistory(history, today);
+        expect(advanced.last).toBe(today);
+        expect(isReturnVisitDay(advanced, today)).toBe(before);
+        expect(before).toBe(true);
+    });
+
+    it('첫 방문일에 반영한 뒤에도 false다(같은 날 핑이 먼저 써도 재방문이 되지 않는다)', () => {
+        const advanced = advanceVisitHistory(null, '2026-11-20');
+        expect(isReturnVisitDay(advanced, '2026-11-20')).toBe(false);
     });
 });

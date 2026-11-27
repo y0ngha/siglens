@@ -127,8 +127,9 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         // captured[0] = INSERT, captured[1] = counter UPDATE
         expect(captured).toHaveLength(2);
         const insertSql = captured[0]!.sql.toLowerCase();
-        expect(insertSql).toContain('coalesce(max(');
-        expect(insertSql).toContain(', 0)');
+        expect(insertSql).toBe(
+            'insert into "chat_messages" ("id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "chart", "status", "created_at") values (default, $1, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $2) + $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, default), (default, $13, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $14) + $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, default) returning "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "chart", "status", "created_at"'
+        );
         // 두 행 각각 "+ n" 표현식이 한 번씩 나온다(파라미터로 1, 2가 순서대로 들어감).
         expect(captured[0]!.params).toContain(1);
         expect(captured[0]!.params).toContain(2);
@@ -142,11 +143,12 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         const repo = new DrizzleChatConversationRepository(db);
         await repo.appendMessages(VALID_ID, [{ role: 'user', content: 'q' }]);
         const counterSql = captured[1]!.sql.toLowerCase();
-        expect(counterSql).toContain('count(*)');
-        expect(counterSql).not.toContain('message_count" +');
+        expect(counterSql).toBe(
+            'update "chat_conversations" set "message_count" = (select count(*) from "chat_messages" where "chat_messages"."conversation_id" = $1), "last_message_at" = $2, "updated_at" = $3 where "chat_conversations"."id" = $4'
+        );
         // The subquery has its own `where`; the outer scope is after the LAST one.
         const outerWhere = counterSql.slice(counterSql.lastIndexOf(' where '));
-        expect(outerWhere).toContain('"chat_conversations"."id" = $');
+        expect(outerWhere).toBe(' where "chat_conversations"."id" = $4');
         expect(captured[1]!.params).toContain(VALID_ID);
     });
 
@@ -162,8 +164,9 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         const repo = new DrizzleChatConversationRepository(db);
         await repo.findForUser(VALID_ID, VALID_USER);
         const where = whereOnly(captured[0]!.sql);
-        expect(where).toContain('"chat_conversations"."id" = $');
-        expect(where).toContain('"chat_conversations"."user_id" = $');
+        expect(where).toBe(
+            '("chat_conversations"."id" = $1 and "chat_conversations"."user_id" = $2) limit $3'
+        );
         expect(captured[0]!.params).toContain(VALID_ID);
         expect(captured[0]!.params).toContain(VALID_USER);
     });
@@ -173,7 +176,9 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         const repo = new DrizzleChatConversationRepository(db);
         await repo.listForUser(VALID_USER);
         const where = whereOnly(captured[0]!.sql);
-        expect(where).toContain('"chat_conversations"."user_id" = $');
+        expect(where).toBe(
+            '"chat_conversations"."user_id" = $1 order by "chat_conversations"."last_message_at" desc limit $2'
+        );
         expect(captured[0]!.params).toContain(VALID_USER);
     });
 
@@ -182,7 +187,7 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         const repo = new DrizzleChatConversationRepository(db);
         await repo.countForUser(VALID_USER);
         const where = whereOnly(captured[0]!.sql);
-        expect(where).toContain('"chat_conversations"."user_id" = $');
+        expect(where).toBe('"chat_conversations"."user_id" = $1');
         expect(captured[0]!.params).toContain(VALID_USER);
     });
 
@@ -191,8 +196,9 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         const repo = new DrizzleChatConversationRepository(db);
         await repo.rename(VALID_ID, VALID_USER, 't');
         const where = whereOnly(captured[0]!.sql);
-        expect(where).toContain('"chat_conversations"."id" = $');
-        expect(where).toContain('"chat_conversations"."user_id" = $');
+        expect(where).toBe(
+            '("chat_conversations"."id" = $3 and "chat_conversations"."user_id" = $4)'
+        );
         expect(captured[0]!.params).toContain(VALID_ID);
         expect(captured[0]!.params).toContain(VALID_USER);
     });
@@ -203,13 +209,9 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
             const repo = new DrizzleChatConversationRepository(db);
             await repo.delete(VALID_ID, VALID_USER);
             expect(captured).toHaveLength(1);
-            const sqlLower = captured[0]!.sql.toLowerCase();
-            expect(
-                sqlLower.startsWith('delete from "chat_conversations"')
-            ).toBe(true);
-            const where = whereOnly(captured[0]!.sql);
-            expect(where).toContain('"chat_conversations"."id" = $');
-            expect(where).toContain('"chat_conversations"."user_id" = $');
+            expect(captured[0]!.sql.toLowerCase()).toBe(
+                'delete from "chat_conversations" where ("chat_conversations"."id" = $1 and "chat_conversations"."user_id" = $2)'
+            );
             expect(captured[0]!.params).toContain(VALID_ID);
             expect(captured[0]!.params).toContain(VALID_USER);
         });
@@ -247,10 +249,16 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         expect(await repo.supersedeAfterLastUser(VALID_ID)).toBe(3);
         expect(captured).toHaveLength(2);
         const selectSql = captured[0]!.sql.toLowerCase();
-        expect(selectSql).toContain('select max("seq") from "chat_messages"');
-        expect(whereOnly(captured[0]!.sql)).toContain('"role" = $');
+        expect(selectSql).toBe(
+            'select max("seq") from "chat_messages" where ("chat_messages"."conversation_id" = $1 and "chat_messages"."role" = $2)'
+        );
+        expect(whereOnly(captured[0]!.sql)).toBe(
+            '("chat_messages"."conversation_id" = $1 and "chat_messages"."role" = $2)'
+        );
         expect(captured[0]!.params).toEqual([VALID_ID, 'user']);
-        expect(captured[1]!.sql.toLowerCase()).toContain('"seq" >= $');
+        expect(captured[1]!.sql.toLowerCase()).toBe(
+            'update "chat_messages" set "status" = $1 where ("chat_messages"."conversation_id" = $2 and "chat_messages"."seq" >= $3)'
+        );
         expect(captured[1]!.params).toContain(4);
     });
 
@@ -261,11 +269,12 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         // DELETE, then a single counter UPDATE — no intermediate SELECT.
         expect(captured).toHaveLength(2);
         const counterSql = captured[1]!.sql.toLowerCase();
-        expect(counterSql).toContain('update');
-        expect(counterSql).toContain('count(*)');
+        expect(counterSql).toBe(
+            'update "chat_conversations" set "message_count" = (select count(*) from "chat_messages" where "chat_messages"."conversation_id" = $1), "updated_at" = $2 where "chat_conversations"."id" = $3'
+        );
         // The subquery has its own `where`; the outer scope is after the LAST one.
         const outerWhere = counterSql.slice(counterSql.lastIndexOf(' where '));
-        expect(outerWhere).toContain('"chat_conversations"."id" = $');
+        expect(outerWhere).toBe(' where "chat_conversations"."id" = $3');
         expect(captured[1]!.params).toContain(VALID_ID);
     });
 });

@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { expectAskAiDestination } from '../support/askAi';
+import { seedReturnVisit } from '../support/pwaBanner';
 
 /**
  * 종목 화면 하단 오버레이 우선순위 — 일시·모달 UI > 모바일 분석 시트 > Ask-AI 링크 > 설치 배너
@@ -83,6 +84,9 @@ test.describe('@webkit symbol overlays: 모바일', () => {
             '모바일 분석 시트는 webkit(모바일)에서만 마운트된다'
         );
 
+        // 첫 방문일에는 배너가 마운트되지 않아 아래 "CSS로 숨겨짐" 단언이 공회전한다(`toBeHidden`은
+        // 없는 요소에도 통과). 재방문일로 심어 배너가 DOM에 올라오게 한 뒤 숨김을 본다.
+        await seedReturnVisit(page);
         await page.goto(`/${SYMBOL}`);
 
         await expect(page.locator(SHEET_HANDLE)).toBeVisible();
@@ -92,6 +96,37 @@ test.describe('@webkit symbol overlays: 모바일', () => {
             page.locator('[data-vaul-drawer] [data-ask-ai-inline]')
         ).toBeAttached();
         await expect(page.locator(FLOATING_LINK)).toBeHidden();
+
+        // 한눈에 보기 카드는 시트 콘텐츠 맨 위(인라인 링크 위)에 있고 세 행을 갖는다.
+        // 시트는 PEEK에서 아래가 잘려 있어 보임이 아니라 DOM 존재와 순서로 확인한다.
+        const sheetCard = page.locator(
+            '[data-vaul-drawer] [data-analysis-conclusion]'
+        );
+        await expect(sheetCard).toBeAttached();
+        await expect(sheetCard.locator('dl > div')).toHaveCount(3);
+        await expect(sheetCard.locator('h2')).toHaveText('한눈에 보기');
+        // 목적: PEEK에서도 카드 제목과 헤드라인(분석 중이면 진행 문구, 끝났으면 추세)이 뷰포트
+        // 안에 있다. 첫 가격 행은 툴바 높이에 달려 있어 단언하지 않는다.
+        // vaul의 열림 애니메이션이 끝나기 전(약 1초)에는 시트가 아직 움직이므로 한 번 읽지 않고
+        // 값이 맞을 때까지 다시 읽는다.
+        await expect(async () => {
+            const viewportHeight = await page.evaluate(
+                () => window.innerHeight
+            );
+            const headingBox = await sheetCard.locator('h2').boundingBox();
+            const headlineBox = await sheetCard
+                .locator('[data-conclusion-headline]')
+                .boundingBox();
+            expect(headingBox).not.toBeNull();
+            expect(headlineBox).not.toBeNull();
+            expect(headingBox?.y ?? Infinity).toBeGreaterThanOrEqual(0);
+            expect(
+                (headingBox?.y ?? Infinity) + (headingBox?.height ?? 0)
+            ).toBeLessThanOrEqual(viewportHeight);
+            expect(
+                (headlineBox?.y ?? Infinity) + (headlineBox?.height ?? 0)
+            ).toBeLessThanOrEqual(viewportHeight);
+        }).toPass({ timeout: 10_000 });
 
         // 첫 입력이 배너의 방아쇠다. 배너는 DOM에 올라오되 CSS로 숨겨진다.
         await page.keyboard.press('Tab');

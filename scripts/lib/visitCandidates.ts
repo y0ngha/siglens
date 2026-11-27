@@ -65,6 +65,6 @@ export function extractExistingKrTickers(fileContent: string): Set<string> {
             ...section.matchAll(
                 new RegExp(`['"](${KR_SHORT_CODE_PATTERN}\\.K[SQ])['"]`, 'g')
             ),
-        ].map(m => m[1]!)
+        ].flatMap(m => (m[1] === undefined ? [] : [m[1]]))
     );
 }

@@ -96,8 +96,8 @@ function readThemes(): {
 }
 
 function relativeLuminance(hex: string): number {
-    let h = hex.slice(1);
-    if (h.length === 3) h = [...h].map(c => c + c).join('');
+    const raw = hex.slice(1);
+    const h = raw.length === 3 ? [...raw].map(c => c + c).join('') : raw;
     // 길이를 여기서 막지 않으면 알파 hex(`#fff8`) 하나가 이 가드를 통째로
     // 무력화한다: `slice`가 채널 하나를 깨고 → `parseInt`가 NaN →
     // `NaN < MIN_RATIO`가 **false**라 실패가 배열에 안 담긴다. 즉 진짜 위반이

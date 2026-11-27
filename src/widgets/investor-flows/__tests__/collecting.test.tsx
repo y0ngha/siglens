@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
+import type {
+    InvestorFlowsPipelineReadiness,
+    CollectingArms,
+} from '@/entities/investor-flows/model';
 import { InvestorFlowsContent } from '../InvestorFlowsContent';
 import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import { AsOfNotice } from '../sections/AsOfNotice';
 import { InstitutionalSection } from '../sections/InstitutionalSection';
 import { ScorecardCard } from '../sections/ScorecardCard';
 import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
-import type { CollectingArms } from '@/entities/investor-flows/model';
 import {
     collectingAxes,
     temporarilyUnavailableAxes,

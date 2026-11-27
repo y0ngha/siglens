@@ -1,103 +1,46 @@
 #!/usr/bin/env bash
 # 배포 전 env 완전성 검증(M5).
 #
-# .env.example의 모든 필수 키가 SSM /siglens/* 에 존재하는지 확인한다. 하나라도
-# 빠지면 누락 키를 나열하고 비정상 종료해 배포를 막는다. 런타임 컨테이너가 키
-# 누락으로 부팅 실패/기능 불능에 빠지는 것을 롤 이전에 차단한다.
+# infra/aws/env-gate.txt(필수·선택 SSM 키 목록)의 모든 필수 키가 SSM /siglens/* 에 존재하는지
+# 확인한다. 하나라도 빠지면 누락 키를 나열하고 비정상 종료해 배포를 막는다. 런타임 컨테이너가
+# 키 누락으로 부팅 실패/기능 불능에 빠지는 것을 롤 이전에 차단한다. 선택 키가 없으면 경고 한 줄만
+# 남기고 통과한다(코드가 기본값으로 동작하는 키).
 #
-# 제외 대상:
-#   - NEXT_PUBLIC_* : 빌드 타임에 이미지로 인라인됨(런타임 SSM env 아님)
-#   - SIGLENS_GITHUB_TOKEN : 빌드 타임 전용(패키지 설치). 04-params.sh도 동일 제외.
-#   - 주석/빈 줄
-# 04-params.sh의 EXCLUDE 규칙과 정합한다.
+# env-gate.txt는 src/shared/config/envRegistry.ts에서 `yarn env:gate`로 생성한 파일이다(직접
+# 고치지 않는다). 배포 잡에는 Node 도구가 없어서 레지스트리를 읽지 않고 커밋된 텍스트를 읽는다.
+# 형식: `required KEY` / `optional KEY` / `override KEY` 한 줄씩, `#` 주석과 빈 줄은 무시한다.
+#   required : 없으면 배포를 막는다.
+#   optional : 기능 키. 없으면 경고 한 줄(기능이 꺼진다).
+#   override : 없는 것이 정상(킬 스위치·튜닝·기본값 덮어쓰기). 없다고 경고하지 않고, SSM에 있으면 이름만 알린다.
+#
+# 키마다 왜 필수/선택인지는 레지스트리의 note와 주석에 있다. 빌드 타임 키(NEXT_PUBLIC_*,
+# SIGLENS_GITHUB_TOKEN 등)는 SSM으로 받지 않으므로 목록에 없다.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"
 require aws
 
-# .env.example 위치: repo 루트(infra/aws에서 두 단계 위).
-ENV_EXAMPLE="${1:-$(dirname "$0")/../../.env.example}"
-[ -f "$ENV_EXAMPLE" ] || { log "ERROR: .env.example not found at $ENV_EXAMPLE"; exit 1; }
+# 게이트 목록 위치: 이 스크립트 옆. 첫 인자로 덮어쓸 수 있다(테스트용).
+ENV_GATE="${1:-$(dirname "$0")/env-gate.txt}"
+[ -f "$ENV_GATE" ] || { log "ERROR: env gate list not found at $ENV_GATE (generate it: yarn env:gate)"; exit 1; }
 
-EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
-
-# Optional keys: present in .env.example but intentionally absent from SSM in production.
-#
-# ANTHROPIC_CHAT_API_KEY / OPENAI_CHAT_API_KEY used to sit in this list, on the premise
-# that they were BYOK-only and deliberately unprovisioned. That premise was wrong: both
-# have existed in /siglens/* since 2026-06-29, holding the same values as their
-# analysis-side counterparts. They are server-paid keys like GEMINI_CHAT_API_KEY and
-# DEEPSEEK_CHAT_API_KEY — `getServerPrimaryKey` in
-# src/entities/llm-provider/lib/serverKeys.ts is read by the SiglensAI agent router
-# (src/entities/llm-provider/api/agent/router.ts) and analysis-plain for every request
-# whose model routes to that provider, including the free-tier models claude-haiku-5-5 and
-# gpt-5-mini. Listing them as optional meant this gate would wave through a deploy that
-# had silently lost them, breaking Claude/ChatGPT for every non-BYOK caller. All four
-# *_CHAT_API_KEY are REQUIRED.
-#
-# DEBUG_VERBOSE_LOGS is an optional debug flag (defaults off when unset); it is never
-# provisioned in prod SSM and must likewise not block deploy.
-#
-# The *_API_KEY (no CHAT) quartet is REQUIRED for the same class of reason:
-# ANTHROPIC/GEMINI/OPENAI/DEEPSEEK_API_KEY are the analysis-side server keys read by
-# @y0ngha/siglens-core's resolveServerApiKey, and every one of the four providers appears
-# in TIER_CONFIG.models.free (the lists live in @y0ngha/siglens-core's tier config, not
-# here, so model ids are not repeated in this comment), i.e. the server pays for all
-# four. Core validates them lazily at call time, so a missing key does not crash startup —
-# it fails the first analysis that routes to that provider, over SSE, with HTTP 200. That
-# is exactly the silent failure this gate exists to catch.
-OPTIONAL_KEYS=(
-  DEBUG_VERBOSE_LOGS
-  # Optional SNS email subscription address for ISR cache alarms. The SNS topic
-  # and CloudWatch alarm wiring (07-alarms.sh) are created regardless; only the
-  # email subscription is skipped when this is absent. Never block deploy for it.
-  ALARM_EMAIL
-  # SiglensAI (ai.siglens.io). NEXT_PUBLIC_AI_SITE_URL defaults to
-  # https://ai.siglens.io (inlined at build time); BRAVE_SEARCH_API_KEY absent =
-  # web_search tool dropped; AGENT_CHAT_DISABLED is a kill switch that is unset
-  # in normal operation.
-  NEXT_PUBLIC_AI_SITE_URL
-  BRAVE_SEARCH_API_KEY
-  # SiglensAI web_search's own NCP application. Absent = the Naver half of the
-  # tool is off (Brave alone still works); never falls back to NAVER_CLIENT_*.
-  NAVER_AI_CLIENT_ID
-  NAVER_AI_CLIENT_SECRET
-  AGENT_CHAT_DISABLED
-  # Analysis kill switch: comma list of providers whose server-paid models are paused. Unset = all on.
-  SERVER_KEY_DISABLED_PROVIDERS
-  # Shared web_search budget override (core AGENT_GLOBAL_LIMITS 33/day, 1,000/month when unset).
-  # Set only while extra Brave capacity is bought, e.g. a benchmark measurement window.
-  AGENT_WEB_SEARCH_PER_DAY
-  AGENT_WEB_SEARCH_PER_MONTH
-  # SiglensAI get_x_posts (official company / CEO posts on X). X_BEARER_TOKEN absent = the tool is not offered
-  # to the model. X bills per post read; AGENT_X_POSTS_PER_DAY overrides the daily read budget (400 when unset).
-  X_BEARER_TOKEN
-  AGENT_X_POSTS_PER_DAY
-  # Investor flows data crons: FINRA_SHORT_DATA_ENABLED / REG_SHO_THRESHOLD_DATA_ENABLED unset = enabled
-  # (non-commercial phase), OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
-  FINRA_SHORT_DATA_ENABLED
-  REG_SHO_THRESHOLD_DATA_ENABLED
-  # Public Open API launch flag: unset = OFF (/developers and /api/v1/* return 404).
-  PUBLIC_API_ENABLED
-  OPENFIGI_API_KEY
-  SEC_USER_AGENT
-  # KR DART disclosure crons: unset = both crons end as `disabled` with zero requests.
-  DART_API_KEY
-  # Operator inbox for inquiry/VOC notification mails and the daily AI-feedback digest.
-  # Unset = those mails are skipped (rows are still stored); the digest cron still purges expired rows.
-  OPERATOR_EMAIL
-)
-
-# 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).
 REQUIRED_KEYS=()
-while IFS= read -r line; do
+OPTIONAL_KEYS=()
+OVERRIDE_KEYS=()
+while IFS= read -r line || [ -n "$line" ]; do
   [[ "$line" =~ ^[[:space:]]*# || -z "${line// }" ]] && continue
-  [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*= ]] || continue
-  key="${BASH_REMATCH[1]}"
-  [[ "$key" =~ $EXCLUDE ]] && continue
-  REQUIRED_KEYS+=("$key")
-done < "$ENV_EXAMPLE"
+  if [[ "$line" =~ ^[[:space:]]*(required|optional|override)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*$ ]]; then
+    case "${BASH_REMATCH[1]}" in
+      required) REQUIRED_KEYS+=("${BASH_REMATCH[2]}") ;;
+      optional) OPTIONAL_KEYS+=("${BASH_REMATCH[2]}") ;;
+      override) OVERRIDE_KEYS+=("${BASH_REMATCH[2]}") ;;
+    esac
+  else
+    log "ERROR: unparseable line in $ENV_GATE: $line"
+    exit 1
+  fi
+done < "$ENV_GATE"
 
-[ "${#REQUIRED_KEYS[@]}" -gt 0 ] || { log "ERROR: no required keys parsed from $ENV_EXAMPLE"; exit 1; }
+[ "${#REQUIRED_KEYS[@]}" -gt 0 ] || { log "ERROR: no required keys parsed from $ENV_GATE"; exit 1; }
 
 # SSM /siglens/* 에 실제 존재하는 키 집합을 한 번에 가져온다(/siglens/ 접두 제거).
 # get-parameters-by-path는 --max-items 미지정 시 자동 페이지네이션(전수 반환).
@@ -105,30 +48,49 @@ EXISTING=$(aws ssm get-parameters-by-path --path /siglens/ --recursive \
   --output json \
   | jq -r '.Parameters[].Name | ltrimstr("/siglens/")')
 
-is_optional() {
-  local k="$1"
-  for opt in "${OPTIONAL_KEYS[@]}"; do
-    [ "$k" = "$opt" ] && return 0
-  done
-  return 1
-}
+# 마이그레이션 게이트 우회가 SSM에 남아 있으면 알린다(값은 읽지 않는다). report/off는 비상용이라
+# 배포가 통과한 뒤 지우지 않으면 게이트가 조용히 꺼진 채로 남는다. 위에서 이미 받은 목록만 쓴다.
+if grep -qxF "MIGRATION_GATE" <<<"$EXISTING"; then
+  log "WARN: SSM /siglens/MIGRATION_GATE is set — the migration gate may be overridden (report/off). Delete it once the deploy is clean: aws ssm delete-parameter --name /siglens/MIGRATION_GATE"
+fi
 
 MISSING=()
 for key in "${REQUIRED_KEYS[@]}"; do
-  if ! grep -qxF "$key" <<<"$EXISTING"; then
-    if is_optional "$key"; then
-      log "WARN: optional key $key not in SSM — skipping (BYOK provider, not required for prod)"
-    else
-      MISSING+=("$key")
-    fi
-  fi
+  grep -qxF "$key" <<<"$EXISTING" || MISSING+=("$key")
 done
+
+MISSING_OPTIONAL=()
+# 선택 키가 하나도 없으면 배열이 비어 있어 `set -u` 아래에서 "${arr[@]}"가 터지는 bash 버전이 있다.
+if [ "${#OPTIONAL_KEYS[@]}" -gt 0 ]; then
+  for key in "${OPTIONAL_KEYS[@]}"; do
+    grep -qxF "$key" <<<"$EXISTING" || MISSING_OPTIONAL+=("$key")
+  done
+fi
+
+# override 키는 없는 것이 정상이라 빠졌다고 알리지 않는다. 거꾸로 **SSM에 있으면** 누군가 일부러
+# 켜 둔 값(킬 스위치, 튜닝, 우회)이므로 이름만 한 줄로 알린다(값은 읽지 않는다). MIGRATION_GATE는
+# 위에서 따로 안내했으니 여기서 빼 중복을 피한다.
+SET_OVERRIDES=()
+if [ "${#OVERRIDE_KEYS[@]}" -gt 0 ]; then
+  for key in "${OVERRIDE_KEYS[@]}"; do
+    [ "$key" = "MIGRATION_GATE" ] && continue
+    ! grep -qxF "$key" <<<"$EXISTING" || SET_OVERRIDES+=("$key")
+  done
+fi
 
 if [ "${#MISSING[@]}" -gt 0 ]; then
   log "ERROR: ${#MISSING[@]} required env key(s) missing from SSM /siglens/*:"
   for key in "${MISSING[@]}"; do log "  - $key"; done
   log "Load them first (e.g. infra/aws/04-params.sh <env-file>) before deploying."
   exit 1
+fi
+
+if [ "${#MISSING_OPTIONAL[@]}" -gt 0 ]; then
+  log "WARN: ${#MISSING_OPTIONAL[@]} optional keys absent from SSM: ${MISSING_OPTIONAL[*]}"
+fi
+
+if [ "${#SET_OVERRIDES[@]}" -gt 0 ]; then
+  log "WARN: ${#SET_OVERRIDES[@]} override key(s) set in SSM: ${SET_OVERRIDES[*]}"
 fi
 
 log "env completeness OK — all required keys present in SSM /siglens/*"

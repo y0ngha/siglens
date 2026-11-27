@@ -39,6 +39,10 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         input.briefRows.some(r => r.brief.signals !== null);
     // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`I18N.md#I18-11`).
     const brand = brandName(locale);
+    const renderContext = {
+        timeZone: input.timeZone,
+        skillLabel: input.skillLabel,
+    };
     const reason = t('reason', { v0: brand });
     const marketHint = marketBriefing === undefined ? null : t('marketHint');
     const marketMore = marketBriefing === undefined ? null : t('marketMore');
@@ -50,7 +54,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     <h1 style="font-size:22px;margin:0 0 8px;color:${COLORS.heading};">${escapeHtml(heading)}</h1>
     <p style="font-size:14px;color:${COLORS.body};margin:0;">${escapeHtml(intro)}</p>
   </div>
-  ${input.sections.map(s => sectionHtml(s, t, input.signalLabel, brand)).join('\n')}
+  ${input.sections.map(s => sectionHtml(s, locale, t, input.signalLabel, brand, renderContext)).join('\n')}
   ${briefTableHtml(input.briefRows, locale, t, input.signalLabel, briefHeading)}
   ${marketBriefing !== undefined && marketHint !== null && marketMore !== null ? `<div style="padding:0 8px 16px;"><p style="font-size:14px;line-height:1.6;color:${COLORS.body};margin:0 0 8px;">${escapeHtml(marketHint)}</p><p style="font-size:14px;margin:0;"><a href="${escapeHtml(marketBriefing.marketUrl)}" style="color:${COLORS.link};font-weight:600;">${escapeHtml(marketMore)} →</a></p></div>` : ''}
   <div style="padding:16px 8px;border-top:1px solid ${COLORS.rule};">
@@ -65,7 +69,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         intro,
         '',
         ...input.sections.flatMap(s => [
-            sectionText(s, t, input.signalLabel, brand),
+            sectionText(s, locale, t, input.signalLabel, brand, renderContext),
             '',
         ]),
         ...briefTableLines(

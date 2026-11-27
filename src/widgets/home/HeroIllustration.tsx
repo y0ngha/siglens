@@ -25,27 +25,28 @@ interface HeroIllustrationProps {
  * 추가해 LCP 리소스의 load delay를 줄인다.
  * `unoptimized`로 next/image의 SVG 변환(불가능)을 우회한다.
  *
- * SVG 본체는 `public/hero-dashboard-v2.svg`에 정적 자산으로 둔다. 컨셉
- * (캔들 차트 + MA 추세 + 골든크로스 마커 + RSI 서브패널)을 추상화한
- * 결정적 디자인이라 실제 데이터에 의존하지 않고 시간이 지나도 outdate되지
- * 않는다.
+ * SVG 본체는 `public/hero-levels-v3.svg`에 정적 자산으로 둔다. 컨셉은
+ * "가격대 지도"다 — 캔들 위에 지지 구간(음영 띠), 저항선(실선), 무효화 기준(점선)을 그린다.
+ * 종목명·가격·등락률·지표 이름이 없는 결정적 디자인이라 실제 데이터를 흉내 내지 않고
+ * 시간이 지나도 outdate되지 않는다(v2는 지어낸 시세와 골든크로스 마커가 있어 대체했다).
  *
  * 캔들 색은 실제 차트와 같아야 한다. 상승은 `shared/lib/chartColors.ts`의
- * `CHART_COLORS_RAW_DARK.bullish`, 하락은 `.bearish` 값이고, `HeroIllustration.test.tsx`가
- * SVG 캔들 그룹이 그 값을 쓰는지 고정한다. 차트 색을 바꾸면 SVG와 그 테스트를 함께 고친다.
+ * `CHART_COLORS_RAW_DARK.bullish`, 하락은 `.bearish` 값이고, 지지·저항·무효화 선은
+ * `supportLine`·`resistanceLine`·`actionStopLoss`다. `HeroIllustration.test.tsx`가
+ * SVG가 그 값을 쓰는지 고정한다. 차트 색을 바꾸면 SVG와 그 테스트를 함께 고친다.
  * 자산은 `immutable`로 캐시되고 배포가 퍼지하지 않으므로, 내용을 바꿀 때는 파일 이름의
- * 버전(`-v2`)을 올린다.
+ * 버전(`-v3`)을 올린다.
  *
  * LCP: 데스크톱(`lg` 이상)에서는 일러스트가 여전히 LCP 후보라 `preload`와
- * `fetchPriority="high"`를 유지한다. 모바일에서는 H1과 검색 상자 뒤에 와서(`HomeHero`)
- * 첫 화면의 LCP는 텍스트일 수 있다 — 이 속성들은 그대로 두어도 해가 없다.
+ * `fetchPriority="high"`를 유지한다. 모바일에서는 `HomeHero`가 이 일러스트를 `hidden lg:block`로
+ * 숨겨 LCP가 텍스트다 — preload는 3.6KB SVG 하나라 모바일 비용이 무시할 만하다.
  */
 export function HeroIllustration({ className }: HeroIllustrationProps) {
     const t = useTranslations('widgets.home');
     return (
         <Image
-            src="/hero-dashboard-v2.svg"
-            alt={t('HeroIllustration.018ed1')}
+            src="/hero-levels-v3.svg"
+            alt={t('HeroIllustration.alt')}
             width={800}
             height={500}
             preload

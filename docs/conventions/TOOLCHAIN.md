@@ -3,9 +3,7 @@
 이 저장소의 타입체크·린트·포맷·코드 건강 검사 도구와 그 제약을 기록한다.
 "왜 이렇게 되어 있는지"를 남기는 문서라, 도구를 바꾸기 전에 여기부터 읽는다.
 
-**Rule IDs.** 반복해서 어겨진 규칙에는 바뀌지 않는 ID(`TC-N`)와 앵커가 붙어 있다. `TOOLCHAIN.md#TC-3`처럼 인용한다.
-TC-1~2 타입체크 · TC-3~4 oxfmt · TC-5~6 React Doctor · TC-7~10·35·37 의존성·프레임워크 업그레이드 ·
-TC-11~13 외부 호출 차단 게이트 · TC-14~16 저장소 설정 파일 · TC-17~28 셸·인프라 스크립트 · TC-29~34 codemod.
+**Rule IDs.** ID 규칙은 root `CLAUDE.md` "Rule IDs and references"를 따른다. `TOOLCHAIN.md#TC-3`처럼 인용한다.
 
 ## Node 런타임 버전 정책
 
@@ -24,11 +22,7 @@ TC-11~13 외부 호출 차단 게이트 · TC-14~16 저장소 설정 파일 · T
   기본값이라 `next build`가 TypeScript CLI(`tsc`, TS 7)로 전체 타입체크를 돌린다
   ("Running TypeScript" 단계, 수 초). 레거시 JS API(`typescript/lib/typescript.js`)는
   더 이상 필요 없다.
-  - 16.2까지는 Next가 JS API를 require했는데 TypeScript 7은 그 파일을 배포하지 않아서,
-    `@typescript/native-preview`를 설치해 두면 Next가 "네이티브 컴파일러 사용 중"으로 보고
-    타입체크를 **건너뛰는** 동작에 기대고 있었다(`next/dist/lib/verify-typescript-setup.js`).
-    CLI 모드는 이 신호를 보지 않으므로 16.3에서는 빌드에 필요 없다. 패키지는 아래
-    에디터 언어 서버 용도로 남겨 두었다(제거해도 빌드는 깨지지 않는다).
+  - `@typescript/native-preview`는 빌드에 필요 없고 아래 에디터 언어 서버 용도로만 남아 있다(제거해도 빌드는 깨지지 않는다).
 - 타입 안전성은 pre-push + CI의 `yarn typecheck`가 담당한다.
 - yarn은 4.18 이상이어야 한다. 4.12는 typescript@7에 compat 패치를 적용하려다
   `lib/_tsc.js` ENOENT로 install 자체가 실패한다.
@@ -74,17 +68,14 @@ oxlint는 자체 파서라 무관하고, 저장소 전체 린트가 1초대에 �
   머지하지 않고 **마지막 매치가 이긴다** — 그래서 "deep import 금지 + 레이어 방향
   금지 + @e2e 금지"를 레이어별 override 하나에 함께 담는다. 규칙을 추가할 때 이
   성질을 잊으면 앞선 override가 통째로 사라진다.
-- 인라인 억제(`oxlint-disable-*`)는 쓰지 않는다. 룰이 우리 코드에 맞지 않으면
-  룰 옵션(예: `no-redundant-roles`의 태그 예외)이나 파일 범위 override로 표현하고
-  근거를 주석으로 남긴다.
+- 인라인 억제 금지는 `CONVENTIONS.md` "Lint and guard rules"가 정한다. 맞지 않는 룰은 룰 옵션(예: `no-redundant-roles`의
+  태그 예외)이나 파일 범위 override로 표현하고 근거를 주석으로 남긴다.
 
 ## oxfmt (prettier 대체)
 
 - 설정: `.oxfmtrc.json` (`oxfmt --migrate=prettier`로 이관)
 - JS/TS뿐 아니라 JSON·CSS·YAML·Markdown까지 포맷한다. tailwind 클래스 정렬은
   내장 `sortTailwindcss`가 담당하며 Tailwind v4의 stylesheet 경로를 받는다.
-  prettier-plugin-tailwindcss는 그 경로를 못 받아 커스텀 테마 유틸을
-  "미지 클래스"로 취급했었다 — 그래서 전환 시 클래스 순서가 크게 바뀌었다.
 - `.gitignore`의 `!.yarn/releases` 부정 패턴 때문에 yarn 번들이 포맷 후보로
   올라온다. `.oxfmtrc.json`의 `ignorePatterns`에서 `.yarn/**`을 명시 제외한다.
 
@@ -136,57 +127,13 @@ JSON 설정(IAM 정책, 설정 파일 등)을 범용 직렬화기로 다시 쓰�
 ### 점수에 대해 알아 둘 것 (실측)
 
 점수는 **서버 API가 진단 목록만 받아 계산**한다(`calculateScore` → `requestScore`).
-로컬 공식은 없고, 코드 크기로 정규화하지도 않는다. 2026-08-18 기준 실측:
-
-| 상태 | 점수 |
-|---|---|
-| 툴체인 전환 전 | 65 |
-| 1차 실수정 + 설정 정리 | 81 |
-| 2차 실수정(아래) 후 **현재** | **85 (Great)**, error 0 |
-| Bugs·Performance·Accessibility를 전부 0으로 만들면 | 90 |
-| 진단 0건 | 100 |
+로컬 공식은 없고, 코드 크기로 정규화하지도 않는다.
 
 - **suppression은 점수를 바꾸지 않는다.** `ignore.rules` / `ignore.overrides`로
   걸러도 점수 API는 원본 진단을 받는다. 반대로 `rules: {x: "off"}`(룰 미실행)과
   `ignore.files`(스캔 제외)는 진단 자체가 생기지 않아 점수에 반영된다.
 - **카테고리 가중치가 크게 다르다.** Maintainability는 134건이 있어도 1점 남짓이고
   (수동 메모화 109건을 전부 지워도 점수 변화 0), Security는 6건이 8점을 물었다.
-- `.github/**`를 스캔에서 제외한 이유: `build-pipeline-secret-boundary`가
-  "시크릿이 있는 잡에서 install이 돈다"를 지적하는데, GitHub Packages는 공개
-  패키지도 인증을 요구해 `@y0ngha/siglens-core`를 받으려면 install 시점 토큰이 필수라 구조적으로 해소가
-  불가능하다. 실제 가능한 완화는 코드에 반영했다 — 토큰을 job 전역 env에서 install
-  스텝으로 좁혔고, 순수 JS 체크 잡은 `--mode=skip-build`로 시크릿이 있는 동안
-  패키지 lifecycle 코드를 실행하지 않는다.
-
-### 2차에서 실제로 고친 것
-
-- **분석 쿼리 4종**(congress/financials/fundamental/options): `enabled: false` + effect에서
-  `refetch()` → `enabled` 기반으로. 포커스/재연결 재요청을 꺼서 "실패 후 창 포커스만으로
-  AI 분석이 다시 도는" 경로를 차단했다.
-- **usePersistentState**: 마운트 effect 복원 → `useSyncExternalStore`. 복원 렌더가 사라지고,
-  같은 key를 쓰는 인스턴스가 자동 동기화되며 다른 탭 변경도 반영된다.
-- **useSectorSignalState**: URL 딥링크 복원을 effect → 첫 렌더 초기화로(이 패널은
-  `useSearchParams` CSR bailout이라 하이드레이션 불일치가 없다).
-- **채팅 메시지 key**: `ChatMessage`(core 소유 타입)에 id가 없어 표시 계층에서 `uiId`를
-  부여하고 LLM 전송·저장 전에 제거한다. 인덱스 key 제거.
-- **모달**(ContactDialog; 차트 지표 설정은 앵커드 팝오버로 바뀌어 제외): 네이티브 `<dialog>` + `showModal()`.
-  포커스 트랩·Esc·비활성 배경을 브라우저에 위임하고 `useFocusTrap`/`useEscapeKey`/
-  `useOnClickOutside` 조합을 걷어냈다. 배경 클릭 닫기는 `useDialog`가 dialog 엘리먼트에
-  직접 리스너를 붙인다(소비자 JSX에 클릭 핸들러를 두면 a11y 룰에 걸린다).
-  jsdom은 `showModal`을 구현하지 않아 `vitest.setup.dom.ts`에 최소 폴리필을 뒀다.
-
-### 90점까지 남은 항목(후속 과제)
-
-남은 9건이 5점을 물고 있다. 전부 "런타임 회귀가 의심되는" 리팩터링이거나 분석기 오탐이라
-이 PR에서는 손대지 않았다.
-
-| 항목 | 건수 | 왜 미뤘나 |
-|---|---|---|
-| `no-pass-data-to-parent` 외 2종 (ChartContent `notifyMobileContent`) | 3 | 모바일 바텀시트 내용을 부모 상태로 올리는 구조다. 부모가 Suspense 경계 **밖**에서 시트를 렌더해 타임프레임 전환 시에도 내용이 유지되는 것이 의도된 설계라(포털로 바꾸면 서스펜드 중 내용이 사라진다) 구조 변경 없이는 못 없앤다 |
-| `no-pass-data-to-parent`/`no-pass-live-state-to-parent` (useSelectedModel) | 2 | 모델 선택이 매 로드 DEFAULT로 강등되던 회귀(PR #713)를 tier 확정 게이트로 막은 파일이다. 파생 상태 재작성이 더 안전할 수 있지만 별도 PR + 실증이 필요하다 |
-| `no-pass-data-to-parent` (useMovingAverageOverlay, useIndicatorTranslationTrigger) | 2 | 분석기 오탐. 각각 lightweight-charts 시리즈에 데이터를 넣는 명령형 동기화와, 마운트 1회 fire-and-forget 서버 액션 트리거다 |
-| `no-adjust-state-on-prop-change` (useAnalysis) | 2 | tier 확정·보유종목 하이드레이션·warm 캐시 결과가 얽힌 레이스 처리다. 상태 조정과 재제출(side effect)이 한 effect에 묶여 있어 렌더 파생으로 옮길 수 없다 |
-
 ## 의존성·프레임워크 업그레이드
 
 <a id="TC-7"></a>
@@ -282,8 +229,7 @@ Windows 7/8.1에서 올릴 수 있는 마지막 Chrome이라 실제 사용자가
 - **지원하지 않는다:** Chrome·Edge 109 미만, iOS 15 미만, IE. 이 환경의 오류는 고치지 않는다. 폴리필 덕에 일부가 우연히
   동작해도 보장하지 않는다.
 - 하한에 없는 메서드는 `src/shared/lib/legacyBrowserPolyfills.ts`가 `instrumentation-client.ts`에서 앱 코드보다 먼저
-  채운다. 지금 채우는 것: `toSorted`, `toReversed`, `findLast`, `findLastIndex`, Array·String `at`, `Object.hasOwn`,
-  `AbortSignal.timeout`.
+  채운다. 채우는 목록은 그 파일이 원본이다(e2e 삭제 목록과의 일치는 `src/__tests__/guards/legacyBrowserPolyfillParity.test.ts`).
 - 그 밖에 하한보다 새 API(`Object.groupBy`·`Map.groupBy`, Set 연산 메서드, `Promise.withResolvers`, `Array.prototype.with`·
   `toSpliced`, `structuredClone` 등)는 서버 전용 코드에서만 쓴다. 클라이언트에서 필요하면 같은 파일에 명세대로
   폴리필을 추가하고, `e2e/specs/legacy-browser.spec.ts`의 삭제 목록에도 넣는다.
@@ -447,4 +393,31 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 
 #### TC-38 — CloudWatch 필터 문구는 소스에 실제로 있어야 한다
 
-`infra/aws/*.sh`의 metric filter는 `console.*` 문구를 글자 그대로 매치하므로, 로그 문구를 바꾸거나 필터에 없는 문구를 적으면 알람이 조용히 죽는다. 필터의 따옴표 용어는 모두 ASCII여야 하고, `src`·`scripts`·`cache-handler`·설치된 core `dist`의 **문자열·템플릿 리터럴 안에** 있어야 한다. 주석에만 남은 문구는 근거가 아니다. `${}` 슬롯이 만드는 문구는 슬롯 값이 소스의 따옴표 리터럴로 정확히 있고 템플릿의 마지막 고정 문구에 닿을 때만 인정한다. `src/__tests__/guards/alarmFilterPhrases.test.ts`가 이를 검사한다. 소스 밖에서 만들어지는 문구는 그 테스트의 허용 목록에 이유와 함께 둔다.
+`infra/aws/*.sh`의 metric filter는 `console.*` 문구를 글자 그대로 매치하므로 문구가 어긋나면 알람이 조용히 죽는다. 따옴표 용어는 ASCII여야 하고 `src`·`scripts`·`cache-handler`·설치된 core `dist`의 **문자열·템플릿 리터럴 안에** 있어야 한다(주석은 근거가 아니다). `${}` 슬롯이 만드는 문구는 슬롯 값이 소스의 따옴표 리터럴로 정확히 있고 마지막 고정 문구에 닿을 때만 인정한다. `alarmFilterPhrases.test.ts`가 이를 검사한다(소스 밖 문구는 허용 목록에 이유와 함께). `alarmFilterReachability.test.ts`는 `src`에서 그 로그가 절대 reject하지 않는 함수(`cacheNonNull` 등)의 직접 `.catch` 안에 있는 경우를 막는다.
+
+<a id="TC-40"></a>
+
+#### TC-40 — 실패할 수 있는 단계 앞에서 공유 상태를 바꾸는 배포 스크립트는 이전 상태를 먼저 기록하고 모든 실패 경로에서 되돌린다
+
+공유 인프라 상태(기본 버전 포인터, 설정 값, 트래픽 대상)를 바꾼 뒤에 실패할 수 있는 단계가 오면, 바꾸기 전 값을 먼저 기록하고 변경과 결과 확정 사이의 **모든 종료 경로**(후속 단계 시작 실패, 실패·취소 결과, 타임아웃)를 나열해 각각에서 복원한다. 처음 쓴 경로만 복원하면 같은 틈이 다른 경로에서 되풀이된다. 아직 진행 중인 작업 때문에 복원이 안전하지 않은 경로(타임아웃)는 임의로 되돌리지 말고 순서가 있는 수동 조치를 출력한다.
+
+- ❌ 새 설정 버전을 만들어 기본으로 지정한 뒤 롤아웃 시작이 실패하면 막힌 버전이 기본으로 남아, 이후 교체가 같은 실패를 반복한다.
+- ✅ 지정 전에 이전 기본값을 기록하고 시작 실패·실패 결과에서 되돌린다. 타임아웃에서는 먼저 롤아웃을 취소하라는 안내를 출력한다.
+
+<a id="TC-41"></a>
+
+#### TC-41 — 규칙 기준선은 줄이기만 한다
+
+`src/__tests__/guards/codeRules.baseline.json`은 `ratchet` 규칙(`non-null-assertion`, `mock-call-index`, `let-then-try`)의 파일별 위반 수를 얼려 둔 기준선이다. `codeRules.test.ts`는 수가 늘거나 새 파일에 위반이 생기면(새 파일은 0에서 시작) 실패하고, 파일이 사라졌는데 남은 항목도 실패한다. 파일이 있는데 위반이 0이 된 항목은 통과하고 줄일 수 있는 항목으로 보고된다(같은 파일을 줄이는 PR 둘이 합쳐져도 master가 깨지지 않게). `yarn rules:ratchet --tighten`을 주기적으로 돌려 줄이고 0 항목을 지운다. 파일의 이름을 바꾸거나 지웠다면(옛 경로가 사라졌을 때만) `--move <옛> <새>`로(`--tighten`보다 먼저) 항목을 따라 옮기고, 고친 파일을 새 파일로 넘기는 용도로는 거절된다. 값이 같거나 작다는 이유만으로 사라진 항목과 새 항목을 짝짓지 않는다. 도구에는 올리는 경로가 없다. 값을 올리거나 규칙 키를 더하는 것은 JSON을 손으로 고치는 일이고 사용자 승인을 PR 본문에 적어야 한다. 줄 번호가 아니라 파일별 개수만 쓴다(`TESTING.md#TE-44`).
+
+- ❌ 새 테스트의 `mock.calls[0]`이 가드에 걸리자 기준선의 숫자를 올려 통과시킨다.
+- ✅ `mock.calls.find(...)`나 `toHaveBeenCalledWith`로 고친다. `yarn rules:ratchet --against origin/master`가 올라간 값과, git 이름 변경(`-M`)으로 짝지어지지 않은 새 키를 나열한다.
+
+<a id="TC-42"></a>
+
+#### TC-42 — `public/` 에셋은 제자리에서 고치거나 바로 지우지 않는다
+
+`public/` 파일은 `immutable`로 오래 캐시되고 태그 퍼지는 브라우저 캐시에 닿지 않으며, CDN·ISR에 캐시된 HTML은 배포 뒤에도 옛 경로를 요청한다. 내용이 바뀌면 버전 접미사가 붙은 새 파일명으로 만들고 모든 참조를 옮긴다. 마지막 참조를 없앤 릴리스에서는 옛 파일을 남기고 다음 릴리스에서 지운다.
+
+- ❌ `hero-dashboard.svg`를 덮어쓰거나, 참조를 없앤 같은 릴리스에서 지운다.
+- ✅ `hero-dashboard-v2.svg`를 추가하고 옛 파일은 한 릴리스 뒤에 지운다.

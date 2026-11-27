@@ -53,6 +53,8 @@ function readReasons(raw: unknown): string[] {
 /**
  * 일일 요약용 집계. 입력은 최신순 👍/👎 행이다(`listAiFeedbackSince`). 투표 방향이
  * `up`/`down`이 아닌 행은 집계에서 뺀다. 그룹은 👎 많은 순 → 표면 → 종류 순으로 정렬한다.
+ *
+ * CONVENTIONS.md#CP-6 예외: 행마다 그룹 Map과 하락 목록을 한 번에 채우는 단일 패스다. 피드백 행이 수천 건이라 행마다 복사하면 O(N²)다.
  */
 export function buildFeedbackDigest(
     rows: readonly FeedbackDigestRow[]

@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
@@ -28,7 +28,6 @@ vi.mock('next/script', () => ({
     ),
 }));
 
-import { act } from '@testing-library/react';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { ADS_CONVERSION_QUEUED_EVENT } from '@/shared/lib/googleAds';
 

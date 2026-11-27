@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cmf_bullish_flip, cmf_bearish_flip]
-token_cost: 501
-digest_hash: "3eebe1ab"
+token_cost: 515
+digest_hash: "ea713526"
+digest_text_hash: "0809fcac"
 ---
 
 ## Overview
@@ -33,8 +34,8 @@ CMF (Chaikin Money Flow), developed by Marc Chaikin, measures the accumulation/d
 
 ### Breakout Confirmation
 
-- Price breaking above resistance + CMF > 0 and rising: the breakout is supported by genuine buying pressure — high-probability follow-through.
-- Price breaking above resistance + CMF < 0 or falling: the breakout lacks volume conviction — higher probability of false breakout or quick reversal.
+- Price breaking above resistance + CMF > 0 and rising: the breakout is supported by buying pressure — follow-through is plausible but not assured.
+- Price breaking above resistance + CMF < 0 or falling: the breakout lacks volume conviction — a false breakout or quick reversal is a real risk.
 - Price breaking below support + CMF < 0 and falling: the breakdown is confirmed by selling pressure — downside continuation likely.
 - CMF as a breakout filter significantly reduces false breakout entries.
 
@@ -61,7 +62,7 @@ CMF (Chaikin Money Flow), developed by Marc Chaikin, measures the accumulation/d
 - CMF is highly sensitive to the close's position within the high-low range. A close exactly at the midpoint yields a CLV of zero regardless of volume, making that bar's contribution nil.
 - CMF uses a fixed lookback window — old data drops off as new data enters. A sudden change in CMF may simply reflect an extreme bar falling out of the window rather than new information.
 - CMF does not account for gap moves. A gap up where the close is near the low of a narrow range produces a negative CLV despite overall bullish price action.
-- The standard 21-period lookback is suitable for daily charts. For shorter timeframes, 10-period CMF may be more responsive; for weekly analysis, 40 periods may provide smoother signals.
+- The standard 21-period lookback is the usual reference. For shorter timeframes, 10-period CMF may be more responsive; for weekly analysis, 40 periods may provide smoother signals.
 - CMF values rarely reach the theoretical extremes of +1 or -1. In practice, values beyond ±0.4 are exceptional.
 - CMF can be distorted on limit-up / limit-down (halt) days: the close is pinned at the locked price while volume accumulates, producing an extreme CLV that does not reflect genuine two-sided trading. Discount CMF readings on halt bars.
 
@@ -80,7 +81,7 @@ Zero-line crossover:
 - Most meaningful when it persists for multiple bars (genuine capital-flow shift vs noise).
 
 Breakout confirmation:
-- Break resistance + CMF>0 & rising = supported by buying, high follow-through; + CMF<0/falling = lacks conviction, likely false.
+- Break resistance + CMF>0 & rising = supported by buying, follow-through plausible; + CMF<0/falling = lacks volume support, false breakout is a real risk.
 - Break support + CMF<0 & falling = confirmed breakdown, downside continuation.
 
 Divergence:
@@ -95,5 +96,5 @@ Combinations:
 - + OBV: rising OBV + positive CMF = strong volume consensus.
 - + Breakout patterns (triangles/rectangles): excellent filter — only act when CMF confirms direction.
 
-Caveats: sensitive to close position (midpoint close → CLV 0, nil contribution regardless of volume); fixed window (sudden change may be an extreme bar dropping out, not new info); ignores gaps (gap-up close near narrow-range low → negative CLV despite bullish action); 21 = daily standard (10 shorter TF, 40 weekly); values beyond ±0.4 exceptional (rarely reach ±1); distorted on limit-up/down halt bars (close pinned, extreme CLV not genuine) — discount halt bars.
+Caveats: sensitive to close position (midpoint close → CLV 0, nil contribution regardless of volume); fixed window (sudden change may be an extreme bar dropping out, not new info); ignores gaps (gap-up close near narrow-range low → negative CLV despite bullish action); 21 = the usual reference (10 for shorter timeframes, 40 for weekly analysis); values beyond ±0.4 exceptional (rarely reach ±1); distorted on limit-up/down halt bars (close pinned, extreme CLV not genuine) — discount halt bars.
 <!-- PROMPT_DIGEST:END -->

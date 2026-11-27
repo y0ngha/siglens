@@ -16,8 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_triangle]
-token_cost: 902
-digest_hash: "0b501590"
+token_cost: 903
+digest_hash: "c16765a8"
+digest_text_hash: "1fbe8ecc"
 ---
 
 ## Detection Criteria
@@ -63,7 +64,7 @@ Factors that decrease confidence:
 - **Apex breakout**: Breakouts occurring very close to or past the apex point have significantly reduced reliability and measured move potential.
 - **No volume confirmation**: A breakout above resistance without a volume surge may be a false breakout. Price may quickly reverse back inside the triangle.
 - **Flat market context**: If there is no prior trend and the ascending triangle forms in a choppy market, the directional bias is weakened.
-- **Premature breakout**: An intraday wick above resistance without a closing break is not confirmation.
+- **Premature breakout**: A within-bar wick above resistance without a closing break is not confirmation.
 - **Resistance slope too steep**: If the "resistance" line has a slope > 1%, the pattern may be a rising channel rather than an ascending triangle.
 
 ## Entry/Exit Considerations
@@ -93,7 +94,7 @@ Geometry:
 - Price converges (range narrows) toward apex. Minimum 15 bars.
 - Engine: lines through confirmed pivots (window 8→5 pivots, grown back to ≤16 while all touches kept), bars contained within 0.25 ATR, touch = within 0.35 ATR, lines interleave (≥2 touches each from the other's first touch); flat upper (≤min(0.75 ATR, 1% price) move) + lower rising ≥1.5 ATR (in between = not drawn), ≥2 touches each, end width ≤0.7× start; direction fixed up; ≥15 bars; height ≥2.5 ATR and the price-share minimum. Lines drawn solid first→last touch, dashed to the bar the printed value is read. Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
-Confirmation: close ABOVE horizontal resistance with increased volume (surge 50%+ above average). Intraday wick above resistance without a close = not confirmed. Volume should decline as triangle narrows. Post-breakout: a pullback to the former resistance that holds as support confirms the pattern. Accelerating higher lows on the ascending support trendline = intensifying buying pressure.
+Confirmation: close ABOVE horizontal resistance with increased volume (surge 50%+ above average). Within-bar wick above resistance without a close = not confirmed. Volume should decline as triangle narrows. Post-breakout: a pullback to the former resistance that holds as support confirms the pattern. Accelerating higher lows on the ascending support trendline = intensifying buying pressure.
 
 Confidence (weight 0.7) — Bulkowski at.html: breaks up 63%; up-breakout failure 17% (down 38%); 70% of up breakouts meet target; rank 16/39.
 - Increase: 3+ touches on resistance, 3+ on support, declining volume, breakout in first 2/3 of triangle (between 50%–75% point most reliable), prior uptrend.

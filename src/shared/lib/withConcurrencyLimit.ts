@@ -24,7 +24,7 @@ export async function withConcurrencyLimit<T, R>(
     const total = items.length;
     for (let i = 0; i < total; i += limit) {
         const chunk = items.slice(i, i + limit);
-        // reduce+spread는 .then 체이닝이 필요해 명료성 이득이 없어 for-loop+push를 택했다.
+        // CONVENTIONS.md#CP-6 예외: reduce+spread는 .then 체이닝이 필요하고 청크마다 결과 배열을 통째로 복사한다(O(N²)). 청크 단위 push는 O(N)이다.
         results.push(...(await Promise.allSettled(chunk.map(fn))));
     }
     return results;

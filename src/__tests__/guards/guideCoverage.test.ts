@@ -19,6 +19,10 @@ import {
  * 스킬→가이드 링크 맵(`guideLinks.generated.ts`)은 생성물이고, 가이드 항목은 스킬 파일을
  * 설명한다. 둘이 표류하면 홈·분석 패널의 "뜻 보기" 링크가 조용히 사라지거나 죽은 링크가 된다.
  * 스킬 추가 PR을 막지 않도록 아직 가이드가 없는 스킬은 `GUIDE_PENDING_SKILLS`에 올려 둔다.
+ *
+ * **새 스킬은 새 정의형 가이드를 쓰지 말고 `GUIDE_PENDING_SKILLS`에 올린다.** 정의형 분류(캔들·차트
+ * 패턴·보조지표·전략)는 동결돼 있고(`guideDefinitionFreeze.test.ts`), 이 가드의 "항목 아니면 대기 목록"
+ * 요구가 그 동결을 깨는 방향으로 밀지 않게 하려는 정책이다. 읽을거리를 늘리려면 `howto`로 쓴다.
  */
 const SKILLS_DIR = path.resolve(__dirname, '../../../skills');
 

@@ -334,3 +334,86 @@ describe('registerShutdownHandlers()', () => {
         });
     });
 });
+
+describe('reportRequestError()', () => {
+    const context = {
+        routerKind: 'App Router',
+        routePath: '/[symbol]',
+        routeType: 'render',
+    };
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('DB 에러면 라우트 패턴과 이름·코드만 한 줄 남기고 파라미터는 싣지 않는다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        const { DrizzleQueryError } = await import('drizzle-orm/errors');
+        const dbError = new DrizzleQueryError(
+            'select 1 where id = $1',
+            ['secret-token-xyz'],
+            Object.assign(new Error('boom'), {
+                name: 'PostgresError',
+                code: '23505',
+            })
+        );
+
+        Object.assign(dbError, { digest: 'abc123' });
+
+        const { reportRequestError } = await import('@/instrumentation.node');
+        reportRequestError(dbError, context);
+
+        expect(errorSpy).toHaveBeenCalledTimes(1);
+        const logged = JSON.stringify(errorSpy.mock.calls);
+        expect(logged).toContain('/[symbol]');
+        expect(logged).toContain('code=23505');
+        expect(logged).toContain('digest=abc123');
+        expect(logged).not.toContain('secret-token-xyz');
+    });
+
+    it('DB 에러가 아니면 아무것도 찍지 않는다(Next가 이미 찍었다)', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const { reportRequestError } = await import('@/instrumentation.node');
+        reportRequestError(new Error('provider timeout'), context);
+
+        expect(errorSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('registerErrorLogRedaction()', () => {
+    it('console.error로 넘긴 DB 에러를 실제로 지운다', async () => {
+        const methods = ['error', 'warn', 'log', 'info', 'debug'] as const;
+        const saved = methods.map(method => [method, console[method]] as const);
+        const marker = Symbol.for('siglens.consoleDbErrorRedactionInstalled');
+        const consoleRecord = console as unknown as Record<symbol, unknown>;
+        const hadMarker = Object.hasOwn(consoleRecord, marker);
+        const savedMarker = consoleRecord[marker];
+        delete consoleRecord[marker];
+        const sink = vi.fn();
+        console.error = sink;
+        try {
+            const { DrizzleQueryError } = await import('drizzle-orm/errors');
+            const { registerErrorLogRedaction } =
+                await import('@/instrumentation.node');
+            registerErrorLogRedaction();
+            console.error(
+                new DrizzleQueryError('select $1', ['secret-token-xyz'])
+            );
+
+            expect(sink).toHaveBeenCalledTimes(1);
+            expect(JSON.stringify(sink.mock.calls)).not.toContain(
+                'secret-token-xyz'
+            );
+            expect(sink).toHaveBeenCalledWith(expect.any(String));
+        } finally {
+            for (const [method, fn] of saved) console[method] = fn;
+            if (hadMarker) consoleRecord[marker] = savedMarker;
+            else delete consoleRecord[marker];
+        }
+    });
+});

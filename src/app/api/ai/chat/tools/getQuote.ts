@@ -46,6 +46,45 @@ function quoteAsOf(quote: MarketQuote): {
     return { asOf: new Date().toISOString(), asOfIsFetchTime: true };
 }
 
+/** 한 심볼의 시세 행. 공급자 오류는 던지므로 호출부가 심볼 단위로 잡는다. */
+async function quoteFor(symbol: string) {
+    const [profile, asset] = await Promise.all([
+        resolveMarketProfile(symbol),
+        resolveAssetInfoOrNull(symbol, 'get_quote'),
+    ]);
+    const quote = await getCachedMarketDataProvider(
+        sessionSpecFor(profile)
+    ).getQuote(asset?.fmpSymbol ?? symbol);
+    if (quote === null) return { symbol, found: false };
+    // 한국의 죽은 리스팅(잘못된 접미사 등)은 가격이 아니라 데이터 오류로 돌린다.
+    const lastTradeDate = staleKrListingDate(
+        profile,
+        quote.timestamp === undefined
+            ? undefined
+            : quote.timestamp * MS_PER_SECOND,
+        Date.now()
+    );
+    if (lastTradeDate !== null)
+        return {
+            symbol,
+            found: false,
+            error: 'stale_listing' as const,
+            lastTradeDate,
+        };
+    const descriptor = getDescriptor(profile);
+    return {
+        symbol,
+        ...resolvedInstrumentFields(asset),
+        found: true,
+        price: quote.price,
+        changesPercentage: quote.changesPercentage,
+        currency: descriptor.priceFormat.currency,
+        marketProfile: profile,
+        quoteDelayMinutes: descriptor.quoteDelayMinutes,
+        ...quoteAsOf(quote),
+    };
+}
+
 /**
  * Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP), quoted
  * through `fmpSymbol` when the canonical symbol differs from the one the
@@ -56,52 +95,13 @@ export const getQuoteTool: ToolExecutor = async args => {
     const symbols = (args.symbols as string[])
         .slice(0, MAX_SYMBOLS)
         .map(s => s.toUpperCase());
-    // `allSettled`, not `all` — one symbol's provider error (e.g. FMP rate
-    // limit on a single ticker) must not blank out every other requested
-    // quote in the same call.
-    const settled = await Promise.allSettled(
-        symbols.map(async symbol => {
-            const [profile, asset] = await Promise.all([
-                resolveMarketProfile(symbol),
-                resolveAssetInfoOrNull(symbol, 'get_quote'),
-            ]);
-            const quote = await getCachedMarketDataProvider(
-                sessionSpecFor(profile)
-            ).getQuote(asset?.fmpSymbol ?? symbol);
-            if (quote === null) return { symbol, found: false };
-            // 한국의 죽은 리스팅(잘못된 접미사 등)은 가격이 아니라 데이터 오류로 돌린다.
-            const lastTradeDate = staleKrListingDate(
-                profile,
-                quote.timestamp === undefined
-                    ? undefined
-                    : quote.timestamp * MS_PER_SECOND,
-                Date.now()
-            );
-            if (lastTradeDate !== null)
-                return {
-                    symbol,
-                    found: false,
-                    error: 'stale_listing' as const,
-                    lastTradeDate,
-                };
-            const descriptor = getDescriptor(profile);
-            return {
-                symbol,
-                ...resolvedInstrumentFields(asset),
-                found: true,
-                price: quote.price,
-                changesPercentage: quote.changesPercentage,
-                currency: descriptor.priceFormat.currency,
-                marketProfile: profile,
-                quoteDelayMinutes: descriptor.quoteDelayMinutes,
-                ...quoteAsOf(quote),
-            };
-        })
-    );
-    const quotes = settled.map((result, i) =>
-        result.status === 'fulfilled'
-            ? result.value
-            : { symbol: symbols[i]!, found: false }
+    // Each lookup catches its own failure — one symbol's provider error (e.g.
+    // FMP rate limit on a single ticker) must not blank out every other
+    // requested quote in the same call.
+    const quotes = await Promise.all(
+        symbols.map(symbol =>
+            quoteFor(symbol).catch(() => ({ symbol, found: false }))
+        )
     );
     return {
         asOf: new Date().toISOString(),

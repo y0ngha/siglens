@@ -1,0 +1,75 @@
+name: Coverage weekly
+
+# 커버리지는 PR CI에서 돌리지 않는다(`yarn test --shard`만 돈다). 이 워크플로가 주 1회
+# 전체 스위트를 한 번 커버리지로 돌려 레이어별 표를 실행 요약과 아티팩트로 남긴다.
+#
+# - 일요일 03:23 KST(토요일 18:23 UTC). 정각을 피해 스케줄 지연을 줄인다.
+# - 잡 하나, 샤드 없음, 병렬 실행 없음: 커버리지 실행 둘이 `coverage/.tmp`를 공유하면
+#   서로 지우면서도 exit 0으로 끝나 리포트가 비어도 성공으로 보인다.
+# - 임계값은 0으로 내린다. 90% 미달로 잡이 빨개지면 "테스트가 깨졌다"와 구분이 안 된다.
+#   그래서 이 잡의 실패는 테스트 실패거나 리포트 누락이고, 미달 폭은 표에서 본다.
+# - 표 스크립트는 리포트가 없거나 비어 있으면 실패한다(`scripts/coverage-by-layer.ts`).
+on:
+    schedule:
+        - cron: '23 18 * * 6'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: coverage-weekly
+    cancel-in-progress: true
+
+jobs:
+    coverage:
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: yarn
+
+            # 토큰·skip-build 근거는 ci.yml `static` 잡의 같은 스텝 주석 참고.
+            - name: Install dependencies
+              env:
+                  SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+              run: yarn install --immutable --mode=skip-build
+
+            # 계측으로 느려지는 스캔 가드의 제한 시간을 늘린다(`src/__tests__/guards/support/controlUsage.ts`).
+            - name: Test with coverage
+              env:
+                  COVERAGE_RUN: '1'
+              run: >-
+                  yarn test-coverage
+                  --coverage.reporter=json-summary
+                  --coverage.reporter=text-summary
+                  --coverage.thresholds.lines=0
+                  --coverage.thresholds.statements=0
+                  --coverage.thresholds.functions=0
+                  --coverage.thresholds.branches=0
+
+            # 테스트가 실패해도 `reportOnFailure`로 나온 리포트가 있으면 표는 만든다.
+            - name: Coverage by layer
+              if: always()
+              run: yarn tsx scripts/coverage-by-layer.ts coverage/coverage-summary.json
+
+            - name: Upload coverage report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-report
+                  path: |
+                      coverage/coverage-summary.json
+                      coverage/by-layer.md
+                      coverage/by-layer.json
+                  if-no-files-found: error
+                  retention-days: 35

@@ -11,13 +11,15 @@ const g = ko.views.guide;
 async function renderLive(
     groups: Parameters<typeof GuideLiveSymbols>[0]['groups'],
     locale: Locale = 'ko',
-    patternTitles: Record<string, string> = {}
+    patternTitles: Record<string, string> = {},
+    hubSlugs: readonly string[] = []
 ) {
     const tree = await resolveAsyncServerTree(
         <GuideLiveSymbols
             locale={locale}
             groups={groups}
             patternTitles={patternTitles}
+            hubSlugs={hubSlugs}
         />
     );
     return renderWithIntl(tree as ReactElement, { locale });
@@ -34,6 +36,7 @@ describe('GuideLiveSymbols', () => {
                         name: '엔비디아',
                         changePercent: -2.345,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T00:00:00.000Z',
                         match: null,
                     },
@@ -42,6 +45,7 @@ describe('GuideLiveSymbols', () => {
                         name: null,
                         changePercent: null,
                         basis: 'snapshot',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-24T21:00:00.000Z',
                         match: null,
                     },
@@ -55,6 +59,7 @@ describe('GuideLiveSymbols', () => {
                         name: '삼성전자',
                         changePercent: 0.5,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T00:00:00.000Z',
                         match: null,
                     },
@@ -97,6 +102,7 @@ describe('GuideLiveSymbols', () => {
                         name: '애플',
                         changePercent: 1,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T00:00:00.000Z',
                         match: null,
                     },
@@ -119,6 +125,7 @@ describe('GuideLiveSymbols', () => {
                         name: '삼성전자',
                         changePercent: 0.5,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T00:00:00.000Z',
                         match: null,
                     },
@@ -127,6 +134,7 @@ describe('GuideLiveSymbols', () => {
                         name: null,
                         changePercent: null,
                         basis: 'snapshot',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-24T21:00:00.000Z',
                         match: null,
                     },
@@ -153,6 +161,7 @@ describe('GuideLiveSymbols', () => {
                         name: 'A',
                         changePercent: 1,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T23:00:00+09:00',
                         match: null,
                     },
@@ -161,6 +170,7 @@ describe('GuideLiveSymbols', () => {
                         name: 'B',
                         changePercent: 1,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T20:00:00.000Z',
                         match: null,
                     },
@@ -187,6 +197,7 @@ describe('GuideLiveSymbols', () => {
                                 name: '애플',
                                 changePercent: 1,
                                 basis: 'scanner',
+                                firstSeenSession: null,
                                 detectedOn: '2026-10-25T00:00:00.000Z',
                                 match: null,
                             },
@@ -213,6 +224,7 @@ describe('GuideLiveSymbols', () => {
                         name: '엔비디아',
                         changePercent: 1,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T00:00:00.000Z',
                         match: {
                             kind: 'signal',
@@ -225,6 +237,7 @@ describe('GuideLiveSymbols', () => {
                         name: '애플',
                         changePercent: 2,
                         basis: 'scanner',
+                        firstSeenSession: null,
                         detectedOn: '2026-10-25T00:00:00.000Z',
                         match: {
                             kind: 'signal',
@@ -262,6 +275,7 @@ describe('GuideLiveSymbols', () => {
                             name: null,
                             changePercent: null,
                             basis: 'snapshot',
+                            firstSeenSession: null,
                             detectedOn: '2026-10-24T21:00:00.000Z',
                             match: {
                                 kind: 'pattern',
@@ -274,6 +288,7 @@ describe('GuideLiveSymbols', () => {
                             name: null,
                             changePercent: null,
                             basis: 'snapshot',
+                            firstSeenSession: null,
                             detectedOn: '2026-10-24T21:00:00.000Z',
                             match: {
                                 kind: 'pattern',
@@ -298,5 +313,84 @@ describe('GuideLiveSymbols', () => {
         const { container } = await renderLive([]);
 
         expect(container).toBeEmptyDOMElement();
+    });
+
+    describe('신호 기록 행과 신호 페이지 링크', () => {
+        const historyGroup = [
+            {
+                market: 'us' as const,
+                rows: [
+                    {
+                        symbol: 'NVDA',
+                        name: '엔비디아',
+                        changePercent: null,
+                        basis: 'history' as const,
+                        firstSeenSession: '2026-11-20',
+                        detectedOn: '2026-11-20T00:00:00.000Z',
+                        match: {
+                            kind: 'signal' as const,
+                            signalType: 'golden_cross' as const,
+                            expected: false,
+                        },
+                    },
+                ],
+            },
+        ];
+
+        it('기록 행은 처음 잡힌 날을 절대 날짜로 적고 "기록 기준" 캡션을 단다', async () => {
+            await renderLive(historyGroup);
+
+            expect(
+                screen.getByText('처음 잡힌 날 2026년 11월 20일')
+            ).toBeInTheDocument();
+            expect(screen.getByText(/신호 기록 기준/)).toBeInTheDocument();
+            expect(screen.queryByText(/탐지$/)).not.toBeInTheDocument();
+        });
+
+        it('허브가 있으면 허브마다 신호 페이지로 가는 링크를 단다', async () => {
+            await renderLive(historyGroup, 'ko', {}, [
+                'golden-cross',
+                'death-cross',
+            ]);
+
+            expect(
+                screen.getByRole('link', { name: '골든크로스 종목 모두 보기' })
+            ).toHaveAttribute('href', '/market/signals/golden-cross');
+            expect(
+                screen.getByRole('link', { name: '데드크로스 종목 모두 보기' })
+            ).toHaveAttribute('href', '/market/signals/death-cross');
+        });
+
+        it('허브가 없으면 링크를 달지 않고, 모르는 슬러그는 버린다', async () => {
+            await renderLive(historyGroup, 'ko', {}, ['no-such-hub']);
+
+            expect(
+                screen.queryByRole('link', { name: /모두 보기/ })
+            ).not.toBeInTheDocument();
+            expect(screen.getAllByRole('link')).toHaveLength(1);
+        });
+
+        it('기록 행이 없으면 기록 캡션을 달지 않는다', async () => {
+            await renderLive([
+                {
+                    market: 'us',
+                    rows: [
+                        {
+                            symbol: 'AAPL',
+                            name: null,
+                            changePercent: 1,
+                            basis: 'scanner',
+                            firstSeenSession: null,
+                            detectedOn: '2026-10-25T00:00:00.000Z',
+                            match: null,
+                        },
+                    ],
+                },
+            ]);
+
+            expect(
+                screen.queryByText(/신호 기록 기준/)
+            ).not.toBeInTheDocument();
+        });
     });
 });

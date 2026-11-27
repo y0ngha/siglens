@@ -42,8 +42,9 @@ const MESSAGE_LIST_SLOT = 'relative min-h-0 flex-1';
  * remark-gfm)와 도구 칩·스크롤 로직을 끌고 오므로 빈 랜딩에서는 첫 로드 JS에서 뺀다. SSR은 켜
  * 둔다 — 저장된 대화(`/c/<id>`)는 서버 HTML에 본문이 그대로 실리고 하이드레이션이 그 청크를
  * 기다리는 동안 화면이 바뀌지 않는다.
+ *
+ * `import()`를 이 자리에 그대로 둔다 — Next가 정적으로 읽어 SSR 때 청크 preload를 심는다.
  */
-// `import()`를 이 자리에 그대로 둔다 — Next가 정적으로 읽어 SSR 때 청크 preload를 심는다.
 const MessageList = dynamic(
     () => import('../MessageList').then(mod => mod.MessageList),
     { loading: () => <div className={MESSAGE_LIST_SLOT} /> }

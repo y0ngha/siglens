@@ -2,8 +2,8 @@ import { OG_FONT_BY_LOCALE } from '../ogFontSources';
 
 describe('OG_FONT_BY_LOCALE', () => {
     it.each([
-        ['ko', 'Pretendard', /pretendard@v1\.3\.9\/.*pretendard-bold\.otf$/],
-        ['en', 'Pretendard', /pretendard@v1\.3\.9\/.*pretendard-bold\.otf$/],
+        ['ko', 'Pretendard', /pretendard@1\.3\.9\/.*Pretendard-Bold\.woff$/],
+        ['en', 'Pretendard', /pretendard@1\.3\.9\/.*Pretendard-Bold\.woff$/],
         [
             'ja',
             'Noto Sans JP',
@@ -18,4 +18,15 @@ describe('OG_FONT_BY_LOCALE', () => {
         expect(OG_FONT_BY_LOCALE[locale].name).toBe(name);
         expect(OG_FONT_BY_LOCALE[locale].url).toMatch(url);
     });
+
+    it.each(Object.entries(OG_FONT_BY_LOCALE))(
+        '%s URL은 jsdelivr npm 경로의 버전 고정 WOFF/TTF/OTF다(gh/ 금지)',
+        (_locale, { url }) => {
+            expect(url).toMatch(
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\/(@[\w-]+\/)?[\w-]+@\d+\.\d+\.\d+\/.+\.(woff|ttf|otf)$/
+            );
+            expect(url).not.toContain('/gh/');
+            expect(url).not.toContain('@latest');
+        }
+    );
 });

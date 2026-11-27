@@ -12,6 +12,7 @@ import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import {
     CONSENT_REQUIRED_MESSAGE,
     OAUTH_ERROR_REDIRECT,
@@ -37,6 +38,8 @@ import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { readConsentForm } from '../lib/readConsentForm';
 
 interface ActiveTermsIds {
@@ -134,6 +137,7 @@ async function issueSignupCookies(
             secure,
         })
     );
+    setMainSessionHint(cookieStore, { secure });
     // 신규 계정 생성이 확정된 뒤에만 도달한다 — 다음 페이지의 GoogleAdsTag가
     // 이 플래그를 읽어 가입 전환을 한 번 기록하고 지운다.
     cookieStore.set(createSignupConversionCookie({ secure }));
@@ -167,7 +171,7 @@ export async function finalizeOAuthSignupAction(
     formData: FormData
 ): Promise<FinalizeOAuthSignupState> {
     try {
-        const { token, agreed } = readConsentForm(formData);
+        const { token, agreed, emailReportOptIn } = readConsentForm(formData);
         if (!token) {
             return localeRedirect(OAUTH_ERROR_REDIRECT.consentInvalid);
         }
@@ -204,6 +208,16 @@ export async function finalizeOAuthSignupAction(
         const created = await createUserWithAgreements(db, consumed, terms);
         if (!created.ok) {
             return localeRedirect(created.redirectTo);
+        }
+
+        // 선택 사항이라 실패해도 가입은 이어 간다(결과를 쓰지 않는다).
+        if (emailReportOptIn.optIn) {
+            await recordSignupEmailReportOptIn(db, {
+                userId: created.value,
+                timezone: emailReportOptIn.timezone,
+                locale: await resolveRequestLocale(),
+                source: 'signup_oauth',
+            });
         }
 
         await issueSignupCookies(db, created.value);

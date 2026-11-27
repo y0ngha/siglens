@@ -63,7 +63,7 @@ const CORPUS: ReadonlyArray<readonly [string, string, unknown]> = [
         '{"reason":"지지선 "150" 부근","score":3}',
         THROWS,
     ],
-    // 3.15.0 (#175): a stray backslash after a closed string now fails the repair
+    // Since 3.15.0: a stray backslash after a closed string now fails the repair
     // consistently instead of being dropped, glued into the previous value, or
     // (array case) overflowing the stack. Failing surfaces as the labeled parse error.
     ['backslash right after a closed string', '{"a":"b"\\}', THROWS],

@@ -2,18 +2,23 @@ import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isBot } from '@/shared/api/isBot';
+import { shouldStartHandoff } from '@/entities/auth/lib/mainSessionHintCookie';
 import {
     AI_SSO_PROBED_COOKIE_NAME,
     AUTH_SESSION_COOKIE_NAME,
+    MAIN_SESSION_HINT_COOKIE_NAME,
 } from '@/shared/config/cookieNames';
 import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { buildHandoffNext } from './handoffTarget';
 
 /**
- * ai 호스트 세션도 `?sso=none`(또는 프록시가 그에 맞춰 심는 probed 쿠키)도 없으면 SSO
- * 핸드오프로 한 번 튕긴다. 목적지는 ai 호스트의 `/api/auth/handoff/start`(상대 경로라
- * 어느 환경에서도 ai 호스트에 머문다) — 브라우저 바인딩 state 쿠키를 먼저 심어야 하는데
- * Server Component 렌더는 쿠키를 설정할 수 없기 때문이다(`api/auth/handoff/start/route.ts`).
+ * ai 호스트 세션도 `?sso=none`(또는 프록시가 그에 맞춰 심는 probed 쿠키)도 없고, 메인 호스트
+ * 로그인 흔적 쿠키(`siglens_signed_in`)가 있으면 SSO 핸드오프로 한 번 튕긴다. 흔적이 없는
+ * 방문자(대부분의 익명 방문)는 왕복 없이 바로 화면을 본다.
+ *
+ * 목적지는 ai 호스트의 `/api/auth/handoff/start`(상대 경로라 어느 환경에서도 ai 호스트에
+ * 머문다) — 브라우저 바인딩 state 쿠키를 먼저 심어야 하는데 Server Component 렌더는
+ * 쿠키를 설정할 수 없기 때문이다(`api/auth/handoff/start/route.ts`).
  *
  * **ai 페이지 `/`와 `/c/[id]`는 다른 데이터 접근·렌더보다 먼저 이것을 불러야 한다** —
  * 메인 사이트에 로그인한 사용자가 익명 랜딩이나 자기 대화의 404를 보지 않게 하려는 것이다.
@@ -33,6 +38,16 @@ export async function maybeHandoffRedirect(
         searchParams.sso === 'none' ||
         cookieStore.get(AI_SSO_PROBED_COOKIE_NAME)?.value !== undefined;
     if (hasSession || alreadyProbed) return;
+    // 메인 호스트 로그인 흔적이 없으면 왕복은 아무것도 못 찾고 돌아올 뿐이다(리다이렉트 3번,
+    // 측정상 약 2.4초). 흔적은 참고용일 뿐 인증이 아니다 — 있어도 핸드오프가 진짜 세션을
+    // 다시 검증하고, 세션이 이미 죽었으면 발급 라우트가 흔적을 지워 다음 방문부터 왕복이 없다.
+    // 로컬 호스트처럼 게이트가 꺼진 환경은 `shouldStartHandoff`가 true라 기존대로 항상 프로브한다.
+    if (
+        !shouldStartHandoff(
+            cookieStore.get(MAIN_SESSION_HINT_COOKIE_NAME)?.value
+        )
+    )
+        return;
     // 크롤러는 어느 호스트에도 세션이 없다 — 두 호스트를 튕기면 색인해야 할 랜딩 대신
     // meta-refresh 페이지만 받는다.
     if (isBot(await headers())) return;

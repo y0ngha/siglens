@@ -4,11 +4,7 @@ Server-side rules for Server Actions, route handlers, I/O, concurrency, the serv
 
 ## Rule IDs
 
-Rules that are cited from code comments, reviews, or other docs carry a stable ID in the form `PREFIX-N`,
-with an explicit anchor line directly above the heading. Cite them as `SERVER.md#SA-1`.
-IDs are never renumbered or reused; a new rule takes the highest existing number of its prefix + 1.
-If a rule is deleted, delete its references in the same change.
-`src/__tests__/guards/ruleReferences.test.ts` fails on any reference that does not resolve to an anchor.
+IDs follow the root `CLAUDE.md` "Rule IDs and references". Cite them as `SERVER.md#SA-1`.
 
 | Prefix | Topic |
 |---|---|
@@ -104,6 +100,10 @@ try { repo.recordVisit(client); } catch { return log_and_204; }
 // ✅ construction stays inside the guarded block
 try { repo.recordVisit(getDatabaseClient()); } catch { return log_and_204; }
 ```
+
+The inverse also holds: a best-effort side effect (syncing a hint cookie, warming a cache) gets its own `try/catch` and log,
+separate from the primary lookup, so the function's return value depends only on that lookup and a failed side effect
+cannot turn a confirmed result into a fallback one.
 
 Cleanup code follows the same rule: do not call an unguarded cleanup step in front of a `try/catch`'d one
 (for example `detachCulling()` before a guarded series removal).
@@ -287,43 +287,27 @@ rest. Test the capacity bound, negative lookups (NODATA/NXDOMAIN) and mapped add
 
 #### SA-18 — An empty or malformed upstream result is not "no data"
 
-An upstream body of the wrong shape (a non-array where a list is expected, a missing field) or an empty `200 []` for a
-range that should have rows is a failure signal, not a successful empty answer. Throw or return the error result so
-the caller degrades, and never cache it or let it set a completion flag: `[]` stored as "no events" hides the gap for
-the whole TTL, and a swallowed chunk makes a partial result look complete.
+A body of the wrong shape (a non-array where a list is expected, a missing field), an empty `200 []` for a range that
+should have rows, or a 200 whose body carries only an `errors` array (a suspended or protected account, a partial
+failure) is a failure, not an empty answer. Throw or return the error result so the caller degrades, and never cache it
+or let it set a completion flag: a stored `[]` hides the gap for the whole TTL, and a swallowed chunk makes a partial
+result look complete.
 
-The same applies to an HTTP 200 whose body carries only an `errors` array (a suspended or protected account, a partial
-failure): it is an error result, not an empty page. Do not map it to `[]` and cache it as "no posts".
+- Keep three outcomes distinct: absent by nature (an ETF with no analyst coverage; cache it as a legitimate empty
+  result), a failed load (never cached; an empty result for a non-empty window is returned uncached or with a short TTL
+  so the next call retries), and a real zero. A tally is `null`, not `0`, when the data is unavailable.
+- A long-TTL cache of a paged provider history validates coverage, not only non-emptiness: each page's first row falls
+  near its requested start and the series begins at a known first period. Row-capped providers drop the oldest rows
+  silently, so a truncated page is non-empty yet incomplete.
+- A read that degraded to empty (a caught DB error turned into `[]`/`null`) never reaches its consumer as a plain empty
+  result; in an LLM tool result it is an explicit `unavailable` marker or an error result, so the model does not report
+  the outage as "no data".
+- A parser refactor or "defensive" touch-up keeps the failure mode: do not skip a malformed row (`if (!row?.title)
+  continue`, `?? []`) where the code used to throw. Add a tolerance only for a shape the provider is known to emit,
+  pinned by a test.
 
 - ❌ `Array.isArray(body) ? body : []` per chunk, then the merged result is cached or marks the day as done.
-- ✅ A malformed chunk throws; an empty result for a non-empty window is returned uncached (or with a short TTL) so the
-  next call retries.
-- A long-TTL cache of a paged provider history validates coverage, not only non-emptiness: each page's first row must
-  fall near its requested start and the series must begin at a known first period. Providers that cap rows per
-  response drop the oldest rows silently, so a truncated page is non-empty yet incomplete and would be served for the
-  whole TTL.
-
-The same holds one step later: a read that degraded to empty (a DB error caught and turned into `[]`/`null`) must not
-reach the consumer as a plain empty result. When the consumer is an LLM tool result, carry an explicit
-`unavailable` marker (or an error result) for that field, otherwise the model reads the outage as "there is no data"
-and states it as fact.
-
-- ❌ `catch { return [] }` in a tool's data read, so the model reports "no indicators this period".
-- ✅ The catch returns `{ unavailable: true }` (or the field is flagged), and the tool result says the data could not
-  be loaded.
-
-Keep three outcomes distinct: a result absent by nature (the provider has no data for this instrument, such as an ETF
-with no analyst coverage), a failed load, and a real zero. Cache the first as a legitimate empty result, never cache the
-second, and report a tally as `null` rather than `0` when the data is unavailable, so "no history exists" and
-"could not be loaded" are not the same output.
-
-A refactor or "defensive" touch-up of a provider parser keeps the same failure mode. Skipping a malformed row
-(`if (!row?.title) continue`, `?? []`) where the code used to throw turns a provider contract break into silently
-missing data, and the caller can no longer degrade or retry. Add a tolerance only when the provider is known to emit
-that shape, and pin it with a test.
-
-- ❌ Adding `.filter((row) => row?.title)` to a news mapper that used to throw on a title-less row.
-- ✅ Keep the throw (or return the error result); the surrounding catch logs and degrades per SA-4.
+- ✅ A malformed chunk throws; the surrounding catch logs and degrades per SA-4.
 <a id="SA-19"></a>
 
 #### SA-19 — A Server Action that wants only the error name and code uses `logActionError`
@@ -414,21 +398,32 @@ tagged as degraded with a short TTL.
 
 #### SA-26 — Server code logs a caught error through `redactDbErrorForLog`
 
-drizzle puts a failed query's bound parameters into the error message (`Failed query: … params: …`), and Node prints
-a wrapped error's `cause` message too. A catch cannot tell statically whether the error is a database error: code that
-receives a repository port (`UserRepository`) never imports the database and still gets one. So every `console.*` call
-in server code that passes a caught error (`catch (e)`, a `.catch(e => …)` callback, an `error` parameter) wraps it in
-`redactDbErrorForLog(e)` from `shared/db/redactDbErrorForLog`. It returns only the name and driver code when the error
-or any `cause` is a database error (detected by structure: drizzle's error shape, `PostgresError`, a SQLSTATE code,
-never by trusting the message) and returns every other error unchanged, so provider and LLM messages stay readable.
-The same applies when an error's text is stored or returned (a delivery row's error column, a response body), not only
-logged. Do not change the fixed text that precedes the error argument: CloudWatch filters match it.
-`src/__tests__/guards/dbErrorLogRedaction.test.ts` enforces this for logs; read its header for what it cannot see
-(a rejection reason copied into another variable first, an error copied into a differently named variable, an error
-handed to a logger callback, a message re-thrown as a new string).
+drizzle puts a failed query's bound parameters into the error message, Node also prints a wrapped error's `cause`,
+and a catch cannot tell statically whether it holds a database error (code that receives a repository port never imports
+the database). So every `console.*` call in server code that passes a caught error (`catch (e)`, a `.catch(e => …)`
+callback, an `error` parameter) wraps it in `redactDbErrorForLog(e)` from `shared/db/redactDbErrorForLog`, and so
+does code that stores or returns an error's text (a delivery row's error column, a response body). The helper treats an
+error as a database error when it or any `cause` is one, detected by structure (drizzle's shape, `PostgresError`, a
+SQLSTATE code), never by the message, and returns other errors unchanged. Keep the fixed text before the error argument (`TOOLCHAIN.md#TC-38`).
+`src/__tests__/guards/dbErrorLogRedaction.test.ts` enforces this for logs; its header lists what it cannot see.
 
 - ❌ `catch (error) { console.error('[loginAction] failed:', error); }`
 - ✅ `catch (error) { console.error('[loginAction] failed:', redactDbErrorForLog(error)); }`
+
+<a id="SA-27"></a>
+
+#### SA-27 — Sign-in paths trust provider identity data only after the same checks on every path
+
+An OAuth or other sign-in entry path applies every check the email path applies before it looks up or writes a user:
+
+- A provider's email is trusted only when its verification claim is strictly `=== true`; the adapter refuses otherwise, before any lookup, and the writer that records `email_verified = true` states the invariant it relies on.
+- An identifier with a canonical form (email: trim + lowercase) is normalized at the single entry point of every path that reads or writes it, and again at the repository boundary (`findByEmail`, `createOAuthUser`), because the column's unique constraint is case-sensitive.
+- A documented "already normalized" input contract is enforced in code, not assumed.
+
+Without these, a mixed-case or unverified address bypasses the duplicate check or squats another person's account.
+
+- ❌ The OAuth adapter passes the provider's raw `email` to `findByEmail` and inserts it as verified.
+- ✅ The adapter requires `email_verified === true`, normalizes the email once, and the repository normalizes again.
 
 ---
 
@@ -524,6 +519,9 @@ step) and loses what earlier attempts learned.
   running alongside, add their in-flight counts, so "batch-wide limit N" is false unless one shared limiter enforces it.
 - A count-then-insert limit check (per-user cap) races across tabs and requests. Run it in a transaction holding a row
   lock on the owner, and let an item that already exists bypass the cap instead of failing the re-add.
+- Take row locks in one parent→child order on every path; a batch job (cron prune) that locks child rows first
+  deadlocks (40P01) against user paths that lock the parent first. An FK insert takes only KEY SHARE on the parent, so
+  lock the parent row explicitly (`FOR NO KEY UPDATE`) before inserting the child.
 
 <a id="CC-11"></a>
 
@@ -546,7 +544,7 @@ deploy script and breaks silently. Encode it as a durable check the dependent st
 marker row), and add an alarm for the gate that never opens so a stalled prerequisite is noticed.
 
 - ❌ "Runs after the ingest cron" in a comment while the schedule says otherwise.
-- ✅ The dependent job refuses to run until the prerequisite's durable marker for that period exists; a staleness alarm covers a marker that stops advancing.
+- ✅ The dependent job refuses to run until the prerequisite's durable marker for that period exists.
 
 <a id="CC-13"></a>
 
@@ -556,8 +554,8 @@ In a job that processes a backlog or chains several steps under one deadline, gi
 of the budget, and track attempts so a permanently failing item rotates out of the front of the queue. Otherwise one
 slow step (a long backfill) or one poison item consumes the whole run and the rest never executes.
 
-- ❌ A 13F backfill consumes the shared deadline, so the filings step is skipped on every run; a failing newest item is retried first forever.
-- ✅ Each step gets a bounded slice (or runs first with a cap), and items record attempts so failures move to the back.
+- ❌ A 13F backfill eats the shared deadline, so the filings step never runs; a failing newest item is retried first forever.
+- ✅ Each step gets a bounded slice, and items record attempts so failures move to the back.
 
 <a id="CC-14"></a>
 
@@ -845,3 +843,12 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
 - ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.
+
+<a id="DB-12"></a>
+
+#### DB-12 — Row-mutating data methods bind ownership inside the statement
+
+A repository method that links, updates or deletes rows owned by an identity takes only the authenticated `userId` (or states the guest case, `user_id IS NULL`) and puts the owner in the `WHERE`. Any proof the action needs (a verified address, `email_verified`) is derived in the same statement, not taken from an argument the caller could pass wrongly. An unguessable row id is not authorization. A child table under an owner-scoped parent takes the owner too, not the parent's id.
+
+- ❌ `deleteLink(id, email)` that trusts the caller-supplied email, or `update ... where id = $1` alone.
+- ✅ `update ... where id = $1 and user_id = $2` (and `email_verified` joined in the query).

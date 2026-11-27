@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import { EmailReportSignupOptIn } from '@/features/email-report-settings/ui/EmailReportSignupOptIn';
 import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { TextField } from '@/shared/ui/TextField';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
@@ -22,7 +23,7 @@ interface DetailsStepFormProps {
 }
 
 /**
- * 3단계: 표시 이름·비밀번호·필수 동의. 입력값은 이 단계에서만 쓰므로 여기서
+ * 3단계: 표시 이름·비밀번호·필수 동의·선택 항목(메일 리포트 받기). 입력값은 이 단계에서만 쓰므로 여기서
  * 들고 있다 — 단계가 바뀌거나 흐름이 다시 시작되면 함께 사라진다.
  */
 export function DetailsStepForm({
@@ -36,6 +37,7 @@ export function DetailsStepForm({
     const [password, setPassword] = useState('');
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
+    const [emailReportOptIn, setEmailReportOptIn] = useState(false);
     const hintId = useId();
 
     return (
@@ -98,6 +100,10 @@ export function DetailsStepForm({
                 onPrivacyChange={setPrivacyChecked}
                 onTosChange={setTosChecked}
                 error={step.consentError}
+            />
+            <EmailReportSignupOptIn
+                checked={emailReportOptIn}
+                onChange={setEmailReportOptIn}
             />
             <SubmitButton
                 label={t('SignupForm.ecb4cc')}

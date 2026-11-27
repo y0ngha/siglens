@@ -5,7 +5,8 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { oauthAccounts, users } from '@/shared/db/schema';
+import { renderSql } from '@/__tests__/utils/renderSql';
+import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import { decryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { DrizzleUserRepository } from '@/entities/auth/api';
@@ -155,27 +156,6 @@ function makeFailingOAuthInsertDb(error: Error): {
     };
 }
 
-function makeUpdateDb(rows: unknown[]): {
-    db: SiglensDatabase;
-    update: ReturnType<typeof vi.fn>;
-    set: ReturnType<typeof vi.fn>;
-    where: ReturnType<typeof vi.fn>;
-    returning: ReturnType<typeof vi.fn>;
-} {
-    const returning = vi.fn().mockResolvedValue(rows);
-    const where = vi.fn(() => ({ returning }));
-    const set = vi.fn(() => ({ where }));
-    const update = vi.fn(() => ({ set }));
-
-    return {
-        db: { update } as unknown as SiglensDatabase,
-        update,
-        set,
-        where,
-        returning,
-    };
-}
-
 describe('DrizzleUserRepository', () => {
     // createOAuthUser now requires OAUTH_TOKEN_ENCRYPTION_KEY to be present and
     // valid. Tests below that exercise non-OAuth paths are unaffected, but tests
@@ -206,6 +186,18 @@ describe('DrizzleUserRepository', () => {
         expect(where).toHaveBeenCalledWith(expect.any(Object));
         expect(limit).toHaveBeenCalledWith(1);
         expect(result).toEqual(userRecord);
+    });
+
+    it('looks the user up by the lowercased, trimmed email', async () => {
+        const { db, where } = makeSelectDb([userRecord]);
+        const repository = new DrizzleUserRepository(db);
+
+        await repository.findByEmail('  Foo@Gmail.com ');
+
+        expect(where).toHaveBeenCalledTimes(1);
+        const [condition] = where.mock.calls.flat();
+        const { params } = renderSql(condition);
+        expect(params).toEqual(['foo@gmail.com']);
     });
 
     it('returns null when no user is found by email', async () => {
@@ -435,6 +427,24 @@ describe('DrizzleUserRepository', () => {
             target: [oauthAccounts.provider, oauthAccounts.providerAccountId],
         });
         expect(result).toEqual(userRecord);
+    });
+
+    it('stores a mixed-case provider email in lowercase', async () => {
+        const { db, userValues } = makeOAuthInsertDb({
+            userRows: [userRecord],
+            accountRows: [{ id: 'oauth-account-1' }],
+        });
+        const repository = new DrizzleUserRepository(db);
+
+        await repository.createOAuthUser({
+            email: 'Foo@Gmail.com',
+            provider: 'google',
+            providerAccountId: 'provider-user-1',
+        });
+
+        expect(userValues).toHaveBeenCalledWith(
+            expect.objectContaining({ email: 'foo@gmail.com' })
+        );
     });
 
     it('creates an OAuth user with avatarUrl provided', async () => {
@@ -719,36 +729,100 @@ describe('DrizzleUserRepository', () => {
         expect(result).toBeNull();
     });
 
-    it('updates the password hash and returns true when a row matches', async () => {
-        const { db, update, set, where } = makeUpdateDb([{ id: 'user-1' }]);
-        const repository = new DrizzleUserRepository(db);
+    describe('resetPasswordRevokingSessions', () => {
+        function makeTransactionDb(updatedRows: unknown[]): {
+            db: SiglensDatabase;
+            txUpdate: ReturnType<typeof vi.fn>;
+            txDelete: ReturnType<typeof vi.fn>;
+            deleteConditions: unknown[];
+            set: ReturnType<typeof vi.fn>;
+            events: string[];
+        } {
+            const events: string[] = [];
+            const returning = vi.fn().mockResolvedValue(updatedRows);
+            const updateWhere = vi.fn(() => ({ returning }));
+            const set = vi.fn(() => ({ where: updateWhere }));
+            const txUpdate = vi.fn((table: unknown) => {
+                events.push(table === users ? 'update:users' : 'update:?');
+                return { set };
+            });
+            const deleteConditions: unknown[] = [];
+            const deleteWhere = vi.fn((condition: unknown) => {
+                deleteConditions.push(condition);
+                return Promise.resolve();
+            });
+            const txDelete = vi.fn((table: unknown) => {
+                events.push(
+                    table === sessions ? 'delete:sessions' : 'delete:?'
+                );
+                return { where: deleteWhere };
+            });
+            const transaction = vi.fn(
+                async (run: (tx: unknown) => Promise<unknown>) => {
+                    events.push('begin');
+                    const result = await run({
+                        update: txUpdate,
+                        delete: txDelete,
+                    });
+                    events.push('commit');
+                    return result;
+                }
+            );
+            return {
+                db: { transaction } as unknown as SiglensDatabase,
+                txUpdate,
+                txDelete,
+                deleteConditions,
+                set,
+                events,
+            };
+        }
 
-        const result = await repository.updatePassword(
-            'user-1',
-            'new-password-hash'
-        );
+        it('updates the hash and deletes every session of that user in one transaction', async () => {
+            const { db, set, deleteConditions, events } = makeTransactionDb([
+                { id: 'user-1' },
+            ]);
+            const repository = new DrizzleUserRepository(db);
 
-        expect(update).toHaveBeenCalledWith(users);
-        expect(set).toHaveBeenCalledWith(
-            expect.objectContaining({
-                passwordHash: 'new-password-hash',
-                updatedAt: expect.anything(),
-            })
-        );
-        expect(where).toHaveBeenCalledWith(expect.any(Object));
-        expect(result).toBe(true);
-    });
+            const result = await repository.resetPasswordRevokingSessions(
+                'user-1',
+                'new-password-hash'
+            );
 
-    it('returns false when updatePassword finds no matching user', async () => {
-        const { db } = makeUpdateDb([]);
-        const repository = new DrizzleUserRepository(db);
+            expect(result).toBe(true);
+            expect(set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    passwordHash: 'new-password-hash',
+                    updatedAt: expect.anything(),
+                })
+            );
+            expect(events).toEqual([
+                'begin',
+                'update:users',
+                'delete:sessions',
+                'commit',
+            ]);
+            // 아무 조건이나 통과하지 않도록 실제 조건식의 컬럼을 연다.
+            expect(deleteConditions).toHaveLength(1);
+            const { sql: conditionSql, params } = renderSql(
+                deleteConditions[0]
+            );
+            expect(conditionSql).toBe('"sessions"."user_id" = $1');
+            expect(params).toEqual(['user-1']);
+        });
 
-        const result = await repository.updatePassword(
-            'missing-user',
-            'new-password-hash'
-        );
+        it('returns false and leaves sessions alone when no user row matches', async () => {
+            const { db, txDelete } = makeTransactionDb([]);
+            const repository = new DrizzleUserRepository(db);
 
-        expect(result).toBe(false);
+            const result = await repository.resetPasswordRevokingSessions(
+                'missing-user',
+                'new-password-hash'
+            );
+
+            expect(result).toBe(false);
+            expect(txDelete).not.toHaveBeenCalled();
+        });
     });
 });
 

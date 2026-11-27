@@ -38,44 +38,23 @@ import type {
     SiglensDatabase,
 } from '@/shared/db/types';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
+import { renderSql } from '@/__tests__/utils/renderSql';
 
-type SqlLike = {
-    queryChunks?: Array<SqlLike | { name?: string }>;
-    name?: string;
-};
-
-function collectColumnNames(node: SqlLike): string[] {
-    if (node.name) return [node.name];
-    if (!node.queryChunks) return [];
-    return node.queryChunks.flatMap(chunk =>
-        collectColumnNames(chunk as SqlLike)
+/** where 조건에 쓰인 컬럼 이름(`"table"."col"`의 col)을 렌더링된 SQL에서 읽는다. */
+function collectColumnNames(node: unknown): string[] {
+    return [...renderSql(node).sql.matchAll(/(?:"[^"]+"\.)?"([^"]+)"/g)].map(
+        match => match[1]
     );
 }
 
-/** 순환 참조 방어 + 무한 재귀 방어용 깊이 상한. Drizzle 조건식은 이보다 훨씬 얕다. */
-const SQL_WALK_MAX_DEPTH = 8;
-
 /**
- * 조건식 객체 그래프에 들어 있는 **모든 문자열**을 모은다.
- *
- * 컬럼 이름만 보면 조건이 어떤 컬럼을 쓰는지는 알아도 *무엇과* 비교하는지는 모른다 —
- * 접미사 필터처럼 값 자체가 계약인 경우엔 그것만으로 부족하다. Drizzle이 바인딩 값을
- * 어느 노드 타입에 담는지는 버전마다 다르므로(`Param`/`StringChunk`/중첩 `SQL`),
- * 특정 형태를 가정하지 않고 그래프 전체를 훑는다.
+ * 조건식을 렌더링해 SQL 문자열과 바인딩된 문자열 값을 함께 모은다. 컬럼 이름만 보면 조건이
+ * 어떤 컬럼을 쓰는지는 알아도 *무엇과* 비교하는지는 모른다 — 접미사 필터처럼 값 자체가
+ * 계약인 경우엔 바인딩 값(`params`)과 연산자(`not like` 등)까지 봐야 한다.
  */
-function collectSqlStrings(
-    node: unknown,
-    depth = 0,
-    seen = new Set<unknown>()
-): string[] {
-    if (depth > SQL_WALK_MAX_DEPTH || node === null) return [];
-    if (typeof node === 'string') return [node];
-    if (typeof node !== 'object') return [];
-    if (seen.has(node)) return [];
-    seen.add(node);
-    return Object.values(node as Record<string, unknown>).flatMap(value =>
-        collectSqlStrings(value, depth + 1, seen)
-    );
+function collectSqlStrings(node: unknown): string[] {
+    const { sql, params } = renderSql(node);
+    return [sql, ...params.filter(value => typeof value === 'string')];
 }
 
 /**
@@ -203,8 +182,10 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(where).toHaveBeenCalledTimes(1);
         // `.where()`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — isNull(delistedAt)이
         // 엉뚱한 컬럼으로 바뀌어도 초록으로 남는다. 조건식을 열어 컬럼을 직접 확인한다.
-        const condition = where.mock.calls[0][0] as SqlLike;
-        expect(collectColumnNames(condition)).toContain('delisted_at');
+        const condition = where.mock.calls[0][0];
+        expect(renderSql(condition).sql).toBe(
+            '"korean_tickers"."delisted_at" is null'
+        );
     });
 
     it('findAll 은 빈 결과도 그대로 반환한다', async () => {
@@ -232,11 +213,11 @@ describe('DrizzleKoreanTickerRepository', () => {
         // `.where()`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — 오타 난 접미사도,
         // 엉뚱한 컬럼도. 실제 조건식을 열어 컬럼과 바인딩 값을 둘 다 확인한다.
         expect(where).toHaveBeenCalledTimes(1);
-        const condition = where.mock.calls[0][0] as SqlLike;
-        expect(collectColumnNames(condition)).toContain('symbol');
-        expect(collectSqlStrings(condition)).toEqual(
-            expect.arrayContaining(['%.KS', '%.KQ'])
-        );
+        const condition = where.mock.calls[0][0];
+        expect(renderSql(condition)).toEqual({
+            sql: '("korean_tickers"."symbol" like $1 or "korean_tickers"."symbol" like $2)',
+            params: ['%.KS', '%.KQ'],
+        });
     });
 
     it('국내 심볼 LIKE 패턴은 isKrEquitySymbol의 판정과 같은 집합이다', () => {
@@ -260,7 +241,7 @@ describe('DrizzleKoreanTickerRepository', () => {
         await expect(repo.findAllNonKr()).resolves.toEqual([apple, microsoft]);
 
         expect(where).toHaveBeenCalledTimes(1);
-        const condition = where.mock.calls[0][0] as SqlLike;
+        const condition = where.mock.calls[0][0];
         expect(collectColumnNames(condition)).toContain('symbol');
         const strings = collectSqlStrings(condition);
         expect(strings).toEqual(expect.arrayContaining(['%.KS', '%.KQ']));
@@ -473,10 +454,11 @@ describe('DrizzleKoreanTickerRepository', () => {
         // `where`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — isNull 가드가
         // and(...)에서 빠져도 초록으로 남는다. 조건식을 열어 컬럼을 직접 확인한다.
         expect(where).toHaveBeenCalledTimes(1);
-        const condition = where.mock.calls[0][0] as SqlLike;
-        expect(collectColumnNames(condition)).toEqual(
-            expect.arrayContaining(['symbol', 'delisted_at'])
-        );
+        const condition = where.mock.calls[0][0];
+        expect(renderSql(condition)).toEqual({
+            sql: '("korean_tickers"."symbol" in ($1) and "korean_tickers"."delisted_at" is null)',
+            params: ['000000.KQ'],
+        });
     });
 
     it('markRelisted 는 delisted_at 을 null 로 되돌린다', async () => {
@@ -488,7 +470,7 @@ describe('DrizzleKoreanTickerRepository', () => {
         // 컬럼으로 바뀌어도 초록으로 남는다. 조건식을 열어 대상 컬럼과 바인딩 값을
         // 둘 다 확인한다.
         expect(where).toHaveBeenCalledTimes(1);
-        const condition = where.mock.calls[0][0] as SqlLike;
+        const condition = where.mock.calls[0][0];
         expect(collectColumnNames(condition)).toContain('symbol');
         expect(collectSqlStrings(condition)).toContain('000000.KQ');
     });
@@ -679,7 +661,7 @@ describe('DrizzleProfileDescriptionTranslationRepository', () => {
         await repo.deleteBySymbols(['LAZR', 'AAPL']);
 
         expect(del).toHaveBeenCalledTimes(1);
-        const condition = where.mock.calls[0][0] as SqlLike;
+        const condition = where.mock.calls[0][0];
         expect(collectColumnNames(condition)).toContain('symbol');
         expect(collectSqlStrings(condition)).toEqual(
             expect.arrayContaining(['LAZR', 'AAPL'])

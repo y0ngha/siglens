@@ -7,6 +7,12 @@ describe('loginErrorKey', () => {
         );
     });
 
+    it('이메일 미인증 코드를 메시지 키로 바꾼다', () => {
+        expect(loginErrorKey('oauth_email_unverified')).toBe(
+            'error.oauthEmailUnverified'
+        );
+    });
+
     it('쿼리가 없으면 undefined', () => {
         expect(loginErrorKey(null)).toBeUndefined();
     });

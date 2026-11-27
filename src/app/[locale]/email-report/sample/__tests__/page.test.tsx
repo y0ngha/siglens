@@ -31,8 +31,10 @@ describe('EmailReportSamplePage', () => {
         const frame = screen.getByTitle('메일 리포트 샘플 미리보기');
         const srcDoc = frame.getAttribute('srcdoc') ?? '';
         expect(srcDoc).toContain('<head><base target="_blank">');
-        expect(srcDoc).toContain('>NVDA</h2>');
-        expect(srcDoc).toContain('>AAPL</h2>');
+        expect(srcDoc).toMatch(
+            />NVIDIA Corporation <span[^>]*>NVDA<\/span><\/h2>/
+        );
+        expect(srcDoc).toMatch(/>Apple Inc. <span[^>]*>AAPL<\/span><\/h2>/);
         expect(srcDoc).toContain('/api/email-report/sample-chart/NVDA');
         expect(srcDoc).not.toContain('/api/email-report/unsubscribe');
     });

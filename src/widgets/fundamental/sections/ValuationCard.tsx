@@ -4,6 +4,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
+import type { KrValuationBasis } from '@/entities/kr-valuation/model';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -17,6 +18,11 @@ const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface ValuationCardProps {
     metrics: FundamentalValuationMetrics | null;
+    /**
+     * 한국 종목의 PER·PBR 계산 기준. 있으면 카드 아래에 기준 한 줄을 붙인다 — 에이전트가 같은 기준을 말하므로 화면도 밝힌다.
+     * 미국·크립토 종목이거나 기준을 구하지 못했으면 null.
+     */
+    basis?: KrValuationBasis | null;
 }
 
 interface MetricRowProps {
@@ -57,8 +63,33 @@ function MetricRow({
     );
 }
 
+/**
+ * 한국 종목 PER·PBR의 계산 기준 한 줄. 번역 키는 리터럴로 적는다(스캐너가 정적으로 읽는다). 순이익 기간(`ttmEnd`)을 모르면
+ * PER이 비어 있으니 자본 기준만 말한다.
+ */
+function KrBasisCaption({ basis }: { basis: KrValuationBasis }) {
+    const t = useTranslations('widgets.fundamental');
+    const dates = {
+        ttmEnd: basis.ttmEnd ?? '',
+        equityAsOf: basis.equityAsOf ?? '',
+    };
+    const text =
+        basis.source === 'provider'
+            ? t('ValuationCard.krBasisProvider')
+            : basis.ttmEnd === null
+              ? t('ValuationCard.krBasisDartEquityOnly', dates)
+              : basis.statements === 'separate'
+                ? t('ValuationCard.krBasisDartSeparate', dates)
+                : t('ValuationCard.krBasisDartConsolidated', dates);
+    return (
+        <p className="mt-3 text-xs leading-relaxed text-secondary-400">
+            {text}
+        </p>
+    );
+}
+
 /** 밸류에이션 카드. 지표가 없으면 빈 카드를 그린다. */
-export function ValuationCard({ metrics }: ValuationCardProps) {
+export function ValuationCard({ metrics, basis = null }: ValuationCardProps) {
     const t = useTranslations('widgets.fundamental');
     if (metrics === null) {
         return (
@@ -151,6 +182,7 @@ export function ValuationCard({ metrics }: ValuationCardProps) {
                     }
                 />
             </div>
+            {basis !== null && <KrBasisCaption basis={basis} />}
         </section>
     );
 }

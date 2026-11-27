@@ -118,6 +118,25 @@
                     "subtitle": "Press the button below to stop receiving scheduled email reports.",
                     "description": "Stop receiving SIGLENS scheduled email reports."
                 }
+            },
+            "alerts": {
+                "empty": "You are not receiving any alert emails.",
+                "login": "Log in",
+                "page": {
+                    "description": "Settings to review the alert emails you receive and stop any of them.",
+                    "subtitle": "See the alert emails you receive and stop any of them.",
+                    "title": "Alert email settings"
+                },
+                "topicFearGreed": "{market} Fear & Greed Index entering an extreme zone",
+                "topicSignal": "Newly detected {hubName} stocks",
+                "topicSymbol": "New signals for {symbol}",
+                "unavailable": "We cannot load your settings right now. Please try again shortly.",
+                "unidentifiedBody": "Use the settings link at the bottom of an alert email, or log in to manage your alert emails.",
+                "unidentifiedTitle": "Please open this from the link in your email"
+            },
+            "alertsLink": {
+                "description": "See which new signal and Fear & Greed Index alerts you receive, and change them.",
+                "title": "Alert email settings"
             }
         },
         "fear-greed": {
@@ -135,7 +154,41 @@
             },
             "symbolListTitle": "Fear & Greed Index by Symbol",
             "factorExtremes": "The factor leaning furthest toward fear right now is {fear}, and the one leaning furthest toward greed is {greed}.",
-            "factorExtremeItem": "{factor} (percentile {percentile})"
+            "factorExtremeItem": "{factor} (percentile {percentile})",
+            "history": {
+                "chartRange": "{from} to {to}",
+                "chartTitle": "Recent trend",
+                "colChange": "Change from previous day",
+                "colChangeDaily": "Change from previous day",
+                "colDate": "Date",
+                "colHigh": "High",
+                "colLabel": "Band",
+                "colLow": "Low",
+                "colMonth": "Month",
+                "colMonthLast": "Last score",
+                "colScore": "Score",
+                "coverage": "{count} scores calculated day by day, from {from} to {to}.",
+                "date": "{month}/{day}/{year}",
+                "downloadCsv": "CSV file",
+                "downloadJson": "JSON file",
+                "downloadLead": "You can download the full history as a file.",
+                "downloadNote": "The files contain only the date, score and band. They hold no price data.",
+                "extremeCell": "{score} (day {day})",
+                "month": "{month}/{year}",
+                "monthFrom": "{month}/{year} (from day {day})",
+                "monthLastCell": "{score} ({label})",
+                "monthUntil": "{month}/{year} (through day {day})",
+                "monthlyCaption": "{subject} Fear & Greed Index by month",
+                "monthlyCaptionOlder": "{subject} Fear & Greed Index by month (earlier records)",
+                "monthlyMore": "Show earlier {count} months",
+                "monthlyTitle": "Monthly history",
+                "recalcNote": "Each daily score is ranked against the records before that day. The comparison window is fixed at the latest {years} years, so past scores can shift slightly from day to day.",
+                "recentCaption": "{subject} Fear & Greed Index, last {count} trading days",
+                "recentCaptionDaily": "{subject} Fear & Greed Index, last {count} days",
+                "recentTitle": "Last {count} trading days",
+                "recentTitleDaily": "Last {count} days",
+                "title": "Past score history"
+            }
         },
         "forgot-password": {
             "page": {
@@ -165,11 +218,11 @@
             "jsonLd": {
                 "faq": {
                     "q0": {
-                        "answer": "Enter a US ticker and it lays out the chart (indicators, candlestick patterns, support and resistance), earnings and valuation, financial statements, recent news flow, options market data, congressional trade disclosures, and short-term buying mood (the Fear & Greed Index), then an overall analysis that ties them together. It is free. For KOSPI and KOSDAQ listings it covers chart, earnings, financial statements, news, Fear & Greed and the overall analysis (Korea has no congressional disclosure regime and no single-stock options market, so those two are omitted). For crypto such as Bitcoin and Ethereum it covers chart, news, Fear & Greed and the overall analysis. No sign-up needed.",
+                        "answer": "{v0} is a web service that lays out the support and resistance to watch on US stock, Korean stock (KOSPI, KOSDAQ) and crypto charts, along with the invalidation level where the current read breaks. For a US stock, enter a ticker and it lays out the chart (indicators and candlestick patterns), earnings and valuation, financial statements, recent news flow, options market data, congressional trade disclosures, and short-term buying mood (the Fear & Greed Index), then an overall analysis that ties them together. For KOSPI and KOSDAQ listings it covers chart, earnings, financial statements, news, Fear & Greed and the overall analysis (Korea has no congressional disclosure regime and no single-stock options market, so those two are omitted). For crypto such as Bitcoin and Ethereum it covers chart, news, Fear & Greed and the overall analysis. No sign-up needed.",
                         "question": "What is {v0}?"
                     },
                     "q10": {
-                        "answer": "Basic analysis is free with no sign-up. Members can use stronger AI models and reasoning options, and see entry, stop loss and target price levels on every symbol.",
+                        "answer": "Basic analysis is free with no sign-up. Detailed prices such as support, resistance and invalidation levels are visible to guests on up to {v3} {v3, plural, one {symbol} other {symbols}} a day, and to members on every symbol. Members can also use stronger AI models and reasoning options.",
                         "question": "Is there a fee to use the service?"
                     },
                     "q11": {
@@ -188,25 +241,20 @@
                         "answer": "The /backtesting page publishes technical signals and AI scenarios for major tickers, back-tested against historical data. Results are based on past data and do not guarantee future performance.",
                         "question": "Where can I see how the AI analysis held up on past data?"
                     }
-                },
-                "howTo": {
-                    "description": "The flow for reviewing US stocks, KOSPI/KOSDAQ listings and crypto on {v0} through chart, news and the Fear & Greed Index, then reviewing the overall analysis and scenarios. US stocks add earnings, financial statements, the options market and Congressional Trades disclosures; Korean listings add earnings and financial statements.",
-                    "name": "How to review US and Korean stocks and crypto on {v0} (chart, news and the Fear & Greed Index) and read the overall analysis",
-                    "step1Name": "Enter a name or symbol",
-                    "step1Text": "Type the name or symbol of the ticker into the search box. For example Apple, Tesla, AAPL, TSLA; for Korean listings Samsung Electronics or 005930.KS; for crypto BTCUSD or ETHUSD.",
-                    "step2Name": "Review the chart analysis",
-                    "step2Text": "On the ticker page, review the trend and key price zones against {v0} indicators, {v1} candlestick patterns, {v2} chart patterns, {v3} strategies and {v4} support/resistance levels.",
-                    "step3Name": "Reinforce with earnings and news",
-                    "step3Text": "Use the Fundamentals tab for valuation and profitability metrics such as PER, PBR and ROE, and the News tab for earnings releases and news sentiment. Together they fill in the background the chart does not show. For example /AAPL/fundamental and /AAPL/news.",
-                    "step4Name": "Check the options market",
-                    "step4Text": "On the Options tab (e.g. /AAPL/options), read Max Pain, the Put/Call ratio and the open-interest distribution to see where institutions expect the price to go.",
-                    "step5Name": "Check the short-term mood",
-                    "step5Text": "On the Fear & Greed Index tab (e.g. /AAPL/fear-greed), check whether short-term buying is strong or weak via the 0–100 score and its five labels. Even when the chart looks good, an overheated mood is a reason to re-check your read of the trend.",
-                    "step6Name": "Read the overall analysis",
-                    "step6Text": "On the Overall tab (e.g. /AAPL/overall), read the overall analysis that ties chart, earnings, news, options and the Fear & Greed Index together, with bull and bear scenarios, checkpoints and risks.",
-                    "step7Name": "Ask the AI a follow-up",
-                    "step7Text": "When the call is unclear, press the 'Ask SIGLENS AI' button at the bottom right of the ticker page. SIGLENS AI opens in a new tab with a question about that ticker already filled in, and it looks up quotes, chart indicators and news itself to answer questions on reading indicators, comparing scenarios and trading strategy."
                 }
+            },
+            "methodBand": {
+                "guideCategoriesLabel": "Chart guide categories",
+                "heading": "How we set the price levels",
+                "historyBody": "We publish how the same kind of analysis held up when checked against past data.",
+                "historyLink": "View backtesting results",
+                "historyTitle": "Track record",
+                "invalidationBody": "Every analysis lists the price where its read breaks. Guests can see this for up to {count, plural, one {# symbol} other {# symbols}} a day.",
+                "invalidationLink": "Read the chart guides",
+                "invalidationTitle": "Invalidation level",
+                "levelsBody": "We pick the support and resistance worth watching now from indicators and chart patterns.",
+                "levelsLink": "See the method",
+                "levelsTitle": "Support and resistance"
             },
             "not-found": {
                 "03ecab": "The page you requested may not exist or may have been moved.\n                        Search for a stock below, or check popular stocks.",
@@ -217,22 +265,20 @@
                 "f8a2cd": "It might be a system error. Please let us know, and we will check."
             },
             "page": {
-                "167f34": "See how technical analysis and AI scenarios held up when checked against past data for 10 major stocks.",
                 "24e60c": "Skip to Search",
-                "2f20c8": "Stock and crypto analysis",
-                "79bd8f": "Easily check AI reports analyzing news, Fundamentals, and the Fear & Greed Index.",
-                "c26658": "AI Analysis for Greater Investment Confidence",
-                "dfbacd": "Verified Against Historical Data",
-                "eafd49": "Chart trends built on {v0} {v0, plural, one {indicator} other {indicators}} and a range of investment strategies,",
-                "ee41ec": "View Backtesting Results →",
                 "aiTeaser": "Ask an AI chatbot about stocks & crypto",
+                "eyebrow": "Not when to buy, but which prices to watch",
+                "headline": "A price-level map for stocks and crypto",
+                "intro": "{v0, plural, =0 {We read the chart with indicators and lay out support, resistance and the price where the current read breaks.} one {We read the chart with # indicator and lay out support, resistance and the price where the current read breaks.} other {We read the chart with # indicators and lay out support, resistance and the price where the current read breaks.}}",
+                "introTail": "News, earnings and the Fear & Greed Index are on the same screen.",
                 "radarBadge": "BETA",
                 "radarBody": "News, filings, X posts and sector outlook for each ticker, all in one place.",
                 "radarChipAria": "Open the {v0} radar",
                 "radarRequestCta": "Request a ticker",
                 "radarRequestPrompt": "Don't see the ticker you want?",
                 "radarTitle": "Ticker Radar",
-                "radarViewAll": "View all"
+                "radarViewAll": "View all",
+                "skillsSummary": "View {count, plural, one {# analysis technique} other {# analysis techniques}}"
             },
             "todayMarket": {
                 "asOf": "As of {date}",
@@ -292,7 +338,8 @@
                 "marketUs": "US stocks",
                 "otherSignals": "Stocks with other signals",
                 "signalStocks": "{signal} stocks",
-                "title": "{signal} stocks: last 30 days in the US and Korea"
+                "title": "{signal} stocks: last 30 days in the US and Korea",
+                "truncated": "Showing the {shown} most recent of {total} stocks."
             }
         },
         "news": {
@@ -368,15 +415,16 @@
         },
         "signup": {
             "SignupContent": {
-                "50f3e4": "After starting social login, there is a terms agreement step."
+                "50f3e4": "After starting social login, there is a terms agreement step.",
+                "emailDivider": "Or sign up with email"
             },
             "page": {
-                "1c6c68": "Start with Email",
                 "8ba06b": "Social Login Signup",
                 "925d56": "Become a member to see more",
                 "9922a0": "Already have an account?",
                 "e2d231": "Log In →",
-                "f0c59b": "You will sign up for SIGLENS with the information below"
+                "f0c59b": "You will sign up for SIGLENS with the information below",
+                "subtitleOptional": "Signing up is free. You can keep viewing charts and AI analysis without an account, just as you do now."
             }
         },
         "symbol": {
@@ -523,6 +571,7 @@
                 "oauthConsentExpired": "The sign-up window has expired. Please try again.",
                 "oauthConsentInvalid": "That sign-up request is invalid. Please start over.",
                 "oauthEmailConflict": "This email is already registered with a password. Please sign in with your password.",
+                "oauthEmailUnverified": "Your Google account's email address is not verified. Verify it in your Google account, then try again.",
                 "oauthProfileInvalid": "We could not verify your social sign-in details.",
                 "oauthUnknown": "An unknown error occurred during social sign-in.",
                 "passwordResetFailed": "An error occurred while resetting your password. Please try again in a moment.",
@@ -531,7 +580,9 @@
                 "redisUnavailable": "The service is temporarily unavailable. Please try again in a moment.",
                 "samePassword": "You cannot reuse your current password.",
                 "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
-                "signupAutoLoginFailed": "Your account was created but automatic sign-in failed. Please sign in from the login page.",
+                "tooManyCodeAttempts": "Too many incorrect codes. Select Edit Email to get a new code.",
+                "tooManyLoginAttempts": "Too many sign-in attempts. Try again later, or reset your password from \"Forgot your password?\".",
+                "tooManyRequests": "Too many requests. Please try again in a moment.",
                 "unknown": "An unknown error occurred. Please try again in a moment.",
                 "userNotFound": "We could not find that account.",
                 "verificationEmailFailed": "An error occurred while sending the verification email. Please try again in a moment.",
@@ -565,16 +616,26 @@
                 "invalidSymbol": "Invalid ticker symbol."
             },
             "email": {
+                "analysisBasis": "Based on the {v0} analysis.",
                 "briefColPrice": "Close / change",
                 "briefColSignals": "Signal summary",
                 "briefColSymbol": "Symbol",
                 "briefColTrend": "Trend",
                 "briefNoData": "No data",
                 "chartAlt": "{v0} daily chart",
+                "chartAltDrawings": "{v0} daily chart with analysis drawings",
+                "chartAndProseBasis": "Chart drawings are from the {v0} analysis. Analysis text is as of {v1}.",
+                "chartDrawingsBasis": "Chart drawings are based on the {v0} analysis.",
                 "confluenceNote": "Confluence is the degree (0–100) to which indicators point the same way; it is not investment advice.",
                 "disclaimer": "This email is for information only and is not investment advice. You are responsible for your investment decisions and their outcomes. AI analysis may be inaccurate.",
                 "heading": "Your holdings & watchlist report",
                 "intro": "Here's the latest on your holdings and watchlist as of {v0}.",
+                "legendDivergence": "Divergence",
+                "legendElliott": "Elliott Wave",
+                "legendFibonacci": "Fibonacci",
+                "legendMore": "+{v0} more",
+                "legendTrendDown": "Downtrend Trendline",
+                "legendTrendUp": "Uptrend Trendline",
                 "manage": "Change settings",
                 "marketHeading": "Today's market signal briefing",
                 "marketHint": "Add holdings or watchlist stocks and your next email becomes a report on your own stocks.",
@@ -586,12 +647,13 @@
                 "optionsIv": "ATM implied volatility",
                 "optionsMove": "Implied move to expiry ({v0})",
                 "optionsPutCall": "Put/call ratio (open interest)",
+                "proseBasis": "Analysis as of {v0}.",
                 "pullback": {
                     "nearWashoutInUptrend": "Near oversold within an uptrend",
                     "washoutBelowMa200": "Oversold in a long-term decline (for reference)",
                     "washoutInUptrend": "Short-term oversold within an uptrend"
                 },
-                "reason": "You're receiving this because you turned on email reports in your {v0} email report settings.",
+                "reason": "You're receiving this because you agreed to receive {v0} email reports.",
                 "sectionBrief": "Other watchlist symbols",
                 "sectionNews": "Top news",
                 "sectionOptions": "Options activity",
@@ -743,6 +805,16 @@
                 "symbolNotFound": "That symbol doesn't exist.",
                 "unauthenticated": "Please sign in."
             }
+        },
+        "mail-alert": {
+            "codeEmail": {
+                "codeLine": "Verification code: {v0}",
+                "expiry": "This code is valid for {v0} minutes.",
+                "heading": "{v0} alert email sign-up",
+                "ignore": "If you did not request this, please ignore this email.",
+                "intro": "Enter the code below to finish signing up for alert emails.",
+                "subject": "[{v0}] Alert email verification code"
+            }
         }
     },
     "features": {
@@ -855,6 +927,13 @@
                 "stepCode": "Step 2: Confirm the verification code",
                 "stepDetails": "Step 3: Set your password and display name",
                 "stepEmail": "Step 1: Request email verification"
+            },
+            "SignupBenefits": {
+                "detail": "Turn on ''{feature}'' to see the AI analysis of every symbol in detail",
+                "emailReport": "Get updates on your holdings and watchlist by email, only if you want them",
+                "heading": "Member benefits",
+                "models": "{count, plural, one {Choose from # more AI model} other {Choose from # more AI models}}",
+                "timeframes": "Charts and AI analysis on shorter timeframes, from {from} to {to}"
             }
         },
         "contact-form": {
@@ -932,6 +1011,11 @@
                 "clearedToast": "Exclusion history cleared: {v0}",
                 "excludedToast": "Excluded from report: {v0}",
                 "includedToast": "Included in report again: {v0}"
+            },
+            "EmailReportSignupOptIn": {
+                "description": "Every {weekday} at {time}, we email you updates on your holdings and watchlist. If you have not added any symbols, we summarize the notable symbols that triggered signals that day. The time follows this device's time zone, and you can change it or turn it off anytime in the email report settings.",
+                "label": "Receive the email report",
+                "legend": "Optional items"
             }
         },
         "email-report-unsubscribe": {
@@ -1306,6 +1390,60 @@
                 "thanks": "Thanks for the feedback",
                 "title": "How do you like SIGLENS?"
             }
+        },
+        "mail-alert": {
+            "addThis": "Add this too",
+            "allStopped": "You will no longer receive alert emails. We deleted your sign-up details and delivery history.",
+            "button": "Get by email",
+            "cancel": "Cancel",
+            "cardFearGreed": "Get an email in the morning when the index enters Extreme Fear or Extreme Greed",
+            "cardFearGreedMarket": "Get an email in the morning when the {market} Fear & Greed Index enters Extreme Fear or Extreme Greed",
+            "cardSignalHub": "Get newly detected {hubName} stocks by email in the morning",
+            "changeEmail": "Change email",
+            "close": "Close",
+            "codeLabel": "Verification code",
+            "codePrompt": "Enter the {length}-digit code we sent to {email}",
+            "confirm": "Confirm and subscribe",
+            "emailLabel": "Email",
+            "errExpired": "The code has expired. Please request a new one.",
+            "errInvalid": "We could not process the request. Refresh and try again.",
+            "errInvalidEmail": "Please check the email address.",
+            "errLimit": "You can receive up to {max} items. Please tidy up in alert email settings.",
+            "errRateLimited": "Please try again in a moment.",
+            "errTooMany": "Too many wrong attempts. Please request a new code.",
+            "errUnavailable": "We cannot take requests right now. Please try again shortly.",
+            "errWrongCode": "That code does not match.",
+            "fearGreedRule": "We notify you on the day the score falls below {fear} and enters Extreme Fear, or rises to {greed} or above and enters Extreme Greed. If the index leaves the zone and re-enters within {gap} trading days, we do not notify you again.",
+            "includePortfolio": "Also receive new signals for my holdings and watchlist",
+            "known": "You are receiving alerts at {email}.",
+            "loading": "Loading",
+            "manage": "Alert email settings",
+            "marketCrypto": "Crypto",
+            "marketKr": "Korea",
+            "marketUs": "US",
+            "member": "We will send alerts to {email}.",
+            "noTopics": "You have no items selected.",
+            "notice": "We only use this address to send alert emails. If you unsubscribe, we delete it right away.",
+            "otherEmail": "Use a different address",
+            "privacyLink": "View the privacy policy",
+            "receive": "Subscribe",
+            "removeTopic": "Stop receiving: {label}",
+            "resend": "Send the code again",
+            "resendWait": "Send the code again ({seconds}s)",
+            "schedule": "After the market closes, we collect only what is new and send it as one email between {from}:00 and {to}:00 AM Korea time. We send nothing on days with no changes.",
+            "sendCode": "Send verification code",
+            "signupLink": "Sign up",
+            "stop": "Stop receiving",
+            "stopAll": "Stop all alert emails",
+            "stopAllConfirm": "Stop everything? We will delete your sign-up details and delivery history right away.",
+            "stopAllYes": "Yes, stop all",
+            "stopped": "You have stopped receiving this.",
+            "subscribed": "You are already receiving this.",
+            "successGuest": "You are subscribed. On days with something new, we will email {email} in the morning.",
+            "successSignup": "Members can receive alerts for their whole watchlist at once.",
+            "titleFearGreed": "We'll email you when the {market} Fear & Greed Index enters an extreme zone",
+            "titleSignalHub": "We'll email you the newly detected {hubName} stocks",
+            "titleSymbol": "We'll email you when a new signal appears for {name}"
         }
     },
     "shared": {
@@ -1893,7 +2031,7 @@
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
             },
             "about": {
-                "description": "SIGLENS is a free service that takes one ticker and has AI analyze its chart, financial statements, news, and options together. It covers US stocks, Korean stocks, and crypto. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
+                "description": "SIGLENS is a free service that takes one ticker and lays out its support, resistance, and the price where the current read breaks down. It covers US stocks, Korean stocks, and crypto, with financial statements for stocks and options for US stocks. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
                 "title": "About SIGLENS",
                 "metaTitle": "About SIGLENS: AI Analysis for US & Korean Stocks and Crypto"
             },
@@ -2071,8 +2209,8 @@
                 "title": "Reset Password"
             },
             "root": {
-                "description": "Analyze US and Korean stocks and crypto from one ticker. Charts, technical signals, fundamentals, news and a Fear & Greed Index read in one AI Overall Analysis.",
-                "headline": "AI Analysis for US & Korean Stocks and Crypto",
+                "description": "Support and resistance to watch on US and Korean stocks and crypto, plus the invalidation level where the read breaks. News, earnings and the Fear & Greed Index sit alongside.",
+                "headline": "AI chart analysis that maps price levels for US and Korean stocks and crypto",
                 "ogImageAlt": "{v0}: chart, fundamentals, news, options, Fear & Greed Index and an overall analysis",
                 "title": "{v0}: US & Korean Stocks and Crypto AI Analysis"
             },
@@ -2380,6 +2518,9 @@
             },
             "toast": {
                 "close": "Dismiss notification"
+            },
+            "OptionalConsentCheckbox": {
+                "optional": "(Optional)"
             }
         },
         "skillSummary": {
@@ -2925,6 +3066,7 @@
                 "extremeZoneColPeakFear": "Lowest score",
                 "extremeZoneColPeakGreed": "Highest score",
                 "extremeZoneColSessions": "Trading days in zone",
+                "extremeZoneColDays": "Days in zone",
                 "extremeZoneColStart": "Entered",
                 "extremeZoneNoScore": "-",
                 "extremeZoneNone": "During this period the score never newly entered Extreme Fear or Extreme Greed.",
@@ -2932,8 +3074,10 @@
                 "extremeZoneOmitted": "{v0} earlier stays are not shown.",
                 "extremeZoneOngoing": "{v0} (ongoing)",
                 "extremeZonePeriod": "Period: {v0} to {v1} (trading days with a score for this symbol).",
+                "extremeZonePeriodDays": "Period: {v0} to {v1} (days with a score for this symbol).",
                 "extremeZoneSessions": "{v0}",
                 "extremeZoneSummary": "{v0}: {v1} entries, median stay {v2} trading days",
+                "extremeZoneSummaryDays": "{v0}: {v1} entries, median stay {v2} days",
                 "extremeZoneTitle": "Extreme zone record",
                 "groupBalanced": "The {v0} and {v1} groups both sit at {v2}, a balanced reading.",
                 "groupFlow": "Flow",
@@ -2970,7 +3114,8 @@
                 "factorHighShort": "high",
                 "factorLowShort": "low",
                 "factorAllInRange": "All factors are within the usual range (25th–75th percentile).",
-                "extremeZoneMethodLink": "How records are grouped"
+                "extremeZoneMethodLink": "How records are grouped",
+                "extremeZonePeriodMarket": "Period: {v0} to {v1} (days with a score for this index)."
             },
             "mobileSheet": {
                 "aiAnalysis": "AI analysis"
@@ -3027,15 +3172,15 @@
         },
         "ai-about": {
             "btc": {
-                "a1": "Bitcoin is at <b>$97,400</b>, up <up>+4.2%</up> over the week.",
-                "a2": "It's near $98,100, the top of its usual price range (the Bollinger Bands). When momentum is strong, the price can keep riding along that line.",
-                "a3": "The RSI, which shows whether it has risen too far, is <b>68.5</b>, close to the overheated threshold of 70.",
-                "a4": "Reports say spot Bitcoin ETFs (Bitcoin funds traded like stocks) have seen inflows for 5 trading days in a row.",
-                "a5": "The next thing to watch is whether it can break above that range and hold.",
-                "asOf": "Sep 19, 2026 08:40",
+                "a1": "Bitcoin starts with the current price and how it has moved over the past week.",
+                "a2": "Bollinger Bands are its usual price range. Hugging the upper edge often means strong upward momentum.",
+                "a3": "If RSI nears the overheated line, a short breather can follow.",
+                "a4": "News like inflows into spot Bitcoin ETFs (Bitcoin funds traded like stocks) is searched on the web.",
+                "a5": "Whether it holds up beyond that range is the next thing to watch.",
+                "asOf": "latest quote",
                 "q": "How's Bitcoin doing lately?",
-                "subjectWeb": "Bitcoin ETF inflows",
-                "web": "3 web results"
+                "subjectWeb": "Recent Bitcoin news",
+                "web": "Web search"
             },
             "cta": {
                 "button": "Ask",
@@ -3052,8 +3197,8 @@
                 "company": "Company data",
                 "companyBody": "Checks whether the price is high or low relative to earnings (P/E, P/B), how profitable the company is, analyst price targets and the next earnings date.",
                 "companyScope": "US stocks, Korean stocks",
-                "exampleA": "It's trading above its 20-day average price. The RSI, which shows whether it has risen too far, is 54, a normal level.",
-                "exampleAsOf": "As of 09-18 close",
+                "exampleA": "It compares the short-term average price with the current price, and uses the RSI to show whether it has risen too far.",
+                "exampleAsOf": "As-of time",
                 "exampleQ": "How's Samsung Electronics doing lately?",
                 "market": "Market & economy",
                 "marketBody": "Looks at the Fear & Greed Index, major index moves, US rates, inflation and jobs data, and upcoming economic events. Used when you ask about the overall market mood.",
@@ -3103,13 +3248,13 @@
                 "title": "Curious about a stock? Ask now"
             },
             "market": {
-                "a1": "Three things stood out in the US market this week.",
-                "a2": "The Fed held rates steady. Its outlook for cuts this year dropped to one.",
-                "a3": "August consumer price inflation (CPI) came in at <b>2.9%</b>, below the 3.0% forecast, and the Nasdaq rose <up>+1.1%</up> that day.",
-                "a4": "Semiconductors rose <up>+3.4%</up> for the week, the best of 11 sectors.",
-                "a5": "For the week, the S&P 500 rose <up>+0.8%</up> and the Nasdaq <up>+1.6%</up>.",
-                "asOf": "Sep 19, 2026 09:00",
-                "news": "40 news items",
+                "a1": "Only what's worth watching in the US market this week is picked out.",
+                "a2": "The Fed's rate decision and the outlook for future cuts come first.",
+                "a3": "Consumer prices (CPI) below expectations are usually welcome news, and the day's market reaction is checked.",
+                "a4": "Sectors are compared to see which rose or fell the most.",
+                "a5": "It closes with the week's moves in the major indexes.",
+                "asOf": "this week",
+                "news": "News",
                 "q": "Just the important US market news this week",
                 "subjectIndices": "S&P 500, Nasdaq",
                 "subjectNews": "US market"
@@ -3124,22 +3269,22 @@
                 "fearGreedCrypto": "Crypto Fear and Greed Index"
             },
             "nvda": {
-                "a1": "It's on the expensive side relative to its earnings. But earnings are growing fast, so opinions differ.",
-                "a2": "Its P/E, which shows how many times a year's earnings the share price is, is <b>45x</b>. That's above the average for large US tech stocks (about 30x).",
-                "a3": "Revenue is up <up>+56%</up> from a year ago.",
-                "a4": "The average analyst price target is <b>$210</b>, above the current price ($182).",
-                "a5": "The next earnings report is on November 19. Whether earnings meet expectations then is what matters.",
-                "asOf": "Sep 18, 2026 16:00 (US Eastern)",
-                "news": "12 news items",
+                "a1": "Whether the price is high relative to earnings is checked through a few indicators.",
+                "a2": "PER shows how many times a year's earnings the price is. It's compared with similar stocks to see if it runs high or low.",
+                "a3": "Revenue growth against last year gives a sense of the growth pace.",
+                "a4": "Whether the average analyst target sits above or below the current price is a useful reference too.",
+                "a5": "If the next earnings date is close, the result matters more, so that's flagged.",
+                "asOf": "latest quote",
+                "news": "News",
                 "q": "Is NVIDIA expensive right now?"
             },
             "nvdaPro": {
-                "a1": "NVDA options flow is tilted toward calls.",
-                "a2": "Put/call ratio (volume) <b>0.71</b>, below the 5-day average of 0.84.",
-                "a3": "ATM IV <b>41%</b>, down <down>6%p</down> from a month ago.",
-                "a4": "Open interest is highest in the 9/26 $190 calls, and max pain is <b>$182</b>.",
-                "a5": "Some read a low put/call ratio as a sign of froth, so it's hard to read in one direction only.",
-                "asOf": "Sep 18, 2026 16:00 (US Eastern)",
+                "a1": "NVDA options start with whether calls or puts trade more.",
+                "a2": "A low put/call ratio means calls dominate.",
+                "a3": "ATM IV is the move the market expects: higher means bigger moves priced in.",
+                "a4": "Open interest by expiry and strike, plus max pain, comes too.",
+                "a5": "Some read a low ratio as overheating, so it's hard to read one way.",
+                "asOf": "latest quote",
                 "q": "Give me NVDA's put/call ratio, IV and max pain"
             },
             "pain": {
@@ -3160,20 +3305,20 @@
             "replay": {
                 "asOf": "As of {time}",
                 "checking": "Checking {label}",
-                "note": "This is an example conversation. Figures may differ from actual data.",
+                "note": "This is an example conversation. It shows what an answer covers, so it carries no real figures.",
                 "pause": "Pause",
                 "region": "SIGLENS AI example conversation",
                 "resume": "Play",
                 "sources": "Sources",
-                "summary": "Checked {tools} in {seconds}s"
+                "summary": "Checked {tools}"
             },
             "samsung": {
-                "a1": "Samsung Electronics closed at <b>KRW 71,800</b> on September 18, <up>+1.3%</up> from the day before.",
-                "a2": "It's above its 20-day average price (KRW 69,950) but still below its 60-day average (KRW 72,400). Short term it's rising; longer term it hasn't recovered yet.",
-                "a3": "The RSI, which shows whether a stock has risen too far, is <b>54</b>. That's a normal level, neither overheated nor oversold.",
-                "a4": "The MACD, which tracks upward and downward momentum, crossed above its signal line on September 12. That means upward momentum is starting to build.",
-                "a5": "The SIGLENS analysis says the next thing to watch is whether it breaks above <b>KRW 72,400</b>.",
-                "asOf": "Sep 18, 2026 close",
+                "a1": "Samsung Electronics starts with its latest close and the change from the day before.",
+                "a2": "Price above the short-term average reads as a short-term uptrend. Below the long-term average, it's still recovering.",
+                "a3": "RSI shows whether it has risen too far. Neither overheated nor oversold means a normal level.",
+                "a4": "MACD shows the strength of the move. Crossing above its signal line means momentum is starting to build.",
+                "a5": "If the SIGLENS analysis names a price level to watch, it's added here.",
+                "asOf": "latest close",
                 "q": "How's Samsung Electronics doing lately?",
                 "searchSubject": "Samsung Electronics → 005930"
             },
@@ -3376,11 +3521,14 @@
             "hubSeoKeywords": "chart guide,how to read a chart,candlestick patterns,chart patterns,technical indicators,technical analysis terms",
             "hubSeoTitle": "Chart Guide: Candlestick Patterns, Chart Patterns and Indicators",
             "hubTitle": "Chart Guide",
+            "liveBasisHistory": "Based on the SIGLENS signal log (the first-seen date can be later than the day the signal actually appeared)",
             "liveBasisScanner": "SIGLENS signal scanner, as of {time}",
             "liveBasisSnapshot": "Post-close snapshot, as of {date}",
             "liveDetectedOn": "Detected {date}",
             "liveExpectedTag": "(expected)",
+            "liveFirstSeen": "First seen {date}",
             "liveHeading": "Stocks showing this signal now",
+            "liveHubLink": "See all {signal} stocks",
             "liveMarketKr": "Korea",
             "liveMarketUs": "United States",
             "liveRowLink": "{label} chart",
@@ -3403,8 +3551,8 @@
         "about": {
             "hero": {
                 "eyebrow": "About SIGLENS",
-                "title": "Enter one ticker. AI analyzes all of it at once.",
-                "lede": "Charts, financial statements, news, and options usually live in different places. SIGLENS gathers them, runs the numbers, and writes it up as a report you can actually read. US stocks, Korean stocks, and crypto all work."
+                "title": "Enter one ticker. See the price levels worth watching.",
+                "lede": "SIGLENS reads the chart and indicators to work out the current trend, support, resistance, and the price where the read breaks down, then writes it up as a report you can actually read. It covers US stocks, Korean stocks, and crypto. Financial statements are available for stocks, and options for US stocks."
             },
             "example": {
                 "aapl": "Apple",
@@ -3422,7 +3570,7 @@
                 "sources": "Based on",
                 "summary": "Analyzed in {count} steps",
                 "asOf": "As of {time}",
-                "note": "This is an example. The numbers are made up for illustration; real analysis lives on each ticker page.",
+                "note": "This is an example. It shows what a report covers, so it carries no real figures. The real analysis lives on each ticker page.",
                 "step": {
                     "bars": "Prices & chart",
                     "barsPending": "Loading prices & chart",
@@ -3442,27 +3590,27 @@
                     "kinds": "{count} types"
                 },
                 "aapl": {
-                    "a1": "<b>Apple (AAPL)</b> keeps trending up above its 50-day moving average.",
-                    "a2": "Up <up>+6.2%</up> over the past month, stronger than the Nasdaq over the same stretch.",
-                    "a3": "RSI, which gauges how overheated a stock is, sits at <b>64</b>. That's just under the overheated line of 70, so a short pause wouldn't be surprising.",
-                    "a4": "The price levels to watch are around <b>$221</b> below and <b>$238</b> above.",
-                    "a5": "Earnings are two weeks out, so moves may get bigger around that date.",
+                    "a1": "<b>Apple (AAPL)</b> starts with the trend: above its moving averages reads as an uptrend, below as weakness.",
+                    "a2": "Its past month against the Nasdaq shows whether it beat the market.",
+                    "a3": "RSI gauges overheating. The closer it gets to the line, the likelier a short pause.",
+                    "a4": "Support and resistance mark where price tends to hold or stall.",
+                    "a5": "As earnings approach, moves can get bigger, so the date is noted.",
                     "asOf": "US close"
                 },
                 "samsung": {
-                    "a1": "<b>Samsung Electronics</b> slipped below its 20-day moving average, and momentum has weakened.",
-                    "a2": "Down <down>-4.1%</down> over five days, on volume about 30% above normal.",
-                    "a3": "The last candle left a long lower wick, a sign that buyers stepped in at lower prices.",
-                    "a4": "The first support to check is around <b>₩70,000</b>.",
-                    "a5": "It's sensitive to chip-industry news right now, so check the news tab too.",
+                    "a1": "<b>Samsung Electronics</b> is read the same way: price against its moving averages shows trend strength.",
+                    "a2": "Volume matters too: heavier than usual means more behind the move.",
+                    "a3": "A long wick on the last candle shows who held the upper hand, buyers or sellers.",
+                    "a4": "The first support and resistance levels to check are laid out as prices.",
+                    "a5": "Related headlines are in the news tab.",
                     "asOf": "Korea close"
                 },
                 "btc": {
-                    "a1": "<b>Bitcoin</b> has moved inside a narrow range for three weeks.",
-                    "a2": "The Bollinger Bands, which track how widely price swings, are the tightest in three months. That often means a bigger move is near.",
-                    "a3": "Up <up>+1.3%</up> in 24 hours, on normal volume.",
-                    "a4": "The key question is whether it breaks above <b>$68,500</b> or below <b>$63,200</b>.",
-                    "a5": "The Fear & Greed Index, which reads overall market mood, is at <b>52</b>: neutral.",
+                    "a1": "<b>Bitcoin</b> is checked for whether price stays in a narrow range or swings widely.",
+                    "a2": "Bollinger Bands show how widely price swings. When they tighten, a bigger move may be near.",
+                    "a3": "The past day's change and whether volume is normal are checked too.",
+                    "a4": "The levels that matter most if price breaks above or below are marked.",
+                    "a5": "The Fear & Greed Index shows overall market mood.",
                     "asOf": "last 24 hours"
                 }
             },
@@ -3756,6 +3904,22 @@
                 "aria": "Meaning of {name}",
                 "entry": "Look up patterns, candlesticks and indicators in the chart guide",
                 "label": "Meaning"
+            },
+            "conclusion": {
+                "title": "At a glance",
+                "resistance": "Resistance",
+                "support": "Support",
+                "invalidation": "Invalidation level",
+                "invalidationHelpLabel": "About the invalidation level",
+                "invalidationHelp": "The price at which this analysis considers its assumed trend broken.",
+                "locked": "Members only",
+                "none": "None",
+                "planVoid": "Broken",
+                "trendUnknown": "No trend information",
+                "caveat": "Summarizes the move up to analysis time. Not a forecast.",
+                "planVoidDescription": "At the time of analysis, the closing price was already below this price.",
+                "trendHeadline": "<prefix>Current trend:</prefix> <value>{v0}</value>",
+                "analyzedAt": "Analysis time"
             }
         },
         "backtesting": {
@@ -3898,7 +4062,8 @@
                 "486c8b": "Loading data…"
             },
             "FearGreedHistoricalChart": {
-                "9b98f6": "Fear & Greed Index Trend Chart for the Last Year"
+                "9b98f6": "Fear & Greed Index Trend Chart for the Last Year",
+                "ariaMonths": "Fear & Greed Index trend chart, last {months} months"
             },
             "ShareCandlestickChart": {
                 "1b2664": "No chart data available",
@@ -4148,6 +4313,9 @@
             "QuoteHeader": {
                 "92387b": "1D"
             },
+            "QuotePrice": {
+                "unavailable": "Price unavailable"
+            },
             "SectorFactsSummary": {
                 "581217": "Sector Signals Overview",
                 "9550ad": "No stocks with technical signals currently. Please check again shortly.",
@@ -4331,7 +4499,8 @@
                 "29eed9": "Current Fear & Greed Index and Period Comparison",
                 "7da634": "Fear & Greed Index Loading",
                 "d6e558": "Insufficient data to calculate Fear & Greed Index.",
-                "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector."
+                "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector.",
+                "trendMonths": "Fear & Greed Index Trend (Last {months} Months)"
             },
             "FearGreedPageError": {
                 "f929f0": "An error occurred while loading the Fear & Greed Index. Please try again shortly.",
@@ -4638,7 +4807,11 @@
                 "dc14bc": "This value is the total value of the company, including debt, divided by operating profit (before depreciation).",
                 "f4d48c": "This value considers earnings growth rate along with PER.",
                 "f63f21": "Typically, the lower it is, the more undervalued; the higher, the more overvalued.",
-                "fccdcd": "This value converts the net profit earned by the company in one year into how much was earned per share."
+                "fccdcd": "This value converts the net profit earned by the company in one year into how much was earned per share.",
+                "krBasisDartConsolidated": "P/E and P/B use DART consolidated financial statements, attributable to the parent's shareholders. Net income covers the four quarters to {ttmEnd} and equity is as of {equityAsOf}. EPS is divided by total issued shares and book value per share by shares excluding treasury stock.",
+                "krBasisDartSeparate": "This company does not file consolidated financial statements, so P/E and P/B use its DART separate financial statements. Net income covers the four quarters to {ttmEnd} and equity is as of {equityAsOf}. EPS is divided by total issued shares and book value per share by shares excluding treasury stock.",
+                "krBasisDartEquityOnly": "P/B divides equity from the DART financial statements as of {equityAsOf} by shares excluding treasury stock. P/E is left blank because trailing four-quarter net income could not be built.",
+                "krBasisProvider": "P/E and P/B follow the data provider's figures."
             },
             "analystBuyCount": "Buy {v0}",
             "analystRating": {
@@ -4671,12 +4844,17 @@
                 "analyzeTitle": "Analyze {v0}",
                 "tickerListLabel": "{v0} ticker list"
             },
-            "CryptoShowcase": {
-                "5c8e33": "Popular Crypto Assets",
-                "ab6a33": "Explore Popular Crypto Assets"
-            },
             "HeroIllustration": {
-                "018ed1": "Illustration of an analysis dashboard displaying a candlestick chart, indicator trendlines, Golden Cross signal markers, and an RSI sub-panel"
+                "alt": "Illustration of a candlestick chart with a support zone, a resistance line and a dashed invalidation line"
+            },
+            "PopularTickers": {
+                "collapse": "Show less",
+                "crypto": "Crypto",
+                "expand": "Show all categories",
+                "heading": "Popular symbols",
+                "kr": "Korean stocks",
+                "tabsLabel": "Choose a market",
+                "us": "US stocks"
             },
             "SkillsShowcase": {
                 "158954": "AI Analysis Techniques",
@@ -4688,12 +4866,6 @@
             },
             "StatsBar": {
                 "deac8e": "SIGLENS Analysis Scale"
-            },
-            "TickerCategories": {
-                "227844": "Popular Korean Stocks by Theme",
-                "0ab969": "Explore Popular US Stocks by Theme",
-                "bc06f5": "Explore Popular Korean Stocks by Theme",
-                "f6087a": "Popular US Stocks by Theme"
             },
             "categoryDescription": {
                 "AIsemiconductors": "Companies building the chips and servers behind AI compute. They track the data-center investment cycle.",

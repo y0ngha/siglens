@@ -45,10 +45,11 @@ function redirectClearingState(url: URL): NextResponse {
  * lands on the ai landing with `?sso=none`. Without a payload the locale is
  * unknown, so that lands on the default-locale root; a session failure keeps the
  * locale of the stored `next`.
+ *
+ * 브라우저가 리다이렉트로 도착하는 SSO 복귀 지점이라 GET이어야 한다. CSRF는 메서드가
+ * 아니라 1회용 코드(getdel)와 발급 시 바인딩한 state 쿠키 대조로 막는다 — 코드가 없거나
+ * 재사용·위조면 세션을 만들지 않고 `?sso=none`으로 떨군다.
  */
-// 브라우저가 리다이렉트로 도착하는 SSO 복귀 지점이라 GET이어야 한다. CSRF는 메서드가
-// 아니라 1회용 코드(getdel)와 발급 시 바인딩한 state 쿠키 대조로 막는다 — 코드가 없거나
-// 재사용·위조면 세션을 만들지 않고 `?sso=none`으로 떨군다.
 // react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (!isAiHost(request.headers.get('host'))) {
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
     const response = redirectClearingState(new URL(next, AI_SITE_URL));
     response.cookies.set(applyAuthCookie(cookie));
+    // 메인 로그인 흔적(`siglens_signed_in`)은 심지 않는다 — 이건 ai 호스트 세션이다.
     response.cookies.set(
         createAuthHintCookie({
             maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,

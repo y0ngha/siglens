@@ -13,9 +13,11 @@ import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedShareView } from '../FearGreedShareView';
-import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import {
+    sentimentLabelText,
+    WARNING_TEXT_KEY,
+} from '@/shared/lib/fearGreedLabels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import { WARNING_TEXT_KEY } from '@/shared/lib/fearGreedLabels';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 배지 문구는 `shared.lib.fearGreed` 카탈로그에서 온다.

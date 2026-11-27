@@ -11,6 +11,7 @@ gating:
   triggers: [hammer, inverted_hammer, shooting_star, hanging_man]
 token_cost: 344
 digest_hash: "b2f4c966"
+digest_text_hash: "4e456a11"
 ---
 
 ## Overview

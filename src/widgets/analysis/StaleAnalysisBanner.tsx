@@ -36,10 +36,14 @@ export function StaleAnalysisBanner({
     return (
         <div
             role="status"
-            className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning-text"
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning-text"
         >
-            <span>{t('message')}</span>
-            <div className="relative inline-flex">
+            {/* 문구가 줄어드는 쪽이다(DESIGN.md#DS-18). `basis-40`이 240px 패널(안쪽 ~150px)에서는
+                한 줄을 다 차지하게 해 버튼을 아래 줄로 내리고, 넓은 패널에서는 버튼과 한 줄에 둔다. */}
+            <span className="min-w-0 flex-1 basis-40 wrap-anywhere">
+                {t('message')}
+            </span>
+            <div className="relative inline-flex shrink-0">
                 <button
                     type="button"
                     onClick={() => {
@@ -55,7 +59,7 @@ export function StaleAnalysisBanner({
                             : undefined
                     }
                     className={cn(
-                        'rounded-lg border px-2 py-1 text-xs font-medium focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none',
+                        'rounded-lg border px-2 py-1 text-xs font-medium whitespace-nowrap focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none',
                         isCoolingDown
                             ? 'cursor-not-allowed border-border-control text-secondary-500'
                             : 'border-ui-warning hover:bg-ui-warning/20'

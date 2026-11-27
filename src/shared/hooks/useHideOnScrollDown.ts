@@ -104,7 +104,7 @@ function startListening(): () => void {
 
 function subscribe(listener: () => void): () => void {
     listeners.add(listener);
-    stopListening ??= startListening();
+    if (stopListening === null) stopListening = startListening();
     return () => {
         listeners.delete(listener);
         if (listeners.size > 0 || stopListening === null) return;

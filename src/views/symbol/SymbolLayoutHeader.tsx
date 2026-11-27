@@ -8,6 +8,7 @@ import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
+import type { AssetInfo } from '@/shared/lib/types';
 import { FearGreedHeaderChip } from './FearGreedHeaderChip';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
@@ -18,7 +19,19 @@ import {
 } from './utils/symbolTabsConfig';
 import { resolveHeaderDisplayName } from './utils/headerDisplayName';
 import { SymbolBreadcrumb } from './ui/header/SymbolBreadcrumb';
-import { SymbolHeaderControls } from './ui/header/SymbolHeaderControls';
+import {
+    SymbolHeaderControls,
+    type MailAlertSlot,
+} from './ui/header/SymbolHeaderControls';
+import { canReceiveSymbolAlerts } from '@/features/mail-alert/lib/canReceiveSymbolAlerts';
+
+/** 자산 정보가 아직 없으면(`undefined`) 자리만 잡고, 알면 버튼을 두거나 두지 않는다. */
+function mailAlertSlotFor(
+    assetInfo: AssetInfo | null | undefined
+): MailAlertSlot {
+    if (assetInfo === undefined) return 'reserved';
+    return canReceiveSymbolAlerts(assetInfo) ? 'button' : 'none';
+}
 
 interface SymbolLayoutHeaderProps {
     /** Ticker from the dynamic route param. Internally upper-cased for the breadcrumb. */
@@ -124,6 +137,7 @@ export function SymbolLayoutHeader({
                         ticker={ticker}
                         watchlistLabel={displayName.watchlistLabel}
                         settings={symbolModel}
+                        mailAlertSlot={mailAlertSlotFor(assetInfo)}
                     />
                 </div>
             </div>

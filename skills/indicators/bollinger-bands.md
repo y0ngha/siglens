@@ -11,8 +11,9 @@ gating:
   state:
     feature: bollinger
     predicate: pctB
-token_cost: 510
-digest_hash: "c6a14b0b"
+token_cost: 522
+digest_hash: "c9c823c4"
+digest_text_hash: "36797b9f"
 ---
 
 ## Overview
@@ -50,15 +51,15 @@ Bollinger Bands consist of a middle band (20-period SMA) and an upper and lower 
 
 ## Recommended Combinations
 
-- Bollinger Bands + RSI: RSI < 30 near lower band = high-probability mean reversion buy; RSI > 70 near upper band = potential mean reversion sell in ranging markets.
+- Bollinger Bands + RSI: RSI < 30 near lower band = mean reversion buy candidate; RSI > 70 near upper band = potential mean reversion sell in ranging markets.
 - Bollinger Bands + MACD/ADX: Determine trend regime first. If ADX > 25 and MACD is trending, band touches are continuation signals — not reversals.
-- Bollinger Bands + Volume Profile: When price bounces from the lower band near a Volume Profile POC level, the support is strengthened by supply/demand confluence.
+- Bollinger Bands + Volume Profile: When price bounces from the lower band near a Volume Profile POC level, the lower band and the POC sit at about the same price; mention it as an observation.
 
 ## Caveats
 
 - Never interpret an upper band touch as an automatic sell signal. In trending conditions, this is precisely where a trend continuation trade would be placed.
 - Bollinger squeeze predicts volatility expansion, not direction. Always identify the likely direction with a trend filter before trading a squeeze breakout.
-- The standard (20, 2) settings suit daily charts. For intraday analysis, narrower periods like (10, 2.0) increase sensitivity but also noise.
+- The standard (20, 2) settings are the usual reference. On shorter bar timeframes, narrower periods like (10, 2.0) increase sensitivity but also noise.
 
 <!-- PROMPT_DIGEST:START -->
 ### Bollinger Bands Signal Guide
@@ -86,9 +87,9 @@ Mean reversion (sideways / low-ADX):
 - Most reliable when RSI confirms overbought (>70) or oversold (<30) at the same time as band touch.
 
 Combinations:
-- + RSI: RSI<30 near lower band = high-prob mean-reversion buy; RSI>70 near upper = mean-reversion sell in ranging markets.
+- + RSI: RSI<30 near lower band = mean-reversion buy candidate; RSI>70 near upper = mean-reversion sell in ranging markets.
 - + MACD/ADX: determine regime FIRST; if ADX>25 and MACD trending, band touches are continuation signals not reversals.
-- + Volume Profile: bounce from lower band near a POC level = support strengthened by supply/demand confluence.
+- + Volume Profile: bounce from lower band near a POC level = lower band and POC at about the same price (an observation).
 
-Caveats: never auto-sell on an upper band touch (that's precisely a trend-continuation entry zone); squeeze predicts vol expansion not direction — identify direction with a trend filter first; (20,2) suits daily, (10,2.0) intraday raises sensitivity and noise.
+Caveats: never auto-sell on an upper band touch (that's precisely a trend-continuation entry zone); squeeze predicts vol expansion not direction — identify direction with a trend filter first; (20,2) is the standard reference; narrower (10,2.0) on short bar timeframes raises sensitivity and noise.
 <!-- PROMPT_DIGEST:END -->

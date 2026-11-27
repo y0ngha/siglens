@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     fetchKrxListedItems,
+    fetchKrxListedItemsOnOrBefore,
     fetchStockPriceItems,
     hasDataGoKrCredentials,
 } from '../krxListedInfoClient';
@@ -527,5 +528,145 @@ describe('hasDataGoKrCredentials', () => {
         expect(hasDataGoKrCredentials()).toBe(true);
         vi.stubEnv('DATA_GO_KR_SERVICE_KEY', '');
         expect(hasDataGoKrCredentials()).toBe(false);
+    });
+});
+
+describe('fetchKrxListedItemsOnOrBefore', () => {
+    // 실제 주식시세 V2 행(2026-11-26 실측)의 모양 — 기준일마다 행이 다르고 숫자도 문자열로 온다.
+    const row = (
+        basDt: string,
+        srtnCd: string,
+        itmsNm: string,
+        count: string
+    ) => ({
+        basDt,
+        srtnCd,
+        isinCd: `KR7${srtnCd}003`,
+        itmsNm,
+        mrktCtg: 'KOSPI',
+        clpr: '33900',
+        lstgStCnt: count,
+    });
+
+    /** 접두사(`likeSrtnCd`)로 찾은 요청 URL(호출 순서가 아니라 인자로 찾는다, TESTING.md#TE-27). */
+    const requestedUrl = (prefix: string): URL => {
+        const found = fetchSpy.mock.calls
+            .map(([input]) => new URL(String(input)))
+            .find(url => url.searchParams.get('likeSrtnCd') === prefix);
+        if (found === undefined) throw new Error(`no request for ${prefix}`);
+        return found;
+    };
+
+    beforeEach(() => {
+        vi.stubEnv('DATA_GO_KR_SERVICE_KEY', 'test-key');
+        fetchSpy.mockReset();
+        vi.stubGlobal('fetch', fetchSpy);
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.unstubAllGlobals();
+    });
+
+    it('종목 접두사와 기간(기준일 10일 전 ~ 하루 뒤)을 한 번의 호출로 보낸다', async () => {
+        fetchSpy.mockResolvedValue(page([]));
+
+        await fetchKrxListedItemsOnOrBefore('00983', '20260930');
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const url = requestedUrl('00983');
+        expect(url.pathname).toBe(
+            '/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2'
+        );
+        expect(url.searchParams.get('likeSrtnCd')).toBe('00983');
+        expect(url.searchParams.get('beginBasDt')).toBe('20260920');
+        expect(url.searchParams.get('endBasDt')).toBe('20261001');
+        expect(url.searchParams.has('basDt')).toBe(false);
+    });
+
+    it('월 경계를 넘는 기간도 달력대로 계산한다', async () => {
+        fetchSpy.mockResolvedValue(page([]));
+
+        await fetchKrxListedItemsOnOrBefore('00983', '20260105');
+
+        const url = requestedUrl('00983');
+        expect(url.searchParams.get('beginBasDt')).toBe('20251226');
+        expect(url.searchParams.get('endBasDt')).toBe('20260106');
+    });
+
+    it('기준일 이하에서 데이터가 있는 가장 늦은 날의 보통주·우선주 행만 돌려준다', async () => {
+        fetchSpy.mockResolvedValue(
+            page([
+                row('20260925', '009830', '한화솔루션', '171892536'),
+                row('20260925', '009835', '한화솔루션우', '2575349'),
+                row('20260929', '009830', '한화솔루션', '224892536'),
+                row('20260929', '009835', '한화솔루션우', '2544616'),
+                // 요청한 기준일 뒤의 날(`endBasDt` 상한이 포함이어도 걸러야 한다).
+                row('20261001', '009830', '한화솔루션', '999999999'),
+            ])
+        );
+
+        const items = await fetchKrxListedItemsOnOrBefore('00983', '20260930');
+
+        expect(
+            items.map(({ shortCode, basDt, listedShares }) => [
+                shortCode,
+                basDt,
+                listedShares,
+            ])
+        ).toEqual([
+            ['009830', '20260929', 224_892_536],
+            ['009835', '20260929', 2_544_616],
+        ]);
+    });
+
+    it('접두사가 다른 종목(필터를 무시한 응답)은 버린다', async () => {
+        fetchSpy.mockResolvedValue(
+            page([
+                row('20260929', '005930', '삼성전자', '5919637922'),
+                row('20260929', '009830', '한화솔루션', '224892536'),
+            ])
+        );
+
+        const items = await fetchKrxListedItemsOnOrBefore('00983', '20260930');
+
+        expect(items.map(item => item.shortCode)).toEqual(['009830']);
+    });
+
+    it('행이 없으면 빈 배열이다', async () => {
+        fetchSpy.mockResolvedValue(page([]));
+
+        expect(
+            await fetchKrxListedItemsOnOrBefore('00983', '20260930')
+        ).toEqual([]);
+    });
+
+    it('키가 없으면 호출하지 않고 빈 배열이다', async () => {
+        vi.stubEnv('DATA_GO_KR_SERVICE_KEY', '');
+
+        expect(
+            await fetchKrxListedItemsOnOrBefore('00983', '20260930')
+        ).toEqual([]);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('HTTP 오류와 resultCode 오류는 던진다(호출부가 DART만으로 내려간다)', async () => {
+        fetchSpy.mockResolvedValueOnce({ ok: false, status: 500 } as Response);
+        await expect(
+            fetchKrxListedItemsOnOrBefore('00983', '20260930')
+        ).rejects.toThrow('HTTP 500');
+
+        fetchSpy.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                response: {
+                    header: { resultCode: '30', resultMsg: 'SERVICE KEY' },
+                },
+            }),
+        } as unknown as Response);
+        await expect(
+            fetchKrxListedItemsOnOrBefore('00983', '20260930')
+        ).rejects.toThrow('resultCode=30');
     });
 });

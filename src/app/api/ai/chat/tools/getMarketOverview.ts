@@ -217,7 +217,8 @@ function sectorBreadth(
 /**
  * The market's fear & greed view, or `null` for a market that has none.
  *
- * `crypto` has no index of its own, and the US/KR snapshots are built from
+ * A crypto fear & greed index exists (`/fear-greed/crypto`), but this tool does
+ * not read it, so `crypto` yields `null` here. The US/KR snapshots are built from
  * their own market's breadth and sector data — handing one of them to a crypto
  * question would be a number from a different market with nothing marking it
  * as such.
@@ -261,8 +262,8 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
         : 'us';
     const scope = dashboardScopeOf(market);
     const [fgResult, summaryResult, sectorResult] = await Promise.allSettled([
-        // 크립토에는 공포·탐욕 지수가 없다 — 미국·한국 스냅샷은 그 시장의 지수·
-        // 섹터 데이터로 만들어지므로 빌려 쓸 수도 없다.
+        // 크립토 공포·탐욕 지수는 있지만(`/fear-greed/crypto`) 이 도구는 읽지 않는다 —
+        // 미국·한국 스냅샷은 그 시장의 지수·섹터 데이터로 만들어지므로 빌려 쓸 수도 없다.
         fearGreedFor(market),
         getMarketSummaryStatic(scope),
         getSectorSignalsStatic(scope, DEFAULT_DASHBOARD_TIMEFRAME),

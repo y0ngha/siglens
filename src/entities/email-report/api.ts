@@ -18,9 +18,7 @@ import type {
     UpsertEmailReportSubscriptionInput,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-
-/** 메일 리포트 대상 등급 — 가입 회원 이상(무료 회원 포함). */
-const EMAIL_REPORT_TIERS = ['member', 'pro'] as const;
+import { EMAIL_REPORT_TIERS } from './lib/emailReportConstants';
 
 /** 구독 행의 select 컬럼 — 조회·upsert 반환이 같은 `EmailReportSubscriptionRecord` 모양을 쓴다. */
 const columns = {
@@ -31,6 +29,7 @@ const columns = {
     timezone: emailReportSubscriptions.timezone,
     locale: emailReportSubscriptions.locale,
     consentedAt: emailReportSubscriptions.consentedAt,
+    consentSource: emailReportSubscriptions.consentSource,
     createdAt: emailReportSubscriptions.createdAt,
     updatedAt: emailReportSubscriptions.updatedAt,
 };
@@ -41,7 +40,8 @@ const columns = {
  *
  * `consented_at`은 **회원이 수신을 마지막으로 켠 시각**이다. `enabled = true` upsert는 저장돼 있던
  * 행이 꺼져 있었거나(또는 없었을) 때만 이 값을 찍는다. 이미 켜진 구독을 다시 저장하면(예: 시각 변경)
- * 동의 시각을 조용히 옮기지 않고 원래 값을 지킨다.
+ * 동의 시각을 조용히 옮기지 않고 원래 값을 지킨다. `consent_source`(수신을 켠 화면)도 같은 규칙이다:
+ * 꺼진 상태에서 켤 때만 입력 값으로 바뀌고, 이미 켜져 있으면 처음 동의한 화면을 지킨다.
  */
 export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubscriptionRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -78,6 +78,9 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
                         timezone: input.timezone,
                         locale: input.locale,
                         consentedAt: input.enabled ? sql`now()` : null,
+                        consentSource: input.enabled
+                            ? input.consentSource
+                            : null,
                     })
                     .onConflictDoUpdate({
                         target: emailReportSubscriptions.userId,
@@ -90,6 +93,9 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
                             consentedAt: input.enabled
                                 ? sql`case when ${emailReportSubscriptions.enabled} then ${emailReportSubscriptions.consentedAt} else now() end`
                                 : sql`${emailReportSubscriptions.consentedAt}`,
+                            consentSource: input.enabled
+                                ? sql`case when ${emailReportSubscriptions.enabled} then ${emailReportSubscriptions.consentSource} else ${input.consentSource} end`
+                                : sql`${emailReportSubscriptions.consentSource}`,
                             updatedAt: sql`now()`,
                         },
                     })

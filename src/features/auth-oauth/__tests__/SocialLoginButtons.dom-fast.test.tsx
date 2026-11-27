@@ -42,6 +42,17 @@ describe('SocialLoginButtons', () => {
         );
     });
 
+    it('기본값은 위쪽 구분선을 그린다(로그인 화면은 폼 아래에 붙는다)', () => {
+        const { container } = render(<SocialLoginButtons />);
+        expect(container.querySelectorAll('div.border-t').length).toBe(1);
+    });
+
+    it("divider='none'이면 위쪽 구분선을 그리지 않는다", () => {
+        const { container } = render(<SocialLoginButtons divider="none" />);
+        expect(container.querySelectorAll('div.border-t').length).toBe(0);
+        expect(screen.getByText('Google로 계속하기')).toBeInTheDocument();
+    });
+
     it('renders Google icon SVG', () => {
         render(<SocialLoginButtons />);
         const svg = document.querySelector('svg[aria-hidden]');

@@ -14,6 +14,12 @@ function createMockEmailTokens(
     } as unknown as VerifyEmailDependencies['emailTokens'];
 }
 
+/** 한도는 통과시키는 포트 — 이 파일은 코드 비교 경계만 본다(한도는 verifyEmail.test가 다룬다). */
+const ALLOW_ALL = {
+    rateLimit: async () => true,
+    ipHash: async () => 'iphash',
+};
+
 describe('Email verification edge cases', () => {
     it('returns expired error when no token stored', async () => {
         const emailTokens = createMockEmailTokens({
@@ -22,7 +28,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code: '123456' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(false);
@@ -42,7 +48,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code: '111111' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(false);
@@ -51,19 +57,22 @@ describe('Email verification edge cases', () => {
         }
     });
 
-    it('returns ok: true when already verified', async () => {
+    it('rejects a wrong code when already verified (no free pass for a stranger)', async () => {
         const emailTokens = createMockEmailTokens({
             get: vi.fn().mockResolvedValue({
                 status: 'verified',
+                tokenHash: hashEmailToken('654321'),
+                bindingHash: hashEmailToken('binding'),
             }),
         });
 
         const result = await verifyEmail(
             { email: 'test@example.com', code: 'any-code' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
-        expect(result.ok).toBe(true);
+        expect(result.ok).toBe(false);
+        expect(emailTokens.set).not.toHaveBeenCalled();
     });
 
     it('returns ok: true and sets verified status on correct code', async () => {
@@ -77,14 +86,17 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(true);
         expect(emailTokens.set).toHaveBeenCalledWith(
             'email_verification',
             'test@example.com',
-            { status: 'verified' },
+            expect.objectContaining({
+                status: 'verified',
+                tokenHash: hashEmailToken(code),
+            }),
             expect.any(Number)
         );
     });
@@ -94,7 +106,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'not-an-email', code: '123456' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(false);

@@ -8,6 +8,7 @@ gating:
   tier: always_on
 token_cost: 182
 digest_hash: "071f4960"
+digest_text_hash: "d888e12a"
 ---
 
 # 퀄리티 투자 분석 프레임

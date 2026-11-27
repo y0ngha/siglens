@@ -28,6 +28,7 @@ const subscriptionRow = {
     timezone: 'Asia/Seoul',
     locale: 'ko',
     consentedAt: new Date('2026-10-01T00:00:00.000Z'),
+    consentSource: 'settings',
     createdAt: new Date('2026-10-01T00:00:00.000Z'),
     updatedAt: new Date('2026-10-01T00:00:01.000Z'),
 };
@@ -39,11 +40,26 @@ const UPSERT_INPUT: UpsertEmailReportSubscriptionInput = {
     sendHour: 21,
     timezone: 'America/New_York',
     locale: 'en',
+    consentSource: 'signup_email',
 };
 
 const dialect = new PgDialect();
 const toSqlText = (value: unknown): string =>
     dialect.sqlToQuery(value as SQL).sql;
+
+/** 주어진 SQL 문장과 바인딩 값으로 렌더되는 Drizzle `SQL` 조각만 맞는 비대칭 매처. */
+function sqlMatching(text: string, params: unknown[]) {
+    return {
+        asymmetricMatch: (value: unknown): boolean => {
+            if (!is(value, SQL)) return false;
+            const query = dialect.sqlToQuery(value);
+            return (
+                query.sql === text &&
+                JSON.stringify(query.params) === JSON.stringify(params)
+            );
+        },
+    };
+}
 
 function makeUpsertDb(rows: unknown[]) {
     const returning = vi.fn().mockResolvedValue(rows);
@@ -143,6 +159,53 @@ describe('DrizzleEmailReportSubscriptionRepository.upsert', () => {
         );
     });
 
+    it('켜는 저장은 수신을 켠 화면을 신규 행에 넣고, 기존 행에는 꺼져 있을 때만 바꾼다', async () => {
+        const { db, values, onConflictDoUpdate } = makeUpsertDb([
+            subscriptionRow,
+        ]);
+        await new DrizzleEmailReportSubscriptionRepository(db).upsert(
+            UPSERT_INPUT
+        );
+
+        expect(values).toHaveBeenCalledWith(
+            expect.objectContaining({ consentSource: 'signup_email' })
+        );
+        expect(onConflictDoUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                set: expect.objectContaining({
+                    consentSource: sqlMatching(
+                        'case when "email_report_subscriptions"."enabled" then "email_report_subscriptions"."consent_source" else $1 end',
+                        ['signup_email']
+                    ),
+                }),
+            })
+        );
+    });
+
+    it('끄는 저장은 수신을 켠 화면을 신규 행에 남기지 않고, 기존 행의 값은 보존한다', async () => {
+        const { db, values, onConflictDoUpdate } = makeUpsertDb([
+            subscriptionRow,
+        ]);
+        await new DrizzleEmailReportSubscriptionRepository(db).upsert({
+            ...UPSERT_INPUT,
+            enabled: false,
+        });
+
+        expect(values).toHaveBeenCalledWith(
+            expect.objectContaining({ consentSource: null })
+        );
+        expect(onConflictDoUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                set: expect.objectContaining({
+                    consentSource: sqlMatching(
+                        '"email_report_subscriptions"."consent_source"',
+                        []
+                    ),
+                }),
+            })
+        );
+    });
+
     it('끄는 저장은 신규 행에 동의 시각을 남기지 않고, 기존 행의 동의 시각은 보존한다', async () => {
         const { db, values, onConflictDoUpdate } = makeUpsertDb([
             subscriptionRow,
@@ -216,11 +279,9 @@ describe('DrizzleEmailReportSubscriptionRepository.findEnabledRecipients', () =>
         const sqlText = dialect.sqlToQuery(
             (where.mock.calls[0] as unknown as [SQL])[0]
         );
-        expect(sqlText.sql).toContain(
-            '"email_report_subscriptions"."enabled" = $1'
+        expect(sqlText.sql).toBe(
+            '("email_report_subscriptions"."enabled" = $1 and "users"."email_verified" = $2 and "users"."tier" in ($3, $4))'
         );
-        expect(sqlText.sql).toContain('"users"."email_verified" = $2');
-        expect(sqlText.sql).toContain('"users"."tier" in ($3, $4)');
         expect(sqlText.params).toEqual([true, true, 'member', 'pro']);
     });
 });
@@ -363,17 +424,15 @@ describe('DrizzleEmailReportExclusionRepository', () => {
         expect(captured).toHaveLength(3);
         // 상한 판정용 개수 조회는 이 회원의 행만 읽는다.
         expect(captured[1]).toEqual({
-            sql: expect.stringMatching(
-                /^select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"\."user_id" = \$1/
-            ),
+            sql: 'select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"."user_id" = $1',
             params: ['user-1'],
         });
         expect(captured[0]).toEqual({
             sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
             params: ['user-1'],
         });
-        expect(captured[2].sql).toMatch(
-            /^insert into "email_report_excluded_symbols" \("user_id", "symbol", "created_at"\) values \(\$1, \$2, default\) on conflict \("user_id","symbol"\) do nothing/
+        expect(captured[2].sql).toBe(
+            'insert into "email_report_excluded_symbols" ("user_id", "symbol", "created_at") values ($1, $2, default) on conflict ("user_id","symbol") do nothing'
         );
         expect(captured[2].params).toEqual(['user-1', 'AAPL']);
     });
@@ -407,8 +466,8 @@ describe('DrizzleEmailReportExclusionRepository', () => {
             )
         ).resolves.toBe('excluded');
         // 삽입은 여전히 나가지만 충돌 무시라 행이 늘지 않는다.
-        expect(captured[2].sql).toMatch(
-            /^insert into "email_report_excluded_symbols".* on conflict \("user_id","symbol"\) do nothing/
+        expect(captured[2].sql).toBe(
+            'insert into "email_report_excluded_symbols" ("user_id", "symbol", "created_at") values ($1, $2, default) on conflict ("user_id","symbol") do nothing'
         );
     });
 
@@ -421,9 +480,7 @@ describe('DrizzleEmailReportExclusionRepository', () => {
             )
         ).resolves.toBe(true);
         expect(removed.captured[0]).toEqual({
-            sql: expect.stringMatching(
-                /^delete from "email_report_excluded_symbols" where \("email_report_excluded_symbols"\."user_id" = \$1 and "email_report_excluded_symbols"\."symbol" = \$2\) returning /
-            ),
+            sql: 'delete from "email_report_excluded_symbols" where ("email_report_excluded_symbols"."user_id" = $1 and "email_report_excluded_symbols"."symbol" = $2) returning "symbol"',
             params: ['user-1', 'AAPL'],
         });
 

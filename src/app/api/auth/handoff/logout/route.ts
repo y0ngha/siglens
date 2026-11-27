@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
@@ -26,9 +27,10 @@ export const dynamic = 'force-dynamic';
  * missing/reused/expired code, a different or no main user, Redis down — still
  * lands on the ai landing without touching the main session. Not an open
  * redirect: the target origin is always the `AI_SITE_URL` constant.
+ *
+ * 브라우저가 ai 로그아웃 액션의 리다이렉트로 도착하는 지점이라 GET이어야 한다.
+ * CSRF는 메서드가 아니라 1회용 코드와 userId 대조로 막는다.
  */
-// 브라우저가 ai 로그아웃 액션의 리다이렉트로 도착하는 지점이라 GET이어야 한다.
-// CSRF는 메서드가 아니라 1회용 코드와 userId 대조로 막는다.
 // react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (isAiHost(request.headers.get('host'))) {
@@ -66,5 +68,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
     response.cookies.set(applyAuthCookie(result.cookie));
     response.cookies.set(createExpiredAuthHintCookie({ secure }));
+    clearMainSessionHint(response.cookies, { secure });
     return response;
 }

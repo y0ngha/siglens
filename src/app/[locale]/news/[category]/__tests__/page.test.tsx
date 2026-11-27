@@ -57,10 +57,9 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { generateMetadata } from '../page';
+import CategoryNewsPage, { generateMetadata } from '../page';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import CategoryNewsPage from '../page';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 import { koMessage } from '@/shared/test-utils/koMessage';
 

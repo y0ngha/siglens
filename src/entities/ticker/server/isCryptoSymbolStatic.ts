@@ -3,6 +3,11 @@ import { isCryptoSymbol } from './cryptoAssetStore';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
+ * 크립토 판별 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
+/**
  * ISR static-safe crypto membership predicate. Wraps `isCryptoSymbol` (a DB
  * read that signals `unstable_noStore` via the drizzle logger) in Next.js
  * `unstable_cache` so ISR cold-gen does not throw `DYNAMIC_SERVER_USAGE`.
@@ -43,6 +48,9 @@ export function isCryptoSymbolStatic(symbol: string): Promise<boolean> {
     return unstable_cache(
         () => isCryptoSymbol(upper),
         ['crypto-membership', upper],
-        { revalidate: SECONDS_PER_DAY, tags: [`symbol:${upper}`] }
+        {
+            revalidate: CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS,
+            tags: [`symbol:${upper}`],
+        }
     )();
 }

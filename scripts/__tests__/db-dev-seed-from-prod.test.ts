@@ -38,6 +38,11 @@ const EXPECTED_PII_TABLES = [
     'portfolio_holdings',
     'email_report_subscriptions',
     'email_report_deliveries',
+    'email_report_welcomes',
+    'mail_alert_subscribers',
+    'mail_alert_topics',
+    'mail_alert_deliveries',
+    'price_alerts',
     'agreements',
     'inquiries',
     'visitor_days',
@@ -93,6 +98,19 @@ describe('db-dev-seed-from-prod.sh', () => {
         const excluded = excludedTables();
         const referencing = tablesReferencing('chatConversations');
         expect(referencing.length).toBeGreaterThan(0);
+        for (const table of referencing) {
+            expect(excluded).toContain(table);
+        }
+    });
+
+    it('알림 메일 구독자(비회원 주소 포함)에 딸린 테이블도 제외한다', () => {
+        const excluded = excludedTables();
+        const referencing = tablesReferencing('mailAlertSubscribers');
+        expect(referencing.sort()).toEqual([
+            'mail_alert_deliveries',
+            'mail_alert_topics',
+            'price_alerts',
+        ]);
         for (const table of referencing) {
             expect(excluded).toContain(table);
         }

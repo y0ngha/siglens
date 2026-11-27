@@ -75,8 +75,8 @@ export function splitMarkdownBlocks(markdown: string): string[] {
             sawBlank = true;
             continue;
         }
-        if (current.length === 0 && sawBlank && blocks.length > 0) {
-            const previous = blocks[blocks.length - 1]!;
+        const previous = blocks.at(-1);
+        if (current.length === 0 && sawBlank && previous !== undefined) {
             // 느슨한 목록·들여쓴 이어 쓰기: 열린 목록으로 끝난 앞 블록을 다시 열어 빈 줄째 붙인다.
             if (opensContinuation(line) && endsInOpenList(previous)) {
                 blocks.pop();
@@ -84,9 +84,10 @@ export function splitMarkdownBlocks(markdown: string): string[] {
             }
         }
         sawBlank = false;
-        if (fenceMatch) {
-            const marker = fenceMatch[1]!;
-            fence = { char: marker[0]!, length: marker.length };
+        const openingMarker = fenceMatch?.[1];
+        const openingChar = openingMarker?.[0];
+        if (openingMarker !== undefined && openingChar !== undefined) {
+            fence = { char: openingChar, length: openingMarker.length };
         }
         current.push(line);
     }

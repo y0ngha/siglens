@@ -10,6 +10,7 @@ gating:
   tier: always_on
 token_cost: 717
 digest_hash: "7b2c107b"
+digest_text_hash: "43b3c6d7"
 ---
 
 ## Evidence and Reliability

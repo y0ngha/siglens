@@ -18,7 +18,7 @@ import {
 } from './lib/guideBrowse';
 import { loadGuideCategoryCopy } from './lib/guideCopy';
 import { patternTitlesByPath, resolveDemoSource } from './lib/guideEntry';
-import type { LiveSymbolGroup } from './lib/liveSymbols';
+import { hubSlugsFor, type LiveSymbolGroup } from './lib/liveSymbols';
 import { splitMarkdownAtHeading } from './lib/splitMarkdown';
 import { GuideEntryAside } from './ui/entry/GuideEntryAside';
 import { GuideEntryCardSection } from './ui/entry/GuideEntryCardSection';
@@ -111,6 +111,7 @@ export async function GuideEntryPage({
                             locale={locale}
                             groups={liveSymbols}
                             patternTitles={patternTitlesByPath(catalog)}
+                            hubSlugs={hubSlugsFor(entry, catalog)}
                         />
                     )}
                     {body.after === null ? null : (

@@ -11,6 +11,7 @@ gating:
   triggers: [bullish_counterattack_line, bearish_counterattack_line, bullish_belt_hold, bearish_belt_hold]
 token_cost: 318
 digest_hash: "3fe119df"
+digest_text_hash: "d77ee4ce"
 ---
 
 ## Overview

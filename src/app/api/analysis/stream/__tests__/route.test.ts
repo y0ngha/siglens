@@ -11,10 +11,12 @@
  * `runAnalysis` is mocked via its bridge module.
  */
 
-// --- Module mocks (hoisted before imports) ---
-
-// 생성 한도 — 기본은 항상 허락(예약·환불 관측은 개별 테스트가 덮어쓴다).
-// 신원 해석이 `cookies()`/`headers()`를 부르므로 그 둘도 막는다.
+/**
+ * --- Module mocks (hoisted before imports) ---
+ *
+ * 생성 한도 — 기본은 항상 허락(예약·환불 관측은 개별 테스트가 덮어쓴다).
+ * 신원 해석이 `cookies()`/`headers()`를 부르므로 그 둘도 막는다.
+ */
 const { mockReserveAnalysisGeneration, mockQuotaRefund } = vi.hoisted(() => {
     const mockQuotaRefund = vi.fn().mockResolvedValue(undefined);
     return {
@@ -113,7 +115,7 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
      * `'USD'`를 단언하는 테스트가 실패 경로만으로 통과했고, `'KRW'`는 한 번도 생성된 적이 없다
      * (감사 실측 M1). 심볼 형상만 보는 순수 함수이므로 모킹할 이유가 없다.
      *
-     * 지금은 라우트가 디스크립터에서 통화를 읽지만(PR #779), 이 항목은 남겨 둔다 —
+     * 지금은 라우트가 디스크립터에서 통화를 읽지만 이 항목은 남겨 둔다 —
      * 같은 모듈을 쓰는 다른 호출자가 생겼을 때 mock이 조용히 undefined를 돌려주는
      * 상태로 돌아가지 않게 한다.
      */

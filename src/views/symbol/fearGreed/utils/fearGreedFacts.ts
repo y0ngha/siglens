@@ -6,19 +6,17 @@
  * 읽히는 본문이라 여기 남은 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고
  * 훅을 부르지 않고 번역자를 인자로 받는다.
  */
-import type {
-    FearGreedFactor,
-    FearGreedGroupName,
-    FearGreedLabel,
-    FearGreedSnapshot,
-} from '@y0ngha/siglens-core';
 import {
     computeLabelTransitions,
     computeMarketScoreGap,
     POC_WINDOW_DEFAULT,
     summarizeExtremeZoneEpisodes,
     type ExtremeFearGreedZone,
+    type FearGreedFactor,
+    type FearGreedGroupName,
+    type FearGreedLabel,
     type FearGreedReading,
+    type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
 import {
     formatFactorRaw,
@@ -164,12 +162,13 @@ export function buildFearGreedGroupComparisonLine(
 function findMostExtremeFactor(
     factors: readonly FearGreedFactor[]
 ): FearGreedFactor | null {
-    if (factors.length === 0) return null;
-    return factors.toSorted(
-        (a, b) =>
-            Math.abs(b.percentile - MEDIAN_PERCENTILE) -
-            Math.abs(a.percentile - MEDIAN_PERCENTILE)
-    )[0]!;
+    return (
+        factors.toSorted(
+            (a, b) =>
+                Math.abs(b.percentile - MEDIAN_PERCENTILE) -
+                Math.abs(a.percentile - MEDIAN_PERCENTILE)
+        )[0] ?? null
+    );
 }
 
 /**
@@ -311,18 +310,25 @@ export function buildFearGreedYearRangeLine(
 ): string | null {
     const window = points.slice(-TRADING_DAYS.year);
     const current = window.at(-1);
-    if (current === undefined || window.length < MIN_DISTRIBUTION_SAMPLE) {
+    const extremes = scoreExtremes(window);
+    if (
+        current === undefined ||
+        extremes === null ||
+        window.length < MIN_DISTRIBUTION_SAMPLE
+    ) {
         return null;
     }
 
-    const { min, max } = scoreExtremes(window)!;
+    const { min, max } = extremes;
 
     const sorted = window.map(p => p.score).toSorted((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
+    const upperMid = sorted[mid];
+    const lowerMid = sorted[mid - 1];
+    // 표본 하한(MIN_DISTRIBUTION_SAMPLE)이 위에서 보장하므로 두 값은 항상 있다.
+    if (upperMid === undefined || lowerMid === undefined) return null;
     const median =
-        sorted.length % 2 === 0
-            ? (sorted[mid - 1]! + sorted[mid]!) / 2
-            : sorted[mid]!;
+        sorted.length % 2 === 0 ? (lowerMid + upperMid) / 2 : upperMid;
     const rank = sorted.filter(s => s <= current.score).length;
     const percentile = Math.round((rank / sorted.length) * 100);
 
@@ -498,7 +504,7 @@ export const EXTREME_ZONE_RECORD_MAX_ROWS = 8;
  * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록.
  *
  * 예전에는 진입 뒤 5·20·60거래일 종가 변화의 중앙값을 보였다. 20개 종목·5년으로 재 보니
- * 그 중앙값이 같은 수의 무작위 날짜 중앙값과 구별되지 않았다(siglens-core#256, 117칸 중
+ * 그 중앙값이 같은 수의 무작위 날짜 중앙값과 구별되지 않았다(117칸 중
  * p<0.10이 10칸 — 우연 수준). 잡음이 숫자로 보이면 패턴처럼 읽혀 투자 권유 위험까지
  * 생기므로, 흔들리지 않는 사실(진입일·마지막 날·머문 거래일·극값 점수)만 보인다.
  * 수익률·평균·승률은 계산하지 않는다(core가 돌려주지 않는다).

@@ -61,6 +61,52 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
     });
 
+    test('shows the "한눈에 보기" card above the panel with its three rows', async ({
+        page,
+    }) => {
+        test.skip(
+            test.info().project.name !== 'chromium',
+            '데스크톱 패널은 chromium 프로젝트에서만 검증한다'
+        );
+
+        await page.goto('/AAPL');
+
+        const panel = page.getByRole('region', { name: 'AI 차트 분석' });
+        // 카드는 첫 분석이 도착하기 전(자리만 잡는 로딩 상태)부터 있다.
+        const card = panel.getByRole('region', { name: '한눈에 보기' });
+        await expect(card).toBeVisible();
+        await expect(
+            card.getByRole('heading', { level: 2, name: '한눈에 보기' })
+        ).toBeVisible();
+
+        // 픽스처 분석이 렌더된 뒤: 헤드라인은 픽스처의 추세(neutral)를 읽고, 행 셋의 라벨이 있다.
+        // 비회원은 값 칸이 "회원 전용"이거나 가격이라 내용은 단언하지 않고 비어 있지 않음만 본다.
+        await expect(
+            panel.getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, { exact: false })
+        ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
+        await expect(card).toHaveAttribute('aria-busy', 'false');
+        await expect(card.getByText('현재 추세 보합')).toBeVisible();
+        await expect(card.getByText('저항선')).toBeVisible();
+        await expect(card.getByText('지지선')).toBeVisible();
+        await expect(card.getByText('무효화 기준')).toBeVisible();
+        await expect(card.locator('dl > div > dd')).toHaveText([
+            /\S/,
+            /\S/,
+            /\S/,
+        ]);
+
+        // 카드가 AI 본문(요약)보다 위에 있다.
+        const cardBox = await card.boundingBox();
+        const summaryBox = await panel
+            .getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, { exact: false })
+            .boundingBox();
+        expect(cardBox).not.toBeNull();
+        expect(summaryBox).not.toBeNull();
+        expect(cardBox?.y ?? Infinity).toBeLessThan(summaryBox?.y ?? -Infinity);
+        // 추세는 카드가 이미 알리므로 패널 머리의 배지는 한 번 더 읽히지 않는다.
+        await expect(panel.getByText('현재 추세 보합')).toHaveCount(1);
+    });
+
     test('free deep links are canonicalized to daily and intraday controls are disabled', async ({
         page,
     }) => {

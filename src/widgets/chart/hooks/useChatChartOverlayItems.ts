@@ -7,7 +7,7 @@ import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import {
     buildOverlayMenuItems,
     type OverlayMenuItem,
-} from '../utils/overlayItems';
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
 
 /**
  * 답변 안 차트의 "차트 작도" 메뉴 항목 — 블록의 작도를 종목 페이지와 같은 규칙(`buildOverlayMenuItems`)으로 묶고,

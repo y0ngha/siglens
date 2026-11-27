@@ -7,13 +7,13 @@
     },
     {
         "file": "src/app/[locale]/backtesting/_lib/backtestingJsonLd.ts",
-        "line": 104,
+        "line": 96,
         "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 백테스팅"
     },
     {
         "file": "src/app/[locale]/backtesting/_lib/backtestingJsonLd.ts",
-        "line": 105,
+        "line": 97,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 분석 백테스트"
     },
@@ -229,7 +229,7 @@
     },
     {
         "file": "src/app/[locale]/guide/_lib/loadGuideLiveSymbols.ts",
-        "line": 130,
+        "line": 183,
         "reason": "developer-diagnostic",
         "text": "`[guide-live] ${source} 조회 실패 — 비운 채로 진행한다`"
     },
@@ -361,7 +361,7 @@
     },
     {
         "file": "src/app/[locale]/market/signals/_lib/loadSignalHub.ts",
-        "line": 80,
+        "line": 91,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 기록 조회 실패"
     },
@@ -528,26 +528,32 @@
         "text": "[ReanalyzeCooldown] acquire 실패:"
     },
     {
+        "file": "src/entities/auth/lib/authUseCaseConstants.ts",
+        "line": 17,
+        "reason": "log-fallback-message",
+        "text": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
+    },
+    {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
-        "line": 15,
+        "line": 23,
         "reason": "log-fallback-message",
         "text": "비밀번호 재설정 토큰이 유효하지 않습니다."
     },
     {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
-        "line": 16,
+        "line": 24,
         "reason": "log-fallback-message",
         "text": "비밀번호 재설정 토큰이 만료되었습니다."
     },
     {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
-        "line": 18,
+        "line": 26,
         "reason": "log-fallback-message",
         "text": "현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다."
     },
     {
         "file": "src/entities/auth/lib/deleteAccount.ts",
-        "line": 97,
+        "line": 116,
         "reason": "log-fallback-message",
         "text": "사용자 계정을 찾을 수 없습니다."
     },
@@ -565,39 +571,51 @@
     },
     {
         "file": "src/entities/auth/lib/loginUser.ts",
-        "line": 13,
+        "line": 27,
         "reason": "log-fallback-message",
         "text": "이메일 또는 비밀번호가 올바르지 않습니다."
     },
     {
+        "file": "src/entities/auth/lib/loginUser.ts",
+        "line": 29,
+        "reason": "log-fallback-message",
+        "text": "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."
+    },
+    {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 19,
+        "line": 20,
         "reason": "log-fallback-message",
         "text": "이미 사용 중인 이메일입니다."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 21,
+        "line": 22,
         "reason": "log-fallback-message",
         "text": "이메일 인증을 완료해야 회원가입이 가능합니다."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 22,
+        "line": 23,
         "reason": "log-fallback-message",
         "text": "필수 동의 항목을 확인해주세요."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 12,
+        "line": 22,
         "reason": "log-fallback-message",
         "text": "인증 코드가 올바르지 않습니다."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 13,
+        "line": 23,
         "reason": "log-fallback-message",
         "text": "인증 코드가 만료되었습니다."
+    },
+    {
+        "file": "src/entities/auth/lib/verifyEmail.ts",
+        "line": 25,
+        "reason": "log-fallback-message",
+        "text": "인증 코드를 여러 번 잘못 입력했습니다. 새 코드를 받아 주세요."
     },
     {
         "file": "src/entities/congress-trades/server/getCongressTradesResilient.ts",
@@ -889,7 +907,7 @@
     },
     {
         "file": "src/entities/investor-flows/server/getInvestorFlowsPipelineReadiness.ts",
-        "line": 92,
+        "line": 97,
         "reason": "developer-diagnostic",
         "text": "[getInvestorFlowsPipelineReadiness] 상태 조회 실패, unknown:"
     },
@@ -901,7 +919,7 @@
     },
     {
         "file": "src/entities/investor-flows/server/getRecentDilutionEvent.ts",
-        "line": 106,
+        "line": 111,
         "reason": "developer-diagnostic",
         "text": "[getRecentDilutionEvent] 증자 공시 조회 실패, 배지 생략:"
     },
@@ -997,7 +1015,7 @@
     },
     {
         "file": "src/entities/signal-history/api.ts",
-        "line": 264,
+        "line": 916,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 사이트맵 집계 실패"
     },
@@ -1213,43 +1231,43 @@
     },
     {
         "file": "src/shared/api/dart/dartClient.ts",
-        "line": 298,
+        "line": 316,
         "reason": "developer-diagnostic",
         "text": "[dart] ip_not_allowed — DART returned 012; remove the IP restriction on the API "
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 356,
+        "line": 358,
         "reason": "developer-diagnostic",
         "text": "[krxListedInfo] DATA_GO_KR_SERVICE_KEY 미설정 — 빈 목록 반환"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 378,
+        "line": 380,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${date}까지 확인하고 중단`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 385,
+        "line": 387,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 최근 ${MAX_DATE_LOOKBACK_DAYS}일 안에서 데이터를 찾지 못했다`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 436,
+        "line": 506,
         "reason": "developer-diagnostic",
         "text": "`${source.tag} 예산(${source.budgetMs}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 463,
+        "line": 533,
         "reason": "developer-diagnostic",
         "text": "`${source.tag} MAX_PAGES(${MAX_PAGES}) 도달 — 결과가 잘렸을 수 있다`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 470,
+        "line": 540,
         "reason": "developer-diagnostic",
         "text": "`${source.tag} ${basDt} 원본 ${rawCollected}건 < totalCount ${reportedTotal} — 중간 페"
     },
@@ -2611,585 +2629,2541 @@
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 8,
+        "line": 10,
         "reason": "catalog-backed-data",
         "text": "메가캡/지수"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 10,
+        "line": 12,
         "reason": "catalog-backed-data",
         "text": "애플"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 11,
+        "line": 13,
         "reason": "catalog-backed-data",
         "text": "마이크로소프트"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 12,
+        "line": 14,
         "reason": "catalog-backed-data",
         "text": "엔비디아"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 13,
+        "line": 15,
         "reason": "catalog-backed-data",
         "text": "알파벳(구글)"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 14,
+        "line": 16,
         "reason": "catalog-backed-data",
         "text": "아마존"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 15,
+        "line": 17,
         "reason": "catalog-backed-data",
         "text": "메타"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 16,
+        "line": 18,
         "reason": "catalog-backed-data",
         "text": "테슬라"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 18,
+        "line": 20,
         "reason": "catalog-backed-data",
         "text": "나스닥100 ETF"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 23,
+        "line": 25,
         "reason": "catalog-backed-data",
         "text": "AI 반도체"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 26,
+        "line": 28,
         "reason": "catalog-backed-data",
         "text": "브로드컴"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 27,
+        "line": 29,
         "reason": "catalog-backed-data",
         "text": "암(ARM)"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 28,
+        "line": 30,
         "reason": "catalog-backed-data",
         "text": "슈퍼마이크로"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 29,
+        "line": 31,
         "reason": "catalog-backed-data",
         "text": "아스테라랩스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 30,
+        "line": 32,
         "reason": "catalog-backed-data",
         "text": "사운드하운드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 35,
+        "line": 37,
         "reason": "catalog-backed-data",
         "text": "소프트웨어/클라우드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 37,
+        "line": 39,
         "reason": "catalog-backed-data",
         "text": "팔란티어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 38,
+        "line": 40,
         "reason": "catalog-backed-data",
         "text": "크라우드스트라이크"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 39,
+        "line": 41,
         "reason": "catalog-backed-data",
         "text": "스노우플레이크"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 40,
+        "line": 42,
         "reason": "catalog-backed-data",
         "text": "서비스나우"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 41,
+        "line": 43,
         "reason": "catalog-backed-data",
         "text": "세일즈포스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 42,
+        "line": 44,
         "reason": "catalog-backed-data",
         "text": "데이터독"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 43,
+        "line": 45,
         "reason": "catalog-backed-data",
         "text": "클라우드플레어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 48,
+        "line": 50,
         "reason": "catalog-backed-data",
         "text": "핀테크/크립토"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 50,
+        "line": 52,
         "reason": "catalog-backed-data",
         "text": "코인베이스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 51,
+        "line": 53,
         "reason": "catalog-backed-data",
         "text": "마이크로스트래티지"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 52,
+        "line": 54,
         "reason": "catalog-backed-data",
         "text": "로빈후드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 53,
+        "line": 55,
         "reason": "catalog-backed-data",
         "text": "블록"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 54,
+        "line": 56,
         "reason": "catalog-backed-data",
         "text": "페이팔"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 55,
+        "line": 57,
         "reason": "catalog-backed-data",
         "text": "소파이"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 56,
+        "line": 58,
         "reason": "catalog-backed-data",
         "text": "어펌"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 61,
+        "line": 63,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 63,
+        "line": 65,
         "reason": "catalog-backed-data",
         "text": "나스닥 3배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 64,
+        "line": 66,
         "reason": "catalog-backed-data",
         "text": "나스닥 3배 숏"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 65,
+        "line": 67,
         "reason": "catalog-backed-data",
         "text": "반도체 3배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 66,
+        "line": 68,
         "reason": "catalog-backed-data",
         "text": "테슬라 2배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 67,
+        "line": 69,
         "reason": "catalog-backed-data",
         "text": "엔비디아 2배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 72,
+        "line": 74,
         "reason": "catalog-backed-data",
         "text": "헬스케어/바이오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 74,
+        "line": 76,
         "reason": "catalog-backed-data",
         "text": "일라이릴리"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 75,
+        "line": 77,
         "reason": "catalog-backed-data",
         "text": "노보노디스크"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 76,
+        "line": 78,
         "reason": "catalog-backed-data",
         "text": "유나이티드헬스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 77,
+        "line": 79,
         "reason": "catalog-backed-data",
         "text": "인튜이티브서지컬"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 78,
+        "line": 80,
         "reason": "catalog-backed-data",
         "text": "암젠"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 83,
+        "line": 85,
         "reason": "catalog-backed-data",
         "text": "양자컴퓨팅"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 85,
+        "line": 87,
         "reason": "catalog-backed-data",
         "text": "아이온큐"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 86,
+        "line": 88,
         "reason": "catalog-backed-data",
         "text": "실스큐"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 87,
+        "line": 89,
         "reason": "catalog-backed-data",
         "text": "리게티 컴퓨팅"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 88,
+        "line": 90,
         "reason": "catalog-backed-data",
         "text": "디웨이브 퀀텀"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 89,
+        "line": 91,
         "reason": "catalog-backed-data",
         "text": "퀀텀 컴퓨팅"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 95,
+        "line": 97,
         "reason": "catalog-backed-data",
         "text": "우주항공"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 101,
+        "line": 103,
         "reason": "catalog-backed-data",
         "text": "로켓랩"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 102,
+        "line": 104,
         "reason": "catalog-backed-data",
         "text": "AST 스페이스모바일"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 103,
+        "line": 105,
         "reason": "catalog-backed-data",
         "text": "인튜이티브 머신스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 104,
+        "line": 106,
         "reason": "catalog-backed-data",
         "text": "레드와이어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 105,
+        "line": 107,
         "reason": "catalog-backed-data",
         "text": "플래닛 랩스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 106,
+        "line": 108,
         "reason": "catalog-backed-data",
         "text": "버진 갤럭틱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 111,
+        "line": 113,
         "reason": "catalog-backed-data",
         "text": "EV/모빌리티"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 114,
+        "line": 116,
         "reason": "catalog-backed-data",
         "text": "테슬라"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 115,
+        "line": 117,
         "reason": "catalog-backed-data",
         "text": "리비안"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 116,
+        "line": 118,
         "reason": "catalog-backed-data",
         "text": "니오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 117,
+        "line": 119,
         "reason": "catalog-backed-data",
         "text": "루시드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 118,
+        "line": 120,
         "reason": "catalog-backed-data",
         "text": "샤오펑"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 119,
+        "line": 121,
         "reason": "catalog-backed-data",
         "text": "우버"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 120,
+        "line": 122,
         "reason": "catalog-backed-data",
         "text": "리프트"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 125,
+        "line": 127,
         "reason": "catalog-backed-data",
         "text": "에너지/산업재"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 127,
+        "line": 129,
         "reason": "catalog-backed-data",
         "text": "엑슨모빌"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 128,
+        "line": 130,
         "reason": "catalog-backed-data",
         "text": "셰브론"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 129,
+        "line": 131,
         "reason": "catalog-backed-data",
         "text": "옥시덴탈"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 130,
+        "line": 132,
         "reason": "catalog-backed-data",
         "text": "코노코필립스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 131,
+        "line": 133,
         "reason": "catalog-backed-data",
         "text": "캐터필러"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 132,
+        "line": 134,
         "reason": "catalog-backed-data",
         "text": "GE에어로스페이스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 133,
+        "line": 135,
         "reason": "catalog-backed-data",
         "text": "보잉"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 138,
+        "line": 140,
         "reason": "catalog-backed-data",
         "text": "반도체/IT"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 151,
+        "line": 153,
         "reason": "catalog-backed-data",
         "text": "삼성전자"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 152,
+        "line": 154,
         "reason": "catalog-backed-data",
         "text": "SK하이닉스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 153,
+        "line": 155,
         "reason": "catalog-backed-data",
         "text": "삼성SDI"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 158,
+        "line": 160,
         "reason": "catalog-backed-data",
         "text": "자동차/2차전지"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 160,
+        "line": 162,
         "reason": "catalog-backed-data",
         "text": "현대차"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 161,
+        "line": 163,
         "reason": "catalog-backed-data",
         "text": "기아"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 162,
+        "line": 164,
         "reason": "catalog-backed-data",
         "text": "현대모비스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 163,
+        "line": 165,
         "reason": "catalog-backed-data",
         "text": "LG에너지솔루션"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 164,
+        "line": 166,
         "reason": "catalog-backed-data",
         "text": "LG화학"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 169,
+        "line": 171,
         "reason": "catalog-backed-data",
         "text": "바이오/헬스케어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 171,
+        "line": 173,
         "reason": "catalog-backed-data",
         "text": "삼성바이오로직스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 172,
+        "line": 174,
         "reason": "catalog-backed-data",
         "text": "셀트리온"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 177,
+        "line": 179,
         "reason": "catalog-backed-data",
         "text": "인터넷/플랫폼"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 179,
+        "line": 181,
         "reason": "catalog-backed-data",
         "text": "네이버"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 180,
+        "line": 182,
         "reason": "catalog-backed-data",
         "text": "카카오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 185,
+        "line": 187,
         "reason": "catalog-backed-data",
         "text": "금융/지주"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 187,
+        "line": 189,
         "reason": "catalog-backed-data",
         "text": "KB금융"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 188,
+        "line": 190,
         "reason": "catalog-backed-data",
         "text": "신한지주"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 189,
+        "line": 191,
         "reason": "catalog-backed-data",
         "text": "삼성물산"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 194,
+        "line": 196,
         "reason": "catalog-backed-data",
         "text": "코스닥"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 196,
+        "line": 198,
         "reason": "catalog-backed-data",
         "text": "알테오젠"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 197,
+        "line": 199,
         "reason": "catalog-backed-data",
         "text": "에코프로"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 198,
+        "line": 200,
         "reason": "catalog-backed-data",
         "text": "에코프로비엠"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 199,
+        "line": 201,
         "reason": "catalog-backed-data",
         "text": "리노공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 15,
+        "reason": "catalog-backed-data",
+        "text": "KODEX 200 (069500) + KODEX 코스닥 150 (229200) holdings via samsungfund.com, holdin"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 18,
+        "reason": "catalog-backed-data",
+        "text": "하이트진로"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 19,
+        "reason": "catalog-backed-data",
+        "text": "유한양행"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 20,
+        "reason": "catalog-backed-data",
+        "text": "CJ대한통운"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 21,
+        "reason": "catalog-backed-data",
+        "text": "두산"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 23,
+        "reason": "catalog-backed-data",
+        "text": "한국앤컴퍼니"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 24,
+        "reason": "catalog-backed-data",
+        "text": "기아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 25,
+        "reason": "catalog-backed-data",
+        "text": "SK하이닉스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 26,
+        "reason": "catalog-backed-data",
+        "text": "영풍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 27,
+        "reason": "catalog-backed-data",
+        "text": "현대건설"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 28,
+        "reason": "catalog-backed-data",
+        "text": "삼성화재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 29,
+        "reason": "catalog-backed-data",
+        "text": "한화"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 30,
+        "reason": "catalog-backed-data",
+        "text": "DB하이텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 32,
+        "reason": "catalog-backed-data",
+        "text": "세아베스틸지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 33,
+        "reason": "catalog-backed-data",
+        "text": "대한전선"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 34,
+        "reason": "catalog-backed-data",
+        "text": "현대해상"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 35,
+        "reason": "catalog-backed-data",
+        "text": "대상"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 36,
+        "reason": "catalog-backed-data",
+        "text": "오리온홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 37,
+        "reason": "catalog-backed-data",
+        "text": "아세아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 39,
+        "reason": "catalog-backed-data",
+        "text": "아모레퍼시픽홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 40,
+        "reason": "catalog-backed-data",
+        "text": "미원상사"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 41,
+        "reason": "catalog-backed-data",
+        "text": "세아제강지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 42,
+        "reason": "catalog-backed-data",
+        "text": "대웅"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 43,
+        "reason": "catalog-backed-data",
+        "text": "삼양식품"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 44,
+        "reason": "catalog-backed-data",
+        "text": "태광산업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 45,
+        "reason": "catalog-backed-data",
+        "text": "대한항공"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 47,
+        "reason": "catalog-backed-data",
+        "text": "포스코퓨처엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 48,
+        "reason": "catalog-backed-data",
+        "text": "롯데정밀화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 49,
+        "reason": "catalog-backed-data",
+        "text": "현대제철"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 50,
+        "reason": "catalog-backed-data",
+        "text": "신세계"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 51,
+        "reason": "catalog-backed-data",
+        "text": "농심"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 52,
+        "reason": "catalog-backed-data",
+        "text": "롯데지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 53,
+        "reason": "catalog-backed-data",
+        "text": "롯데칠성"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 54,
+        "reason": "catalog-backed-data",
+        "text": "현대차"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 55,
+        "reason": "catalog-backed-data",
+        "text": "코스모화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 56,
+        "reason": "catalog-backed-data",
+        "text": "POSCO홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 57,
+        "reason": "catalog-backed-data",
+        "text": "DB손해보험"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 58,
+        "reason": "catalog-backed-data",
+        "text": "에스엘"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 59,
+        "reason": "catalog-backed-data",
+        "text": "삼성전자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 60,
+        "reason": "catalog-backed-data",
+        "text": "NH투자증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 61,
+        "reason": "catalog-backed-data",
+        "text": "동원산업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 63,
+        "reason": "catalog-backed-data",
+        "text": "녹십자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 64,
+        "reason": "catalog-backed-data",
+        "text": "삼성SDI"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 65,
+        "reason": "catalog-backed-data",
+        "text": "대한유화"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 66,
+        "reason": "catalog-backed-data",
+        "text": "미래에셋증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 67,
+        "reason": "catalog-backed-data",
+        "text": "GS리테일"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 68,
+        "reason": "catalog-backed-data",
+        "text": "오뚜기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 69,
+        "reason": "catalog-backed-data",
+        "text": "DN오토모티브"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 70,
+        "reason": "catalog-backed-data",
+        "text": "이수페타시스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 71,
+        "reason": "catalog-backed-data",
+        "text": "율촌화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 72,
+        "reason": "catalog-backed-data",
+        "text": "호텔신라"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 73,
+        "reason": "catalog-backed-data",
+        "text": "한미사이언스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 74,
+        "reason": "catalog-backed-data",
+        "text": "삼성전기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 75,
+        "reason": "catalog-backed-data",
+        "text": "한샘"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 76,
+        "reason": "catalog-backed-data",
+        "text": "한올바이오파마"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 77,
+        "reason": "catalog-backed-data",
+        "text": "HD한국조선해양"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 78,
+        "reason": "catalog-backed-data",
+        "text": "한화솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 79,
+        "reason": "catalog-backed-data",
+        "text": "영원무역홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 80,
+        "reason": "catalog-backed-data",
+        "text": "OCI홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 82,
+        "reason": "catalog-backed-data",
+        "text": "고려아연"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 83,
+        "reason": "catalog-backed-data",
+        "text": "삼성중공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 85,
+        "reason": "catalog-backed-data",
+        "text": "LG이노텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 86,
+        "reason": "catalog-backed-data",
+        "text": "롯데케미칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 88,
+        "reason": "catalog-backed-data",
+        "text": "현대위아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 89,
+        "reason": "catalog-backed-data",
+        "text": "금호석유화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 91,
+        "reason": "catalog-backed-data",
+        "text": "현대모비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 92,
+        "reason": "catalog-backed-data",
+        "text": "한화에어로스페이스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 93,
+        "reason": "catalog-backed-data",
+        "text": "삼성에피스홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 94,
+        "reason": "catalog-backed-data",
+        "text": "에스원"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 95,
+        "reason": "catalog-backed-data",
+        "text": "한솔케미칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 96,
+        "reason": "catalog-backed-data",
+        "text": "동원시스템즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 97,
+        "reason": "catalog-backed-data",
+        "text": "한국전력"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 98,
+        "reason": "catalog-backed-data",
+        "text": "삼성증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 99,
+        "reason": "catalog-backed-data",
+        "text": "SK텔레콤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 100,
+        "reason": "catalog-backed-data",
+        "text": "현대엘리베이터"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 101,
+        "reason": "catalog-backed-data",
+        "text": "한국카본"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 102,
+        "reason": "catalog-backed-data",
+        "text": "삼성에스디에스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 103,
+        "reason": "catalog-backed-data",
+        "text": "한온시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 104,
+        "reason": "catalog-backed-data",
+        "text": "코웨이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 105,
+        "reason": "catalog-backed-data",
+        "text": "한화머시너리앤서비스홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 106,
+        "reason": "catalog-backed-data",
+        "text": "포스코DX"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 107,
+        "reason": "catalog-backed-data",
+        "text": "롯데쇼핑"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 108,
+        "reason": "catalog-backed-data",
+        "text": "기업은행"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 109,
+        "reason": "catalog-backed-data",
+        "text": "동서"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 110,
+        "reason": "catalog-backed-data",
+        "text": "삼성E&A"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 111,
+        "reason": "catalog-backed-data",
+        "text": "삼성물산"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 112,
+        "reason": "catalog-backed-data",
+        "text": "팬오션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 113,
+        "reason": "catalog-backed-data",
+        "text": "삼성카드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 114,
+        "reason": "catalog-backed-data",
+        "text": "제일기획"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 116,
+        "reason": "catalog-backed-data",
+        "text": "LG유플러스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 117,
+        "reason": "catalog-backed-data",
+        "text": "삼성생명"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 119,
+        "reason": "catalog-backed-data",
+        "text": "두산에너빌리티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 120,
+        "reason": "catalog-backed-data",
+        "text": "LG디스플레이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 121,
+        "reason": "catalog-backed-data",
+        "text": "파라다이스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 123,
+        "reason": "catalog-backed-data",
+        "text": "강원랜드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 125,
+        "reason": "catalog-backed-data",
+        "text": "카카오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 126,
+        "reason": "catalog-backed-data",
+        "text": "한국가스공사"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 128,
+        "reason": "catalog-backed-data",
+        "text": "키움증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 129,
+        "reason": "catalog-backed-data",
+        "text": "한화오션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 130,
+        "reason": "catalog-backed-data",
+        "text": "한미반도체"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 131,
+        "reason": "catalog-backed-data",
+        "text": "대우건설"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 132,
+        "reason": "catalog-backed-data",
+        "text": "포스코인터내셔널"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 133,
+        "reason": "catalog-backed-data",
+        "text": "한국항공우주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 134,
+        "reason": "catalog-backed-data",
+        "text": "한전KPS"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 135,
+        "reason": "catalog-backed-data",
+        "text": "LG생활건강"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 136,
+        "reason": "catalog-backed-data",
+        "text": "LG화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 137,
+        "reason": "catalog-backed-data",
+        "text": "한전기술"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 138,
+        "reason": "catalog-backed-data",
+        "text": "신한지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 139,
+        "reason": "catalog-backed-data",
+        "text": "산일전기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 140,
+        "reason": "catalog-backed-data",
+        "text": "현대로템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 141,
+        "reason": "catalog-backed-data",
+        "text": "LG씨엔에스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 142,
+        "reason": "catalog-backed-data",
+        "text": "LG전자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 143,
+        "reason": "catalog-backed-data",
+        "text": "엘앤에프"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 144,
+        "reason": "catalog-backed-data",
+        "text": "셀트리온"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 145,
+        "reason": "catalog-backed-data",
+        "text": "TKG휴켐스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 146,
+        "reason": "catalog-backed-data",
+        "text": "대웅제약"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 147,
+        "reason": "catalog-backed-data",
+        "text": "현대백화점"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 148,
+        "reason": "catalog-backed-data",
+        "text": "한국금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 149,
+        "reason": "catalog-backed-data",
+        "text": "지역난방공사"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 150,
+        "reason": "catalog-backed-data",
+        "text": "HD현대마린엔진"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 151,
+        "reason": "catalog-backed-data",
+        "text": "금호타이어"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 153,
+        "reason": "catalog-backed-data",
+        "text": "LIG디펜스앤에어로스페이스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 154,
+        "reason": "catalog-backed-data",
+        "text": "미스토홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 155,
+        "reason": "catalog-backed-data",
+        "text": "한화엔진"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 156,
+        "reason": "catalog-backed-data",
+        "text": "현대글로비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 157,
+        "reason": "catalog-backed-data",
+        "text": "하나금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 158,
+        "reason": "catalog-backed-data",
+        "text": "한화생명"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 159,
+        "reason": "catalog-backed-data",
+        "text": "아모레퍼시픽"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 160,
+        "reason": "catalog-backed-data",
+        "text": "후성"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 161,
+        "reason": "catalog-backed-data",
+        "text": "SK이노베이션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 162,
+        "reason": "catalog-backed-data",
+        "text": "CJ제일제당"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 163,
+        "reason": "catalog-backed-data",
+        "text": "풍산"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 164,
+        "reason": "catalog-backed-data",
+        "text": "KB금융"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 165,
+        "reason": "catalog-backed-data",
+        "text": "영원무역"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 166,
+        "reason": "catalog-backed-data",
+        "text": "씨에스윈드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 167,
+        "reason": "catalog-backed-data",
+        "text": "코오롱인더"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 168,
+        "reason": "catalog-backed-data",
+        "text": "한미약품"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 169,
+        "reason": "catalog-backed-data",
+        "text": "에스디바이오센서"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 170,
+        "reason": "catalog-backed-data",
+        "text": "메리츠금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 171,
+        "reason": "catalog-backed-data",
+        "text": "BNK금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 172,
+        "reason": "catalog-backed-data",
+        "text": "iM금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 173,
+        "reason": "catalog-backed-data",
+        "text": "이마트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 174,
+        "reason": "catalog-backed-data",
+        "text": "한국타이어앤테크놀로지"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 175,
+        "reason": "catalog-backed-data",
+        "text": "한국콜마"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 176,
+        "reason": "catalog-backed-data",
+        "text": "JB금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 177,
+        "reason": "catalog-backed-data",
+        "text": "한진칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 178,
+        "reason": "catalog-backed-data",
+        "text": "종근당"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 179,
+        "reason": "catalog-backed-data",
+        "text": "더블유게임즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 180,
+        "reason": "catalog-backed-data",
+        "text": "코스맥스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 181,
+        "reason": "catalog-backed-data",
+        "text": "HL만도"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 182,
+        "reason": "catalog-backed-data",
+        "text": "삼성바이오로직스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 183,
+        "reason": "catalog-backed-data",
+        "text": "두산밥캣"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 184,
+        "reason": "catalog-backed-data",
+        "text": "넷마블"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 185,
+        "reason": "catalog-backed-data",
+        "text": "크래프톤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 186,
+        "reason": "catalog-backed-data",
+        "text": "HD현대"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 187,
+        "reason": "catalog-backed-data",
+        "text": "HD현대일렉트릭"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 188,
+        "reason": "catalog-backed-data",
+        "text": "HD건설기계"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 189,
+        "reason": "catalog-backed-data",
+        "text": "미원에스씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 190,
+        "reason": "catalog-backed-data",
+        "text": "오리온"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 191,
+        "reason": "catalog-backed-data",
+        "text": "한화시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 192,
+        "reason": "catalog-backed-data",
+        "text": "에이피알"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 193,
+        "reason": "catalog-backed-data",
+        "text": "롯데웰푸드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 194,
+        "reason": "catalog-backed-data",
+        "text": "BGF리테일"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 195,
+        "reason": "catalog-backed-data",
+        "text": "SK케미칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 196,
+        "reason": "catalog-backed-data",
+        "text": "효성티앤씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 197,
+        "reason": "catalog-backed-data",
+        "text": "효성중공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 198,
+        "reason": "catalog-backed-data",
+        "text": "HS효성첨단소재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 199,
+        "reason": "catalog-backed-data",
+        "text": "한일시멘트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 200,
+        "reason": "catalog-backed-data",
+        "text": "SK바이오사이언스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 201,
+        "reason": "catalog-backed-data",
+        "text": "현대오토에버"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 202,
+        "reason": "catalog-backed-data",
+        "text": "우리금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 203,
+        "reason": "catalog-backed-data",
+        "text": "카카오뱅크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 204,
+        "reason": "catalog-backed-data",
+        "text": "SK바이오팜"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 205,
+        "reason": "catalog-backed-data",
+        "text": "HD현대중공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 206,
+        "reason": "catalog-backed-data",
+        "text": "하이브"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 207,
+        "reason": "catalog-backed-data",
+        "text": "SK아이이테크놀로지"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 208,
+        "reason": "catalog-backed-data",
+        "text": "LG에너지솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 209,
+        "reason": "catalog-backed-data",
+        "text": "DL이앤씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 210,
+        "reason": "catalog-backed-data",
+        "text": "카카오페이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 212,
+        "reason": "catalog-backed-data",
+        "text": "SK스퀘어"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 213,
+        "reason": "catalog-backed-data",
+        "text": "HD현대마린솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 214,
+        "reason": "catalog-backed-data",
+        "text": "에코프로머티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 215,
+        "reason": "catalog-backed-data",
+        "text": "두산로보틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 217,
+        "reason": "catalog-backed-data",
+        "text": "이수스페셜티케미컬"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 218,
+        "reason": "catalog-backed-data",
+        "text": "달바글로벌"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 221,
+        "reason": "catalog-backed-data",
+        "text": "삼천당제약"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 222,
+        "reason": "catalog-backed-data",
+        "text": "에임드바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 223,
+        "reason": "catalog-backed-data",
+        "text": "하림지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 224,
+        "reason": "catalog-backed-data",
+        "text": "동진쎄미켐"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 225,
+        "reason": "catalog-backed-data",
+        "text": "서부T&D"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 226,
+        "reason": "catalog-backed-data",
+        "text": "네이처셀"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 227,
+        "reason": "catalog-backed-data",
+        "text": "포스코엠텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 228,
+        "reason": "catalog-backed-data",
+        "text": "성광벤드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 229,
+        "reason": "catalog-backed-data",
+        "text": "성우하이텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 230,
+        "reason": "catalog-backed-data",
+        "text": "브이티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 231,
+        "reason": "catalog-backed-data",
+        "text": "시노펙스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 232,
+        "reason": "catalog-backed-data",
+        "text": "동화기업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 233,
+        "reason": "catalog-backed-data",
+        "text": "아난티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 235,
+        "reason": "catalog-backed-data",
+        "text": "한컴"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 236,
+        "reason": "catalog-backed-data",
+        "text": "원익홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 237,
+        "reason": "catalog-backed-data",
+        "text": "피에스케이홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 238,
+        "reason": "catalog-backed-data",
+        "text": "다우데이타"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 239,
+        "reason": "catalog-backed-data",
+        "text": "케이엠더블유"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 240,
+        "reason": "catalog-backed-data",
+        "text": "우리기술"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 241,
+        "reason": "catalog-backed-data",
+        "text": "제룡전기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 242,
+        "reason": "catalog-backed-data",
+        "text": "동성화인텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 245,
+        "reason": "catalog-backed-data",
+        "text": "SFA반도체"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 246,
+        "reason": "catalog-backed-data",
+        "text": "감성코퍼레이션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 247,
+        "reason": "catalog-backed-data",
+        "text": "에프에스티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 248,
+        "reason": "catalog-backed-data",
+        "text": "솔브레인홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 249,
+        "reason": "catalog-backed-data",
+        "text": "주성엔지니어링"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 250,
+        "reason": "catalog-backed-data",
+        "text": "삼표시멘트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 251,
+        "reason": "catalog-backed-data",
+        "text": "이오테크닉스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 252,
+        "reason": "catalog-backed-data",
+        "text": "오스코텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 253,
+        "reason": "catalog-backed-data",
+        "text": "우리기술투자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 254,
+        "reason": "catalog-backed-data",
+        "text": "에스엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 255,
+        "reason": "catalog-backed-data",
+        "text": "카페24"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 256,
+        "reason": "catalog-backed-data",
+        "text": "성호전자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 257,
+        "reason": "catalog-backed-data",
+        "text": "현대바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 258,
+        "reason": "catalog-backed-data",
+        "text": "쏠리드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 259,
+        "reason": "catalog-backed-data",
+        "text": "코나아이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 260,
+        "reason": "catalog-backed-data",
+        "text": "안랩"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 261,
+        "reason": "catalog-backed-data",
+        "text": "유진로봇"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 263,
+        "reason": "catalog-backed-data",
+        "text": "리노공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 264,
+        "reason": "catalog-backed-data",
+        "text": "에스피지"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 266,
+        "reason": "catalog-backed-data",
+        "text": "큐렉소"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 267,
+        "reason": "catalog-backed-data",
+        "text": "LS마린솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 268,
+        "reason": "catalog-backed-data",
+        "text": "티씨케이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 269,
+        "reason": "catalog-backed-data",
+        "text": "신성델타테크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 271,
+        "reason": "catalog-backed-data",
+        "text": "하나마이크론"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 272,
+        "reason": "catalog-backed-data",
+        "text": "셀트리온제약"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 273,
+        "reason": "catalog-backed-data",
+        "text": "웹젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 274,
+        "reason": "catalog-backed-data",
+        "text": "원익QnC"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 275,
+        "reason": "catalog-backed-data",
+        "text": "컴투스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 276,
+        "reason": "catalog-backed-data",
+        "text": "대주전자재료"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 277,
+        "reason": "catalog-backed-data",
+        "text": "제주반도체"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 278,
+        "reason": "catalog-backed-data",
+        "text": "젬백스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 279,
+        "reason": "catalog-backed-data",
+        "text": "비츠로셀"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 280,
+        "reason": "catalog-backed-data",
+        "text": "비에이치아이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 281,
+        "reason": "catalog-backed-data",
+        "text": "유진테크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 282,
+        "reason": "catalog-backed-data",
+        "text": "차바이오텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 283,
+        "reason": "catalog-backed-data",
+        "text": "에코프로"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 284,
+        "reason": "catalog-backed-data",
+        "text": "펩트론"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 285,
+        "reason": "catalog-backed-data",
+        "text": "테크윙"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 286,
+        "reason": "catalog-backed-data",
+        "text": "브이엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 287,
+        "reason": "catalog-backed-data",
+        "text": "로보스타"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 288,
+        "reason": "catalog-backed-data",
+        "text": "휴림로봇"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 290,
+        "reason": "catalog-backed-data",
+        "text": "테스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 291,
+        "reason": "catalog-backed-data",
+        "text": "네오위즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 292,
+        "reason": "catalog-backed-data",
+        "text": "씨젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 293,
+        "reason": "catalog-backed-data",
+        "text": "고영"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 294,
+        "reason": "catalog-backed-data",
+        "text": "쎄트렉아이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 295,
+        "reason": "catalog-backed-data",
+        "text": "미래에셋벤처투자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 296,
+        "reason": "catalog-backed-data",
+        "text": "에스앤에스텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 297,
+        "reason": "catalog-backed-data",
+        "text": "위메이드맥스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 298,
+        "reason": "catalog-backed-data",
+        "text": "로보티즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 299,
+        "reason": "catalog-backed-data",
+        "text": "위메이드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 300,
+        "reason": "catalog-backed-data",
+        "text": "나노신소재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 301,
+        "reason": "catalog-backed-data",
+        "text": "와이지엔터테인먼트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 302,
+        "reason": "catalog-backed-data",
+        "text": "아이티센글로벌"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 303,
+        "reason": "catalog-backed-data",
+        "text": "한라캐스트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 304,
+        "reason": "catalog-backed-data",
+        "text": "티에스이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 305,
+        "reason": "catalog-backed-data",
+        "text": "두산테스나"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 306,
+        "reason": "catalog-backed-data",
+        "text": "피엔티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 307,
+        "reason": "catalog-backed-data",
+        "text": "파크시스템스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 308,
+        "reason": "catalog-backed-data",
+        "text": "리가켐바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 309,
+        "reason": "catalog-backed-data",
+        "text": "휴젤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 310,
+        "reason": "catalog-backed-data",
+        "text": "필옵틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 311,
+        "reason": "catalog-backed-data",
+        "text": "하나머티리얼즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 312,
+        "reason": "catalog-backed-data",
+        "text": "선익시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 313,
+        "reason": "catalog-backed-data",
+        "text": "서진시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 314,
+        "reason": "catalog-backed-data",
+        "text": "코미코"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 315,
+        "reason": "catalog-backed-data",
+        "text": "인텔리안테크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 316,
+        "reason": "catalog-backed-data",
+        "text": "데브시스터즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 317,
+        "reason": "catalog-backed-data",
+        "text": "HK이노엔"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 318,
+        "reason": "catalog-backed-data",
+        "text": "알테오젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 319,
+        "reason": "catalog-backed-data",
+        "text": "제이앤티씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 320,
+        "reason": "catalog-backed-data",
+        "text": "인카금융서비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 321,
+        "reason": "catalog-backed-data",
+        "text": "덕산네오룩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 322,
+        "reason": "catalog-backed-data",
+        "text": "클래시스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 323,
+        "reason": "catalog-backed-data",
+        "text": "케어젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 324,
+        "reason": "catalog-backed-data",
+        "text": "아이쓰리시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 325,
+        "reason": "catalog-backed-data",
+        "text": "파마리서치"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 326,
+        "reason": "catalog-backed-data",
+        "text": "메가스터디교육"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 328,
+        "reason": "catalog-backed-data",
+        "text": "SFA넥셀"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 329,
+        "reason": "catalog-backed-data",
+        "text": "심텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 330,
+        "reason": "catalog-backed-data",
+        "text": "넥슨게임즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 331,
+        "reason": "catalog-backed-data",
+        "text": "올릭스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 332,
+        "reason": "catalog-backed-data",
+        "text": "와이씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 333,
+        "reason": "catalog-backed-data",
+        "text": "에스티팜"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 334,
+        "reason": "catalog-backed-data",
+        "text": "원익IPS"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 335,
+        "reason": "catalog-backed-data",
+        "text": "코스메카코리아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 336,
+        "reason": "catalog-backed-data",
+        "text": "에코프로비엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 337,
+        "reason": "catalog-backed-data",
+        "text": "펌텍코리아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 338,
+        "reason": "catalog-backed-data",
+        "text": "스튜디오드래곤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 339,
+        "reason": "catalog-backed-data",
+        "text": "네오셈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 340,
+        "reason": "catalog-backed-data",
+        "text": "실리콘투"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 341,
+        "reason": "catalog-backed-data",
+        "text": "펄어비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 342,
+        "reason": "catalog-backed-data",
+        "text": "이녹스첨단소재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 343,
+        "reason": "catalog-backed-data",
+        "text": "레인보우로보틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 344,
+        "reason": "catalog-backed-data",
+        "text": "천보"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 345,
+        "reason": "catalog-backed-data",
+        "text": "레이크머티리얼즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 346,
+        "reason": "catalog-backed-data",
+        "text": "엘앤씨바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 347,
+        "reason": "catalog-backed-data",
+        "text": "카카오게임즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 348,
+        "reason": "catalog-backed-data",
+        "text": "에이치브이엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 349,
+        "reason": "catalog-backed-data",
+        "text": "에이비엘바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 350,
+        "reason": "catalog-backed-data",
+        "text": "보로노이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 351,
+        "reason": "catalog-backed-data",
+        "text": "현대무벡스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 352,
+        "reason": "catalog-backed-data",
+        "text": "피에스케이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 353,
+        "reason": "catalog-backed-data",
+        "text": "태성"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 354,
+        "reason": "catalog-backed-data",
+        "text": "루닛"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 355,
+        "reason": "catalog-backed-data",
+        "text": "디앤디파마텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 356,
+        "reason": "catalog-backed-data",
+        "text": "넥스틴"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 357,
+        "reason": "catalog-backed-data",
+        "text": "엔켐"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 358,
+        "reason": "catalog-backed-data",
+        "text": "씨앤씨인터내셔널"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 359,
+        "reason": "catalog-backed-data",
+        "text": "솔브레인"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 360,
+        "reason": "catalog-backed-data",
+        "text": "지아이이노베이션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 361,
+        "reason": "catalog-backed-data",
+        "text": "디어유"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 362,
+        "reason": "catalog-backed-data",
+        "text": "유일로보틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 363,
+        "reason": "catalog-backed-data",
+        "text": "가온칩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 365,
+        "reason": "catalog-backed-data",
+        "text": "LS머트리얼즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 366,
+        "reason": "catalog-backed-data",
+        "text": "기가비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 367,
+        "reason": "catalog-backed-data",
+        "text": "삼현"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 368,
+        "reason": "catalog-backed-data",
+        "text": "큐리옥스바이오시스템즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 369,
+        "reason": "catalog-backed-data",
+        "text": "클로봇"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 370,
+        "reason": "catalog-backed-data",
+        "text": "오름테라퓨틱"
     },
     {
         "file": "src/shared/config/supportedAssets.ts",
@@ -3613,1243 +5587,1249 @@
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 423,
+        "line": 280,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 AI 백테스팅"
+        "text": "지지선 저항선 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 424,
         "reason": "seo-keywords-ko-only",
-        "text": "기술적 분석 백테스팅"
+        "text": "주식 AI 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 425,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 주식 분석 백테스트"
+        "text": "기술적 분석 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 426,
         "reason": "seo-keywords-ko-only",
-        "text": "기술적 분석 백테스트 결과"
+        "text": "AI 주식 분석 백테스트"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 427,
         "reason": "seo-keywords-ko-only",
-        "text": "RSI 신호 백테스팅"
+        "text": "기술적 분석 백테스트 결과"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 428,
         "reason": "seo-keywords-ko-only",
-        "text": "MACD 백테스팅"
+        "text": "RSI 신호 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 429,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 분석 백테스트 방법론"
+        "text": "MACD 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 430,
         "reason": "seo-keywords-ko-only",
-        "text": "Magnificent 7 분석"
+        "text": "AI 분석 백테스트 방법론"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 431,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 시나리오 사후 검증"
+        "text": "Magnificent 7 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 432,
         "reason": "seo-keywords-ko-only",
-        "text": "기술적 분석 백테스트 무료"
+        "text": "AI 시나리오 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 433,
         "reason": "seo-keywords-ko-only",
-        "text": "기술적 신호 사후 검증"
+        "text": "기술적 분석 백테스트 무료"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 434,
         "reason": "seo-keywords-ko-only",
+        "text": "기술적 신호 사후 검증"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 435,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 백테스트"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 394,
+        "line": 393,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 주가`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 395,
+        "line": 394,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 차트`"
+    },
+    {
+        "file": "src/shared/lib/seoSymbol.ts",
+        "line": 395,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 396,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 차트 분석`"
+        "text": "`${ticker} 기술적 신호`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 397,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 기술적 신호`"
+        "text": "`${ticker} 기술적 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 398,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 기술적 분석`"
+        "text": "`${ticker} AI 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 399,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} AI 분석`"
+        "text": "`${displayName} 주가 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 400,
         "reason": "seo-keywords-ko-only",
-        "text": "`${displayName} 주가 분석`"
-    },
-    {
-        "file": "src/shared/lib/seoSymbol.ts",
-        "line": 401,
-        "reason": "seo-keywords-ko-only",
         "text": "`${displayName} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 404,
+        "line": 403,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 주가`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 404,
+        "line": 403,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 451,
+        "line": 450,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무제표`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 452,
+        "line": 451,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 손익계산서`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 453,
+        "line": 452,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무상태표`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 454,
+        "line": 453,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 현금흐름표`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 455,
+        "line": 454,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매출 성장`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 456,
+        "line": 455,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 영업이익`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 457,
+        "line": 456,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 460,
+        "line": 459,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 재무제표`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 461,
+        "line": 460,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 손익계산서`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 462,
+        "line": 461,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 463,
+        "line": 462,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 현금흐름`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 466,
+        "line": 465,
         "reason": "seo-keywords-ko-only",
         "text": "재무제표 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 467,
+        "line": 466,
         "reason": "seo-keywords-ko-only",
         "text": "손익계산서"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 468,
+        "line": 467,
         "reason": "seo-keywords-ko-only",
         "text": "재무상태표"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 469,
+        "line": 468,
         "reason": "seo-keywords-ko-only",
         "text": "현금흐름표"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 470,
+        "line": 469,
         "reason": "seo-keywords-ko-only",
         "text": "매출 성장"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 471,
+        "line": 470,
         "reason": "seo-keywords-ko-only",
         "text": "영업이익"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 472,
+        "line": 471,
         "reason": "seo-keywords-ko-only",
         "text": "순이익"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 473,
+        "line": 472,
         "reason": "seo-keywords-ko-only",
         "text": "재무 건전성"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 520,
+        "line": 519,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 의회 거래`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 521,
+        "line": 520,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 의원 매매`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 522,
+        "line": 521,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 상원 의원 매매`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 523,
+        "line": 522,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 하원 의원 매매`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 524,
+        "line": 523,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 정치인 매매`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 525,
+        "line": 524,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 공시`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 528,
+        "line": 527,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 의회 거래`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 529,
+        "line": 528,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 의원 매매`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 530,
+        "line": 529,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 정치인 매매`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 533,
+        "line": 532,
         "reason": "seo-keywords-ko-only",
         "text": "의회 거래"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 534,
+        "line": 533,
         "reason": "seo-keywords-ko-only",
         "text": "의원 매매"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 535,
+        "line": 534,
         "reason": "seo-keywords-ko-only",
         "text": "상원 의원 매매"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 536,
+        "line": 535,
         "reason": "seo-keywords-ko-only",
         "text": "하원 의원 매매"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 537,
+        "line": 536,
         "reason": "seo-keywords-ko-only",
         "text": "정치인 주식 매매"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 539,
+        "line": 538,
         "reason": "seo-keywords-ko-only",
         "text": "의회 공시"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 586,
+        "line": 585,
         "reason": "seo-keywords-ko-only",
         "text": "`${code} 대량보유`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 587,
+        "line": 586,
         "reason": "seo-keywords-ko-only",
         "text": "`${code} 지분 공시`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 590,
+        "line": 589,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 대량보유`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 591,
+        "line": 590,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 지분 변동`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 592,
+        "line": 591,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 임원 지분`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 593,
+        "line": 592,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 주요주주`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 596,
+        "line": 595,
         "reason": "seo-keywords-ko-only",
         "text": "대량보유 보고"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 597,
+        "line": 596,
         "reason": "seo-keywords-ko-only",
         "text": "임원 소유 보고"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 598,
+        "line": 597,
         "reason": "seo-keywords-ko-only",
         "text": "거래계획 보고서"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 599,
+        "line": 598,
         "reason": "seo-keywords-ko-only",
         "text": "DART 지분공시"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 609,
+        "line": 608,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 수급`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 610,
+        "line": 609,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 기관 매수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 611,
+        "line": 610,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 기관 보유`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 612,
+        "line": 611,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 공매도`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 613,
+        "line": 612,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 내부자 거래`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 616,
+        "line": 615,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 수급`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 617,
+        "line": 616,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 기관 매수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 618,
+        "line": 617,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 공매도`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 621,
+        "line": 620,
         "reason": "seo-keywords-ko-only",
         "text": "기관 수급"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 623,
+        "line": 622,
         "reason": "seo-keywords-ko-only",
         "text": "공매도 잔고"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 624,
+        "line": 623,
         "reason": "seo-keywords-ko-only",
         "text": "내부자 거래"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 625,
+        "line": 624,
         "reason": "seo-keywords-ko-only",
         "text": "대량보유"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 679,
+        "line": 678,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 펀더멘털 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 680,
+        "line": 679,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 681,
+        "line": 680,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 밸류에이션`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 682,
+        "line": 681,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 애널리스트 컨센서스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 685,
+        "line": 684,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 펀더멘털`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 686,
+        "line": 685,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 687,
+        "line": 686,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 밸류에이션`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 690,
+        "line": 689,
         "reason": "seo-keywords-ko-only",
         "text": "`${sector} 섹터 펀더멘털`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 691,
+        "line": 690,
         "reason": "seo-keywords-ko-only",
         "text": "펀더멘털 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 696,
+        "line": 695,
         "reason": "seo-keywords-ko-only",
         "text": "재무 건전성"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 697,
+        "line": 696,
         "reason": "seo-keywords-ko-only",
         "text": "애널리스트 컨센서스"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 755,
+        "line": 754,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 옵션`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 756,
+        "line": 755,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 옵션 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 763,
+        "line": 762,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 옵션`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 764,
+        "line": 763,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 옵션 시장`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 765,
+        "line": 764,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 옵션 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 768,
+        "line": 767,
         "reason": "seo-keywords-ko-only",
         "text": "옵션 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 769,
+        "line": 768,
         "reason": "seo-keywords-ko-only",
         "text": "옵션 시장"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 816,
+        "line": 815,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seoSymbol.ts",
+        "line": 816,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 호재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 817,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 호재`"
+        "text": "`${ticker} 악재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 818,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 악재`"
+        "text": "`${ticker} 뉴스 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 819,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 뉴스 분위기`"
+        "text": "`${ticker} 소식`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 820,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 소식`"
+        "text": "`${ticker} 이슈`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 821,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 이슈`"
+        "text": "`${ticker} 분석 의견`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 822,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 분석 의견`"
+        "text": "`${ticker} 어닝 일정`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 823,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 어닝 일정`"
+        "text": "`${ticker} 실적 발표`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 824,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 실적 발표`"
-    },
-    {
-        "file": "src/shared/lib/seoSymbol.ts",
-        "line": 825,
-        "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 애널리스트 등급`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 828,
+        "line": 827,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 829,
+        "line": 828,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 호재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 830,
+        "line": 829,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 어닝`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 831,
+        "line": 830,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 실적`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 834,
+        "line": 833,
         "reason": "seo-keywords-ko-only",
         "text": "뉴스 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 835,
+        "line": 834,
         "reason": "seo-keywords-ko-only",
         "text": "뉴스 분위기"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 836,
+        "line": 835,
         "reason": "seo-keywords-ko-only",
         "text": "뉴스 분석 의견"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 837,
+        "line": 836,
         "reason": "seo-keywords-ko-only",
         "text": "주식 호재"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 838,
+        "line": 837,
         "reason": "seo-keywords-ko-only",
         "text": "주식 악재"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 839,
+        "line": 838,
         "reason": "seo-keywords-ko-only",
         "text": "주식 이슈"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 840,
+        "line": 839,
         "reason": "seo-keywords-ko-only",
         "text": "주식 소식"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 841,
+        "line": 840,
         "reason": "seo-keywords-ko-only",
         "text": "어닝 발표"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 842,
+        "line": 841,
         "reason": "seo-keywords-ko-only",
         "text": "실적 발표"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 843,
+        "line": 842,
         "reason": "seo-keywords-ko-only",
         "text": "애널리스트 등급"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 844,
+        "line": 843,
         "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 890,
+        "line": 889,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} AI 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 891,
+        "line": 890,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 892,
+        "line": 891,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 시나리오 분석`"
+    },
+    {
+        "file": "src/shared/lib/seoSymbol.ts",
+        "line": 892,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 시나리오`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 893,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 시나리오`"
+        "text": "`${ticker} 위험 요인`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 894,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 위험 요인`"
+        "text": "`${ticker} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 895,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seoSymbol.ts",
-        "line": 896,
-        "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 4축 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 899,
+        "line": 898,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 900,
+        "line": 899,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} AI 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 901,
+        "line": 900,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 시나리오 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 902,
+        "line": 901,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 905,
+        "line": 904,
         "reason": "seo-keywords-ko-only",
         "text": "AI 종합 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 906,
+        "line": 905,
         "reason": "seo-keywords-ko-only",
         "text": "시나리오 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 907,
+        "line": 906,
         "reason": "seo-keywords-ko-only",
         "text": "4축 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 908,
+        "line": 907,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 909,
+        "line": 908,
         "reason": "seo-keywords-ko-only",
         "text": "펀더멘털 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 910,
+        "line": 909,
         "reason": "seo-keywords-ko-only",
         "text": "뉴스 분석"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 926,
+        "line": 925,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 시세`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 927,
+        "line": 926,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 가격`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 928,
+        "line": 927,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 차트`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 929,
+        "line": 928,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 930,
+        "line": 929,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 기술적 신호`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 931,
+        "line": 930,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 기술적 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 932,
+        "line": 931,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} AI 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 933,
+        "line": 932,
         "reason": "seo-keywords-ko-only",
         "text": "`${displayName} 시세 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 934,
+        "line": 933,
         "reason": "seo-keywords-ko-only",
         "text": "`${displayName} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1038,
+        "line": 1037,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1039,
+        "line": 1038,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 코인 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1040,
+        "line": 1039,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 호재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1041,
+        "line": 1040,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 악재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1042,
+        "line": 1041,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 뉴스 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1043,
+        "line": 1042,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 시장 이슈`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1044,
+        "line": 1043,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 크립토 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1045,
+        "line": 1044,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 소식`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1046,
+        "line": 1045,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 뉴스 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1047,
+        "line": 1046,
         "reason": "seo-keywords-ko-only",
         "text": "`크립토 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1048,
+        "line": 1047,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 호재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1049,
+        "line": 1048,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 악재`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1050,
+        "line": 1049,
         "reason": "seo-keywords-ko-only",
         "text": "`암호화폐 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1051,
+        "line": 1050,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 시장 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1052,
+        "line": 1051,
         "reason": "seo-keywords-ko-only",
         "text": "`비트코인 뉴스`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1107,
+        "line": 1106,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} AI 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1108,
+        "line": 1107,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 코인 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1109,
+        "line": 1108,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 시나리오 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1110,
+        "line": 1109,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 시나리오`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1111,
+        "line": 1110,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 위험 요인`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1112,
+        "line": 1111,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1113,
+        "line": 1112,
         "reason": "seo-keywords-ko-only",
         "text": "`AI 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1114,
+        "line": 1113,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 시나리오 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1115,
+        "line": 1114,
         "reason": "seo-keywords-ko-only",
         "text": "`크립토 종합 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1116,
+        "line": 1115,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 기술적 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1117,
+        "line": 1116,
         "reason": "seo-keywords-ko-only",
         "text": "`암호화폐 AI 분석`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1176,
+        "line": 1175,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 공포 지수`"
+    },
+    {
+        "file": "src/shared/lib/seoSymbol.ts",
+        "line": 1176,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 탐욕 지수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1177,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 탐욕 지수`"
+        "text": "`${ticker} 코인 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1178,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 코인 매수 분위기`"
+        "text": "`${ticker} 매수세`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1179,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매수세`"
+        "text": "`${ticker} 단기 흐름`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1180,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 단기 흐름`"
+        "text": "`${ticker} 단기 심리`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1181,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 단기 심리`"
+        "text": "`공포 탐욕 지수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1182,
         "reason": "seo-keywords-ko-only",
-        "text": "`공포 탐욕 지수`"
+        "text": "`코인 투자 심리`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
         "line": 1183,
         "reason": "seo-keywords-ko-only",
-        "text": "`코인 투자 심리`"
-    },
-    {
-        "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1184,
-        "reason": "seo-keywords-ko-only",
         "text": "`코인 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1186,
+        "line": 1185,
         "reason": "seo-keywords-ko-only",
         "text": "`크립토 투자 심리`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1187,
+        "line": 1186,
         "reason": "seo-keywords-ko-only",
         "text": "`암호화폐 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1188,
+        "line": 1187,
         "reason": "seo-keywords-ko-only",
         "text": "`코인 단기 매매 심리`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1257,
+        "line": 1256,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 공포 지수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1258,
+        "line": 1257,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 탐욕 지수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1259,
+        "line": 1258,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1260,
+        "line": 1259,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매수세`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1261,
+        "line": 1260,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 단기 흐름`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1262,
+        "line": 1261,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 단기 심리`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1263,
+        "line": 1262,
         "reason": "seo-keywords-ko-only",
         "text": "`${sector} 섹터 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1266,
+        "line": 1265,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 공포 지수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1267,
+        "line": 1266,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 탐욕 지수`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1268,
+        "line": 1267,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1271,
+        "line": 1270,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1272,
+        "line": 1271,
         "reason": "seo-keywords-ko-only",
         "text": "투자 심리 지표"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1274,
+        "line": 1273,
         "reason": "seo-keywords-ko-only",
         "text": "주식 매수 분위기"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1275,
+        "line": 1274,
         "reason": "seo-keywords-ko-only",
         "text": "단기 매매 심리"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1316,
+        "line": 1315,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 평단`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1317,
+        "line": 1316,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 평단 계산`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1318,
+        "line": 1317,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 내 위치`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1319,
+        "line": 1318,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 52주 범위`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1320,
+        "line": 1319,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 평단`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1320,
+        "line": 1319,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 내 위치`"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1321,
+        "line": 1320,
         "reason": "seo-keywords-ko-only",
         "text": "평단 확인"
     },
     {
         "file": "src/shared/lib/seoSymbol.ts",
-        "line": 1322,
+        "line": 1321,
         "reason": "seo-keywords-ko-only",
         "text": "52주 최고가 최저가"
     }

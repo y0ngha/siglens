@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
-token_cost: 1174
-digest_hash: "f91fb5b5"
+token_cost: 1176
+digest_hash: "8a8a73e8"
+digest_text_hash: "58da5c9d"
 ---
 
 ## Overview
@@ -67,9 +68,9 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 
 ### Filter 1: Closing Price Confirmation
 
-- Only count a breakout when the **closing price** (not intraday price) is beyond the boundary
-- Intraday spikes that close back within the range are not breakouts
-- This filter removes intraday fakeouts that close back inside the range
+- Only count a breakout when the **closing price** (not a within-bar price) is beyond the boundary
+- Within-bar spikes that close back within the range are not breakouts
+- This filter removes within-bar fakeouts that close back inside the range
 
 ### Filter 2: Volume Confirmation
 
@@ -212,7 +213,7 @@ Enter when price decisively closes beyond a defined support/resistance boundary.
 - Donchian (Turtle): break above highest-high / below lowest-low of past N bars. Classic = 20-bar entry, 10-bar exit. ATR-based position sizing. Best in trends, bad in ranges.
 
 ### False-Breakout Filters
-1. Closing price: only count when CLOSE (not intraday) is beyond boundary.
+1. Closing price: only count when CLOSE (not a within-bar price) is beyond boundary.
 2. Volume: cite `## Indicator State (computed)`'s `Volume: last bar x× 20-bar average` line — never compute the ratio yourself. Genuine breakout has x≥1.5 (≥50% above average); stays elevated 2-3 bars. Declining-volume breakouts are suspect.
 3. Multi-bar (conservative): require 2 consecutive closes beyond boundary.
 4. Momentum: RSI must not be in extreme opposite zone (e.g. RSI>70 for downside breakout is contradictory); MACD trending in breakout direction; ADX rising above 25 confirms trending environment.

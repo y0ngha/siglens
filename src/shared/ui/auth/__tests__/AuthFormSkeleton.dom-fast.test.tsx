@@ -28,6 +28,37 @@ describe('AuthFormSkeleton', () => {
         expect(bars.length).toBe(7);
     });
 
+    it('leadingAction은 실제 가입 블록의 행을 순서대로 그린다', () => {
+        const { container } = render(
+            <AuthFormSkeleton rows={1} leadingAction />
+        );
+        const root = container.firstElementChild as HTMLElement;
+        const rows = Array.from(root.children);
+
+        // 소셜 묶음(버튼 h-12 + 안내 h-4), 구분선 줄(h-4), 단계 안내(h-4), 입력 행(라벨 h-3), 제출 버튼(h-12)
+        expect(rows).toHaveLength(5);
+        expect(rows[0]?.firstElementChild).toHaveClass('h-12');
+        expect(rows[1]).toHaveClass('h-4');
+        expect(rows[2]).toHaveClass('h-4');
+        expect(rows[3]?.firstElementChild).toHaveClass('h-3');
+        expect(rows[4]).toHaveClass('h-12');
+        const social = root.children[0] as HTMLElement;
+        expect(social.children).toHaveLength(2);
+        expect(social.children[1]).toHaveClass('mt-2', 'h-4');
+        expect(root.children[1]).toHaveClass('my-6', 'h-4');
+        // 막대: 버튼·안내·단계·입력 행(2)·제출 버튼
+        expect(container.querySelectorAll('div.bg-secondary-700').length).toBe(
+            6
+        );
+    });
+
+    it('leadingAction을 주지 않으면 앞쪽 막대와 구분선이 없다', () => {
+        const { container } = render(<AuthFormSkeleton rows={1} />);
+
+        expect(container.querySelectorAll('div.h-12').length).toBe(0);
+        expect(container.querySelectorAll('div.h-10').length).toBe(2);
+    });
+
     it('자리표시자가 카드 표면 토큰을 쓰지 않는다', () => {
         // `secondary-800`은 카드 표면이라 그 위에 얹으면 1.00:1이 된다.
         const { container } = render(<AuthFormSkeleton rows={3} />);

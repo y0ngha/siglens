@@ -18,6 +18,7 @@ gating:
   triggers: [rectangle]
 token_cost: 1121
 digest_hash: "cc5e2194"
+digest_text_hash: "974f6468"
 ---
 
 ## Detection Criteria

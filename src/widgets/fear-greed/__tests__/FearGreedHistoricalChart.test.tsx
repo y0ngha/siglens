@@ -179,6 +179,56 @@ describe('FearGreedHistoricalChart', () => {
         expect(box?.style.height).toBe(`${FEAR_GREED_CHART_HEIGHT}px`);
     });
 
+    /**
+     * 접근성 이름의 기간은 차트가 실제로 그리는 점에서 정한다. 252점은 주식에서 1년이지만
+     * 매일 거래하는 암호화폐에서는 약 8개월이라 "최근 1년"이면 틀린다.
+     */
+    describe('접근성 이름의 기간', () => {
+        const dailySeries = (count: number, stepDays: number) =>
+            Array.from({ length: count }, (_, i) => ({
+                date: new Date(Date.UTC(2025, 0, 1) + i * stepDays * MS_PER_DAY)
+                    .toISOString()
+                    .slice(0, 10),
+                score: 50,
+                label: 'NEUTRAL' as const,
+            }));
+
+        it('1년에 걸친 주식 기록은 "최근 1년"이다', () => {
+            // 252세션이 365일에 걸치도록 5/7 비율로 달력일을 늘린다.
+            const stock = Array.from(
+                { length: FEAR_GREED_SESSIONS_PER_YEAR },
+                (_, i) => ({
+                    date: new Date(
+                        Date.UTC(2025, 0, 1) +
+                            Math.round((i * 7) / 5) * MS_PER_DAY
+                    )
+                        .toISOString()
+                        .slice(0, 10),
+                    score: 50,
+                    label: 'NEUTRAL' as const,
+                })
+            );
+            const { container } = render(
+                <FearGreedHistoricalChart history={stock} />
+            );
+            expect(container.querySelector('[role="img"]')).toHaveAttribute(
+                'aria-label',
+                '최근 1년 공포 탐욕 지수 추이 차트'
+            );
+        });
+
+        it('매일 쌓이는 암호화폐 252점은 "최근 8개월"이다', () => {
+            const crypto = dailySeries(FEAR_GREED_SESSIONS_PER_YEAR, 1);
+            const { container } = render(
+                <FearGreedHistoricalChart history={crypto} />
+            );
+            expect(container.querySelector('[role="img"]')).toHaveAttribute(
+                'aria-label',
+                '최근 8개월 공포 탐욕 지수 추이 차트'
+            );
+        });
+    });
+
     it('fits the time scale after setting data', () => {
         render(<FearGreedHistoricalChart history={history} />);
         expect(mockFitContent).toHaveBeenCalled();

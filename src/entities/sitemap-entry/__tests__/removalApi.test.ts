@@ -45,9 +45,9 @@ describe('DrizzleRemovalSitemapCandidateSource', () => {
 
             const query = captured[0]!;
             const sql = normalizeSql(query.sql);
-            expect(sql).toContain('"korean_tickers"."updated_at" <');
-            expect(sql).toContain('"korean_tickers"."symbol" not in');
-            expect(sql).toContain('order by "korean_tickers"."symbol" asc');
+            expect(sql).toBe(
+                'select "symbol" from "korean_tickers" where ("korean_tickers"."updated_at" < $1 and "korean_tickers"."symbol" not in ($2, $3)) order by "korean_tickers"."symbol" asc'
+            );
             expect(query.params).toContain(cutoff.toISOString());
             expect(query.params).toEqual(
                 expect.arrayContaining(excludedSymbols)
@@ -66,11 +66,9 @@ describe('DrizzleRemovalSitemapCandidateSource', () => {
 
             const query = captured[0]!;
             const sql = normalizeSql(query.sql);
-            expect(sql).toContain('"crypto_assets"."symbol" not in');
-            expect(sql).toContain(
-                'order by "crypto_assets"."circulating_supply" desc nulls last, "crypto_assets"."symbol" asc'
+            expect(sql).toBe(
+                'select "symbol" from "crypto_assets" where "crypto_assets"."symbol" not in ($1) order by "crypto_assets"."circulating_supply" desc nulls last, "crypto_assets"."symbol" asc limit $2'
             );
-            expect(sql).toContain('limit');
             expect(query.params).toContain(excludedSymbols[0]);
             expect(query.params).toContain(1_000);
         });

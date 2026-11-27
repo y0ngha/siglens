@@ -223,3 +223,144 @@ test.describe('crypto market fear & greed', () => {
         expect(await res.text()).toContain('/fear-greed/crypto</loc>');
     });
 });
+
+/**
+ * 공포·탐욕 기록 내려받기 파일. 여섯 공개 경로가 rewrite로 라우트 핸들러에 닿고, 프록시
+ * matcher가 `.csv`·`.json`을 건드리지 않아야 한다. E2E fixture는 점수가 있는 점을 20개
+ * 넘게 만든다 — 하한 밑으로 내려가면 파일이 503이 되어 아래 테스트가 크게 깨지는데, 그게
+ * 의도다.
+ */
+test.describe('fear & greed data files', () => {
+    test('us csv가 200과 noindex 헤더, 헤더 줄, 20줄 이상의 데이터를 돌려준다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed/data.csv', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-type']).toMatch(/^text\/csv/);
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
+        const lines = (await res.text()).split('\n').filter(Boolean);
+        expect(lines[0]).toBe('date,score,label');
+        expect(lines.length - 1).toBeGreaterThanOrEqual(20);
+    });
+
+    test('crypto json이 schemaVersion 1과 20점 이상을 돌려준다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed/crypto/data.json', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-type']).toMatch(/^application\/json/);
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
+        const body = (await res.json()) as {
+            schemaVersion: number;
+            points: unknown[];
+        };
+        expect(body.schemaVersion).toBe(1);
+        expect(body.points.length).toBeGreaterThanOrEqual(20);
+    });
+
+    test('kr csv가 200이다', async ({ page }) => {
+        const res = await page.request.get('/fear-greed/kr/data.csv', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-type']).toMatch(/^text\/csv/);
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
+    });
+
+    test('허브 HTML에 DataDownload JSON-LD와 csv 주소가 들어 있다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed');
+        const html = await res.text();
+
+        expect(html).toContain('"@type":"DataDownload"');
+        expect(html).toContain('/fear-greed/data.csv');
+    });
+});
+
+/**
+ * 허브의 "지난 점수 기록" 카드. 표와 극단 구간 기록은 서버 컴포넌트라 JS 없이 받은 HTML에
+ * 그대로 있어야 한다(크롤러가 읽는 건 이 표다). 제목은 next-intl 클라이언트 메시지 페이로드
+ * (`<script>`)에도 들어 있으므로 `<script>`를 걷어낸 본문에만 단언한다.
+ *
+ * E2E fixture는 400일의 연속 달력일을 만들어 점수 있는 점이 약 265개다. 그래서 월별 표는
+ * 12개월을 넘지 않아 접힌 `<details>`는 생기지 않고(단위 테스트가 접힘을 고정한다), 차트가
+ * 그리는 마지막 252점은 약 8개월에 걸친다.
+ */
+const HISTORY_HUBS = [
+    {
+        path: '/fear-greed',
+        csv: '/fear-greed/data.csv',
+        recent: '최근 20거래일',
+    },
+    {
+        path: '/fear-greed/kr',
+        csv: '/fear-greed/kr/data.csv',
+        recent: '최근 20거래일',
+    },
+    // 암호화폐는 매일 거래하므로 "거래일"이 아니라 "일"이다.
+    {
+        path: '/fear-greed/crypto',
+        csv: '/fear-greed/crypto/data.csv',
+        recent: '최근 20일',
+    },
+] as const;
+
+const stripScripts = (html: string): string =>
+    html.replace(/<script[\s\S]*?<\/script>/g, '');
+
+test.describe('fear & greed history section', () => {
+    for (const { path, csv, recent } of HISTORY_HUBS) {
+        test(`${path}: JS 없이 받은 HTML에 기록 카드의 제목·표·내려받기 링크가 있다`, async ({
+            page,
+        }) => {
+            const res = await page.request.get(path);
+            expect(res.status()).toBe(200);
+            const body = stripScripts(await res.text());
+
+            for (const text of [
+                '지난 점수 기록',
+                '월별 기록',
+                recent,
+                '극단 구간 기록',
+            ]) {
+                expect(body, `${path}에 "${text}"가 없다`).toContain(text);
+            }
+            // React는 `dateTime`을 그대로 내보내므로 대소문자를 가리지 않는다. 최근 20일 행(날짜 머리 셀)만으로도 20개다. 월별 표의 `<time>`은 더해진다.
+            const timeCount = (body.match(/<time datetime="/gi) ?? []).length;
+            expect(timeCount).toBeGreaterThanOrEqual(20);
+
+            expect(body).toContain(`href="${csv}"`);
+            expect(body).toContain(`href="${csv.replace('.csv', '.json')}"`);
+            // 접힘은 닫힌 채로 시작한다(열린 `<details>`는 첫 화면을 밀어낸다).
+            expect(body).not.toMatch(/<details[^>]*\sopen/);
+        });
+    }
+
+    /**
+     * 차트 접근성 이름의 기간은 그려지는 점이 걸친 기간에서 나온다. 고정 문구 "최근 1년"이면
+     * 252일(약 8개월)을 그리는 이 화면에서 틀리므로 옛 코드는 이 단언을 통과하지 못한다.
+     * 차트는 `ssr: false`라 하이드레이션 뒤에야 `role="img"`가 생긴다.
+     */
+    test('암호화폐 허브의 차트 이름이 실제 기간(8개월)을 말한다', async ({
+        page,
+    }) => {
+        await page.goto('/fear-greed/crypto');
+
+        await expect(
+            page.getByRole('img', {
+                name: '최근 8개월 공포 탐욕 지수 추이 차트',
+            })
+        ).toBeVisible();
+        await expect(
+            page.getByRole('img', { name: '최근 1년 공포 탐욕 지수 추이 차트' })
+        ).toHaveCount(0);
+    });
+});

@@ -3,6 +3,15 @@ import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { allQuotesPresent } from './marketSummaryCompleteness';
 
 /**
+ * 지수 행 중 시세가 0인 것이 있는가. 한국 캐시 쓰기 가드({@link shouldCacheMarketSummary})와
+ * 정적 캐시의 장애 로그·렌더 핀이 **같은 판정**을 쓰도록 한 곳에 둔다. 섹터 ETF 결측은
+ * 얇은 거래 탓의 일상이라 여기서 보지 않는다.
+ */
+export function hasMissingIndexQuote(summary: MarketSummaryData): boolean {
+    return summary.indices.some(q => q.price === 0);
+}
+
+/**
  * 이 번들을 Redis에 굳혀도 되는가. `getCachedMarketSummary`의 쓰기 가드.
  *
  * 미국은 전부 있어야 한다(`allQuotesPresent`) — FMP는 인증된 유료 소스라 결측이
@@ -19,7 +28,5 @@ export function shouldCacheMarketSummary(
     summary: MarketSummaryData
 ): boolean {
     if (scope.id !== 'kr') return allQuotesPresent(summary);
-    return (
-        summary.indices.length > 0 && summary.indices.every(q => q.price > 0)
-    );
+    return summary.indices.length > 0 && !hasMissingIndexQuote(summary);
 }

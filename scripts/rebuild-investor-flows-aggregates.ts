@@ -12,7 +12,7 @@ import { rebuildAggregates } from './lib/rebuildInvestorFlowsAggregates';
 /**
  * 수급 13F 집계 전체 재계산 — `yarn investor-flows:rebuild-aggregates [--dry-run] [--reset]`.
  *
- * 흐름과 사용 시점은 `scripts/lib/rebuildInvestorFlowsAggregates.ts` 머리말과 `docs/reference/CRON.md`.
+ * 흐름과 사용 시점은 `scripts/lib/rebuildInvestorFlowsAggregates.ts` 머리말.
  * **쓰기 스크립트**라 DB-4대로 원격 대상이면 거부한다(`guardRemoteWrite`; 운영에는 `ALLOW_REMOTE_DB_WRITE=1`).
  * `--dry-run`은 쓰지 않으므로 가드를 거치지 않고 대상만 찍는다. `--reset`은 기준이 없는 분기의 변화 열을 먼저
  * NULL로 되돌린다(baseline 규칙을 엄격하게 바꾼 뒤).

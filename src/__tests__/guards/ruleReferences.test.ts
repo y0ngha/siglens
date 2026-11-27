@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { ruleDocPaths } from './support/ruleDocs';
 
 /**
  * 규칙 문서를 가리키는 `FILE#ID` 참조는 실재하는 앵커로 풀려야 한다.
@@ -14,6 +15,11 @@ import { describe, expect, it } from 'vitest';
  *
  * 참조 형식: 파일명만(`CONVENTIONS.md`, `TESTING.md` …)은 `docs/conventions/` 또는
  * 저장소 루트에서, 경로가 붙은 것(`src/app/CLAUDE.md`)은 저장소 루트 기준으로 푼다.
+ *
+ * 폐기한 ID는 규칙 문서 머리말의 `Retired IDs: TE-32, TE-35` 한 줄에 적는다. 폐기된 ID는 앵커가 다시
+ * 생기면 안 되고(재사용 금지), 어디서도 인용되면 안 되며, 그 파일이 쓰는 접두사여야 하고, 두 번 적히면
+ * 안 된다. 다음 ID는 앵커와 폐기 목록을 합친 최댓값 + 1이지만, 번호 자체는 이 가드가 검사하지 않고
+ * 리뷰에서 본다(기존 앵커가 폐기 번호보다 낮은 것은 정상이라 문서만으로는 판정할 수 없다).
  *
  * 이 파일은 옛 `MISTAKES` 문서가 다시 규칙의 출처로 되살아나는 것도 막는다. 그
  * 문서는 규칙 문서로 해체됐고, 남은 언급은 모두 죽은 링크다. `CHANGELOG.md`(릴리스
@@ -70,6 +76,9 @@ const REFERENCE_PATTERN =
 const ANCHOR_PATTERN =
     /<a id="([A-Z][A-Z0-9]*-\d+)"><\/a>[ \t]*\n+[ \t]*#{1,6} \1\b/g;
 const LEGACY_DOC_PATTERN = /MISTAKES/;
+/** 규칙 파일당 `Retired IDs: A-1, B-2` 줄(여러 줄이어도 모두 합친다). */
+const RETIRED_LINE_PATTERN = /^Retired IDs: (.+)$/gm;
+const RULE_ID_PATTERN = /^[A-Z][A-Z0-9]*-\d+$/;
 
 interface Reference {
     readonly source: string;
@@ -133,6 +142,87 @@ function findDanglingReferences(
     });
 }
 
+function prefixOf(id: string): string {
+    return id.slice(0, id.lastIndexOf('-'));
+}
+
+/** 한 문서가 `Retired IDs:` 줄로 선언한 ID들(공백 제거, 빈 토큰 제외). */
+function parseRetiredIds(text: string): string[] {
+    return [...text.matchAll(RETIRED_LINE_PATTERN)].flatMap(match =>
+        (match[1] ?? '')
+            .split(',')
+            .map(token => token.trim())
+            .filter(token => token !== '')
+    );
+}
+
+interface RuleDoc {
+    readonly relative: string;
+    readonly text: string;
+}
+
+/**
+ * 폐기 선언 자체의 결함: 형식 오류, 그 파일이 쓰지 않는 접두사, 중복 기재, 폐기했는데 남은 앵커.
+ * 앵커는 모든 규칙 문서에서 찾는다(다른 파일로 옮겨 살려 두는 우회도 막는다).
+ */
+function findRetiredDeclarationProblems(docs: readonly RuleDoc[]): string[] {
+    const anchorsByDoc = docs.map(({ relative, text }) => ({
+        relative,
+        anchors: [...text.matchAll(ANCHOR_PATTERN)].map(
+            match => match[1] ?? ''
+        ),
+    }));
+    const prefixesByDoc = new Map(
+        anchorsByDoc.map(({ relative, anchors }) => [
+            relative,
+            new Set(anchors.map(prefixOf)),
+        ])
+    );
+    const declared = docs.flatMap(({ relative, text }) =>
+        parseRetiredIds(text).map(id => ({ relative, id }))
+    );
+    return declared.flatMap(({ relative, id }, index) => {
+        if (!RULE_ID_PATTERN.test(id)) {
+            return [`${relative}: Retired IDs 형식 오류 ${id}`];
+        }
+        const ownPrefixes = prefixesByDoc.get(relative) ?? new Set<string>();
+        const duplicate =
+            declared.findIndex(other => other.id === id) !== index;
+        const revived = anchorsByDoc
+            .filter(({ anchors }) => anchors.includes(id))
+            .map(doc => doc.relative);
+        return [
+            ...(ownPrefixes.has(prefixOf(id))
+                ? []
+                : [
+                      `${relative}: ${id} 접두사가 이 파일의 규칙 접두사가 아니다`,
+                  ]),
+            ...(duplicate ? [`${relative}: ${id} 폐기 ID가 두 번 적혔다`] : []),
+            ...revived.map(
+                where =>
+                    `${where}: 폐기된 ${id}에 앵커가 다시 생겼다(ID 재사용 금지)`
+            ),
+        ];
+    });
+}
+
+/** 폐기된 ID를 인용한 참조. 끊어진 참조와 구분해 폐기 사실을 메시지에 적는다. */
+function findRetiredCitations(
+    references: readonly Reference[],
+    retiredOf: (docPath: string) => readonly string[]
+): string[] {
+    return references.flatMap(({ source, file, id }) => {
+        const docPath = resolveDocPath(file);
+        return docPath !== null && retiredOf(docPath).includes(id)
+            ? [`${source}: ${file}#${id} (폐기된 ID)`]
+            : [];
+    });
+}
+
+function retiredIdsIn(docPath: string): string[] {
+    return parseRetiredIds(readFileSync(docPath, 'utf8'));
+}
+
 describe('rule reference guard', () => {
     const files = scannedFiles();
     const texts = files.map(file => ({
@@ -191,5 +281,93 @@ describe('rule reference guard', () => {
             'a.ts: CONVENTIONS.md#ZZ-999 (앵커 없음)',
             'b.ts: NoSuchDoc.md#CS-1 (파일 없음)',
         ]);
+    });
+
+    describe('Retired IDs', () => {
+        const liveDocs: RuleDoc[] = ruleDocPaths(ROOT).map(relative => ({
+            relative,
+            text: readFileSync(path.join(ROOT, relative), 'utf8'),
+        }));
+
+        it('실제 규칙 문서의 폐기 선언을 읽어 낸다(파서가 공허하지 않음)', () => {
+            const testing = liveDocs.find(
+                ({ relative }) => relative === 'docs/conventions/TESTING.md'
+            );
+            expect(parseRetiredIds(testing?.text ?? '')).toEqual(
+                expect.arrayContaining(['TE-32', 'TE-35'])
+            );
+        });
+
+        it('실제 규칙 문서의 폐기 선언에 결함이 없다', () => {
+            expect(findRetiredDeclarationProblems(liveDocs)).toEqual([]);
+        });
+
+        it('폐기된 ID를 인용한 곳이 없다', () => {
+            const references = texts.flatMap(({ relative, text }) =>
+                extractReferences(relative, text)
+            );
+            expect(findRetiredCitations(references, retiredIdsIn)).toEqual([]);
+        });
+
+        const planted = (retired: string, body = ''): RuleDoc => ({
+            relative: 'docs/conventions/X.md',
+            text: `Retired IDs: ${retired}\n\n<a id="XX-1"></a>\n\n#### XX-1 — t\n${body}`,
+        });
+
+        it('폐기 선언을 쉼표 목록으로 읽는다', () => {
+            expect(parseRetiredIds('a\nRetired IDs: XX-2, XX-3\nb')).toEqual([
+                'XX-2',
+                'XX-3',
+            ]);
+            expect(parseRetiredIds('Retired IDs mentioned in prose')).toEqual(
+                []
+            );
+        });
+
+        it('폐기한 ID에 앵커가 남아 있으면 실패한다', () => {
+            expect(findRetiredDeclarationProblems([planted('XX-1')])).toEqual([
+                'docs/conventions/X.md: 폐기된 XX-1에 앵커가 다시 생겼다(ID 재사용 금지)',
+            ]);
+        });
+
+        it('다른 파일에서 폐기 ID의 앵커를 살려도 실패한다', () => {
+            const other: RuleDoc = {
+                relative: 'docs/conventions/Y.md',
+                text: '<a id="XX-5"></a>\n\n#### XX-5 — t\n',
+            };
+            expect(
+                findRetiredDeclarationProblems([planted('XX-5'), other])
+            ).toEqual([
+                'docs/conventions/Y.md: 폐기된 XX-5에 앵커가 다시 생겼다(ID 재사용 금지)',
+            ]);
+        });
+
+        it('폐기 ID를 인용하면 폐기 사실을 밝히며 실패한다', () => {
+            const references: Reference[] = [
+                { source: 'a.ts', file: 'TESTING.md', id: 'TE-32' },
+                { source: 'b.ts', file: 'TESTING.md', id: 'TE-1' },
+            ];
+            expect(
+                findRetiredCitations(references, () => ['TE-32', 'TE-35'])
+            ).toEqual(['a.ts: TESTING.md#TE-32 (폐기된 ID)']);
+        });
+
+        it('그 파일이 쓰지 않는 접두사는 실패한다', () => {
+            expect(findRetiredDeclarationProblems([planted('ZZ-9')])).toEqual([
+                'docs/conventions/X.md: ZZ-9 접두사가 이 파일의 규칙 접두사가 아니다',
+            ]);
+        });
+
+        it('같은 ID를 두 번 적으면 실패한다', () => {
+            expect(
+                findRetiredDeclarationProblems([planted('XX-8, XX-8')])
+            ).toEqual(['docs/conventions/X.md: XX-8 폐기 ID가 두 번 적혔다']);
+        });
+
+        it('형식이 틀린 토큰은 실패한다', () => {
+            expect(findRetiredDeclarationProblems([planted('xx-1')])).toEqual([
+                'docs/conventions/X.md: Retired IDs 형식 오류 xx-1',
+            ]);
+        });
     });
 });

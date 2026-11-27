@@ -42,17 +42,20 @@ export function splitFrames(buffer: string): {
  * survives.
  */
 export function parseSseFrame(frame: string): SseFrame {
-    let event = '';
-    const dataLines: string[] = [];
-    for (const line of frame.split(/\r?\n/)) {
-        if (line.startsWith('event:')) {
-            event = line.slice(6).trim();
-        } else if (line.startsWith('data:')) {
+    const lines = frame.split(/\r?\n/);
+    // 같은 필드가 여러 번 오면 마지막 `event:`가 이긴다.
+    const event =
+        lines
+            .findLast(line => line.startsWith('event:'))
+            ?.slice(6)
+            .trim() ?? '';
+    const raw = lines
+        .filter(line => line.startsWith('data:'))
+        .map(line => {
             const value = line.slice(5);
-            dataLines.push(value.startsWith(' ') ? value.slice(1) : value);
-        }
-    }
-    const raw = dataLines.join('\n');
+            return value.startsWith(' ') ? value.slice(1) : value;
+        })
+        .join('\n');
     try {
         return {
             event,

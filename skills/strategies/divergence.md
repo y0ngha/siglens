@@ -10,8 +10,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_bullish_divergence, rsi_bearish_divergence, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
-token_cost: 1070
-digest_hash: "842f768d"
+token_cost: 1097
+digest_hash: "653e4643"
+digest_text_hash: "60136ff2"
 ---
 
 ## Overview
@@ -30,8 +31,8 @@ Regular divergences signal that the current trend is losing momentum and a rever
 
 | Type | Price Action | Oscillator Action | Signal | Reliability |
 |---|---|---|---|---|
-| Regular Bullish | Lower Low | Higher Low | Downtrend weakening → potential reversal to upside | High when at support |
-| Regular Bearish | Higher High | Lower High | Uptrend weakening → potential reversal to downside | High when at resistance |
+| Regular Bullish | Lower Low | Higher Low | Downtrend weakening → potential reversal to upside | Note whether price is at a support level |
+| Regular Bearish | Higher High | Lower High | Uptrend weakening → potential reversal to downside | Note whether price is at a resistance level |
 
 ### Hidden Divergence (Trend Continuation Signals)
 
@@ -74,7 +75,7 @@ Hidden divergences confirm that the current trend remains intact despite a tempo
 
 ### Multi-Oscillator Confirmation
 
-When two or more oscillators show the same divergence at the same swings, treat it as stronger evidence than a single-oscillator divergence. RSI, MACD and Stochastic are all derived from the same price series, so agreement is corroboration, not independent confirmation.
+When two or more oscillators show the same divergence at the same swings, report it as agreement among oscillators. RSI, MACD and Stochastic are all derived from the same price series, so agreement is corroboration, not independent confirmation.
 
 ---
 
@@ -84,7 +85,7 @@ When two or more oscillators show the same divergence at the same swings, treat 
 
 1. **Identify divergence**: Price makes lower low while oscillator makes higher low
 2. **Wait for confirmation**: Oscillator exits oversold zone (RSI crosses above 30, Stochastic %K crosses above 20, or MACD histogram turns positive)
-3. **Double confirmation (optional)**: Price bounces from a known support level
+3. **Optional context**: Note whether price bounces from a known support level (an observation, no reliability claim)
 4. **Entry trigger**: Enter long when the confirmation candle closes
 5. **Stop loss**: Below the most recent swing low (the lower low in the divergence)
 6. **Target**: Previous swing high or resistance level
@@ -93,7 +94,7 @@ When two or more oscillators show the same divergence at the same swings, treat 
 
 1. **Identify divergence**: Price makes higher high while oscillator makes lower high
 2. **Wait for confirmation**: Oscillator exits overbought zone (RSI crosses below 70, Stochastic %K crosses below 80, or MACD histogram turns negative)
-3. **Double confirmation (optional)**: Price rejects from a known resistance level
+3. **Optional context**: Note whether price rejects from a known resistance level (an observation, no reliability claim)
 4. **Entry trigger**: Enter short when the confirmation candle closes
 5. **Stop loss**: Above the most recent swing high (the higher high in the divergence)
 6. **Target**: Previous swing low or support level
@@ -129,16 +130,16 @@ When two or more oscillators show the same divergence at the same swings, treat 
 
 confidence_weight: 0.78 — Divergence is a widely used momentum warning: it shows that the latest price extreme was not confirmed by momentum. It is a warning, not a timing signal — divergences can persist through several swings before resolving (especially in strong trends), so entry timing still requires additional confirmation such as an oscillator exit from the extreme zone, a candlestick pattern, or a support/resistance test.
 
-Factors that increase confidence:
-- Multiple oscillators show the same divergence simultaneously
-- Divergence occurs at a known support/resistance level
+Factors that increase confidence (heuristics, not measured):
+- Multiple oscillators show the same divergence simultaneously (same price series, so corroboration only)
+- Divergence is observed near a known support/resistance level (state it as an observation)
 - Volume confirms the divergence (decreasing volume on the price extreme)
 - Divergence appears on a higher timeframe (daily or weekly)
 
 Factors that decrease confidence:
 - Only one oscillator shows divergence
 - Strong trending market (regular divergences can persist through multiple swings)
-- No clear support/resistance confluence
+- No nearby support/resistance level to cite
 - Divergence on very low timeframes (1-minute, 5-minute) — higher noise ratio
 
 ---
@@ -174,7 +175,7 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 ```
 
 Additional output rules:
-- If **multiple oscillators** show the same divergence, explicitly note this as higher confidence
+- If **multiple oscillators** show the same divergence, explicitly note the agreement (same price series, corroboration only)
 - If divergence is detected but **confirmation is pending**, state the specific condition needed (e.g., "RSI가 30선을 상향 돌파하면 확인 완료")
 - If **hidden divergence** is detected, emphasize that it is a continuation signal, not a reversal
 - If no divergence is found, state "현재 가격-오실레이터 간 다이버전스 미감지" and briefly describe the current momentum alignment
@@ -186,8 +187,8 @@ Discrepancy between price and oscillator (RSI, MACD histogram, Stochastic %K) an
 
 ### Types
 Regular (reversal signals):
-- Regular Bullish: price Lower Low + oscillator Higher Low → downtrend weakening → reversal up. High reliability at support.
-- Regular Bearish: price Higher High + oscillator Lower High → uptrend weakening → reversal down. High reliability at resistance.
+- Regular Bullish: price Lower Low + oscillator Higher Low → downtrend weakening → reversal up. Note whether price is at support.
+- Regular Bearish: price Higher High + oscillator Lower High → uptrend weakening → reversal down. Note whether price is at resistance.
 Hidden (continuation signals):
 - Hidden Bullish: price Higher Low + oscillator Lower Low → pullback within uptrend → continuation up. Strong in uptrends.
 - Hidden Bearish: price Lower High + oscillator Higher High → bounce within downtrend → continuation down. Strong in downtrends.
@@ -208,8 +209,8 @@ Hidden Bearish: PREREQ confirmed downtrend (LH/LL, price below key MAs) → pric
 Primary: target reached. Trail: move stop to breakeven once price forms a new swing in the trade direction, then trail behind swing points. Invalidation: close if opposite-direction divergence forms. Time: if price fails to move as expected within 10-15 bars, close for small loss/breakeven.
 
 ### Confidence
-Increase: multiple oscillators same divergence (same price series — corroboration, not independent); at known S/R; volume confirms (decreasing on price extreme); on higher TF (daily/weekly).
-Decrease: only one oscillator; strong trend (regular divergences persist through multiple swings); no S/R confluence; very low TF (1m/5m noise).
+Increase (heuristics, not measured): multiple oscillators same divergence (same price series — corroboration, not independent); observed near known S/R (state as observation); volume confirms (decreasing on price extreme); on higher TF (daily/weekly).
+Decrease: only one oscillator; strong trend (regular divergences persist through multiple swings); no nearby S/R to cite; very low TF (1m/5m noise).
 Caveats: NEVER trade divergence alone — it is a warning, always require confirmation. In strong trends regular divergence can appear at multiple consecutive swings before reversal — check higher-TF trend first. Hidden = continuation NOT reversal, do not confuse with regular. Keep divergence and entry confirmation on SAME timeframe. Oscillator values change per bar — confirm on CLOSED bars only.
 
 ### Output (one **label**: value per line)
@@ -219,7 +220,7 @@ Caveats: NEVER trade divergence alone — it is a warning, always require confir
 **확인 상태**: [확인 완료 / 확인 대기 중 / 미확인]
 **신호 상태**: [신호의 방향과 확인 정도 / 명확한 신호 없음]
 **상세 분석**: [맥락, 지지/저항 수렴, 멀티 오실레이터 일치, 주의사항]
-- Multiple oscillators same divergence → note explicitly as higher confidence.
+- Multiple oscillators same divergence → note the agreement explicitly (same price series, corroboration only).
 - Confirmation pending → state specific condition needed (e.g. "RSI가 30선을 상향 돌파하면 확인 완료").
 - Hidden divergence → emphasize continuation, not reversal.
 - None → "현재 가격-오실레이터 간 다이버전스 미감지" + describe momentum alignment.

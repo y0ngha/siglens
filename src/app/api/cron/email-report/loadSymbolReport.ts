@@ -47,10 +47,11 @@ async function readOptionsMetrics(
     if (!(await isTabAllowedForSymbol(symbol, 'options'))) return null;
     if (!(await hasOptionsMarket(symbol))) return null;
     const snapshot = await fetchOptionsSnapshot(symbol);
-    if (snapshot === null || snapshot.chains.length === 0) return null;
+    if (snapshot === null) return null;
     const chain =
         snapshot.chains.find(c => c.daysToExpiration >= 1) ??
-        snapshot.chains[0]!;
+        snapshot.chains[0];
+    if (chain === undefined) return null;
     return summarizeChainForLlm(chain, snapshot.underlyingPrice);
 }
 
@@ -84,9 +85,8 @@ async function settle<T>(
     }
 }
 
-function isFresh(snapshot: SeoAnalysisSnapshot | undefined, now: Date) {
+function isFresh(snapshot: SeoAnalysisSnapshot, now: Date): boolean {
     return (
-        snapshot !== undefined &&
         now.getTime() - snapshot.generatedAt.getTime() <= SNAPSHOT_MAX_AGE_MS
     );
 }
@@ -123,18 +123,23 @@ export async function loadSymbolReport(
 
     const technicalRow = snapshots.find(s => s.tab === 'technical');
     const optionsRow = snapshots.find(s => s.tab === 'options');
-    const technical = isFresh(technicalRow, now)
-        ? narrowTechnicalContent(technicalRow!.content)
-        : null;
-    const optionsProse = isFresh(optionsRow, now)
-        ? narrowOptionsContent(optionsRow!.content)
-        : null;
+    const technical =
+        technicalRow !== undefined && isFresh(technicalRow, now)
+            ? narrowTechnicalContent(technicalRow.content)
+            : null;
+    const optionsProse =
+        optionsRow !== undefined && isFresh(optionsRow, now)
+            ? narrowOptionsContent(optionsRow.content)
+            : null;
+    // 기술 분석을 못 쓰면(오래됨·형태 불일치) 그 행의 평문·시각도 싣지 않는다.
+    const usedTechnicalRow = technical === null ? undefined : technicalRow;
 
     return buildSymbolReport({
         symbol,
         technical,
-        plain: technical === null ? null : (technicalRow!.plain ?? null),
-        analyzedAt: technical === null ? null : technicalRow!.generatedAt,
+        plain: usedTechnicalRow?.plain ?? null,
+        // 분석 내용 안의 시각 — 행의 `generatedAt`은 하베스트가 `cached` 결과를 다시 쓴 시각일 수 있다.
+        analyzedAt: technical?.analyzedAt ?? null,
         news,
         optionsMetrics,
         optionsProse,

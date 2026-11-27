@@ -12,6 +12,10 @@ const SUNDAY_UTC = Date.UTC(2024, 0, 7);
 export interface ScheduleLabelFormatters {
     /** `Date#getDay()` 값의 짧은 요일 이름(예: ko `월`, en `Mon`). */
     readonly weekday: (day: Weekday) => string;
+    /** `Date#getDay()` 값의 긴 요일 이름(예: ko `월요일`, en `Monday`). 문장 안에서 쓴다. */
+    readonly weekdayLong: (day: Weekday) => string;
+    /** 0~23시의 정각을 분 없이(예: ko `오전 8시`, en `8 AM`). 문장 안에서 쓴다. */
+    readonly hourOnly: (hour: number) => string;
     /** 0~23시의 정각 시각(예: ko `오전 8:00`, en `8:00 AM`). */
     readonly hour: (hour: number) => string;
 }
@@ -28,6 +32,16 @@ export function createScheduleLabelFormatters(
         weekday: 'short',
         timeZone: 'UTC',
     });
+    const weekdayLong = new Intl.DateTimeFormat(intlLocale, {
+        weekday: 'long',
+        timeZone: 'UTC',
+    });
+    // 12시간제를 명시한다: ja는 기본이 24시간제라 `8時`로만 나와 방침의 "午前8時"와 어긋난다.
+    const hourOnly = new Intl.DateTimeFormat(intlLocale, {
+        hour: 'numeric',
+        hour12: true,
+        timeZone: 'UTC',
+    });
     const hour = new Intl.DateTimeFormat(intlLocale, {
         hour: 'numeric',
         minute: '2-digit',
@@ -35,6 +49,13 @@ export function createScheduleLabelFormatters(
     });
     return {
         weekday: day => weekday.format(new Date(SUNDAY_UTC + day * MS_PER_DAY)),
+        weekdayLong: day =>
+            weekdayLong.format(new Date(SUNDAY_UTC + day * MS_PER_DAY)),
+        // zh의 Intl은 `上午8时`로 쓰지만 방침과 일상 표기는 `上午8点`이다.
+        hourOnly: h =>
+            hourOnly
+                .format(new Date(Date.UTC(2024, 0, 1, h)))
+                .replace(/(\d)时$/, '$1点'),
         hour: h => hour.format(new Date(Date.UTC(2024, 0, 1, h))),
     };
 }

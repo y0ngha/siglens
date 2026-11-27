@@ -59,12 +59,27 @@ const HTTP_SERVER_ERROR_MIN = 500;
 /** zip 파일 서명(`PK\x03\x04`). `corpCode.xml`은 오류일 때 zip이 아니라 상태 XML을 준다. */
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04] as const;
 
+/**
+ * 요청 경로(화면 렌더·에이전트 도구)가 크론 기본값 대신 넘기는 요청 옵션. 생략하면 크론 기본값이다.
+ * - `timeoutMs`: 요청 하나의 상한(기본 `DART_REQUEST_TIMEOUT_MS`).
+ * - `maxRetries`: 재시도 횟수(기본 `DART_MAX_RETRIES`). 요청 경로는 0 — 느린 DART를 두 번 기다리지 않는다.
+ * - `reserve`: 일일 호출 예산에서 다른 호출자(수집 크론)를 위해 남겨 둘 호출 수. 남은 예산이 이보다 적으면 HTTP 없이 `DartQuotaError`다.
+ */
+export interface DartRequestOptions {
+    timeoutMs?: number;
+    maxRetries?: number;
+    reserve?: number;
+}
+
 export type DartEndpoint =
     | 'corpCode.xml'
     | 'list.json'
     | 'majorstock.json'
     | 'elestock.json'
-    | 'alotMatter.json';
+    | 'alotMatter.json'
+    | 'fnlttSinglAcntAll.json'
+    | 'stockTotqySttus.json'
+    | 'company.json';
 
 /** `list.json` 지분공시 상세 유형 — D001 대량보유, D002 임원·주요주주 소유, D005 임원·주요주주 거래계획. */
 export type DartDisclosureDetailType = 'D001' | 'D002' | 'D005';
@@ -231,14 +246,17 @@ function requestUrl(
 async function requestBytes(
     endpoint: DartEndpoint,
     params: Record<string, string>,
-    options: { timeoutMs: number; maxBytes: number }
+    options: { timeoutMs: number; maxBytes: number } & Pick<
+        DartRequestOptions,
+        'maxRetries' | 'reserve'
+    >
 ): Promise<Uint8Array> {
     const key = dartApiKey();
     if (key === null) throw new DartDisabledError();
     const url = requestUrl(endpoint, key, params);
     return withRetry(
         async () => {
-            const blockedReason = await reserveCall();
+            const blockedReason = await reserveCall(options.reserve);
             if (blockedReason !== null) {
                 throw new DartQuotaError(endpoint, blockedReason);
             }
@@ -271,7 +289,7 @@ async function requestBytes(
             }
         },
         {
-            maxRetries: DART_MAX_RETRIES,
+            maxRetries: options.maxRetries ?? DART_MAX_RETRIES,
             baseDelayMs: DART_RETRY_BASE_DELAY_MS,
             isRetryable: isTransient,
         }
@@ -339,13 +357,16 @@ function parseEnvelope(
 
 async function fetchJsonList(
     endpoint: Exclude<DartEndpoint, 'corpCode.xml'>,
-    params: Record<string, string>
+    params: Record<string, string>,
+    options: DartRequestOptions = {}
 ): Promise<DartJsonEnvelope | null> {
     const envelope = parseEnvelope(
         endpoint,
         await requestBytes(endpoint, params, {
-            timeoutMs: DART_REQUEST_TIMEOUT_MS,
+            timeoutMs: options.timeoutMs ?? DART_REQUEST_TIMEOUT_MS,
             maxBytes: DART_MAX_JSON_BYTES,
+            maxRetries: options.maxRetries,
+            reserve: options.reserve,
         })
     );
     return (await acceptDartStatus(endpoint, envelope.status, envelope.message))
@@ -427,6 +448,77 @@ export async function fetchAlotMatter(
         reprt_code: DART_ANNUAL_REPORT_CODE,
     });
     return envelope === null ? null : envelope.list;
+}
+
+/**
+ * 정기보고서 보고서 코드 — 1분기 `11013`, 반기 `11012`, 3분기 `11014`, 사업보고서 `11011`. 12월 결산 법인 기준이며, 다른
+ * 결산월 법인의 `bsns_year`·`reprt_code`는 그 법인의 사업연도 기준이다.
+ */
+export type DartPeriodicReportCode = '11011' | '11012' | '11013' | '11014';
+
+/** 재무제표 구분 — `CFS` 연결, `OFS` 별도(개별). 연결 재무제표를 내지 않는 회사는 `CFS`가 `013`이다. */
+export type DartFsDiv = 'CFS' | 'OFS';
+
+/**
+ * 단일회사 전체 재무제표(`fnlttSinglAcntAll.json`) — 한 회사·한 사업연도·한 보고서의 재무상태표·손익계산서·현금흐름표·자본변동표
+ * 전 계정. 해당 보고서가 없으면(`013`) null — 빈 목록과 구분한다(호출부가 앞선 보고서를 시도한다).
+ */
+export async function fetchFinancialStatementsAll(
+    corpCode: string,
+    fiscalYear: number,
+    reportCode: DartPeriodicReportCode,
+    fsDiv: DartFsDiv,
+    options?: DartRequestOptions
+): Promise<DartRecord[] | null> {
+    const envelope = await fetchJsonList(
+        'fnlttSinglAcntAll.json',
+        {
+            corp_code: corpCode,
+            bsns_year: String(fiscalYear),
+            reprt_code: reportCode,
+            fs_div: fsDiv,
+        },
+        options
+    );
+    return envelope === null ? null : envelope.list;
+}
+
+/**
+ * 정기보고서 주요정보 "주식의 총수 현황"(`stockTotqySttus.json`) — 종류(보통주·우선주·합계)별 발행·자기주식·유통주식수. 보고서가
+ * 없으면(`013`) null. 분기보고서(1·3분기)는 이 표를 싣지 않아 합계 행이 전부 `-`로 온다(실측) — 호출부가 숫자가 있는 앞선
+ * 보고서를 찾는다.
+ */
+export async function fetchStockTotalQuantity(
+    corpCode: string,
+    fiscalYear: number,
+    reportCode: DartPeriodicReportCode,
+    options?: DartRequestOptions
+): Promise<DartRecord[] | null> {
+    const envelope = await fetchJsonList(
+        'stockTotqySttus.json',
+        {
+            corp_code: corpCode,
+            bsns_year: String(fiscalYear),
+            reprt_code: reportCode,
+        },
+        options
+    );
+    return envelope === null ? null : envelope.list;
+}
+
+/**
+ * 기업개황(`company.json`) — 목록(`list`)이 아니라 평평한 객체 하나로 온다. 결산월(`acc_mt`)을 읽는 데 쓴다. 없으면(`013`) null.
+ */
+export async function fetchCompanyInfo(
+    corpCode: string,
+    options?: DartRequestOptions
+): Promise<DartRecord | null> {
+    const envelope = await fetchJsonList(
+        'company.json',
+        { corp_code: corpCode },
+        options
+    );
+    return envelope === null ? null : envelope.raw;
 }
 
 const isZip = (bytes: Uint8Array): boolean =>

@@ -6,6 +6,7 @@
  *   node scripts/i18n/extract.mjs --write     ko 카탈로그까지 생성
  *   node scripts/i18n/extract.mjs --apply     소스도 치환 (안전한 컨텍스트만)
  *   node scripts/i18n/extract.mjs --apply --only src/widgets/layout
+ *   node scripts/i18n/extract.mjs --check     --write가 쓸 내용을 계산만 하고, 디스크와 다르면 exit 1
  *
  * **텍스트 스플라이싱**으로 치환한다(제너레이터 미사용). 파일 전체를 다시 찍으면
  * 포맷이 통째로 바뀌어 리뷰가 불가능해지고, 이 레포는 주석 밀도가 높아 손실 위험도 크다.
@@ -27,8 +28,36 @@ import { classify } from './lib/context.mjs';
 
 const ROOT = resolve(process.argv[1], '../../..');
 const args = process.argv.slice(2);
-const WRITE = args.includes('--write') || args.includes('--apply');
+const CHECK = args.includes('--check');
 const APPLY = args.includes('--apply');
+if (CHECK && (APPLY || args.includes('--write') || args.includes('--only'))) {
+    console.error(
+        '--check는 단독으로만 쓴다(--write, --apply, --only와 함께 쓸 수 없다).'
+    );
+    process.exit(2);
+}
+// --check는 --write와 같은 산출 경로를 타되 디스크에는 쓰지 않는다.
+const WRITE = args.includes('--write') || APPLY || CHECK;
+
+/**
+ * 산출물 쓰기의 **유일한 통로**.
+ *
+ * `--write`가 쓰는 파일은 전부 여기를 지난다. `--check`는 같은 호출에서 쓰는 대신
+ * 디스크 내용과 비교하므로, "쓰기 모드에선 쓰지만 검사 모드에선 비교하지 않는 파일"이
+ * 생길 수 없다. 새 산출물은 반드시 이 함수로 쓰고, `__tests__/extractCheck.test.ts`의
+ * `OUTPUTS`에도 추가해 차이·삭제 검사가 그 파일까지 돌게 한다(테스트는 나열된 산출물만 본다).
+ */
+const driftedFiles = [];
+function emitFile(absPath, content) {
+    if (!CHECK) {
+        writeFileSync(absPath, content);
+        return;
+    }
+    const current = existsSync(absPath) ? readFileSync(absPath, 'utf8') : null;
+    if (current !== content) {
+        driftedFiles.push(absPath.slice(ROOT.length + 1));
+    }
+}
 const ONLY = args[args.indexOf('--only') + 1];
 const onlyPrefix = args.includes('--only') ? ONLY : null;
 
@@ -191,9 +220,10 @@ function keysForFiles(graph, files) {
          * 조회 테이블(`shared.assetName`·`shared.skillName`)을 **2세그먼트 전용**
          * 네임스페이스로 분리해 둔 이유가 이것이다 — `widgets.dashboard` 아래
          * 두면 그 슬라이스 전체가 크롬 페이로드에 딸려간다.
+         *
+         * 동적 키를 쓰는 **번역자만** 그 네임스페이스를 넓힌다. 같은 파일의
+         * 다른 번역자는 리터럴만 쓰면 아래에서 키 단위로 수집된다.
          */
-        // 동적 키를 쓰는 **번역자만** 그 네임스페이스를 넓힌다. 같은 파일의
-        // 다른 번역자는 리터럴만 쓰면 아래에서 키 단위로 수집된다.
         const widenedNames = new Set();
         for (const [name, ns] of translatorNamespace) {
             /**
@@ -584,7 +614,7 @@ for (const relPath of files) {
         next = next.slice(0, edit.start) + edit.text + next.slice(edit.end);
     }
 
-    writeFileSync(`${ROOT}/${relPath}`, next);
+    emitFile(`${ROOT}/${relPath}`, next);
     filesChanged += 1;
 }
 
@@ -596,7 +626,7 @@ const totalKeys = Object.values(catalog).reduce(
 
 if (WRITE) {
     const target = `${ROOT}/messages/ko.json`;
-    mkdirSync(dirname(target), { recursive: true });
+    if (!CHECK) mkdirSync(dirname(target), { recursive: true });
 
     /**
      * 기존 카탈로그에서 **손으로 쓴 키만** 살린다.
@@ -645,9 +675,9 @@ if (WRITE) {
     for (const path of Object.keys(merged).sort()) {
         setPath(nested, path, merged[path]);
     }
-    writeFileSync(target, JSON.stringify(nested, null, 4) + '\n');
+    emitFile(target, JSON.stringify(nested, null, 4) + '\n');
 
-    mkdirSync(`${ROOT}/messages/_meta`, { recursive: true });
+    if (!CHECK) mkdirSync(`${ROOT}/messages/_meta`, { recursive: true });
     /**
      * `--only`는 트리의 일부만 스캔하므로 `skips`가 그 하위집합만 담는다.
      * 그대로 덮어쓰면 전체 목록이 잘린다 — 실측: `--only src/widgets/layout`이
@@ -656,7 +686,7 @@ if (WRITE) {
      * 스캔하므로 영향이 없고, 이 파일만 부분 결과에 취약하다.
      */
     if (onlyPrefix === null) {
-        writeFileSync(
+        emitFile(
             `${ROOT}/messages/_meta/skips.json`,
             JSON.stringify(skips, null, 4) + '\n'
         );
@@ -674,7 +704,8 @@ if (WRITE) {
      * first-load JS +28%, RSC prefetch +45.8%였다.
      */
     const graph = buildModuleGraph(ROOT);
-    const ko = JSON.parse(readFileSync(`${ROOT}/messages/ko.json`, 'utf8'));
+    // 디스크에서 다시 읽지 않는다: --check에서는 ko.json이 쓰이지 않기 때문이다.
+    const ko = nested;
     const exists = path =>
         path
             .split('.')
@@ -840,7 +871,7 @@ if (WRITE) {
         Object.entries(routes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     );
 
-    writeFileSync(
+    emitFile(
         `${ROOT}/messages/_meta/clientKeys.json`,
         JSON.stringify({ chrome, routes: sortedRoutes }, null, 4) + '\n'
     );
@@ -862,3 +893,13 @@ for (const [reason, count] of Object.entries(byReason).sort(
     console.log(`  ${String(count).padStart(5)}  ${reason}`);
 }
 if (APPLY) console.log(`수정된 파일:       ${filesChanged}`);
+
+if (CHECK && driftedFiles.length > 0) {
+    console.error('\ni18n:extract 산출물이 소스와 어긋나 있다:');
+    for (const file of driftedFiles) console.error(`  - ${file}`);
+    console.error(
+        '\n`yarn i18n:extract --write`를 실행하고 변경된 파일을 커밋하라.'
+    );
+    process.exit(1);
+}
+if (CHECK) console.log('i18n:extract 산출물이 최신이다.');

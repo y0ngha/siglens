@@ -1,7 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { OverlayMenuItem } from '../../utils/overlayItems';
-import { ACTION_PRICES_ITEM_KEY } from '../../utils/overlayItems';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
+import { ACTION_PRICES_ITEM_KEY } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import type { ComponentProps } from 'react';
 import { useExclusiveChartMenu } from '../../hooks/useExclusiveChartMenu';
 import { ChartOverlayMenu } from '../../ui/ChartOverlayMenu';

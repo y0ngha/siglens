@@ -11,9 +11,6 @@ vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
         { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
     ],
 }));
-vi.mock('@/widgets/home/CryptoShowcase', () => ({
-    CryptoShowcase: () => null,
-}));
 vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
 }));
@@ -26,8 +23,8 @@ vi.mock('@/widgets/home/StatsBar', () => ({
 vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
     HomeWatchlistCard: () => null,
 }));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
+vi.mock('@/widgets/home/PopularTickers', () => ({
+    PopularTickers: () => null,
 }));
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => null,
@@ -86,9 +83,15 @@ import {
 } from '@/shared/lib/seo';
 import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 import { SITE_NAME_KO } from '@/shared/config/brand';
+import { defined } from '@/shared/test-utils/defined';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { StatsBar } from '@/widgets/home/StatsBar';
+import { HomeMethodBand } from '@/app/[locale]/(home)/_components/HomeMethodBand';
 import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';
+import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
+import koMessages from '../../../../messages/ko.json';
+
+const KO_ROOT_SEO = koMessages.shared.seo.root;
+const KO_HOME_PAGE = koMessages.app.home.page;
 
 async function renderHome() {
     return await Home({ params: Promise.resolve({ locale: 'ko' }) });
@@ -117,6 +120,55 @@ describe('홈 메타데이터·H1·WebPage — 브랜드', () => {
         expect(h1.textContent).not.toContain('새로운 기준');
     });
 
+    it('H1은 새 헤드라인과 브랜드를 담고 옛 문구("분석 서비스")와 "확신"은 없다', async () => {
+        const { container } = render(await renderHome());
+        const h1 = defined(container.querySelector('h1'));
+
+        expect(h1.textContent).toContain(KO_HOME_PAGE.headline);
+        expect(h1.textContent).toContain(brandIntroName('ko'));
+        expect(h1.textContent).not.toContain('분석 서비스');
+        expect(h1.textContent).not.toContain('확신');
+    });
+
+    it('눈썹 문구가 카탈로그 값이고 "확신"이 없다', async () => {
+        const { container } = render(await renderHome());
+
+        const eyebrow = [...container.querySelectorAll('p')].find(
+            p => p.textContent === KO_HOME_PAGE.eyebrow
+        );
+        expect(eyebrow).toBeDefined();
+        expect(eyebrow?.textContent).not.toContain('확신');
+    });
+
+    it('WebApplication·WebPage·Organization 설명은 root.description이고 Organization의 disambiguatingDescription은 root.headline이다', async () => {
+        const nodes = collectJsonLdData(await renderHome());
+        const byType = (type: string) =>
+            nodes.find(d => d['@type'] === type) as
+                | { description: string; disambiguatingDescription?: string }
+                | undefined;
+
+        expect(byType('WebApplication')?.description).toBe(
+            KO_ROOT_SEO.description
+        );
+        expect(byType('WebPage')?.description).toBe(KO_ROOT_SEO.description);
+        expect(byType('Organization')?.description).toBe(
+            KO_ROOT_SEO.description
+        );
+        expect(byType('Organization')?.disambiguatingDescription).toBe(
+            KO_ROOT_SEO.headline
+        );
+    });
+
+    it('메타 description·og·twitter 설명이 root.description이다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+
+        expect(metadata.description).toBe(KO_ROOT_SEO.description);
+        expect(metadata.openGraph?.description).toBe(KO_ROOT_SEO.description);
+        expect(metadata.twitter?.description).toBe(KO_ROOT_SEO.description);
+    });
+
     it('WebPage JSON-LD name이 title과 같다', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko' }),
@@ -136,7 +188,7 @@ describe('홈 FAQ', () => {
         expectFaqSingleSource(await renderHome());
     });
 
-    it('JSON-LD 문항 수 == 화면 <dt> 수', async () => {
+    it('JSON-LD 문항 수 == 화면 <summary> 수(접힌 FAQ)', async () => {
         const tree = await renderHome();
 
         const faq = collectJsonLdData(tree).find(
@@ -145,16 +197,17 @@ describe('홈 FAQ', () => {
         expect(faq).toBeDefined();
 
         const { container } = render(tree);
-        expect(container.querySelectorAll('dt')).toHaveLength(
+        expect(container.querySelectorAll('summary')).toHaveLength(
             faq!.mainEntity.length
         );
+        expect(container.querySelector('dt')).toBeNull();
     });
 
     it('답변 속 사이트 경로(/market 등)는 화면에서 링크가 되고 구조화데이터에는 원문이 간다', async () => {
         const tree = await renderHome();
         const { container } = render(tree);
 
-        const hrefs = [...container.querySelectorAll('dd a')].map(a =>
+        const hrefs = [...container.querySelectorAll('details a')].map(a =>
             a.getAttribute('href')
         );
         expect(hrefs).toContain('/market');
@@ -174,7 +227,7 @@ describe('홈 FAQ', () => {
     it('PER/PBR·24/7 같은 글자는 링크가 되지 않는다', async () => {
         const { container } = render(await renderHome());
 
-        const linkTexts = [...container.querySelectorAll('dd a')].map(
+        const linkTexts = [...container.querySelectorAll('details a')].map(
             a => a.textContent
         );
         expect(linkTexts.every(text => /^\/[A-Za-z]/.test(text ?? ''))).toBe(
@@ -183,13 +236,76 @@ describe('홈 FAQ', () => {
         expect(linkTexts).not.toContain('/7');
     });
 
-    it('StatsBar는 히어로 카피와 같은 skillCounts를 받는다', async () => {
+    it('HomeMethodBand(StatsBar를 담는다)는 히어로 카피와 같은 skillCounts를 받는다', async () => {
         const tree = await renderHome();
 
-        const statsBar = findElementByType(tree, StatsBar);
-        expect(statsBar?.props).toMatchObject({
+        const band = findElementByType(tree, HomeMethodBand);
+        expect(band?.props).toMatchObject({
             counts: { indicators: 13, candlesticks: 30, patterns: 5 },
+            guestDailySymbols: resolveMeterDailySymbols(),
         });
+    });
+
+    it('FAQ는 접혀 있고 첫 문항(q0)만 열려 있으며 닫힌 답변도 문서에 있다', async () => {
+        const tree = await renderHome();
+        const { container } = render(tree);
+
+        const faq = collectJsonLdData(tree).find(
+            d => d['@type'] === 'FAQPage'
+        ) as { mainEntity: { acceptedAnswer: { text: string } }[] };
+        const details = [...container.querySelectorAll('details')];
+        expect(details.map(d => d.open)).toEqual(
+            faq.mainEntity.map((_, index) => index === 0)
+        );
+        expect(details.map(d => d.querySelector('p')?.textContent)).toEqual(
+            faq.mainEntity.map(e => e.acceptedAnswer.text)
+        );
+    });
+
+    it('q10 답변이 비회원 하루 한도를 core 정책 값으로 말한다', async () => {
+        const faqPage = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'FAQPage'
+        ) as
+            | {
+                  mainEntity: {
+                      name: string;
+                      acceptedAnswer: { text: string };
+                  }[];
+              }
+            | undefined;
+        const q10 = faqPage?.mainEntity.find(
+            e => e.name === '서비스 이용 요금이 있나요?'
+        );
+
+        expect(q10?.acceptedAnswer.text).toContain(
+            `비회원도 하루 ${resolveMeterDailySymbols()}종목까지`
+        );
+    });
+
+    it('buildHomeFaq는 모든 답변에 정책 값 v3를 넘긴다', () => {
+        const answers = buildHomeFaq(
+            (key, values) => `${key}|${String(values?.v3)}`,
+            'ko'
+        ).map(item => item.answer);
+
+        expect(answers).toHaveLength(6);
+        expect(
+            answers.every(answer =>
+                answer.endsWith(`|${resolveMeterDailySymbols()}`)
+            )
+        ).toBe(true);
+    });
+
+    it('q0 답변의 첫 문장이 가격대 포지셔닝을 말하고 "무료"로 시작하지 않는다', async () => {
+        const faqPage = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'FAQPage'
+        ) as { mainEntity: { acceptedAnswer: { text: string } }[] } | undefined;
+        const firstSentence =
+            faqPage?.mainEntity[0]?.acceptedAnswer.text.split('. ')[0] ?? '';
+
+        expect(firstSentence).toContain('지지선과 저항선');
+        expect(firstSentence).toContain('무효화 기준');
+        expect(firstSentence).not.toContain('무료');
     });
 
     /**
