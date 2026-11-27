@@ -14,6 +14,15 @@
 //     steps: [{ promptTokens, cachedTokens }] // provider 호출 단계별 usage 프레임
 //   }
 
+import {
+    buildLevelLadder,
+    readPutCallRatio,
+    tallyEarningsReactions,
+} from '@y0ngha/siglens-core';
+
+/** 평가가 질문을 보내는 시간대(run.mjs가 요청 헤더에 같은 값을 보낸다). 기간 시작(이번 주·1개월 전)은 이 시간대의 날짜다. */
+export const EVAL_TIME_ZONE = 'Asia/Seoul';
+
 /** 도구 호출 이름의 집합. */
 const calledNames = transcript =>
     new Set(transcript.toolCalls.map(call => call.name));
@@ -682,6 +691,643 @@ function earningsReview(_case, transcript) {
     };
 }
 
+// ------------------------------------------------- WP-08: 도구가 준 해석 사실을 답변이 따르는지
+
+/** 인용한 값과 도구 값의 허용 오차(소수 둘째 자리 반올림 + 부동소수 여유). */
+const PRICE_TOLERANCE = 0.01 + 1e-9;
+
+/** 숫자 토큰("1,234.5", "+6.05")을 수로. 쉼표·부호·공백을 걷는다. */
+const toNumber = text => Number(String(text).replace(/[,+\s]/g, ''));
+
+/** 도구 결과(JSON 문자열) 행 중 `toolName`이고 파싱되는 것들. */
+function parsedRows(transcript, toolName) {
+    return transcript.toolRows
+        .filter(r => r.toolName === toolName)
+        .flatMap(r => {
+            try {
+                const parsed = JSON.parse(r.content);
+                return typeof parsed === 'object' && parsed !== null
+                    ? [parsed]
+                    : [];
+            } catch {
+                return [];
+            }
+        });
+}
+
+const RISE_WORD = '(?:상승|올랐|올라|오른|올)';
+const FALL_WORD = '(?:하락|내렸|내려|내린|떨어졌|떨어진|떨어)';
+const COUNT_UNIT = '(?:번|회|차례|분기)';
+
+/**
+ * 답변이 말한 실적 반응 횟수: "N번 중 M번 상승/하락", "M번 올랐/내렸"을 모은다.
+ * `of`는 "N번 중"의 N(없으면 null), `count`는 M, `dir`은 'up'/'down'.
+ */
+export function extractReactionCounts(answer) {
+    const directions = `(${RISE_WORD}|${FALL_WORD})`;
+    const ofPattern = new RegExp(
+        String.raw`(\d+)\s*${COUNT_UNIT}\s*중\s*(\d+)\s*${COUNT_UNIT}\s*(?:이|가|은|는)?\s*${directions}`,
+        'g'
+    );
+    const plain = new RegExp(
+        String.raw`(\d+)\s*${COUNT_UNIT}\s*(?:이나|나)?\s*${directions}`,
+        'g'
+    );
+    const dirOf = word =>
+        new RegExp(`^${RISE_WORD}`).test(word) ? 'up' : 'down';
+    const withOf = [...answer.matchAll(ofPattern)].map(m => ({
+        of: Number(m[1]),
+        count: Number(m[2]),
+        dir: dirOf(m[3]),
+    }));
+    // "8번 중 5번 상승"의 "5번 상승"을 두 번 세지 않도록 앞 패턴이 잡은 구간을 지우고 센다.
+    const withoutOf = [...answer.replace(ofPattern, ' ').matchAll(plain)].map(
+        m => ({ of: null, count: Number(m[1]), dir: dirOf(m[2]) })
+    );
+    return [...withOf, ...withoutOf];
+}
+
+/** "가장 크게 오른/최대 상승 ... N%"의 N과 방향. */
+export function extractReactionExtremes(answer) {
+    const rise = new RegExp(
+        String.raw`(?:가장\s*크게\s*${RISE_WORD}|가장\s*큰\s*상승(?:폭)?|최대\s*상승(?:폭)?|최고\s*상승)[^\d\n+\-]{0,14}([+\-]?\d+(?:\.\d+)?)\s*%`,
+        'g'
+    );
+    const fall = new RegExp(
+        String.raw`(?:가장\s*크게\s*${FALL_WORD}|가장\s*큰\s*(?:하락|낙)(?:폭)?|최대\s*(?:하락|낙)(?:폭)?|최대\s*낙폭)[^\d\n+\-]{0,14}([+\-]?\d+(?:\.\d+)?)\s*%`,
+        'g'
+    );
+    return [
+        ...[...answer.matchAll(rise)].map(m => ({
+            dir: 'up',
+            value: Math.abs(toNumber(m[1])),
+        })),
+        ...[...answer.matchAll(fall)].map(m => ({
+            dir: 'down',
+            value: Math.abs(toNumber(m[1])),
+        })),
+    ];
+}
+
+/**
+ * 실적 반응 횟수·최대 변동이 도구의 `earningsReactionTally`와 같아야 한다. 센 횟수(N번 중 M번)와 "가장 크게 오른/내린"
+ * 값이 틀리면 하드 실패다(모델이 목록을 직접 세다 틀린 것이 이 필드를 만든 이유). 값이 없으면 평가 불가.
+ */
+function earningsTally(_case, transcript) {
+    // NEW 결과는 도구가 낸 `earningsReactionTally`를 그대로 쓰고, OLD 결과(필드 없음)는 기록된 `earningsReactions`에서 core 함수로
+    // 같은 기준값을 계산한다 — 두 변형이 같은 정답으로 판정된다.
+    const tally = parsedRows(transcript, 'get_fundamentals')
+        .map(r =>
+            typeof r.earningsReactionTally === 'object' &&
+            r.earningsReactionTally !== null
+                ? r.earningsReactionTally
+                : Array.isArray(r.earningsReactions)
+                  ? tallyEarningsReactions(r.earningsReactions)
+                  : undefined
+        )
+        .find(t => t !== undefined);
+    if (tally === undefined)
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'tally: earningsReactionTally is missing from the stored get_fundamentals result',
+            ],
+        };
+    const fails = [
+        ...extractReactionCounts(transcript.answer).flatMap(c => {
+            const expected = c.dir === 'up' ? tally.up : tally.down;
+            return [
+                ...(c.count === expected
+                    ? []
+                    : [
+                          `tally: the answer says ${c.count} ${c.dir === 'up' ? 'rises' : 'falls'} but the tally has ${expected}`,
+                      ]),
+                ...(c.of === null || c.of === tally.measured
+                    ? []
+                    : [
+                          `tally: the answer says "${c.of} reports" but the tally measured ${tally.measured}`,
+                      ]),
+            ];
+        }),
+        ...extractReactionExtremes(transcript.answer).flatMap(e => {
+            const extreme =
+                e.dir === 'up' ? tally.largestRise : tally.largestFall;
+            const label = e.dir === 'up' ? 'largest rise' : 'largest fall';
+            if (extreme === null || extreme === undefined)
+                return [
+                    `tally: the answer quotes a ${label} but the tally has none`,
+                ];
+            return Math.abs(Math.abs(extreme.movePct) - e.value) <=
+                PRICE_TOLERANCE
+                ? []
+                : [
+                      `tally: the answer's ${label} ${e.value}% differs from the tally's ${extreme.movePct}%`,
+                  ];
+        }),
+    ];
+    return { fails, reviews: [] };
+}
+
+/** 답변이 "풋이 많다"고 말하는 문구와 "콜이 많다"고 말하는 문구. */
+export const PUT_DOMINATES_RE =
+    /풋(?:\s*옵션)?(?:이|은|가)?\s*(?:콜보다\s*)?(?:더\s*)?(?:조금\s*|훨씬\s*)?(?:많|우위)|하락\s*(?:쪽\s*)?베팅(?:이|은)?\s*(?:조금\s*|훨씬\s*|더\s*)*많|풋\s*우위|puts?\s+(?:outnumber|dominate)/i;
+export const CALL_DOMINATES_RE =
+    /콜(?:\s*옵션)?(?:이|은|가)?\s*(?:풋보다\s*)?(?:더\s*)?(?:조금\s*|훨씬\s*)?(?:많|우위)|상승\s*(?:쪽\s*)?베팅(?:이|은)?\s*(?:조금\s*|훨씬\s*|더\s*)*많|콜\s*우위|calls?\s+(?:outnumber|dominate)/i;
+
+/**
+ * 풋/콜 비율을 말하는 문장이 비율이 가리키는 쪽과 반대로 말하면 하드 실패. 옵션(OI 기준)과 13F(명목 기준) 두 출처를 각자
+ * 자기 비율 숫자가 들어 있는 문장에서만 판정한다(두 출처의 쪽이 달라도 서로 섞지 않는다). `even`은 판정하지 않는다.
+ */
+function putCallSide(_case, transcript) {
+    const sources = [
+        // 쪽은 도구가 낸 `reading`, 없으면(OLD 결과) 찍힌 비율에서 core 함수로 같은 기준값을 계산한다.
+        ...parsedRows(transcript, 'get_options_summary').map(r => ({
+            label: 'options',
+            ratio: r.metrics?.putCallRatio,
+            side:
+                r.metrics?.putCallReading?.side ??
+                readPutCallRatio(
+                    r.metrics?.putCallRatio ?? null,
+                    'open_interest'
+                )?.side,
+        })),
+        ...parsedRows(transcript, 'get_investor_flows').map(r => ({
+            label: '13F',
+            ratio: r.institutional?.putCall?.putCallValueRatio,
+            side:
+                r.institutional?.putCall?.reading?.side ??
+                readPutCallRatio(
+                    r.institutional?.putCall?.putCallValueRatio ?? null,
+                    'notional'
+                )?.side,
+        })),
+    ].filter(
+        src => typeof src.ratio === 'number' && typeof src.side === 'string'
+    );
+    if (sources.length === 0)
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'putcall: no putCallReading in the stored options or flows result',
+            ],
+        };
+    const sentences = splitSentences(transcript.answer);
+    const results = sources.map(src => {
+        const ratioToken = new RegExp(
+            String.raw`(?<![\d.])${String(src.ratio).replace('.', String.raw`\.`)}(?![\d]|\.\d)`
+        );
+        const mentioning = sentences.filter(s => ratioToken.test(s));
+        const wrong =
+            src.side === 'more_calls'
+                ? mentioning.filter(s => PUT_DOMINATES_RE.test(s))
+                : src.side === 'more_puts'
+                  ? mentioning.filter(s => CALL_DOMINATES_RE.test(s))
+                  : [];
+        return {
+            fails: wrong.map(
+                s =>
+                    `putcall: ${src.label} side is ${src.side} (ratio ${src.ratio}) but the answer says the opposite: "${s}"`
+            ),
+            reviews:
+                mentioning.length === 0
+                    ? [
+                          `putcall: the answer never quotes the ${src.label} ratio ${src.ratio}, so its side was not checked`,
+                      ]
+                    : [],
+        };
+    });
+    return {
+        fails: results.flatMap(r => r.fails),
+        reviews: results.flatMap(r => r.reviews),
+    };
+}
+
+const NEAREST_ROLE_RE = /가장\s*가까운\s*(지지|저항)(?:선|대|가격|레벨)?/g;
+/** 역할 말 뒤에서 가격을 찾는 범위(문자 수). */
+const NEAREST_PRICE_REACH = 40;
+const NUMBER_RE = /\d[\d,]*(?:\.\d+)?/g;
+/** 수 뒤에 붙어 기간·개수를 나타내는 단위: "20일 평균선(98.5)"의 20은 가격이 아니다. */
+const COUNT_UNIT_AFTER_RE = /^\s*(?:일|주|개월)/;
+
+/** "가장 가까운 지지/저항" 뒤 같은 문장 안에서 기간 단위(일·주·개월)가 붙지 않은 첫 수를 가격으로 읽는다. */
+export function extractNearestClaims(answer) {
+    return [...answer.matchAll(NEAREST_ROLE_RE)].flatMap(m => {
+        const tail = answer
+            .slice(
+                m.index + m[0].length,
+                m.index + m[0].length + NEAREST_PRICE_REACH
+            )
+            .split('\n')[0];
+        const price = [...tail.matchAll(NUMBER_RE)].find(
+            n => !COUNT_UNIT_AFTER_RE.test(tail.slice(n.index + n[0].length))
+        );
+        return price === undefined
+            ? []
+            : [
+                  {
+                      role: m[1] === '저항' ? 'resistance' : 'support',
+                      value: toNumber(price[0]),
+                  },
+              ];
+    });
+}
+
+/** 기록된 분석 결과의 레벨(지지·저항·POC·목표·손절)을 core 후보 모양으로. 차트 기준(52주·평균)은 이 결과에 없다. */
+function analysisCandidates(analysis) {
+    const price = v => (typeof v === 'number' ? [v] : []);
+    const levelKind = (levels, kind) =>
+        (levels ?? []).flatMap(l =>
+            price(l?.price).map(p => ({ price: p, kind }))
+        );
+    return [
+        ...levelKind(analysis?.keyLevels?.support, 'analysis_support'),
+        ...levelKind(analysis?.keyLevels?.resistance, 'analysis_resistance'),
+        ...price(analysis?.keyLevels?.poc?.price).map(p => ({
+            price: p,
+            kind: 'analysis_poc',
+        })),
+        ...[
+            analysis?.priceTargets?.bullish,
+            analysis?.priceTargets?.bearish,
+        ].flatMap(sc => levelKind(sc?.targets, 'analysis_target')),
+        ...price(analysis?.actionRecommendation?.stopLoss).map(p => ({
+            price: p,
+            kind: 'analysis_stop',
+        })),
+    ];
+}
+
+const CLOSER_RESISTANCE_RE =
+    /저항(?:선|대)?(?:이|은|가)?\s*(?:더\s*)?가(?:깝|까워|까운)/;
+const CLOSER_SUPPORT_RE =
+    /지지(?:선|대)?(?:이|은|가)?\s*(?:더\s*)?가(?:깝|까워|까운)/;
+
+/**
+ * `get_cached_analysis.sinceAnalysis.levelLadder` 기준: "가장 가까운 지지/저항" 뒤의 숫자는 아래(below)/위(above)의 첫 칸
+ * 가격(±0.01)이어야 하고, 한 답변에서 같은 역할에 서로 다른 숫자가 둘 있으면 안 되며, "저항이 더 가깝다" 같은 말은
+ * `closer`와 맞아야 한다. 사다리가 없으면 평가 불가.
+ */
+function levelsNearest(_case, transcript) {
+    // NEW 결과는 도구가 낸 `levelLadder`, OLD 결과(사다리 없음)는 기록된 분석 레벨과 `priceNow`로 core `buildLevelLadder`를 불러
+    // 같은 기준값을 만든다(차트 기준 없이 분석 레벨만 — 아래 review 줄이 그 사실을 알린다).
+    const recorded = parsedRows(transcript, 'get_cached_analysis');
+    const toolLadder = recorded
+        .map(r => r.sinceAnalysis?.levelLadder)
+        .find(l => typeof l === 'object' && l !== null);
+    const rebuilt =
+        toolLadder !== undefined
+            ? undefined
+            : recorded
+                  .map(r =>
+                      typeof r.sinceAnalysis?.priceNow === 'number'
+                          ? buildLevelLadder(
+                                r.sinceAnalysis.priceNow,
+                                analysisCandidates(r.analysis)
+                            )
+                          : null
+                  )
+                  .find(l => l !== null && l !== undefined);
+    const ladder = toolLadder ?? rebuilt;
+    if (ladder === undefined)
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'levels: no levelLadder, and no analysis levels with priceNow to rebuild one from, in the stored get_cached_analysis result',
+            ],
+        };
+    const rebuiltReview =
+        rebuilt === undefined
+            ? []
+            : [
+                  'levels: reference ladder rebuilt from the recorded analysis levels (no chart references: 52-week, 20-day, averages)',
+              ];
+    const claims = extractNearestClaims(transcript.answer);
+    const expected = {
+        resistance: ladder.above?.[0]?.price,
+        support: ladder.below?.[0]?.price,
+    };
+    const roleLabel = {
+        resistance: 'nearest resistance',
+        support: 'nearest support',
+    };
+    const wrongNumbers = claims
+        .filter(
+            c =>
+                typeof expected[c.role] !== 'number' ||
+                Math.abs(c.value - expected[c.role]) > PRICE_TOLERANCE
+        )
+        .map(
+            c =>
+                `levels: the answer's ${roleLabel[c.role]} is ${c.value} but the ladder's is ${expected[c.role] ?? 'none'}`
+        );
+    const conflicting = ['resistance', 'support'].flatMap(role => {
+        const values = [
+            ...new Set(claims.filter(c => c.role === role).map(c => c.value)),
+        ];
+        return values.length > 1
+            ? [
+                  `levels: two different numbers in the ${roleLabel[role]} role: ${values.join(', ')}`,
+              ]
+            : [];
+    });
+    const saysResistanceCloser = CLOSER_RESISTANCE_RE.test(transcript.answer);
+    const saysSupportCloser = CLOSER_SUPPORT_RE.test(transcript.answer);
+    const closerFails = [
+        ...(saysResistanceCloser && ladder.closer === 'below'
+            ? [
+                  'levels: the answer says the resistance is closer but the ladder says below (support) is',
+              ]
+            : []),
+        ...(saysSupportCloser && ladder.closer === 'above'
+            ? [
+                  'levels: the answer says the support is closer but the ladder says above (resistance) is',
+              ]
+            : []),
+    ];
+    const closerReviews =
+        (saysResistanceCloser || saysSupportCloser) &&
+        (ladder.closer === 'equal' || ladder.closer === null)
+            ? [
+                  `levels: the answer says which level is closer but the ladder's closer is ${ladder.closer}`,
+              ]
+            : [];
+    return {
+        fails: [...wrongNumbers, ...conflicting, ...closerFails],
+        reviews: [...rebuiltReview, ...closerReviews],
+    };
+}
+
+/** 기간 시작 질문 모양: month = "최근 1개월"(한 달 전 같은 날), week = "이번 주"(그 주 월요일). */
+const PERIOD_START_TOLERANCE_DAYS = 3;
+const MS_PER_DAY = 86_400_000;
+
+/** `turnAt` 기준 기간 시작일(UTC 날짜 `YYYY-MM-DD`). 알 수 없으면 null. */
+export function periodStartFor(kind, turnAt) {
+    const turn = Date.parse(turnAt ?? '');
+    if (Number.isNaN(turn)) return null;
+    // 질문이 간 시간대(`EVAL_TIME_ZONE`)의 달력 날짜로 센다: UTC로 세면 한국 월요일 새벽이 전 주 일요일로 읽힌다.
+    const parts = Object.fromEntries(
+        new Intl.DateTimeFormat('en-CA', {
+            timeZone: EVAL_TIME_ZONE,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        })
+            .formatToParts(new Date(turn))
+            .map(p => [p.type, p.value])
+    );
+    const local = Date.UTC(
+        Number(parts.year),
+        Number(parts.month) - 1,
+        Number(parts.day)
+    );
+    if (kind === 'week') {
+        const dow = (new Date(local).getUTCDay() + 6) % 7; // Monday = 0
+        return new Date(local - dow * MS_PER_DAY).toISOString().slice(0, 10);
+    }
+    if (kind === 'month') {
+        const d = new Date(local);
+        return new Date(
+            Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, d.getUTCDate())
+        )
+            .toISOString()
+            .slice(0, 10);
+    }
+    return null;
+}
+
+/** "M월 D일"·`YYYY-MM-DD`로 쓴 날짜를 `YYYY-MM-DD`로(연도는 `year`). */
+export function datesIn(text, year) {
+    const iso = [...text.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)].map(
+        m => m[0]
+    );
+    const korean = [...text.matchAll(/(\d{1,2})월\s*(\d{1,2})일/g)].map(
+        m =>
+            `${year}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`
+    );
+    return [...new Set([...iso, ...korean])];
+}
+
+const CAUSE_RE = /때문|영향|여파|원인|탓|이유|로 인해|으로 인해|덕분|힘입|따라/;
+
+/** 답변이 인용한 기사: 제목 전체(또는 앞 15자)가 답변에 있는 도구 항목. */
+function quotedItems(answer, items) {
+    return items.filter(item => {
+        const title = String(item.title ?? '');
+        return title.length >= 8 && answer.includes(title.slice(0, 15));
+    });
+}
+
+/**
+ * 뉴스·주가 흐름 케이스. 하드 실패: (1) 저장된 `get_news` 결과가 절단 봉투(`truncated:true`)이거나 JSON이 깨짐, (2) `get_news`를
+ * `since` 없이 불렀거나 `since`가 기간 시작(`case.periodStart`: month/week)에서 ±3일 밖, (3) 답변이 어떤 날짜와 함께 인용한
+ * 기사의 `session`이 그 날짜보다 늦음, (4) `session: null`(마지막 마감 뒤) 기사를 원인 표현과 함께 인용. 리뷰 줄: 답변이 말한
+ * 날짜와 `priceMoves.moveDays`를 나란히.
+ */
+function newsAligned(testCase, transcript) {
+    const parsed = transcript.toolRows
+        .filter(r => r.toolName === 'get_news')
+        .map(r => {
+            try {
+                return JSON.parse(r.content);
+            } catch {
+                return null;
+            }
+        });
+    const cutFails = parsed.flatMap((p, i) =>
+        p === null || p.truncated === true
+            ? [
+                  `news: get_news result #${i + 1} was stored cut (truncated or not JSON)`,
+              ]
+            : []
+    );
+    const start = periodStartFor(testCase.periodStart, transcript.turnAt);
+    const bySymbol = transcript.toolCalls.filter(
+        c => c.name === 'get_news' && typeof c.args?.symbol === 'string'
+    );
+    const sinceFails =
+        start === null
+            ? []
+            : bySymbol.flatMap(c => {
+                  const since = c.args?.since;
+                  if (typeof since !== 'string')
+                      return [
+                          'news: get_news was called without since for a period question',
+                      ];
+                  const gap =
+                      Math.abs(Date.parse(since) - Date.parse(start)) /
+                      MS_PER_DAY;
+                  return gap <= PERIOD_START_TOLERANCE_DAYS
+                      ? []
+                      : [
+                            `news: since ${since} is ${Math.round(gap)} days from the period start ${start}`,
+                        ];
+              });
+    const sinceNotEvaluable =
+        bySymbol.length > 0 && start === null
+            ? ['news: no turn time or periodStart, so since was not checked']
+            : [];
+    const symbolResults = parsed.filter(
+        p => p !== null && p.priceMoves !== undefined
+    );
+    if (symbolResults.length === 0)
+        return {
+            fails: [...cutFails, ...sinceFails],
+            reviews: [],
+            notEvaluable: [
+                ...sinceNotEvaluable,
+                'news: no get_news result with priceMoves, so session alignment was not checked',
+            ],
+        };
+    const items = symbolResults.flatMap(p =>
+        Array.isArray(p.items) ? p.items : []
+    );
+    const year =
+        (transcript.turnAt ?? '').slice(0, 4) ||
+        String(new Date().getUTCFullYear());
+    const sentences = splitSentences(transcript.answer);
+    const alignFails = quotedItems(transcript.answer, items).flatMap(item => {
+        const quoting = sentences.filter(s =>
+            s.includes(String(item.title).slice(0, 15))
+        );
+        const asCause =
+            item.session === null && quoting.some(s => CAUSE_RE.test(s))
+                ? [
+                      `news: an item with session null (after the last close) is presented as a cause: "${item.title}"`,
+                  ]
+                : [];
+        const tooEarly =
+            typeof item.session === 'string'
+                ? quoting.flatMap(s =>
+                      datesIn(s, year)
+                          .filter(d => item.session > d)
+                          .map(
+                              d =>
+                                  `news: the headline "${item.title}" belongs to session ${item.session} but is tied to ${d}`
+                          )
+                  )
+                : [];
+        return [...asCause, ...tooEarly];
+    });
+    const moveDates = symbolResults.flatMap(p =>
+        (p.priceMoves?.moveDays ?? []).map(d => d.date)
+    );
+    const named = datesIn(transcript.answer, year);
+    return {
+        fails: [...cutFails, ...sinceFails, ...alignFails],
+        reviews: [
+            `news: answer dates=[${named.join(', ')}], priceMoves.moveDays=[${moveDates.join(', ')}]`,
+        ],
+        notEvaluable: sinceNotEvaluable,
+    };
+}
+
+/** 한 숫자의 천 단위 묶음 표기("1,234,567")와 묶지 않은 표기. */
+const digitForms = n => [n.toLocaleString('en-US'), String(n)];
+
+/** `YYYY-MM-DD` 분기말의 한국어·영어 표기들. */
+export function periodForms(period) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(period ?? '');
+    if (m === null) return [];
+    const [year, month, day] = [m[1], Number(m[2]), Number(m[3])];
+    const quarter = Math.ceil(month / 3);
+    return [
+        period,
+        `${year}년 ${month}월 ${day}일`,
+        `${month}월 ${day}일`,
+        `${year}년 ${quarter}분기`,
+        `${year}Q${quarter}`,
+        `Q${quarter} ${year}`,
+        `${quarter}분기`,
+    ];
+}
+
+/**
+ * 이름 지정 기관 보유 질문: 하드 실패 — 첫 `get_investor_flows` 호출에 `holder`가 없음, 조회가 `found`인데 답변에 보유 주수
+ * (묶음 표기)나 기준 분기가 없음. 조회 결과가 `found`가 아니면 주수 검사는 평가 불가(상태를 말로 했는지는 리뷰 줄).
+ */
+function holderLookupUsed(_case, transcript) {
+    const first = transcript.toolCalls.find(
+        c => c.name === 'get_investor_flows'
+    );
+    if (first === undefined) return { fails: [], reviews: [] }; // mustCall이 이미 잡는다
+    const fails =
+        typeof first.args?.holder === 'string' &&
+        first.args.holder.trim() !== ''
+            ? []
+            : [
+                  'holder: the first get_investor_flows call has no holder argument',
+              ];
+    const lookup = parsedRows(transcript, 'get_investor_flows')
+        .map(r => r.holderLookup)
+        .find(l => typeof l === 'object' && l !== null);
+    if (lookup === undefined)
+        return {
+            fails,
+            reviews: [],
+            notEvaluable: ['holder: no holderLookup in the stored result'],
+        };
+    if (lookup.status !== 'found')
+        return {
+            fails,
+            reviews: [
+                `holder: lookup status ${lookup.status}; check the answer says it in words`,
+            ],
+            notEvaluable: [
+                `holder: share count not evaluable (status ${lookup.status})`,
+            ],
+        };
+    const match = lookup.matches?.[0];
+    const shareForms = digitForms(match?.shares ?? Number.NaN);
+    return {
+        fails: [
+            ...fails,
+            ...(shareForms.some(f => transcript.answer.includes(f))
+                ? []
+                : [
+                      `holder: the answer lacks the matched share count ${shareForms[0]}`,
+                  ]),
+            ...(periodForms(lookup.period).some(f =>
+                transcript.answer.includes(f)
+            )
+                ? []
+                : [`holder: the answer lacks the period ${lookup.period}`]),
+        ],
+        reviews: [],
+    };
+}
+
+/**
+ * 부작용 지표(판정이 아니라 수치): 답변 길이, 수치 문장 수(평이한 수준의 숫자 개수 천장 ~15 비교용), 단계 수, 도구 호출 수,
+ * web_search 수, core `findUngroundedNumbers`로 센 근거 없는 숫자 수. `findUngrounded`는 실행기가 core 함수를 넘긴다.
+ *
+ * @param {any} transcript
+ * @param {((answer: string, toolResults: string[]) => string[]) | null} [findUngrounded]
+ */
+export function sideEffects(transcript, findUngrounded = null) {
+    const figureCount = splitSentences(transcript.answer).filter(
+        isFigureSentence
+    ).length;
+    return {
+        answerChars: transcript.answer.length,
+        figureSentences: figureCount,
+        steps: transcript.steps.length,
+        toolCalls: transcript.toolCalls.length,
+        webSearches: transcript.toolCalls.filter(c => c.name === 'web_search')
+            .length,
+        ungroundedNumbers:
+            findUngrounded === null
+                ? null
+                : findUngrounded(
+                      transcript.answer,
+                      transcript.toolRows.map(r => r.content)
+                  ).length,
+    };
+}
+
 /** 턴 n ≥ 2: 첫 단계 cachedTokens가 직전 턴 마지막 단계의 전체 입력 − 192 이상이어야 한다(접두사 캐시). */
 export const CACHE_TOLERANCE_TOKENS = 192;
 function cachedPrefix(_case, transcript, previous) {
@@ -717,6 +1363,11 @@ export const CHECKS = {
     earningsReview,
     noWrongZoneConversion,
     cachedPrefix,
+    earningsTally,
+    putCallSide,
+    levelsNearest,
+    newsAligned,
+    holderLookupUsed,
 };
 
 /** mustCall·mustNotCall·턴 오류와 케이스가 이름으로 단 검사를 모두 돌려 합친다. */
@@ -906,7 +1557,37 @@ export function compareRuns(oldRun, newRun) {
             new Set(result.turns.flatMap(t => t.toolCalls.map(c => c.name)));
         const oldTools = before === undefined ? new Set() : names(before);
         const newTools = names(entry);
+        const totals = result =>
+            result?.sideEffects === undefined
+                ? null
+                : result.sideEffects.reduce(
+                      (acc, e) => ({
+                          answerChars: acc.answerChars + e.answerChars,
+                          figureSentences:
+                              acc.figureSentences + e.figureSentences,
+                          steps: acc.steps + e.steps,
+                          toolCalls: acc.toolCalls + e.toolCalls,
+                          webSearches: acc.webSearches + e.webSearches,
+                          ungroundedNumbers:
+                              acc.ungroundedNumbers === null ||
+                              e.ungroundedNumbers === null
+                                  ? null
+                                  : acc.ungroundedNumbers + e.ungroundedNumbers,
+                      }),
+                      {
+                          answerChars: 0,
+                          figureSentences: 0,
+                          steps: 0,
+                          toolCalls: 0,
+                          webSearches: 0,
+                          ungroundedNumbers: 0,
+                      }
+                  );
         return {
+            oldNotEvaluable: before?.notEvaluable?.length ?? null,
+            newNotEvaluable: entry.notEvaluable?.length ?? null,
+            oldSideEffects: totals(before),
+            newSideEffects: totals(entry),
             id: entry.id,
             oldFails: before?.fails.length ?? null,
             newFails: entry.fails.length,

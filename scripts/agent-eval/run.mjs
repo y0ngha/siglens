@@ -37,12 +37,14 @@ import { tsImport } from 'tsx/esm/api';
 import postgres from 'postgres';
 import { CASES } from './cases.mjs';
 import {
+    EVAL_TIME_ZONE,
     buildTranscript,
     compareRuns,
     isLocalUrl,
     parseSseFrames,
     runChecks,
     selectCases,
+    sideEffects,
 } from './checks.mjs';
 import { isStrictLocalAddress } from './localGuard.mjs';
 
@@ -51,7 +53,6 @@ const E2E_PASSWORD = 'E2eAuthUser1!';
 // 모델이 본 메모는 DB에 없다(저장하는 것은 `turn_at` 시각뿐). 같은 시각·로케일·시간대·KRX 스펙으로 core가 다시 만든다.
 // 요청마다 이 시간대 헤더를 보내므로 서버가 쓴 값과 같다(로케일은 한국어 로그인 화면이라 ko).
 const EVAL_LOCALE = 'ko';
-const EVAL_TIME_ZONE = 'Asia/Seoul';
 const TIME_ZONE_HEADER = 'x-siglens-timezone';
 const DESKTOP_UA =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
@@ -90,11 +91,15 @@ function printComparison(oldPath, newPath) {
         JSON.parse(readFileSync(newPath, 'utf8'))
     );
     process.stdout.write(
-        'id\told fails\tnew fails\tdropped tools\tadded tools\n'
+        'id\told fails\tnew fails\told n/e\tnew n/e\tdropped tools\tadded tools\n'
     );
+    const side = e =>
+        e === null
+            ? '-'
+            : `chars ${e.answerChars}, figures ${e.figureSentences}, steps ${e.steps}, tools ${e.toolCalls}, search ${e.webSearches}, ungrounded ${e.ungroundedNumbers ?? '?'}`;
     rows.forEach(row =>
         process.stdout.write(
-            `${row.id}\t${row.oldFails ?? '-'}\t${row.newFails}\t${row.droppedTools.join(',') || '-'}\t${row.addedTools.join(',') || '-'}${row.droppedTools.length > 0 ? '\t<-- REGRESSION' : ''}\n`
+            `${row.id}\t${row.oldFails ?? '-'}\t${row.newFails}\t${row.oldNotEvaluable ?? '-'}\t${row.newNotEvaluable}\t${row.droppedTools.join(',') || '-'}\t${row.addedTools.join(',') || '-'}${row.droppedTools.length > 0 ? '\t<-- REGRESSION' : ''}\n    old: ${side(row.oldSideEffects)}\n    new: ${side(row.newSideEffects)}\n`
         )
     );
 }
@@ -284,6 +289,10 @@ async function runCase(page, testCase) {
     return {
         id: testCase.id,
         turns: done.transcripts,
+        // 판정이 아닌 부작용 수치(답변 길이, 수치 문장, 단계·도구·검색 수, 근거 없는 숫자): `--compare`가 견준다.
+        sideEffects: done.transcripts.map(t =>
+            sideEffects(t, installedCore.findUngroundedNumbers)
+        ),
         fails: done.fails,
         reviews: done.reviews,
         notEvaluable: done.notEvaluable,
@@ -365,8 +374,13 @@ try {
         )
     );
     const failed = results.filter(r => r.fails.length > 0).length;
+    // A not-evaluable line is never a pass: count them beside the failures so a quiet run is not read as a clean one.
+    const notEvaluable = results.reduce((n, r) => n + r.notEvaluable.length, 0);
+    const notEvaluableCases = results.filter(
+        r => r.notEvaluable.length > 0
+    ).length;
     process.stdout.write(
-        `${results.length} cases, ${failed} with failures -> ${outPath}\n`
+        `${results.length} cases, ${failed} with failures, ${notEvaluable} not evaluable lines in ${notEvaluableCases} cases -> ${outPath}\n`
     );
 } finally {
     await browser.close();

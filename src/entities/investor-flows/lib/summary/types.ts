@@ -11,6 +11,7 @@ import type {
     InvestorFlowsSignalStrength,
     InvestorFlowsSufficiency,
     OfferingKind,
+    PutCallReading,
     ShortInterestTrend,
     InsiderTransactionType,
     SqueezeRiskComponentId,
@@ -120,6 +121,8 @@ export interface SummaryPutCall {
     readonly period: string;
     readonly putCallValueRatio: number | null;
     readonly priorPutCallValueRatio: number | null;
+    /** `putCallValueRatio`(출력되는 반올림 값)를 명목금액 기준으로 읽은 쪽. 비율이 없으면 `null`. */
+    readonly reading: PutCallReading | null;
     readonly note: string;
 }
 

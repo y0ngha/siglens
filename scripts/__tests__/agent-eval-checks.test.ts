@@ -12,6 +12,8 @@ import {
     answerHasClock,
     extractClockTimes,
     extractEarningsDayCounts,
+    extractNearestClaims,
+    EVAL_TIME_ZONE,
     compareRuns,
     hasDateToken,
     isFigureSentence,
@@ -21,7 +23,10 @@ import {
     OFFER_RE,
     parseSseFrames,
     parseTurnNote,
+    periodForms,
+    periodStartFor,
     runChecks,
+    sideEffects,
     selectCases,
     splitSentences,
     storedOscillatorZones,
@@ -1106,7 +1111,775 @@ describe('실행기 보조 함수', () => {
                 newFails: 1,
                 droppedTools: ['get_news'],
                 addedTools: ['web_search'],
+                // neither run recorded side effects or not-evaluable lines
+                oldNotEvaluable: null,
+                newNotEvaluable: null,
+                oldSideEffects: null,
+                newSideEffects: null,
             },
         ]);
+    });
+
+    it('compareRuns: sums the per-turn side effects of each run (null ungrounded stays null)', () => {
+        const effects = (chars: number, ungrounded: number | null) => ({
+            answerChars: chars,
+            figureSentences: 2,
+            steps: 3,
+            toolCalls: 1,
+            webSearches: 0,
+            ungroundedNumbers: ungrounded,
+        });
+        const run = (sideEffects: ReturnType<typeof effects>[]) => ({
+            label: 'x',
+            results: [
+                {
+                    id: 'c',
+                    fails: [],
+                    turns: [{ toolCalls: [] }, { toolCalls: [] }],
+                    sideEffects,
+                },
+            ],
+        });
+        const [row] = compareRuns(
+            run([effects(100, 1), effects(50, 2)]),
+            run([effects(10, null), effects(20, 1)])
+        );
+        expect(row?.oldSideEffects).toEqual({
+            answerChars: 150,
+            figureSentences: 4,
+            steps: 6,
+            toolCalls: 2,
+            webSearches: 0,
+            ungroundedNumbers: 3,
+        });
+        expect(row?.newSideEffects?.answerChars).toBe(30);
+        expect(row?.newSideEffects?.ungroundedNumbers).toBeNull();
+    });
+});
+
+const row = (toolName: string, content: unknown) => ({
+    toolName,
+    content: typeof content === 'string' ? content : JSON.stringify(content),
+});
+
+describe('earningsTally on an OLD result', () => {
+    it('computes the reference tally from the recorded earningsReactions with core', () => {
+        // 5 up, 3 down by hand: the old model said 6 of 8
+        const reactions = [3, 2, 1, 4, 5]
+            .map(m => ({ date: '2026-01-0' + m, movePct: m }))
+            .concat(
+                [1, 2, 3].map(m => ({ date: '2025-01-0' + m, movePct: -m }))
+            );
+        const result = (answer: string) =>
+            CHECKS.earningsTally(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [
+                        row('get_fundamentals', {
+                            earningsReactions: reactions,
+                        }),
+                    ],
+                })
+            );
+        expect(result('8번 중 6번 상승했어요.').fails).toEqual([
+            'tally: the answer says 6 rises but the tally has 5',
+        ]);
+        expect(result('8번 중 5번 상승했어요.').fails).toEqual([]);
+    });
+});
+
+describe('earningsTally', () => {
+    // 5 up, 3 down, 8 measured; largest rise +6.05, largest fall -4.5 (hand-written, not from the tool).
+    const tally = {
+        measured: 8,
+        up: 5,
+        down: 3,
+        flat: 0,
+        largestRise: { date: '2026-02-03', movePct: 6.05 },
+        largestFall: { date: '2025-07-29', movePct: -4.5 },
+    };
+    const run = (
+        answer: string,
+        content: unknown = { earningsReactionTally: tally }
+    ) =>
+        CHECKS.earningsTally(
+            {},
+            transcript({ answer, toolRows: [row('get_fundamentals', content)] })
+        );
+
+    it('passes when the counts and extremes match the tally', () => {
+        expect(
+            run(
+                '최근 8번 중 5번 상승했고 3번 하락했어요. 가장 크게 오른 날은 +6.05%, 최대 하락은 -4.5%입니다.'
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('fails on a wrong "N번 중 M번" count', () => {
+        const r = run('8번 중 6번 상승했습니다.');
+        expect(r.fails).toEqual([
+            'tally: the answer says 6 rises but the tally has 5',
+        ]);
+    });
+
+    it('fails when the "N번 중" total differs from measured', () => {
+        expect(run('10번 중 5번 상승했습니다.').fails).toEqual([
+            'tally: the answer says "10 reports" but the tally measured 8',
+        ]);
+    });
+
+    it('checks a plain "M번 올랐/내렸" count against up/down', () => {
+        expect(run('5번 올랐고 3번 내렸어요.').fails).toEqual([]);
+        expect(run('4번 올랐어요.').fails).toHaveLength(1);
+        expect(run('2번 하락했어요.').fails).toHaveLength(1);
+    });
+
+    it('does not count "5번 상승" inside "8번 중 5번 상승" twice', () => {
+        expect(run('8번 중 5번 상승했어요.').fails).toEqual([]);
+    });
+
+    it('fails on a wrong extreme, tolerates 0.01', () => {
+        expect(run('가장 크게 오른 날은 +6.5%였어요.').fails).toHaveLength(1);
+        expect(run('가장 크게 오른 날은 6.06%였어요.').fails).toEqual([]);
+        expect(run('최대 하락은 4.8%였어요.').fails).toHaveLength(1);
+    });
+
+    it('fails when an extreme is quoted but the tally has none', () => {
+        const r = run('가장 크게 오른 날은 3%였어요.', {
+            earningsReactionTally: { ...tally, largestRise: null },
+        });
+        expect(r.fails).toEqual([
+            'tally: the answer quotes a largest rise but the tally has none',
+        ]);
+    });
+
+    it('is not evaluable without a tally in the stored result', () => {
+        const r = run('8번 중 6번 상승', { symbol: 'X' });
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+});
+
+describe('putCallSide', () => {
+    const options = (ratio: number, side: string) =>
+        row('get_options_summary', {
+            metrics: {
+                putCallRatio: ratio,
+                putCallReading: { side, text: 't' },
+            },
+        });
+    const run = (answer: string, ...rows: ReturnType<typeof row>[]) =>
+        CHECKS.putCallSide({}, transcript({ answer, toolRows: rows }));
+
+    it('fails when a sentence with the ratio says puts dominate but the side is more_calls', () => {
+        const r = run(
+            '풋이 콜의 0.83배로, 하락 쪽 베팅이 조금 더 많아요.',
+            options(0.83, 'more_calls')
+        );
+        expect(r.fails).toHaveLength(1);
+        expect(r.fails[0]).toContain('more_calls');
+    });
+
+    it.each([
+        '풋 우위로 0.83입니다.',
+        '0.83이라 풋이 더 많습니다.',
+        '비율 0.83, 하락 베팅이 더 많아요.',
+    ])('fails for "%s" when the side is more_calls', sentence => {
+        expect(run(sentence, options(0.83, 'more_calls')).fails).toHaveLength(
+            1
+        );
+    });
+
+    it('fails the converse: calls dominate while the side is more_puts', () => {
+        expect(
+            run('비율 1.42, 콜이 더 많아요.', options(1.42, 'more_puts')).fails
+        ).toHaveLength(1);
+        expect(
+            run('비율 1.42, 상승 베팅이 더 많아요.', options(1.42, 'more_puts'))
+                .fails
+        ).toHaveLength(1);
+    });
+
+    it('passes when the sentence matches the side', () => {
+        expect(
+            run('비율 0.83이라 콜이 더 많아요.', options(0.83, 'more_calls'))
+                .fails
+        ).toEqual([]);
+        expect(
+            run('비율 1.42이라 풋이 더 많아요.', options(1.42, 'more_puts'))
+                .fails
+        ).toEqual([]);
+    });
+
+    it('only judges sentences that quote the source ratio', () => {
+        const r = run(
+            '풋이 더 많다는 말이 있지만 다른 이야기예요.',
+            options(0.83, 'more_calls')
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.reviews).toHaveLength(1);
+    });
+
+    it('does not judge an even side', () => {
+        expect(
+            run('비율 1, 풋이 더 많아요.', options(1, 'even')).fails
+        ).toEqual([]);
+    });
+
+    it('keeps the options and 13F sides apart', () => {
+        const flows = row('get_investor_flows', {
+            institutional: {
+                putCall: {
+                    putCallValueRatio: 1.47,
+                    reading: { side: 'more_puts' },
+                },
+            },
+        });
+        // options 0.83 -> more_calls; 13F 1.47 -> more_puts. Each sentence is judged against its own source.
+        expect(
+            run(
+                '옵션은 0.83으로 콜이 더 많아요. 13F는 1.47로 풋이 더 많아요.',
+                options(0.83, 'more_calls'),
+                flows
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('is not evaluable without a ratio at all', () => {
+        const r = run('x', row('get_options_summary', { metrics: {} }));
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+
+    describe('an OLD result (no reading field): the side is computed from the printed ratio with core', () => {
+        const oldOptions = (ratio: number) =>
+            row('get_options_summary', { metrics: { putCallRatio: ratio } });
+
+        it('options: 0.83 means more calls, so "puts dominate" fails and "calls dominate" passes', () => {
+            expect(
+                run('비율 0.83, 풋이 더 많아요.', oldOptions(0.83)).fails
+            ).toHaveLength(1);
+            expect(
+                run('비율 0.83, 콜이 더 많아요.', oldOptions(0.83)).fails
+            ).toEqual([]);
+        });
+
+        it('13F: 1.47 means more puts by notional', () => {
+            const flows = row('get_investor_flows', {
+                institutional: { putCall: { putCallValueRatio: 1.47 } },
+            });
+            expect(run('비율 1.47, 콜이 더 많아요.', flows).fails).toHaveLength(
+                1
+            );
+            expect(run('비율 1.47, 풋이 더 많아요.', flows).fails).toEqual([]);
+        });
+    });
+
+    it('matches the ratio as a whole number token, not a substring of another number', () => {
+        // 0.83 is inside 10.83 and 0.835: neither sentence quotes the ratio
+        const r = run(
+            '지수는 10.83이고 풋이 더 많아요. 0.835 수준이며 풋이 더 많아요.',
+            options(0.83, 'more_calls')
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.reviews).toHaveLength(1);
+        // a sentence that really quotes it is still judged, also with trailing punctuation
+        expect(
+            run(
+                '비율은 0.83. 풋이 더 많아요 0.83.',
+                options(0.83, 'more_calls')
+            ).fails
+        ).toHaveLength(1);
+    });
+});
+
+describe('levelsNearest', () => {
+    const ladder = {
+        above: [{ price: 117.77 }, { price: 119.7 }],
+        below: [{ price: 112.1 }],
+        closer: 'above',
+    };
+    const analysisRow = (l: unknown = ladder) =>
+        row('get_cached_analysis', { sinceAnalysis: { levelLadder: l } });
+    const run = (answer: string, l?: unknown) =>
+        CHECKS.levelsNearest(
+            {},
+            transcript({ answer, toolRows: [analysisRow(l)] })
+        );
+
+    it('passes when the nearest numbers are the first rung of each side (±0.01)', () => {
+        expect(
+            run('가장 가까운 저항은 117.77, 가장 가까운 지지는 112.1입니다.')
+                .fails
+        ).toEqual([]);
+        expect(run('가장 가까운 저항선 117.78').fails).toEqual([]);
+    });
+
+    it('fails when the number is not the first rung', () => {
+        expect(run('가장 가까운 저항은 119.70입니다.').fails).toEqual([
+            "levels: the answer's nearest resistance is 119.7 but the ladder's is 117.77",
+        ]);
+    });
+
+    it('fails on two different numbers in one role', () => {
+        const r = run(
+            '가장 가까운 저항은 117.77이고, 가장 가까운 저항은 119.7이에요.'
+        );
+        expect(r.fails).toContain(
+            'levels: two different numbers in the nearest resistance role: 117.77, 119.7'
+        );
+    });
+
+    it('fails when a nearest claim has no rung on that side', () => {
+        expect(
+            run('가장 가까운 지지는 100입니다.', {
+                above: [],
+                below: [],
+                closer: null,
+            }).fails
+        ).toHaveLength(1);
+    });
+
+    it('checks closer wording against the ladder', () => {
+        expect(run('위쪽 저항이 더 가까워요.').fails).toEqual([]);
+        expect(run('지지선이 더 가까워요.').fails).toEqual([
+            'levels: the answer says the support is closer but the ladder says above (resistance) is',
+        ]);
+        expect(
+            run('저항이 더 가까워요.', { ...ladder, closer: 'below' }).fails
+        ).toHaveLength(1);
+        // a tie or one empty side is not decided: a review line, not a failure
+        const tie = run('저항이 더 가까워요.', { ...ladder, closer: 'equal' });
+        expect(tie.fails).toEqual([]);
+        expect(tie.reviews).toHaveLength(1);
+    });
+
+    describe('an OLD result (no levelLadder): the reference is rebuilt from the recorded analysis levels', () => {
+        const oldResult = (extra: Record<string, unknown> = {}) =>
+            row('get_cached_analysis', {
+                analysis: {
+                    keyLevels: {
+                        support: [{ price: 112.1 }],
+                        resistance: [{ price: 117.77 }, { price: 119.7 }],
+                    },
+                },
+                sinceAnalysis: { priceNow: 115, ...extra },
+            });
+        const runOld = (answer: string) =>
+            CHECKS.levelsNearest(
+                {},
+                transcript({ answer, toolRows: [oldResult()] })
+            );
+
+        it('passes the right nearest numbers and says the chart references are missing', () => {
+            const r = runOld(
+                '가장 가까운 저항은 117.77, 가장 가까운 지지는 112.1입니다.'
+            );
+            expect(r.fails).toEqual([]);
+            expect(r.reviews[0]).toContain(
+                'rebuilt from the recorded analysis levels'
+            );
+        });
+
+        it('fails a wrong nearest number', () => {
+            expect(
+                runOld('가장 가까운 저항은 119.7입니다.').fails
+            ).toHaveLength(1);
+        });
+
+        it('is not evaluable without priceNow', () => {
+            const r = CHECKS.levelsNearest(
+                {},
+                transcript({
+                    answer: '가장 가까운 저항은 1입니다.',
+                    toolRows: [
+                        row('get_cached_analysis', {
+                            analysis: { keyLevels: {} },
+                        }),
+                    ],
+                })
+            );
+            expect(r.notEvaluable).toHaveLength(1);
+        });
+    });
+
+    it('skips a number followed by 일/주/개월 and reads the price after it', () => {
+        expect(
+            extractNearestClaims('가장 가까운 지지는 20일 평균선(98.5)입니다.')
+        ).toEqual([{ role: 'support', value: 98.5 }]);
+        expect(
+            extractNearestClaims(
+                '가장 가까운 저항선 52주 고점 130, 가장 가까운 지지는 3개월 저점 99'
+            )
+        ).toEqual([
+            { role: 'resistance', value: 130 },
+            { role: 'support', value: 99 },
+        ]);
+        // a bare number is still the price; a role with no price in reach yields no claim
+        expect(
+            extractNearestClaims('가장 가까운 저항은 117.77입니다.')
+        ).toEqual([{ role: 'resistance', value: 117.77 }]);
+        expect(
+            extractNearestClaims('가장 가까운 지지는 50일선입니다.')
+        ).toEqual([]);
+    });
+
+    it('is not evaluable without a ladder', () => {
+        const r = CHECKS.levelsNearest(
+            {},
+            transcript({
+                answer: '가장 가까운 저항은 1입니다.',
+                toolRows: [row('get_cached_analysis', { sinceAnalysis: {} })],
+            })
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+});
+
+describe('newsAligned', () => {
+    const TURN_AT = '2026-11-20T03:00:00.000Z'; // Friday
+    const news = (items: unknown[], moveDays: unknown[] = []) =>
+        row('get_news', { priceMoves: { moveDays }, items });
+    const call = (args: Record<string, unknown>) => ({
+        id: '1',
+        name: 'get_news',
+        args,
+    });
+    const run = (
+        testCase: Record<string, unknown>,
+        over: Partial<Transcript>
+    ) => CHECKS.newsAligned(testCase, transcript({ turnAt: TURN_AT, ...over }));
+
+    it('periodStartFor counts the date in the eval time zone (KST), not in UTC', () => {
+        expect(EVAL_TIME_ZONE).toBe('Asia/Seoul');
+        // Sunday 16:00 UTC = Monday 01:00 KST: the week already started on 2026-11-23 in the asking zone
+        expect(periodStartFor('week', '2026-11-22T16:00:00.000Z')).toBe(
+            '2026-11-23'
+        );
+        // Friday 03:00 UTC is Friday noon KST: same week either way
+        expect(periodStartFor('week', TURN_AT)).toBe('2026-11-16');
+        // 2026-11-30 16:00 UTC = 2026-12-01 01:00 KST: a month back is 11-01, not 10-31
+        expect(periodStartFor('month', '2026-11-30T16:00:00.000Z')).toBe(
+            '2026-11-01'
+        );
+    });
+
+    it('periodStartFor: a month back and the Monday of the week', () => {
+        expect(periodStartFor('month', TURN_AT)).toBe('2026-10-20');
+        expect(periodStartFor('week', TURN_AT)).toBe('2026-11-16');
+        expect(periodStartFor('month', null)).toBeNull();
+        expect(periodStartFor('other', TURN_AT)).toBeNull();
+    });
+
+    it('fails when a stored get_news result is the truncation envelope or not JSON', () => {
+        const r = run(
+            { periodStart: 'month' },
+            {
+                toolRows: [
+                    row('get_news', { truncated: true, preview: '{"a' }),
+                    row('get_news', '{"items": [{"title'),
+                ],
+            }
+        );
+        expect(r.fails).toHaveLength(2);
+    });
+
+    it('fails when get_news was called without since, or since is more than 3 days from the period start', () => {
+        const base = { periodStart: 'month' };
+        const rows = [news([])];
+        expect(
+            run(base, { toolCalls: [call({ symbol: 'AAPL' })], toolRows: rows })
+                .fails
+        ).toEqual([
+            'news: get_news was called without since for a period question',
+        ]);
+        expect(
+            run(base, {
+                toolCalls: [call({ symbol: 'AAPL', since: '2026-10-23' })],
+                toolRows: rows,
+            }).fails
+        ).toEqual([]);
+        expect(
+            run(base, {
+                toolCalls: [call({ symbol: 'AAPL', since: '2026-10-24' })],
+                toolRows: rows,
+            }).fails
+        ).toEqual([
+            'news: since 2026-10-24 is 4 days from the period start 2026-10-20',
+        ]);
+    });
+
+    it('a category call needs no since', () => {
+        expect(
+            run(
+                { periodStart: 'month' },
+                {
+                    toolCalls: [call({ category: 'crypto' })],
+                    toolRows: [news([])],
+                }
+            ).fails
+        ).toEqual([]);
+    });
+
+    const items = [
+        { title: '실적 발표 앞두고 기대감 확산 소식', session: '2026-11-12' },
+        { title: '주말에 나온 규제 관련 발표 내용', session: null },
+    ];
+
+    it('fails when a headline is tied to a date earlier than its session', () => {
+        const r = run(
+            { periodStart: 'month' },
+            {
+                answer: '11월 10일 하락은 실적 발표 앞두고 기대감 확산 소식과 같이 봐야 해요.',
+                toolRows: [news(items)],
+            }
+        );
+        expect(r.fails).toEqual([
+            'news: the headline "실적 발표 앞두고 기대감 확산 소식" belongs to session 2026-11-12 but is tied to 2026-11-10',
+        ]);
+    });
+
+    it('passes when the headline is tied to its own or a later date', () => {
+        expect(
+            run(
+                { periodStart: 'month' },
+                {
+                    answer: '11월 12일 상승은 실적 발표 앞두고 기대감 확산 소식과 같이 봐야 해요.',
+                    toolRows: [news(items)],
+                }
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('fails when a session-null item is presented as a cause, passes when reported as later news', () => {
+        const cause = run(
+            { periodStart: 'month' },
+            {
+                answer: '주말에 나온 규제 관련 발표 내용 때문에 하락했어요.',
+                toolRows: [news(items)],
+            }
+        );
+        expect(cause.fails).toEqual([
+            'news: an item with session null (after the last close) is presented as a cause: "주말에 나온 규제 관련 발표 내용"',
+        ]);
+        expect(
+            run(
+                { periodStart: 'month' },
+                {
+                    answer: '마감 이후에는 주말에 나온 규제 관련 발표 내용이 있었어요.',
+                    toolRows: [news(items)],
+                }
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('lists the answer dates beside the move days for review', () => {
+        const r = run(
+            { periodStart: 'month' },
+            {
+                answer: '11월 12일에 크게 올랐어요.',
+                toolRows: [
+                    news([], [{ date: '2026-11-12' }, { date: '2026-11-03' }]),
+                ],
+            }
+        );
+        expect(r.reviews).toEqual([
+            'news: answer dates=[2026-11-12], priceMoves.moveDays=[2026-11-12, 2026-11-03]',
+        ]);
+    });
+
+    it('is not evaluable for alignment when no result carries priceMoves', () => {
+        const r = run(
+            { periodStart: 'month' },
+            { toolRows: [row('get_news', { items: [] })] }
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+});
+
+describe('holderLookupUsed', () => {
+    const lookup = (over: Record<string, unknown> = {}) => ({
+        query: 'Two Sigma',
+        period: '2026-06-30',
+        status: 'found',
+        matches: [{ shares: 1234567 }],
+        ...over,
+    });
+    const flowsCall = (args: Record<string, unknown>) => ({
+        id: '1',
+        name: 'get_investor_flows',
+        args,
+    });
+    const run = (
+        answer: string,
+        args: Record<string, unknown>,
+        l: unknown = lookup()
+    ) =>
+        CHECKS.holderLookupUsed(
+            {},
+            transcript({
+                answer,
+                toolCalls: [flowsCall(args)],
+                toolRows: [row('get_investor_flows', { holderLookup: l })],
+            })
+        );
+
+    it('passes with holder in the first call and the grouped share count and period in the answer', () => {
+        expect(
+            run('2026-06-30 기준 1,234,567주를 보유해요.', {
+                symbol: 'AMD',
+                holder: 'Two Sigma',
+            }).fails
+        ).toEqual([]);
+    });
+
+    it('accepts the period written in Korean or as a quarter', () => {
+        expect(periodForms('2026-06-30')).toContain('2026년 6월 30일');
+        expect(
+            run('2026년 2분기 말 1,234,567주예요.', {
+                symbol: 'AMD',
+                holder: 'Two Sigma',
+            }).fails
+        ).toEqual([]);
+    });
+
+    it('fails without holder in the first get_investor_flows call', () => {
+        expect(run('2026-06-30 1,234,567주', { symbol: 'AMD' }).fails).toEqual([
+            'holder: the first get_investor_flows call has no holder argument',
+        ]);
+        expect(
+            run('2026-06-30 1,234,567주', { symbol: 'AMD', holder: '  ' }).fails
+        ).toHaveLength(1);
+    });
+
+    it('fails when found but the answer lacks the share count or the period', () => {
+        const r = run('보유하고 있어요.', {
+            symbol: 'AMD',
+            holder: 'Two Sigma',
+        });
+        expect(r.fails).toEqual([
+            'holder: the answer lacks the matched share count 1,234,567',
+            'holder: the answer lacks the period 2026-06-30',
+        ]);
+    });
+
+    it('a status other than found makes the share check not evaluable, with a review line', () => {
+        const r = run(
+            '찾지 못했어요.',
+            { symbol: 'AMD', holder: 'Two Sigma' },
+            lookup({ status: 'no_matching_filer', matches: [] })
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+        expect(r.reviews).toHaveLength(1);
+    });
+
+    it('is not evaluable without a holderLookup in the stored result', () => {
+        const r = CHECKS.holderLookupUsed(
+            {},
+            transcript({
+                toolCalls: [flowsCall({ symbol: 'AMD', holder: 'x' })],
+                toolRows: [row('get_investor_flows', { available: true })],
+            })
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+
+    it('does nothing when get_investor_flows was never called (mustCall reports that)', () => {
+        expect(CHECKS.holderLookupUsed({}, transcript()).fails).toEqual([]);
+    });
+});
+
+describe('sideEffects', () => {
+    it('counts chars, figure sentences, steps, tool calls, web searches and ungrounded numbers', () => {
+        const effects = sideEffects(
+            transcript({
+                answer: '종가는 44.74달러예요. 좋아요.',
+                toolCalls: [
+                    { id: '1', name: 'get_quote', args: {} },
+                    { id: '2', name: 'web_search', args: {} },
+                ],
+                toolRows: [row('get_quote', { price: 44.74 })],
+                steps: [
+                    { promptTokens: 1, cachedTokens: 0 },
+                    { promptTokens: 1, cachedTokens: 0 },
+                ],
+            }),
+            (answer: string, toolResults: string[]) => {
+                expect(answer).toContain('44.74');
+                expect(toolResults).toEqual(['{"price":44.74}']);
+                return ['1'];
+            }
+        );
+        expect(effects).toEqual({
+            answerChars: 19,
+            figureSentences: 1,
+            steps: 2,
+            toolCalls: 2,
+            webSearches: 1,
+            ungroundedNumbers: 1,
+        });
+    });
+
+    it('leaves ungroundedNumbers null without a finder', () => {
+        expect(sideEffects(transcript()).ungroundedNumbers).toBeNull();
+    });
+});
+
+describe('WP-08 cases', () => {
+    interface EvalCase {
+        id: string;
+        question?: string;
+        mustCall?: string[];
+        checks?: string[];
+        periodStart?: string;
+    }
+    const cases = CASES as EvalCase[];
+    const byId = (id: string) => cases.find(c => c.id === id);
+
+    it('adds news-month-1..4, news-why-1, pc-1..2, levels-1..2 and the holder cases with their checks', () => {
+        expect(byId('news-month-3')?.checks).toContain('newsAligned');
+        expect(byId('news-month-1')?.periodStart).toBe('month');
+        expect(byId('news-why-1')?.periodStart).toBe('week');
+        expect(byId('pc-2')?.checks).toEqual(['putCallSide']);
+        expect(byId('levels-1')?.checks).toEqual(['levelsNearest']);
+        expect(byId('holder')?.checks).toContain('holderLookupUsed');
+        expect(byId('holder-2')?.checks).toContain('holderLookupUsed');
+        expect(byId('earn-1')?.checks).toContain('earningsTally');
+        expect(
+            [
+                'news-month-1',
+                'news-month-2',
+                'news-month-3',
+                'news-month-4',
+            ].every(id => byId(id)?.mustCall?.includes('get_news'))
+        ).toBe(true);
+    });
+
+    it('case ids are unique', () => {
+        const ids = cases.map(c => c.id);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+});
+
+describe('compareRuns not-evaluable counts', () => {
+    it('reports how many not-evaluable lines each run had, so a quiet run is not read as clean', () => {
+        const run = (notEvaluable: string[]) => ({
+            label: 'x',
+            results: [
+                {
+                    id: 'c',
+                    fails: [],
+                    notEvaluable,
+                    turns: [{ toolCalls: [] }],
+                },
+            ],
+        });
+        const [row] = compareRuns(run(['a', 'b', 'c']), run(['a']));
+        expect([row?.oldNotEvaluable, row?.newNotEvaluable]).toEqual([3, 1]);
     });
 });

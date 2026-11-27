@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+    buildLevelLadder,
     buildPlanCheck,
     peekAnalysisCache,
     peekOverallAnalysisCache,
@@ -7,8 +8,11 @@ import {
     TIER_CONFIG,
     type ActionRecommendation,
     type AnalysisResponse,
+    type Bar,
     type FilteredAnalysisResponse,
+    type IndicatorResult,
     type KeyLevel,
+    type LevelLadder,
     type KeyLevels,
     type Timeframe,
 } from '@y0ngha/siglens-core';
@@ -32,6 +36,11 @@ import { isGuestSubject } from '../guestSubject';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import {
+    chartReferenceLevels,
+    technicalLevelCandidates,
+    type ChartReferenceLevels,
+} from './levelCandidates';
 import { pctVs } from './percent';
 import {
     fitTechnicalAnalysis,
@@ -86,6 +95,16 @@ function barTradingDateUtc(timeSec: number): string {
 }
 
 /**
+ * Staleness plus, for a `1Day` analysis, the cached daily series the staleness read already loaded — the ladder
+ * reuses it, so one bars read serves both. `dailySeries` is `null` for an intraday analysis, an empty series
+ * or a bars failure (the ladder then has analysis levels only).
+ */
+interface StaleAndSeries {
+    stale: boolean;
+    dailySeries: { bars: readonly Bar[]; indicators: IndicatorResult } | null;
+}
+
+/**
  * Bar-based staleness with a graceful fallback to the old age-only rule when
  * bars cannot be loaded, or load but come back empty (spec §3.2) — a
  * bars-cache outage (or an empty series, which behaves the same as one for
@@ -108,25 +127,34 @@ function barTradingDateUtc(timeSec: number): string {
  * error. Intraday timeframes keep the original instant comparison — there is
  * no calendar-date ambiguity to correct there.
  */
-async function isStaleByBars(
+async function staleAndDailySeries(
     tab: string,
     timeframe: Timeframe,
     generatedAt: Date,
     symbol: string,
     fmpSymbol: string | undefined
-): Promise<boolean> {
-    if (Date.now() - generatedAt.getTime() > STALE_HARD_CAP_MS) return true;
+): Promise<StaleAndSeries> {
+    // Past the hard cap the answer is already `stale` and no bars are read (as before), so such an old analysis's
+    // ladder carries analysis levels only.
+    if (Date.now() - generatedAt.getTime() > STALE_HARD_CAP_MS)
+        return { stale: true, dailySeries: null };
     try {
         const marketProfile = await resolveMarketProfile(symbol);
         const session = sessionSpecFor(marketProfile);
-        const { bars } = await getCachedBarsWithIndicators(
+        const { bars, indicators } = await getCachedBarsWithIndicators(
             getCachedMarketDataProvider(session),
             symbol,
             timeframe,
             fmpSymbol,
             session
         );
-        if (bars.length === 0) return stale(tab, generatedAt);
+        // Chart references are daily-bar facts: only a `1Day` analysis gets them.
+        const dailySeries =
+            timeframe === '1Day' && bars.length > 0
+                ? { bars, indicators }
+                : null;
+        if (bars.length === 0)
+            return { stale: stale(tab, generatedAt), dailySeries: null };
         if (timeframe === '1Day') {
             const timeZone =
                 session.kind === 'scheduled' ? session.timeZone : 'UTC';
@@ -134,15 +162,43 @@ async function isStaleByBars(
             const newerBars = bars.filter(
                 b => barTradingDateUtc(b.time) > analysisDate
             ).length;
-            return newerBars >= STALE_NEW_BARS['1Day'];
+            return {
+                stale: newerBars >= STALE_NEW_BARS['1Day'],
+                dailySeries,
+            };
         }
         const generatedAtSec = generatedAt.getTime() / 1000;
         const newerBars = bars.filter(b => b.time > generatedAtSec).length;
-        return newerBars >= STALE_NEW_BARS[timeframe];
+        return {
+            stale: newerBars >= STALE_NEW_BARS[timeframe],
+            dailySeries: null,
+        };
     } catch (error) {
         logToolDegrade('get_cached_analysis', 'stale-by-bars check', error);
-        return stale(tab, generatedAt);
+        return {
+            stale: stale(tab, generatedAt),
+            dailySeries: null,
+        };
     }
+}
+
+/** `staleAndDailySeries`' staleness alone, for the paths that have no ladder. */
+async function isStaleByBars(
+    tab: string,
+    timeframe: Timeframe,
+    generatedAt: Date,
+    symbol: string,
+    fmpSymbol: string | undefined
+): Promise<boolean> {
+    return (
+        await staleAndDailySeries(
+            tab,
+            timeframe,
+            generatedAt,
+            symbol,
+            fmpSymbol
+        )
+    ).stale;
 }
 
 /**
@@ -233,47 +289,6 @@ async function priceNowFor(
 const isValidLevel = (l: KeyLevel): boolean =>
     Number.isFinite(l.price) && l.price > 0;
 
-/**
- * Nearest SUPPORT at or below `priceNow` (the highest such level) — a
- * support price that price has already broken ABOVE must never be reported
- * as "nearest support" (it reads as a floor still under price). `null` when
- * no valid support sits at/below `priceNow`.
- *
- * `distancePct` follows core's own convention: `(level − price) / price`,
- * so a level ABOVE price is positive and one BELOW is negative — computed
- * via `pctVs(level, price)`, never `pctVs(price, level)` (the inverse sign).
- */
-function nearestSupportBelow(
-    levels: readonly KeyLevel[] | undefined,
-    priceNow: number
-): { price: number; distancePct: number } | null {
-    const candidates = (levels ?? []).filter(
-        l => isValidLevel(l) && l.price <= priceNow
-    );
-    if (candidates.length === 0) return null;
-    const nearest = candidates.reduce((best, l) =>
-        l.price > best.price ? l : best
-    );
-    const distancePct = pctVs(nearest.price, priceNow);
-    return distancePct === null ? null : { price: nearest.price, distancePct };
-}
-
-/** Nearest RESISTANCE at or above `priceNow` (the lowest such level) — mirrors `nearestSupportBelow`, same `distancePct` convention. */
-function nearestResistanceAbove(
-    levels: readonly KeyLevel[] | undefined,
-    priceNow: number
-): { price: number; distancePct: number } | null {
-    const candidates = (levels ?? []).filter(
-        l => isValidLevel(l) && l.price >= priceNow
-    );
-    if (candidates.length === 0) return null;
-    const nearest = candidates.reduce((best, l) =>
-        l.price < best.price ? l : best
-    );
-    const distancePct = pctVs(nearest.price, priceNow);
-    return distancePct === null ? null : { price: nearest.price, distancePct };
-}
-
 /** Support levels the price has fallen through / resistance levels it has broken above, since the analysis was generated. */
 function levelsBrokenFrom(
     keyLevels: KeyLevels | null | undefined,
@@ -294,8 +309,13 @@ interface SinceAnalysis {
     priceNow: number;
     movePct: number | null;
     levelsBroken: Array<{ kind: 'support' | 'resistance'; price: number }>;
-    nearestSupport: { price: number; distancePct: number } | null;
-    nearestResistance: { price: number; distancePct: number } | null;
+    /**
+     * Analysis levels plus (daily analyses) the chart references, placed by their side of `priceNow`, nearest first.
+     * Replaces the old `nearestSupport`/`nearestResistance` pair (analysis levels only, named by role): two
+     * "nearest" notions in one result is how an answer called two different prices the nearest resistance.
+     * Absent when no usable level exists.
+     */
+    levelLadder?: LevelLadder;
     planNow: {
         riskReward: number | null;
         belowStopLoss: boolean;
@@ -316,7 +336,8 @@ interface SinceAnalysis {
  */
 function sinceAnalysisFrom(
     a: AnalysisResponse | FilteredAnalysisResponse,
-    priceNow: number | null
+    priceNow: number | null,
+    dailySeries: StaleAndSeries['dailySeries'] = null
 ): SinceAnalysis | undefined {
     if (priceNow === null) return undefined;
     const analysisPrice =
@@ -330,16 +351,21 @@ function sinceAnalysisFrom(
     const planCheck = rec
         ? buildPlanCheck(rec, priceNow, planEntryPrice(rec, analysisPrice))
         : null;
+    const levelLadder = buildLevelLadder(
+        priceNow,
+        technicalLevelCandidates(
+            a,
+            dailySeries === null
+                ? null
+                : chartReferenceLevels(dailySeries.bars, dailySeries.indicators)
+        )
+    );
     return {
         analysisPrice,
         priceNow,
         movePct: pctVs(priceNow, analysisPrice),
         levelsBroken: levelsBrokenFrom(a.keyLevels, priceNow),
-        nearestSupport: nearestSupportBelow(a.keyLevels?.support, priceNow),
-        nearestResistance: nearestResistanceAbove(
-            a.keyLevels?.resistance,
-            priceNow
-        ),
+        ...(levelLadder === null ? {} : { levelLadder }),
         planNow: planCheck
             ? {
                   riskReward: planCheck.riskRewardAtCurrent,
@@ -347,6 +373,50 @@ function sinceAnalysisFrom(
                   exceedsEntryZone: planCheck.exceedsEntryZone,
               }
             : null,
+    };
+}
+
+/**
+ * Rebuilds `sinceAnalysis.levelLadder` on an already-built `get_cached_analysis` result and drops the old
+ * `nearestSupport`/`nearestResistance` pair. A pure function of the result shape plus the chart references, so the
+ * evaluation replay can turn a recorded old-shape result into the new shape with production code (the analysis
+ * and `priceNow` are read from the result itself). A result without `sinceAnalysis` or `analysis` is returned
+ * unchanged.
+ */
+export function withLevelLadder<
+    T extends {
+        analysis?: unknown;
+        sinceAnalysis?: { priceNow?: unknown } | undefined;
+    },
+>(result: T, chart: ChartReferenceLevels | null): T {
+    const since = result.sinceAnalysis;
+    const analysis = result.analysis;
+    if (
+        since === undefined ||
+        typeof since.priceNow !== 'number' ||
+        typeof analysis !== 'object' ||
+        analysis === null
+    )
+        return result;
+    const {
+        nearestSupport: _s,
+        nearestResistance: _r,
+        ...rest
+    } = since as Record<string, unknown>;
+    const ladder = buildLevelLadder(
+        since.priceNow,
+        technicalLevelCandidates(
+            analysis as AnalysisResponse | FilteredAnalysisResponse,
+            chart
+        )
+    );
+    const { levelLadder: _old, ...withoutLadder } = rest;
+    return {
+        ...result,
+        sinceAnalysis:
+            ladder === null
+                ? withoutLadder
+                : { ...withoutLadder, levelLadder: ladder },
     };
 }
 
@@ -573,11 +643,11 @@ async function peekTechnicalResult(
         // every miss for no reason. Run in parallel with each other
         // instead, since both are independent lookups with their own
         // bounded timeout.
-        const [isStale, priceNow] = await Promise.all([
-            isStaleByBars(tab, timeframe, generatedAt, symbol, fmpSymbol),
+        const [{ stale: isStale, dailySeries }, priceNow] = await Promise.all([
+            staleAndDailySeries(tab, timeframe, generatedAt, symbol, fmpSymbol),
             priceNowFor(symbol, fmpSymbol),
         ]);
-        const sinceAnalysis = sinceAnalysisFrom(a, priceNow);
+        const sinceAnalysis = sinceAnalysisFrom(a, priceNow, dailySeries);
         // Budget-fit via the SAME shared helper `run_fresh_analysis`
         // uses (`fitTechnicalAnalysis`) — without it, an oversized
         // `patterns`/`candlePatterns`/`strategies` slice would fall

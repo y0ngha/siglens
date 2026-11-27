@@ -105,7 +105,7 @@ export const API_KEY_REVOKED_TOMBSTONE_TTL_SECONDS =
  *   `get_bars_indicators`는 실행기가 `ToolRuntime.barsResultMaxChars`로 넘기는 이 값(에서 `annotate` 몫을 뺀 것)에 맞춰
  *   오래된 봉부터 줄이므로 결과가 이 상한을 넘어 `{ truncated, preview }`로 무너지지 않는다. 기본 요청(30봉)의 실측 최악
  *   크기(~6,330자, 오실레이터 요약 포함)가 6,000을 넘어 7,000으로 올렸다 — 6,000이면 기본 요청도 봉이 잘린다.
- * `get_news`도 자체 예산(4,000)으로 항목을 줄이며 실행기 상한과 무관하다.
+ * `get_news`는 자체 예산(8,000)으로 요약·항목을 줄이며, `news` 칸은 실행기가 그 결과를 다시 자르지 않게 같은 값을 둔 것이다.
  */
 export const PUBLIC_API_RESULT_CAPS = {
     standard: 16_000,
@@ -126,6 +126,10 @@ export const PUBLIC_API_RESULT_CAPS = {
     swingHistory: 24_000,
     // `get_analyst_views`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
     analystViews: 24_000,
+    // `get_news`는 이 상한이 아니라 자체 예산(에이전트와 같은 8,000자)으로 요약·항목을 줄인다 — 같은 값을 둬 실행기가 다시 자르지 않게 한다.
+    news: 8_000,
+    // `get_fundamentals`는 공개 API에서 `standard`와 같은 값이다 — 에이전트 쪽 자체 상한(5,000)이 공개 응답을 줄이지 않게 한다.
+    fundamentals: 16_000,
     cachedAnalysis: 32_000,
     cachedAnalysisBudget: 32_000,
 } as const;
