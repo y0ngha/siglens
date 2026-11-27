@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveEffectiveActionLevels } from '@/entities/analysis/lib/effectiveActionLevels';
+import {
+    isStopLossRejected,
+    resolveEffectiveActionLevels,
+} from '@/entities/analysis/lib/effectiveActionLevels';
 
 describe('resolveEffectiveActionLevels', () => {
     it('보정값이 있으면 원본 AI 손절/익절 대신 보정값을 쓴다', () => {
@@ -77,6 +80,33 @@ describe('resolveEffectiveActionLevels', () => {
         expect(levels.entryPrices).toEqual([148, 150]);
     });
 
+    it('손절 거부 표식이 있으면 원본 손절로 되돌아가지 않는다', () => {
+        // core가 모델 손절을 거부하고 대체 손절도 못 정하면 `stopLoss`를 비우고
+        // 표식만 붙인다. 원본으로 되돌아가면 거부된 레벨이 다시 실린다.
+        const levels = resolveEffectiveActionLevels({
+            entryPrices: [150],
+            stopLoss: 120,
+            takeProfitPrices: [165],
+            reconciledLevels: {
+                stopLossRejected: true,
+                takeProfitPrices: [165],
+            },
+        });
+
+        expect(levels.stopLoss).toBeUndefined();
+        expect(levels.entryPrices).toEqual([150]);
+        expect(levels.takeProfitPrices).toEqual([165]);
+    });
+
+    it('거부 표식이 true 리터럴이 아니면 무시한다', () => {
+        const levels = resolveEffectiveActionLevels({
+            stopLoss: 120,
+            reconciledLevels: { stopLossRejected: 'true' },
+        });
+
+        expect(levels.stopLoss).toBe(120);
+    });
+
     it('양쪽 다 없으면 undefined', () => {
         expect(resolveEffectiveActionLevels(undefined)).toEqual({
             entryPrices: undefined,
@@ -88,5 +118,20 @@ describe('resolveEffectiveActionLevels', () => {
             stopLoss: undefined,
             takeProfitPrices: undefined,
         });
+    });
+});
+
+describe('isStopLossRejected', () => {
+    it('reconciledLevels.stopLossRejected === true일 때만 참', () => {
+        expect(
+            isStopLossRejected({ reconciledLevels: { stopLossRejected: true } })
+        ).toBe(true);
+        expect(
+            isStopLossRejected({
+                reconciledLevels: { stopLossRejected: false },
+            })
+        ).toBe(false);
+        expect(isStopLossRejected({ stopLoss: 120 })).toBe(false);
+        expect(isStopLossRejected(undefined)).toBe(false);
     });
 });

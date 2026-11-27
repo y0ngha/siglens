@@ -10,6 +10,7 @@ export interface ActionLevelsSource {
     readonly reconciledLevels?: {
         readonly stopLoss?: unknown;
         readonly takeProfitPrices?: unknown;
+        readonly stopLossRejected?: unknown;
     };
 }
 
@@ -39,6 +40,21 @@ function isPositivePrice(value: unknown): value is number {
 }
 
 /**
+ * core가 모델의 손절을 거부하고 대체 손절도 못 정한 계획인가.
+ *
+ * core는 손절이 진입 구간에서 너무 멀거나(구간이 너무 넓음) 쓸 수 없을 때
+ * `reconciledLevels.stopLossRejected: true`를 붙이고 `reconciledLevels.stopLoss`는
+ * 비워 둔다. 이 계획은 **손절이 없는** 계획이라, 원본 `stopLoss`(거부된 값)로
+ * 되돌아가면 core가 버린 레벨을 표시·채점에 다시 싣게 된다. `true` 리터럴만
+ * 인정하는 이유는 저장 행이 어떤 모양이든 받는 `unknown` 입력이기 때문이다.
+ */
+export function isStopLossRejected(
+    action: ActionLevelsSource | undefined
+): boolean {
+    return action?.reconciledLevels?.stopLossRejected === true;
+}
+
+/**
  * `actionRecommendation`에서 **실효** 손절·익절을 뽑는다 — 보정값 우선.
  *
  * core는 AI가 낸 손절·익절이 무효할 때(예: 롱인데 손절가가 진입가 위, 익절 사다리에
@@ -52,6 +68,7 @@ function isPositivePrice(value: unknown): value is number {
  * 레벨 기준으로 채점·표시된다.
  *
  * 보정값이 있으면 그쪽을, 없으면 AI 원본을 쓰되 양쪽 모두 개별 값 단위로 검증한다.
+ * 단, `reconciledLevels.stopLossRejected`가 있으면 손절은 `undefined`다(원본으로 되돌아가지 않음).
  * 사다리에 든 하나의 `NaN`/`0`은 그 항목만 떨어뜨리고 나머지는 남긴다.
  *
  * ⚠️ core의 `extractReconciledActionLines`와 혼동하지 말 것. 그쪽은 차트 오버레이
@@ -78,9 +95,10 @@ export function resolveEffectiveActionLevels(
 
     // 후보를 우선순위 순으로 늘어놓고 첫 유효값을 취한다. `let`+`if`(CONVENTIONS.md#CP-4)도,
     // 중첩 삼항(FF 1-E)도 쓰지 않으면서 "보정값 우선"이 배열 순서로 드러난다.
-    const stopLoss = [reconciled?.stopLoss, action?.stopLoss].find(
-        isPositivePrice
-    );
+    // 거부 표식이 있으면 원본으로 되돌아가지 않는다 — 손절 없는 계획이다(`isStopLossRejected`).
+    const stopLoss = isStopLossRejected(action)
+        ? undefined
+        : [reconciled?.stopLoss, action?.stopLoss].find(isPositivePrice);
 
     return { entryPrices, stopLoss, takeProfitPrices };
 }

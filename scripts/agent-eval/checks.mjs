@@ -11,7 +11,7 @@
 //     toolRows:  [{ toolName, content }],     // DB tool 행(이 턴 것만), content는 도구 결과 JSON 문자열
 //     turnAt, turnContext,                    // 이 턴 user 행의 `turn_at`(ISO)과, 그 시각으로 core가 다시 만든 "## Now" 메모(없으면 null)
 //     webSearchAvailable,                     // false면 이 실행에서 web_search를 쓸 수 없었다(run.mjs --no-web-search)
-//     steps: [{ promptTokens, cachedTokens }] // provider 호출 단계별 usage 프레임
+//     steps: [{ promptTokens, cachedTokens, cacheWriteTokens }] // provider 호출 단계별 usage 프레임(세 입력 버킷의 합 = 제공사 입력 토큰)
 //   }
 
 import {
@@ -1340,13 +1340,17 @@ function cachedPrefix(_case, transcript, previous) {
             fails: ['cache: a turn has no usage frame to compare'],
             reviews: [],
         };
-    const needed =
-        prevLast.promptTokens + prevLast.cachedTokens - CACHE_TOLERANCE_TOKENS;
+    // 전체 입력은 세 버킷의 합이다. 캐시 쓰기분(Claude·OpenAI Responses)을 빼면 문턱이 낮아져 접두사 캐시 미스를 놓친다.
+    const prevInput =
+        prevLast.promptTokens +
+        prevLast.cachedTokens +
+        (prevLast.cacheWriteTokens ?? 0);
+    const needed = prevInput - CACHE_TOLERANCE_TOKENS;
     return first.cachedTokens >= needed
         ? { fails: [], reviews: [] }
         : {
               fails: [
-                  `cache: step 1 cachedTokens ${first.cachedTokens} < previous last step ${prevLast.promptTokens} + ${prevLast.cachedTokens} - ${CACHE_TOLERANCE_TOKENS} = ${needed}`,
+                  `cache: step 1 cachedTokens ${first.cachedTokens} < previous last step input ${prevInput} - ${CACHE_TOLERANCE_TOKENS} = ${needed}`,
               ],
               reviews: [],
           };
@@ -2184,6 +2188,7 @@ export function buildTranscript({
             .map(f => ({
                 promptTokens: f.data.usage.promptTokens ?? 0,
                 cachedTokens: f.data.usage.cachedTokens ?? 0,
+                cacheWriteTokens: f.data.usage.cacheWriteTokens ?? 0,
             })),
     };
 }
