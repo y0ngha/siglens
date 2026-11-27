@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { bucketizePosition } from '@y0ngha/siglens-core';
-
 const mocks = vi.hoisted(() => ({
     findByUserAndSymbol: vi.fn(),
 }));
@@ -13,6 +10,9 @@ vi.mock('@/entities/portfolio/api', () => ({
         findByUserAndSymbol = mocks.findByUserAndSymbol;
     },
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { bucketizePosition } from '@y0ngha/siglens-core';
 
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 

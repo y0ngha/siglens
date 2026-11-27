@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-
 // 한글명 리졸버는 DB/FMP를 타는 server-only 경로다. 이 파일의 관심사는 렌더된
 // 링크 그래프이지 이름 조회가 아니므로, 결정적인 스텁으로 고정한다.
 vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
@@ -19,6 +16,9 @@ vi.mock('next/navigation', async importOriginal => ({
     ...(await importOriginal<typeof import('next/navigation')>()),
     useSelectedLayoutSegment: () => mockSegment.current,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 import { RelatedSymbols } from '../RelatedSymbols';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';

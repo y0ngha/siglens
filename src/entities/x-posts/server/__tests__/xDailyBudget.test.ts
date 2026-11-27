@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { redis } = vi.hoisted(() => {
@@ -40,6 +38,8 @@ const { redis } = vi.hoisted(() => {
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => (redis.available ? redis.client : null),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     __resetXDailyBudgetForTests,

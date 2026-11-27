@@ -5,6 +5,12 @@ import manualKeys from '../../../../messages/_meta/manualKeys.json';
 import { pickMessages } from '../loadMessages';
 import type { AbstractIntlMessages } from 'next-intl';
 
+import {
+    ancestorClientPaths,
+    CHROME_CLIENT_PATHS,
+    routeClientPaths,
+} from '../clientNamespaces';
+
 /**
  * next-intl의 `AbstractIntlMessages`는 **배열 값을 모델링하지 않는다**.
  * 툴팁 문단은 실제로 배열이고 `TooltipParagraphs`가 `t.raw()`로 읽는다 —
@@ -12,11 +18,6 @@ import type { AbstractIntlMessages } from 'next-intl';
  * 그래서 여기서만 좁힌다(프로덕션 로더는 동적 import라 이 문제가 없다).
  */
 const messages = koMessages as unknown as AbstractIntlMessages;
-import {
-    ancestorClientPaths,
-    CHROME_CLIENT_PATHS,
-    routeClientPaths,
-} from '../clientNamespaces';
 
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');

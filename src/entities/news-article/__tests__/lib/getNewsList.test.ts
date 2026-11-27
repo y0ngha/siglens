@@ -14,11 +14,11 @@
  * DrizzleNewsRepository.prototype.listCardsBySymbol을 vi.spyOn으로 가로채 같은 효과를 낸다.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: { __mock: true } }),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import {
     DrizzleNewsRepository,

@@ -1,14 +1,14 @@
-import { createTranslator } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
-import { describe, expect, it, vi } from 'vitest';
-import ko from '../../../../../messages/ko.json';
-
 vi.mock('next-intl/server', () => ({
     getTranslations: vi.fn(
         async ({ namespace }: { locale: string; namespace: string }) =>
             createTranslator({ locale: 'ko', messages: ko, namespace } as never)
     ),
 }));
+
+import { createTranslator } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { describe, expect, it, vi } from 'vitest';
+import ko from '../../../../../messages/ko.json';
 
 import {
     buildReportScenarios,

@@ -1,6 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChartAnalysisSource } from '@/app/api/ai/chat/tools/chartBlock';
-
 const m = vi.hoisted(() => ({
     runAnalysis: vi.fn(),
     overall: vi.fn(),
@@ -95,6 +92,9 @@ vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
 vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ChartAnalysisSource } from '@/app/api/ai/chat/tools/chartBlock';
 
 import {
     __resetFreshSemaphoreForTests,

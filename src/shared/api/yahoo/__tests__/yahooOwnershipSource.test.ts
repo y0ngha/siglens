@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { quoteSummary, cache, e2e } = vi.hoisted(() => ({
@@ -23,6 +21,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
         return value;
     },
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getYahooOwnershipShares } from '../yahooOwnershipSource';
 

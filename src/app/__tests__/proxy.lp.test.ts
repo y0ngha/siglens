@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     GUEST_ID_COOKIE_NAME: 'siglens_guest',
@@ -42,6 +40,8 @@ vi.mock('next/server', () => {
         }),
     };
 });
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NextRequest } from 'next/server';
 import { proxy } from '@/proxy';

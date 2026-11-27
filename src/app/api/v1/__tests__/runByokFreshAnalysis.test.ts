@@ -1,6 +1,3 @@
-import * as Anthropic from '@anthropic-ai/sdk';
-import * as OpenAI from 'openai';
-
 const m = vi.hoisted(() => ({
     overall: vi.fn(),
     news: vi.fn(),
@@ -17,21 +14,6 @@ const m = vi.hoisted(() => ({
         async (): Promise<string | undefined> => undefined
     ),
 }));
-
-interface CoreCall {
-    cacheOnly: boolean;
-    model: string;
-    tier: string;
-    providerFallback: unknown;
-    keyPolicy: string | undefined;
-    userApiKey: string | undefined;
-    /** core가 LLM에 실제로 쓸 키. 서버 키를 골랐다면 env 값. 캐시 확인만 한 호출은 `null`. */
-    keyUsedForLlm: string | null;
-    /** core `runAnalysis`가 받은 이 회사의 실적 발표일. */
-    earningsDates: readonly string[] | undefined;
-    /** core `runAnalysis`가 받은 비교 지수. */
-    benchmark: { symbol: string } | undefined;
-}
 const serverKeys = vi.hoisted(() => ({ getServerPrimaryKey: vi.fn() }));
 const core = vi.hoisted(() => ({
     cache: null as object | null,
@@ -227,6 +209,9 @@ vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
 
+import * as Anthropic from '@anthropic-ai/sdk';
+import * as OpenAI from 'openai';
+
 import { prepareRunner } from '@/app/api/v1/freshAnalysisRunner';
 import { runByokFreshAnalysis } from '@/app/api/v1/runByokFreshAnalysis';
 import { UserApiKeyMissingError, type ModelId } from '@y0ngha/siglens-core';
@@ -247,6 +232,21 @@ import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+
+interface CoreCall {
+    cacheOnly: boolean;
+    model: string;
+    tier: string;
+    providerFallback: unknown;
+    keyPolicy: string | undefined;
+    userApiKey: string | undefined;
+    /** core가 LLM에 실제로 쓸 키. 서버 키를 골랐다면 env 값. 캐시 확인만 한 호출은 `null`. */
+    keyUsedForLlm: string | null;
+    /** core `runAnalysis`가 받은 이 회사의 실적 발표일. */
+    earningsDates: readonly string[] | undefined;
+    /** core `runAnalysis`가 받은 비교 지수. */
+    benchmark: { symbol: string } | undefined;
+}
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_USER_ID = '22222222-2222-4222-8222-222222222222';

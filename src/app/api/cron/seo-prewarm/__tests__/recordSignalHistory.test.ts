@@ -1,9 +1,3 @@
-import type { MarketDataProvider } from '@y0ngha/siglens-core';
-import type {
-    ScanCursor,
-    SignalHistoryMarket,
-} from '@/entities/signal-history/types';
-
 const repo = vi.hoisted(() => ({
     loadScanCursors: vi.fn(),
     latestCompletedSession: vi.fn(),
@@ -36,6 +30,12 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     getKoreanNames: vi.fn(),
 }));
 vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: () => null }));
+
+import type { MarketDataProvider } from '@y0ngha/siglens-core';
+import type {
+    ScanCursor,
+    SignalHistoryMarket,
+} from '@/entities/signal-history/types';
 
 import type { SiglensDatabase } from '@/shared/db/types';
 import {

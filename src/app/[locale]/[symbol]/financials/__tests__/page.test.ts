@@ -1,4 +1,4 @@
-// vi.mock はhoist されるが import/first と可読性のため全 import の上に置く
+// vi.mock은 hoist되므로 모든 import 위에 둔다 (TESTING.md#TE-1).
 // Default: equity symbol (allowed) — individual tests that need crypto behavior
 // can override mockIsTabAllowedForSymbol per-call.
 vi.mock('@/entities/ticker/api', () => ({

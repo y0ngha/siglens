@@ -1,3 +1,7 @@
+import { render, screen } from '@testing-library/react';
+import { HomeSkillsDisclosure } from '@/app/[locale]/(home)/_components/HomeSkillsDisclosure';
+import type { HomeSkillItem } from '@/widgets/home/utils/toSkillShowcaseItems';
+
 vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -6,10 +10,6 @@ vi.stubGlobal(
         disconnect = vi.fn();
     }
 );
-
-import { render, screen } from '@testing-library/react';
-import { HomeSkillsDisclosure } from '@/app/[locale]/(home)/_components/HomeSkillsDisclosure';
-import type { HomeSkillItem } from '@/widgets/home/utils/toSkillShowcaseItems';
 
 const SKILLS: HomeSkillItem[] = [
     {

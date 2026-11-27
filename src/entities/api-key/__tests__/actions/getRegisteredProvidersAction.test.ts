@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 const { mockFindByUser } = vi.hoisted(() => ({ mockFindByUser: vi.fn() }));
 
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
@@ -14,6 +13,8 @@ vi.mock('@/entities/api-key/api', () => ({
         };
     }),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';

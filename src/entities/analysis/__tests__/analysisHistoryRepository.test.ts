@@ -1,10 +1,3 @@
-/**
- * `analysisHistoryQuery`만 spy로 override한다 — findRecentForPrompt는 이
- * 함수가 돌려주는 limit/sinceMs를 그대로 쿼리 빌더에 넘겨야 하므로, 로컬에서
- * 공식을 재구현하는 테스트는 무의미하다(core 계약이 바뀌면 조용히 어긋난다).
- * 나머지 export는 실제 구현을 그대로 쓴다.
- */
-const analysisHistoryQuerySpy = vi.fn();
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const original =
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
@@ -19,20 +12,6 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     };
 });
 
-/**
- * eq/gte/lt/isNotNull/notExists/inArray만 spy로 래핑해 findRecentForPrompt와
- * pruneAnalysisHistory가 어떤 column/value로 필터를 거는지 단언한다(특히
- * findRecentForPrompt에서 model_id/locale 필터가 **없다**는 걸 증명하려면 eq 호출
- * 횟수를 세야 한다; pruneAnalysisHistory에서는 두 retention cutoff와 orphan-blob
- * notExists 조건이 정확한 컬럼/서브쿼리를 가리키는지 확인한다). and/desc는 실제
- * 구현을 그대로 써서 쿼리 빌더 체인을 보존한다.
- */
-const eqSpy = vi.fn();
-const gteSpy = vi.fn();
-const ltSpy = vi.fn();
-const isNotNullSpy = vi.fn();
-const notExistsSpy = vi.fn();
-const inArraySpy = vi.fn();
 vi.mock('drizzle-orm', async importOriginal => {
     const original = await importOriginal<typeof import('drizzle-orm')>();
     return {
@@ -86,6 +65,29 @@ import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+
+/**
+ * `analysisHistoryQuery`만 spy로 override한다 — findRecentForPrompt는 이
+ * 함수가 돌려주는 limit/sinceMs를 그대로 쿼리 빌더에 넘겨야 하므로, 로컬에서
+ * 공식을 재구현하는 테스트는 무의미하다(core 계약이 바뀌면 조용히 어긋난다).
+ * 나머지 export는 실제 구현을 그대로 쓴다.
+ */
+const analysisHistoryQuerySpy = vi.fn();
+
+/**
+ * eq/gte/lt/isNotNull/notExists/inArray만 spy로 래핑해 findRecentForPrompt와
+ * pruneAnalysisHistory가 어떤 column/value로 필터를 거는지 단언한다(특히
+ * findRecentForPrompt에서 model_id/locale 필터가 **없다**는 걸 증명하려면 eq 호출
+ * 횟수를 세야 한다; pruneAnalysisHistory에서는 두 retention cutoff와 orphan-blob
+ * notExists 조건이 정확한 컬럼/서브쿼리를 가리키는지 확인한다). and/desc는 실제
+ * 구현을 그대로 써서 쿼리 빌더 체인을 보존한다.
+ */
+const eqSpy = vi.fn();
+const gteSpy = vi.fn();
+const ltSpy = vi.fn();
+const isNotNullSpy = vi.fn();
+const notExistsSpy = vi.fn();
+const inArraySpy = vi.fn();
 
 function sha256Hex(body: string): string {
     return createHash('sha256').update(body, 'utf8').digest('hex');

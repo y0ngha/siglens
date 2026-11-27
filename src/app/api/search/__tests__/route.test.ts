@@ -1,14 +1,14 @@
 const { mockGetClientIp } = vi.hoisted(() => ({ mockGetClientIp: vi.fn() }));
 vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('@/entities/ticker/server/searchTickerQuery', async importOriginal => ({
     ...(await importOriginal<
         typeof import('@/entities/ticker/server/searchTickerQuery')
     >()),
     searchTickerQuery: vi.fn(),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GET } from '../route';
 import {

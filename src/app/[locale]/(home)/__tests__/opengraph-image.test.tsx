@@ -1,12 +1,3 @@
-// @vitest-environment node
-import type { ReactNode } from 'react';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { SITE_NAME } from '@/shared/config/brand';
-import koMessages from '../../../../../messages/ko.json';
-import enMessages from '../../../../../messages/en.json';
-import jaMessages from '../../../../../messages/ja.json';
-import zhMessages from '../../../../../messages/zh.json';
-
 const { mockImageResponse, mockLoadOgFont } = vi.hoisted(() => ({
     mockImageResponse: vi.fn(),
     mockLoadOgFont: vi.fn(),
@@ -21,6 +12,15 @@ vi.mock('next/og', () => ({
 vi.mock('@/entities/og-image/server/loadOgFont', () => ({
     loadOgFont: mockLoadOgFont,
 }));
+
+// @vitest-environment node
+import type { ReactNode } from 'react';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { SITE_NAME } from '@/shared/config/brand';
+import koMessages from '../../../../../messages/ko.json';
+import enMessages from '../../../../../messages/en.json';
+import jaMessages from '../../../../../messages/ja.json';
+import zhMessages from '../../../../../messages/zh.json';
 
 import Image, {
     contentType,

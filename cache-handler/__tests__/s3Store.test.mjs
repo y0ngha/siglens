@@ -1,5 +1,3 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-
 const { send } = vi.hoisted(() => ({ send: vi.fn() }));
 
 vi.mock('@aws-sdk/client-s3', () => ({
@@ -28,6 +26,8 @@ vi.mock('../config.mjs', () => ({
         dataScope: 'data-v1-next16.3.6',
     },
 }));
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { getEntry, lookupEntry, setEntry, s3KeyForTest } from '../s3Store.mjs';
 import { serialize } from '../serialize.mjs';

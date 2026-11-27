@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { findCikBySymbol, fetchConcept, getOrSetCache, flagIsSet, flagMark } =
     vi.hoisted(() => ({
         flagIsSet: vi.fn(),
@@ -20,6 +18,8 @@ vi.mock('@/shared/api/sec/secClient', () => ({
     fetchCompanyConceptJson: fetchConcept,
 }));
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     loadSecQuarters,

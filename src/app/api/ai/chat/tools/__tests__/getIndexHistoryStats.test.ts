@@ -1,21 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { loader } = vi.hoisted(() => ({ loader: { load: vi.fn() } }));
 vi.mock('@/entities/index-history/server/loadIndexMonthEnds', () => ({
     loadIndexMonthEnds: loader.load,
 }));
-const loaded = (monthEnds: unknown[], usCycle: boolean) => ({
-    monthEnds,
-    currentMonth: '2026-11',
-    usCycle,
-});
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexHistoryStats } from '@y0ngha/siglens-core';
 import { isRecord } from '@/shared/lib/isRecord';
 import { getIndexHistoryStatsTool } from '@/app/api/ai/chat/tools/getIndexHistoryStats';
 import { INDEX_HISTORY_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+
+const loaded = (monthEnds: unknown[], usCycle: boolean) => ({
+    monthEnds,
+    currentMonth: '2026-11',
+    usCycle,
+});
 
 const ctx = {
     userId: 'u',

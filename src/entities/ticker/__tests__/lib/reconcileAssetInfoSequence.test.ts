@@ -1,21 +1,3 @@
-/**
- * cron(`reconcileUsTickerNames`) → `getAssetInfo` → cron 순서가 이름을 되돌려 쓰며 도는지(flap)
- * 확인하는 시뮬레이션.
- *
- * 걱정은 이것이다: cron은 `korean_tickers`/`asset_translations`에 **stock-list** 표기를
- * 쓰는데, `getAssetInfo`의 FMP 경로는 **search-symbol** 표기를 `reusableKoreanName`에서
- * 저장 이름과 비교한다. 두 표기가 정규화 후에도 다르면 getAssetInfo가 재번역해 search
- * 표기를 되써 넣고, 다음 cron이 다시 stock-list 표기로 갈아엎는 순환이 될 수 있다.
- *
- * 결론(이 파일이 고정하는 것): **순환하지 않는다.** FMP 경로는 `asset_translations` 행이
- * 없을 때만 타고(`resolveAssetInfo`는 DB를 먼저 읽는다), 그 경로가 끝나면 항상 그 행을 만든다.
- * 그래서 getAssetInfo의 FMP 경로는 심볼당 많아야 한 번이고, 그 뒤 cron은 한 번 더 갈아 쓴 다음
- * 수렴한다. 두 저장소와 두 표기를 실제 모듈로 엮어 날 단위로 돌린다.
- */
-import type { AssetTranslationRecord } from '@/shared/db/types';
-import type { KoreanTickerEntry } from '@/shared/lib/types';
-import type { FmpSearchResult } from '../../model';
-
 const {
     store,
     tryGetDatabaseClientMock,
@@ -32,9 +14,6 @@ const {
     translateCompanyNamesMock: vi.fn(),
     cronTranslateMock: vi.fn(),
 }));
-
-const tickers = store.tickers as Map<string, KoreanTickerEntry>;
-const assets = store.assets as Map<string, AssetTranslationRecord>;
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
@@ -85,11 +64,32 @@ vi.mock('../../server/fmpCryptoMembership', () => ({
     fmpCryptoMembership: vi.fn().mockResolvedValue(null),
 }));
 
+/**
+ * cron(`reconcileUsTickerNames`) → `getAssetInfo` → cron 순서가 이름을 되돌려 쓰며 도는지(flap)
+ * 확인하는 시뮬레이션.
+ *
+ * 걱정은 이것이다: cron은 `korean_tickers`/`asset_translations`에 **stock-list** 표기를
+ * 쓰는데, `getAssetInfo`의 FMP 경로는 **search-symbol** 표기를 `reusableKoreanName`에서
+ * 저장 이름과 비교한다. 두 표기가 정규화 후에도 다르면 getAssetInfo가 재번역해 search
+ * 표기를 되써 넣고, 다음 cron이 다시 stock-list 표기로 갈아엎는 순환이 될 수 있다.
+ *
+ * 결론(이 파일이 고정하는 것): **순환하지 않는다.** FMP 경로는 `asset_translations` 행이
+ * 없을 때만 타고(`resolveAssetInfo`는 DB를 먼저 읽는다), 그 경로가 끝나면 항상 그 행을 만든다.
+ * 그래서 getAssetInfo의 FMP 경로는 심볼당 많아야 한 번이고, 그 뒤 cron은 한 번 더 갈아 쓴 다음
+ * 수렴한다. 두 저장소와 두 표기를 실제 모듈로 엮어 날 단위로 돌린다.
+ */
+import type { AssetTranslationRecord } from '@/shared/db/types';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
+import type { FmpSearchResult } from '../../model';
+
 import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
 } from '../../server/getAssetInfo';
 import { reconcileUsTickerNames } from '../../server/reconcileUsTickerNames';
+
+const tickers = store.tickers as Map<string, KoreanTickerEntry>;
+const assets = store.assets as Map<string, AssetTranslationRecord>;
 
 /** stock-list 표기와 search-symbol 표기 — 정규화 후에도 다른 (가상의) 불일치. */
 const STOCK_LIST_NAME = 'Acme Global Technologies Inc';

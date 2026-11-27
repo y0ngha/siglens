@@ -54,7 +54,7 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
     usePathname: () => '/backtesting',
 }));
-const jsonLdSpy = vi.fn();
+
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: ({ data }: { data: Record<string, unknown> }) => {
         jsonLdSpy(data);
@@ -89,6 +89,8 @@ vi.mock('@/entities/backtest-case/lib/deriveBacktestStats', () => ({
 import { renderToStaticMarkup } from 'react-dom/server';
 import BacktestingPage from '@/app/[locale]/backtesting/page';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+
+const jsonLdSpy = vi.fn();
 
 describe('/backtesting Dataset JSON-LD', () => {
     it('composes temporalCoverage from derived stats and drops the fake dateModified', async () => {

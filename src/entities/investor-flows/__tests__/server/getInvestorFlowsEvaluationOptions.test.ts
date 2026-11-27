@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 vi.mock('react', async importOriginal => ({
     ...(await importOriginal<typeof import('react')>()),
@@ -21,6 +19,8 @@ vi.mock('@/shared/api/finra/finraShortDataEnabled', () => ({
 vi.mock('@/shared/api/exchange/regShoThresholdDataEnabled', () => ({
     isRegShoThresholdDataEnabled: mockRegSho,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getInvestorFlowsEvaluationOptions } from '../../server/getInvestorFlowsEvaluationOptions';
 

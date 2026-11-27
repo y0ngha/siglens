@@ -1,6 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import React from 'react';
-
 // react-markdown and its plugins are ESM-only. Mock the module with a minimal
 // implementation that parses the markdown just enough for structural testing.
 vi.mock('react-markdown', async () => {
@@ -175,6 +172,9 @@ vi.mock('react-markdown', async () => {
 
 vi.mock('remark-gfm', () => ({ __esModule: true, default: () => {} }));
 vi.mock('rehype-slug', () => ({ __esModule: true, default: () => {} }));
+
+import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 

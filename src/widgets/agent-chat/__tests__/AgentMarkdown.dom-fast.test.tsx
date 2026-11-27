@@ -1,7 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import type { Options } from 'react-markdown';
-import { describe, expect, it, vi } from 'vitest';
-
 /** 블록별 파싱 횟수를 세려고 react-markdown을 그대로 감싼다(동작은 원본 그대로). */
 const { parsed } = vi.hoisted(() => ({ parsed: vi.fn() }));
 vi.mock('react-markdown', async importOriginal => {
@@ -14,6 +10,10 @@ vi.mock('react-markdown', async importOriginal => {
         },
     };
 });
+
+import { render, screen } from '@testing-library/react';
+import type { Options } from 'react-markdown';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AgentMarkdown } from '@/widgets/agent-chat/AgentMarkdown';
 

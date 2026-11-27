@@ -1,5 +1,3 @@
-import React from 'react';
-
 const { marker } = vi.hoisted(() => ({
     marker:
         (name: string) =>
@@ -48,6 +46,8 @@ vi.mock('@/shared/model/NavigationPendingContext', () => ({
 vi.mock('@/shared/ui/ToastProvider', () => ({
     ToastProvider: marker('toast'),
 }));
+
+import React from 'react';
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';

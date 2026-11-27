@@ -1,6 +1,3 @@
-delete process.env.UPSTASH_REDIS_REST_URL;
-delete process.env.UPSTASH_REDIS_REST_TOKEN;
-
 vi.mock('server-only', () => ({}));
 
 const { mockGetMarketSummary, mockRedisGet, mockRedisSet, mockRedisCtor } =
@@ -17,8 +14,6 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     computeBarsEffectiveTtl: vi.fn(() => 60),
 }));
 
-const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
-
 vi.mock('@upstash/redis', () => ({
     Redis: vi.fn().mockImplementation(function (opts: unknown) {
         mockRedisCtor(opts);
@@ -33,6 +28,11 @@ import {
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
 import { marketSummaryConfigFingerprint } from '../api/marketSummaryCache';
+
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const sampleSummary: MarketSummaryData = {
     indices: [

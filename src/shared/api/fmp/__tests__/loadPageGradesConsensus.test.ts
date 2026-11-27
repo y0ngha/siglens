@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getGrades, cacheStore, staticSymbolCache } = vi.hoisted(() => {
     const cacheStore = new Map<string, unknown>();
     return {
@@ -25,6 +23,8 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({ staticSymbolCache }));
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: () => ({ getGradesConsensus: getGrades }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadPageGradesConsensus } from '@/shared/api/fmp/loadPageGradesConsensus';
 

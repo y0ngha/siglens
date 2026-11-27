@@ -1,6 +1,3 @@
-import type { Mock } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
 // 대기 시간을 없앤다.
 vi.mock('@/shared/lib/sleep', () => ({
@@ -68,6 +65,10 @@ vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
 vi.mock('../../lib/analyzeNewsCards', () => ({
     analyzeNewsCards: vi.fn().mockResolvedValue(undefined),
 }));
+
+import type { Mock } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type {
     NewsItem,

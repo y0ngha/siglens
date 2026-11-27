@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
     const m = {
         user: vi.fn(),
@@ -97,6 +95,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
     runAgentTurn: m.runTurn,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import sharp from 'sharp';
 import { POST } from '@/app/api/ai/chat/stream/route';

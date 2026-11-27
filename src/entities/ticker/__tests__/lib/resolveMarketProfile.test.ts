@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-
 vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
+
+import { describe, it, expect, vi } from 'vitest';
 
 import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';

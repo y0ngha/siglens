@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockGetKoreanNames, capturedResolvers } = vi.hoisted(() => ({
     mockGetKoreanNames: vi.fn(),
     capturedResolvers: [] as ((symbol: string) => Promise<string | null>)[],
@@ -16,6 +14,8 @@ vi.mock('../../server/naverNewsClient', () => ({
         }
     },
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getNewsClient } from '../../server/getNewsClient';
 

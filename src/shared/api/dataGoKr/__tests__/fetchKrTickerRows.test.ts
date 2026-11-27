@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockMaster, mockSupplement } = vi.hoisted(() => ({
     mockMaster: vi.fn(),
     mockSupplement: vi.fn(),
@@ -9,6 +7,8 @@ vi.mock('../krxListedInfoClient', () => ({
     fetchKrxListedItems: mockMaster,
     fetchStockPriceItems: mockSupplement,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { KrxListedItem } from '../krxListedInfoClient';
 import { fetchKrTickerRows } from '../fetchKrTickerRows';

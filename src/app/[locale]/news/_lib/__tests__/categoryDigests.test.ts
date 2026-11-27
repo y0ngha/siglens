@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 const { peekMock } = vi.hoisted(() => ({ peekMock: vi.fn() }));
 vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
     peekMarketNewsDigestStatic: peekMock,
 }));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchCategoryDigestLines } from '@/app/[locale]/news/_lib/categoryDigests';
 

@@ -1,6 +1,3 @@
-import { render } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const m = vi.hoisted(() => ({
     consume: vi.fn<() => 'email' | 'oauth' | null>(),
     readLastGate: vi.fn<() => string | null>(),
@@ -19,6 +16,9 @@ vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
     trackFunnelEvent: m.track,
 }));
 vi.mock('next/navigation', () => ({ usePathname: () => m.pathname }));
+
+import { render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 

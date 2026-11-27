@@ -1,4 +1,3 @@
-import type { MockInstance } from 'vitest';
 const { mockSubmitInquiry, mockCreate, mockRateLimit, mockNotify } = vi.hoisted(
     () => ({
         mockSubmitInquiry: vi.fn(),
@@ -34,6 +33,8 @@ vi.mock('@y0ngha/siglens-core', async orig => ({
 vi.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),
 }));
+
+import type { MockInstance } from 'vitest';
 
 import { submitContactAction } from '../actions/submitContactAction';
 import type { ContactFormState } from '@/shared/lib/types';

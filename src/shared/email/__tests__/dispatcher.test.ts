@@ -1,4 +1,3 @@
-import type { MockedClass } from 'vitest';
 const { sendMock, getRedisClientMock } = vi.hoisted(() => ({
     sendMock: vi.fn(),
     getRedisClientMock: vi.fn(),
@@ -11,6 +10,8 @@ vi.mock('resend', () => ({
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: getRedisClientMock,
 }));
+
+import type { MockedClass } from 'vitest';
 
 import { Resend } from 'resend';
 import { createEmailDispatcher } from '../dispatcher';

@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const {
     mockFinancials,
     mockScorecard,
@@ -57,6 +55,8 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/shared/lib/etTimeUtils', () => ({
     kstDateKey: () => '2026-11-08',
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getFundamentalFacts } from '../server/getFundamentalFacts';
 

@@ -1,19 +1,3 @@
-/**
- * 홈 섹션 구성(WP-25 PR-2) — 순서, 접힌 콘텐츠의 서버 HTML 보존, 메일 카드 자리.
- *
- * 줄이기 작업이 가장 쉽게 깨는 것은 내부 링크다. 인기 종목은 탭·접기로, 기법 카드는 닫힌
- * `<details>`로, FAQ는 `<details>`로 접히지만 **DOM에는 전부 남아야** 크롤러가 따라간다.
- * 그래서 이 파일은 위젯을 목으로 대체하지 않고 실제 인기 종목·기법 목록(`skills/` 파일)·
- * 오늘의 시장을 렌더해 링크 집합을 단언한다.
- */
-vi.stubGlobal(
-    'ResizeObserver',
-    class {
-        observe = vi.fn();
-        unobserve = vi.fn();
-        disconnect = vi.fn();
-    }
-);
 vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
 }));
@@ -107,6 +91,23 @@ import {
     INITIAL_VISIBLE_COUNT,
     SKILL_TABS,
 } from '@/widgets/home/utils/skillTabs';
+
+/**
+ * 홈 섹션 구성(WP-25 PR-2) — 순서, 접힌 콘텐츠의 서버 HTML 보존, 메일 카드 자리.
+ *
+ * 줄이기 작업이 가장 쉽게 깨는 것은 내부 링크다. 인기 종목은 탭·접기로, 기법 카드는 닫힌
+ * `<details>`로, FAQ는 `<details>`로 접히지만 **DOM에는 전부 남아야** 크롤러가 따라간다.
+ * 그래서 이 파일은 위젯을 목으로 대체하지 않고 실제 인기 종목·기법 목록(`skills/` 파일)·
+ * 오늘의 시장을 렌더해 링크 집합을 단언한다.
+ */
+vi.stubGlobal(
+    'ResizeObserver',
+    class {
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+    }
+);
 
 async function renderHome(locale: string) {
     return render(await Home({ params: Promise.resolve({ locale }) }));

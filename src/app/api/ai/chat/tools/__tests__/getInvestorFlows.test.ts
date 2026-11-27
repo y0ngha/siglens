@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { isTabAllowed, loadScorecard, loadKrTrend } = vi.hoisted(() => ({
@@ -20,13 +18,6 @@ const { ownership } = vi.hoisted(() => ({ ownership: { get: vi.fn() } }));
 vi.mock('@/shared/api/yahoo/yahooOwnershipSource', () => ({
     getYahooOwnershipShares: ownership.get,
 }));
-/** 실측(2026-11-16 NVDA) 모양의 보유 비율 — 크기 예산 테스트에도 실린다. */
-const OWNERSHIP = {
-    institutionsPct: 71.17,
-    institutionsFloatPct: 74.25,
-    insidersPct: 4.16,
-    institutionCount: 7773,
-};
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
 }));
@@ -37,6 +28,8 @@ const { lookupHolder } = vi.hoisted(() => ({ lookupHolder: vi.fn() }));
 vi.mock('@/entities/investor-flows/server/getHolderLookup', () => ({
     getHolderLookup: lookupHolder,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getInvestorFlowsTool } from '@/app/api/ai/chat/tools/getInvestorFlows';
 import { INVESTOR_FLOWS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
@@ -80,6 +73,14 @@ import {
     EMPTY_COLLECTING_SNAPSHOT,
     resolveCollectingArms,
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+
+/** 실측(2026-11-16 NVDA) 모양의 보유 비율 — 크기 예산 테스트에도 실린다. */
+const OWNERSHIP = {
+    institutionsPct: 71.17,
+    institutionsFloatPct: 74.25,
+    insidersPct: 4.16,
+    institutionCount: 7773,
+};
 
 const ctx = {
     userId: 'u',

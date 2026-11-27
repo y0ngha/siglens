@@ -1,11 +1,5 @@
 vi.mock('server-only', () => ({}));
 
-const computeCryptoFearGreedIndex = vi.fn(
-    (..._args: unknown[]): unknown => ({})
-);
-const computeCryptoFearGreedHistory = vi.fn(
-    (..._args: unknown[]): unknown[] => []
-);
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
@@ -19,12 +13,10 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-const fetchCryptoDailyBars = vi.fn();
 vi.mock('../../api/fetchCryptoDailyBars', () => ({
     fetchCryptoDailyBars: (...args: unknown[]) => fetchCryptoDailyBars(...args),
 }));
 
-const getOrSetCache = vi.fn();
 vi.mock('@/shared/cache/getOrSetCache', () => ({
     getOrSetCache: (...args: unknown[]) => getOrSetCache(...args),
 }));
@@ -41,6 +33,17 @@ import {
     MARKET_FEAR_GREED_CRYPTO_UNIVERSE,
 } from '../../lib/marketFearGreedCryptoSymbols';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+
+const computeCryptoFearGreedIndex = vi.fn(
+    (..._args: unknown[]): unknown => ({})
+);
+const computeCryptoFearGreedHistory = vi.fn(
+    (..._args: unknown[]): unknown[] => []
+);
+
+const fetchCryptoDailyBars = vi.fn();
+
+const getOrSetCache = vi.fn();
 
 /** `getOrSetCache(key, ttl, fetcher, guard)`의 fetcher를 실행해 결과를 얻는다. */
 async function runFetcher() {

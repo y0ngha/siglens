@@ -1,8 +1,3 @@
-import {
-    expectLogWithoutPlantedSecrets,
-    plantedDbError,
-} from '@/shared/test-utils/plantedDbError';
-
 const launched = vi.hoisted(() => ({ value: true }));
 const priceLaunched = vi.hoisted(() => ({ value: true }));
 vi.mock(
@@ -36,6 +31,11 @@ vi.mock('@/entities/mail-alert/server/mailAlertFlows', () => ({
     setMailAlertIncludePortfolioFlow: vi.fn(),
     cancelPriceAlertFlow: vi.fn(),
 }));
+
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 import { addMailAlertTopicAction } from '@/entities/mail-alert/actions/addMailAlertTopicAction';
 import { cancelPriceAlertAction } from '@/entities/mail-alert/actions/cancelPriceAlertAction';

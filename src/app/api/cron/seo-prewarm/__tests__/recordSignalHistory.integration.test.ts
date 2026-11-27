@@ -1,9 +1,3 @@
-import type { Bar, MarketDataProvider } from '@y0ngha/siglens-core';
-import type {
-    OpenEpisode,
-    SymbolScanWrite,
-} from '@/entities/signal-history/types';
-
 const store = vi.hoisted(() => ({
     writes: [] as unknown[],
     sessions: [] as unknown[],
@@ -38,6 +32,12 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     getKoreanNames: vi.fn(async () => ({})),
 }));
 vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: () => null }));
+
+import type { Bar, MarketDataProvider } from '@y0ngha/siglens-core';
+import type {
+    OpenEpisode,
+    SymbolScanWrite,
+} from '@/entities/signal-history/types';
 
 import type { SiglensDatabase } from '@/shared/db/types';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';

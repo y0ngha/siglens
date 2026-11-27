@@ -1,13 +1,13 @@
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import { mockViewport } from '@/__tests__/utils/mockViewport';
-
-const track = vi.hoisted(() => vi.fn());
-vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
-    trackFunnelEvent: track,
-}));
 
 import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
 

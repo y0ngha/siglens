@@ -1,6 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
-
 const { signupFormSpy, socialSpy, searchParamsRef } = vi.hoisted(() => ({
     signupFormSpy: vi.fn(),
     socialSpy: vi.fn(),
@@ -22,6 +19,9 @@ vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
         return <div data-testid="social" />;
     },
 }));
+
+import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 
 import { SignupContent } from '../SignupContent';
 

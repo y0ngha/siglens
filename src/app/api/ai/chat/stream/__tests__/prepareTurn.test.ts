@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { repo, portfolio, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
     const repo = {
         create: vi.fn(),
@@ -34,6 +32,8 @@ vi.mock('@/entities/portfolio/api', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import {

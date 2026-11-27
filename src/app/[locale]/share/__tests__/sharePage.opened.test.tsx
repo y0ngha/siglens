@@ -1,9 +1,3 @@
-/**
- * 공유 링크 페이지가 `share_opened` 비콘에 id와 분석 종류를 넘긴다. 만료·없는 링크는 404라
- * (`sharePage.notFound.test.tsx`) 이 비콘이 아예 렌더되지 않는다.
- */
-import type { ReactElement, ReactNode } from 'react';
-
 const { mockLookup } = vi.hoisted(() => ({ mockLookup: vi.fn() }));
 
 vi.mock('@/entities/shared-analysis/actions/getCachedSharedAnalysis', () => ({
@@ -27,6 +21,12 @@ vi.mock('@/views/share/ShareKindPanel', () => ({
 vi.mock('@/features/visitor-ping/ui/ShareOpenedPing', () => ({
     ShareOpenedPing: () => null,
 }));
+
+/**
+ * 공유 링크 페이지가 `share_opened` 비콘에 id와 분석 종류를 넘긴다. 만료·없는 링크는 404라
+ * (`sharePage.notFound.test.tsx`) 이 비콘이 아예 렌더되지 않는다.
+ */
+import type { ReactElement, ReactNode } from 'react';
 
 import SharePage from '@/app/[locale]/share/[id]/page';
 import { ShareOpenedPing } from '@/features/visitor-ping/ui/ShareOpenedPing';

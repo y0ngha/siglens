@@ -1,7 +1,3 @@
-import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
-import type { PrewarmBatchCounts } from '../runPrewarmBatch';
-import type { SeamOutcome } from '../harvest';
-
 const {
     mockMarkSkipped,
     mockClearInFlight,
@@ -92,6 +88,10 @@ vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     resolveCurrentPrice: mockResolveCurrentPrice,
     resolvePriceAsOf: mockResolvePriceAsOf,
 }));
+
+import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+import type { PrewarmBatchCounts } from '../runPrewarmBatch';
+import type { SeamOutcome } from '../harvest';
 
 import { TAB_SEAMS, resolveHarvest } from '../harvest';
 

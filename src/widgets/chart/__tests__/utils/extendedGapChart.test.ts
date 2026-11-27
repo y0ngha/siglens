@@ -1,9 +1,9 @@
-import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
+
+import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { IChartApi } from 'lightweight-charts';
 import type { Bar } from '@y0ngha/siglens-core';

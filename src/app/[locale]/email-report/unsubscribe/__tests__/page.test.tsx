@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 vi.mock('@/features/email-report-unsubscribe/ui/UnsubscribeConfirm', () => ({
     UnsubscribeConfirm: () => <div data-testid="unsubscribe-confirm" />,
 }));
@@ -26,6 +24,8 @@ vi.mock('@/shared/ui/auth/AuthFormSkeleton', () => ({
 vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import EmailReportUnsubscribePage, {
     generateMetadata,

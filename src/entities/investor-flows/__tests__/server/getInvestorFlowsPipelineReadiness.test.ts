@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 vi.mock('react', async importOriginal => ({
     ...(await importOriginal<typeof import('react')>()),
@@ -41,6 +39,8 @@ vi.mock('@/shared/api/exchange/regShoThresholdDataEnabled', () => ({
     isRegShoThresholdDataEnabled: mockRegSho,
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: mockE2E }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { INVESTOR_FLOWS_READINESS_TAG } from '../../lib/investorFlowsTag';
 import { getInvestorFlowsPipelineReadiness } from '../../server/getInvestorFlowsPipelineReadiness';

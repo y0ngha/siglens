@@ -1,7 +1,6 @@
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/lib/logActionError', () => ({ logActionError: vi.fn() }));
 
-const mockUpsert = vi.fn();
 vi.mock('@/entities/email-report/api', () => ({
     DrizzleEmailReportSubscriptionRepository: vi
         .fn()
@@ -13,6 +12,8 @@ vi.mock('@/entities/email-report/api', () => ({
 import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
 import { logActionError } from '@/shared/lib/logActionError';
 import type { SiglensDatabase } from '@/shared/db/types';
+
+const mockUpsert = vi.fn();
 
 const DB = {} as SiglensDatabase;
 

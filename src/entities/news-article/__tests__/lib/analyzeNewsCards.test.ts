@@ -11,7 +11,7 @@ vi.mock('@/entities/news-article/server/newsCardFailureBackoff', () => ({
 }));
 
 // `vi.mock`은 import 위로 호이스트되어야 static import보다 먼저 평가된다
-// (`import/first` 규칙과 일치) — 아래 import 블록은 하나로 이어져야 한다.
+// (TESTING.md#TE-1) — 아래 import 블록은 하나로 이어져야 한다.
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
         await importOriginal<typeof import('@y0ngha/siglens-core')>();

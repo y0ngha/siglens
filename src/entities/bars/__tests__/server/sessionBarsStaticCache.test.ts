@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const {
     mockShortenRevalidate,
     mockShortenIncomplete,
@@ -56,6 +54,8 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: vi.fn(),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BarsData } from '@y0ngha/siglens-core';
 import {

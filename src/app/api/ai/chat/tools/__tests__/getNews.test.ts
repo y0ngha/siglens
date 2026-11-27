@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { bySymbol, byCategory, peekDigest, degradeSpy, getBars, profile } =
     vi.hoisted(() => ({
         bySymbol: vi.fn(),
@@ -40,6 +38,8 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: async () => null,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     getNewsTool,

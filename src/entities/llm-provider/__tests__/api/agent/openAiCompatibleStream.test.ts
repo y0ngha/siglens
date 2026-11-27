@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockCreate, MockOpenAI } = vi.hoisted(() => {
     const create = vi.fn();
     const MockOpenAI = vi.fn().mockImplementation(function () {
@@ -8,6 +6,8 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
     return { mockCreate: create, MockOpenAI };
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AGENT_NARRATION_HOLD_CHARS } from '@/entities/llm-provider/lib/agentStream';
 import {

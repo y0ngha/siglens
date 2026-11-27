@@ -1,7 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const mockGetQuote = vi.fn();
-
 vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(async () => null),
 }));
@@ -15,7 +11,11 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: () => ({}),
 }));
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { fetchQuotePriceForAnalysis } from '@/entities/analysis/server/fetchQuotePriceForAnalysis';
+
+const mockGetQuote = vi.fn();
 
 describe('fetchQuotePriceForAnalysis', () => {
     beforeEach(() => {

@@ -1,11 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
-import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
-import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
-import { INDEXNOW_ENDPOINTS } from '@/shared/config/indexNow';
-import type { IndexNowQueueEntry } from '@/shared/api/indexNowQueue';
-import { SITE_URL } from '@/shared/lib/seo';
-
 const {
     mockIsIndexNowEnabled,
     mockEnqueue,
@@ -43,6 +35,14 @@ vi.mock('../indexNowStaticPages', async importOriginal => ({
     readStaticLastmods: mockReadStaticLastmods,
     writeStaticLastmods: mockWriteStaticLastmods,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { INDEXNOW_ENDPOINTS } from '@/shared/config/indexNow';
+import type { IndexNowQueueEntry } from '@/shared/api/indexNowQueue';
+import { SITE_URL } from '@/shared/lib/seo';
 
 import { submitIndexNowForBatch } from '../indexNowSubmission';
 

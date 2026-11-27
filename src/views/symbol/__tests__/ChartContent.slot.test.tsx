@@ -14,8 +14,8 @@ const FALLBACK_ANALYSIS = buildFallbackAnalysis(
 
 // 무거운 차트/하위 훅은 stub. 슬롯 분기에 필요한 useBars/useAnalysis만 제어.
 // vitest가 vi.mock 호출을 파일 최상단으로 호이스팅하므로, 선언 위치와 무관하게
-// 모킹이 적용된다. eslint import/first를 만족시키려고 import를 모두 위에 모으고
-// mock 선언을 그 아래에 둔다 (둘 다 동작하는 동등 표현).
+// 모킹이 적용된다. import 블록을 하나로 이어 두려고 mock 선언을 모두 import 위에 둔다
+// (TESTING.md#TE-1).
 // StockChart만 스텁으로 바꾼다 — 슬롯이 `headerStartSlot`으로 넘어가는 배선만 본다.
 vi.mock('next/dynamic', () => ({
     default: (loader: () => Promise<unknown>) => {

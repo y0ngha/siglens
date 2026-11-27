@@ -1,5 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 const { mockQuantize, mockShortenRevalidate, memoStores } = vi.hoisted(() => ({
     mockQuantize: vi.fn(),
     mockShortenRevalidate: vi.fn(async () => undefined),
@@ -19,7 +17,6 @@ vi.mock('react', async importOriginal => ({
         };
     },
 }));
-import type { BarsData } from '@y0ngha/siglens-core';
 
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
@@ -37,6 +34,10 @@ vi.mock('@/entities/bars/lib/quantizeBars', () => ({
         session?: unknown
     ) => mockQuantize(data, now, session),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import type { BarsData } from '@y0ngha/siglens-core';
 
 import { EMPTY_INDICATOR_RESULT } from '@y0ngha/siglens-core';
 import {

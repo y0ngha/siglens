@@ -1,3 +1,11 @@
+vi.mock('@/widgets/market-fear-greed/MarketFearGreedPage', () => ({
+    MarketFearGreedPage: () => null,
+}));
+
+vi.mock('@/entities/market-fear-greed/api/marketFearGreedStaticCache', () => ({
+    getMarketFearGreedStatic: vi.fn(),
+}));
+
 import { render, screen } from '@testing-library/react';
 import {
     describe,
@@ -7,14 +15,6 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-
-vi.mock('@/widgets/market-fear-greed/MarketFearGreedPage', () => ({
-    MarketFearGreedPage: () => null,
-}));
-
-vi.mock('@/entities/market-fear-greed/api/marketFearGreedStaticCache', () => ({
-    getMarketFearGreedStatic: vi.fn(),
-}));
 
 import FearGreedRoutePage, {
     generateMetadata,

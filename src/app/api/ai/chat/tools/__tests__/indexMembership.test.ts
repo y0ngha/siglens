@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { getOrSetCache, fetchIndexConstituents } = vi.hoisted(() => ({
@@ -13,6 +11,8 @@ vi.mock('@/shared/api/wikipedia/indexConstituents', async importOriginal => ({
     >()),
     fetchIndexConstituents,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     INDEX_FAILURE_CACHE_TTL_SECONDS,

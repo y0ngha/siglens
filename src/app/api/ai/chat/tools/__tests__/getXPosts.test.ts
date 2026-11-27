@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { load } = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock('@/entities/x-posts/server/getXPosts', () => ({ getXPosts: load }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     AGENT_X_POST_TEXT_MAX_CHARS,

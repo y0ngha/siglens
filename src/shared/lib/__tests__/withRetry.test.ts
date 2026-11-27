@@ -1,11 +1,12 @@
-import type { MockedFunction, Mock } from 'vitest';
 // `sleep` is the only true side effect inside withRetry. Stubbing it lets each
 // test run synchronously and lets us assert on delay schedules without burning
 // real wall-clock time. `vi.mock` is hoisted to the top of the file so it
-// runs before the static imports below (required by `import/first`).
+// runs before the static imports below (TESTING.md#TE-1).
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
+
+import type { MockedFunction, Mock } from 'vitest';
 
 import { withRetry } from '@/shared/lib/withRetry';
 import { sleep } from '@/shared/lib/sleep';

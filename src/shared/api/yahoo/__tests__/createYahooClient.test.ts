@@ -1,10 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
-
-const constructorArgs: unknown[] = [];
-const quoteImpl = vi.fn(async (symbol: string) => ({ symbol }));
-// allowlist에 없는 동기 헬퍼 흉내 — 감싸이면 안 되므로 async가 아니다.
-const syncHelperImpl = vi.fn((symbol: string) => ({ symbol, sync: true }));
-
 vi.mock('yahoo-finance2', () => ({
     default: class MockYahooFinance {
         constructor(opts?: unknown) {
@@ -20,12 +13,19 @@ vi.mock('yahoo-finance2', () => ({
     },
 }));
 
+import { describe, expect, it, vi } from 'vitest';
+
 import {
     createYahooClient,
     getYahooClient,
     YAHOO_FETCH_TIMEOUT_MS,
 } from '@/shared/api/yahoo/createYahooClient';
 import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
+
+const constructorArgs: unknown[] = [];
+const quoteImpl = vi.fn(async (symbol: string) => ({ symbol }));
+// allowlist에 없는 동기 헬퍼 흉내 — 감싸이면 안 되므로 async가 아니다.
+const syncHelperImpl = vi.fn((symbol: string) => ({ symbol, sync: true }));
 
 interface CapturedOptions {
     suppressNotices?: string[];

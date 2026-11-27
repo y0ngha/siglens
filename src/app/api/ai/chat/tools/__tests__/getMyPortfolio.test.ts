@@ -1,5 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
-
 const { findByUser, profile, getQuote } = vi.hoisted(() => ({
     findByUser: vi.fn(),
     profile: vi.fn(),
@@ -27,6 +25,8 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import {
     getMyPortfolioTool,

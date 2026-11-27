@@ -1,8 +1,3 @@
-// @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
-
 const track = vi.hoisted(() => vi.fn());
 vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
     trackFunnelEvent: track,
@@ -14,6 +9,11 @@ vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
 vi.mock('../AnalysisToast', () => ({ AnalysisToast: () => null }));
 vi.mock('../AdBanner', () => ({ AdBanner: () => null }));
 vi.mock('../StaleAnalysisBanner', () => ({ StaleAnalysisBanner: () => null }));
+
+// @vitest-environment jsdom
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AnalysisResponse } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
 

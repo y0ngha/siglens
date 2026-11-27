@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const m = vi.hoisted(() => ({
@@ -17,6 +15,8 @@ vi.mock('@/app/api/ai/chat/tools/getMarketOverview', () => ({
 vi.mock('@/app/api/ai/chat/tools/getThemeSnapshot', () => ({
     loadThemeSnapshot: m.theme,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildHeatmapBlock } from '@/app/api/ai/chat/tools/visualBlocks/heatmap';
 

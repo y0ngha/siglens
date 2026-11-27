@@ -3,36 +3,13 @@ vi.mock('@/features/watchlist/ui/SearchWatchlistStar', () => ({
     SearchWatchlistStar: () => null,
 }));
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const replaceMock = vi.fn();
-const pushMock = vi.fn();
-const routeState = { pathname: '/NVDA' };
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: replaceMock, push: pushMock }),
     usePathname: () => routeState.pathname,
 }));
-
-const searchState = {
-    results: [] as unknown[],
-    isSearching: false,
-    hasQuery: false,
-    isError: false,
-    // 입력과 같아야 첫 결과를 신뢰한다 — 디바운스 지연 결과로 이동하는 것을 막는 가드.
-    debouncedQuery: '',
-};
 vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
     useTickerSearch: () => searchState,
 }));
-
-const addSearchMock = vi.fn();
-const recentState = {
-    recentSearches: [] as { symbol: string; label: string }[],
-};
 vi.mock('@/features/ticker-search/hooks/useRecentSearches', () => ({
     useRecentSearches: () => ({
         recentSearches: recentState.recentSearches,
@@ -42,7 +19,31 @@ vi.mock('@/features/ticker-search/hooks/useRecentSearches', () => ({
     }),
 }));
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { SearchOverlay } from '@/features/ticker-search/ui/SearchOverlay';
+
+const replaceMock = vi.fn();
+const pushMock = vi.fn();
+const routeState = { pathname: '/NVDA' };
+
+const searchState = {
+    results: [] as unknown[],
+    isSearching: false,
+    hasQuery: false,
+    isError: false,
+    // 입력과 같아야 첫 결과를 신뢰한다 — 디바운스 지연 결과로 이동하는 것을 막는 가드.
+    debouncedQuery: '',
+};
+
+const addSearchMock = vi.fn();
+const recentState = {
+    recentSearches: [] as { symbol: string; label: string }[],
+};
 
 describe('SearchOverlay', () => {
     const onNavigateMock = vi.fn();

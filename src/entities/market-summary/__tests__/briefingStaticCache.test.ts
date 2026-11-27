@@ -1,14 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type {
-    MarketBriefingResponse,
-    MarketSummaryData,
-} from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-import {
-    KR_DASHBOARD_SCOPE,
-    US_DASHBOARD_SCOPE,
-} from '@/shared/config/dashboardScope';
-
 vi.mock('next/cache', () => ({
     unstable_cache: (
         fn: (
@@ -41,6 +30,17 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     peekBriefingCache: mockPeekBriefingCache,
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type {
+    MarketBriefingResponse,
+    MarketSummaryData,
+} from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
 
 import {
     marketBriefingSeedSurface,

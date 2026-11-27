@@ -23,8 +23,6 @@ vi.mock('@/shared/ui/JsonLd', () => ({
     },
 }));
 
-const jsonLdSpy = vi.fn();
-
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
@@ -39,6 +37,8 @@ import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { SITE_URL } from '@/shared/lib/seo';
+
+const jsonLdSpy = vi.fn();
 
 async function renderPage(locale: string): Promise<string> {
     return renderToStaticMarkup(

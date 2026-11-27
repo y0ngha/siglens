@@ -8,8 +8,6 @@
  * - L135: accessToken fallback to ''
  */
 
-import type { MockedFunction, MockedClass } from 'vitest';
-
 vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn().mockReturnValue({ name: 'auth', value: 'v' }),
 }));
@@ -66,6 +64,8 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
     ...(await vi.importActual('@/shared/lib/auth/redirect')),
     sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
+
+import type { MockedFunction, MockedClass } from 'vitest';
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/callback/[provider]/route';

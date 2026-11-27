@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { fetchTrend, getRedisClient } = vi.hoisted(() => ({
@@ -10,6 +8,8 @@ vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient }));
 vi.mock('@/shared/api/naver/naverInvestorTrend', () => ({
     fetchNaverInvestorTrend: fetchTrend,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     buildKrInvestorTrend,

@@ -1,7 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MarketFearGreedHubView } from '@/entities/market-fear-greed/model';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
 vi.mock('server-only', () => ({}));
 
 // `next/cache`의 `unstable_cache`를 vi.fn()으로 대체해 호출 인자를 직접 캡처한다.
@@ -25,6 +21,10 @@ vi.mock('@/entities/market-fear-greed/api/marketFearGreedCache', () => ({
     getCachedMarketFearGreed: vi.fn(),
     MARKET_FEAR_GREED_CONFIG_FINGERPRINT: 'abcdef012345',
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { MarketFearGreedHubView } from '@/entities/market-fear-greed/model';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import { getCachedMarketFearGreed } from '@/entities/market-fear-greed/api/marketFearGreedCache';

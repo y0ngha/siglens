@@ -6,14 +6,11 @@
  * `/[symbol]/position` CTA) as the add form's starting symbol.
  */
 
-const mockRefresh = vi.fn();
-let mockSearchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ refresh: mockRefresh }),
     useSearchParams: () => mockSearchParams,
 }));
 
-let lastDefaultSymbol: string | undefined;
 vi.mock('@/features/portfolio-management/ui/PortfolioSection', () => ({
     PortfolioSection: ({
         defaultSymbol,
@@ -34,6 +31,11 @@ vi.mock('@/features/portfolio-management/ui/PortfolioSection', () => ({
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PortfolioManager } from '@/app/[locale]/portfolio/_components/PortfolioManager';
+
+const mockRefresh = vi.fn();
+let mockSearchParams = new URLSearchParams();
+
+let lastDefaultSymbol: string | undefined;
 
 describe('PortfolioManager', () => {
     beforeEach(() => {

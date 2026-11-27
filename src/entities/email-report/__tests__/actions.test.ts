@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 const { mockFindByUser, mockUpsert } = vi.hoisted(() => ({
     mockFindByUser: vi.fn(),
     mockUpsert: vi.fn(),
@@ -21,6 +19,8 @@ vi.mock('@/entities/email-report/api', () => ({
             return { findByUser: mockFindByUser, upsert: mockUpsert };
         }),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';

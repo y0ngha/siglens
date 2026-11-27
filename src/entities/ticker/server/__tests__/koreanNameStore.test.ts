@@ -1,8 +1,3 @@
-import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { KoreanTickerEntry } from '@/shared/lib/types';
-import type { KoreanTickerRepository } from '@/shared/db/types';
-import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
-
 const {
     mockCache,
     mockRepository,
@@ -25,10 +20,6 @@ const {
     repositoryFactoryMock: vi.fn(),
 }));
 
-interface FakeDbClient {
-    db: unknown;
-}
-
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
@@ -45,6 +36,11 @@ vi.mock('../../api', () => ({
     },
 }));
 
+import type { CacheProvider } from '@y0ngha/siglens-core';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
+import type { KoreanTickerRepository } from '@/shared/db/types';
+import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
+
 import {
     __resetKoreanSearchSnapshotForTests,
     correctKrSymbolSuffix,
@@ -56,6 +52,10 @@ import {
     setKoreanTickers,
 } from '../koreanNameStore';
 import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from '../../lib/cacheKeys';
+
+interface FakeDbClient {
+    db: unknown;
+}
 
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',

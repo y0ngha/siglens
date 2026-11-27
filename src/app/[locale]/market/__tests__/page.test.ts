@@ -1,12 +1,5 @@
 // Mock all server/client dependencies before any imports
 
-const mockSetQueryData = vi.fn();
-// QueryClient must remain a proper constructor (class/function) so `new QueryClient()` in
-// MarketContent does not throw "not a constructor". An arrow function in vi.mock would break this.
-function MockQueryClientClass() {
-    return { setQueryData: mockSetQueryData };
-}
-
 vi.mock('@tanstack/react-query', () => ({
     dehydrate: vi.fn(() => ({})),
     HydrationBoundary: () => null,
@@ -32,25 +25,15 @@ vi.mock('@/widgets/dashboard/SignalTypeGuide', () => ({
     SignalTypeGuide: () => null,
 }));
 
-const mockGetMarketSummaryStatic = vi.fn().mockResolvedValue({
-    indices: [],
-    sectors: [],
-});
 vi.mock('@/entities/market-summary/api/marketSummaryStaticCache', () => ({
     getMarketSummaryStatic: (...args: unknown[]) =>
         mockGetMarketSummaryStatic(...args),
 }));
 
-const mockPeekBriefingStatic = vi.fn().mockResolvedValue(null);
 vi.mock('@/entities/market-summary/api/briefingStaticCache', () => ({
     peekBriefingStatic: (...args: unknown[]) => mockPeekBriefingStatic(...args),
 }));
 
-// Intentionally includes minutes/seconds to verify quantization strips them off
-const mockGetSectorSignalsStatic = vi.fn().mockResolvedValue({
-    computedAt: '2026-06-04T14:37:22.000Z',
-    stocks: [],
-});
 vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
     getSectorSignalsStatic: (...args: unknown[]) =>
         mockGetSectorSignalsStatic(...args),
@@ -130,6 +113,26 @@ import {
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
+
+const mockSetQueryData = vi.fn();
+// QueryClient must remain a proper constructor (class/function) so `new QueryClient()` in
+// MarketContent does not throw "not a constructor". An arrow function in vi.mock would break this.
+function MockQueryClientClass() {
+    return { setQueryData: mockSetQueryData };
+}
+
+const mockGetMarketSummaryStatic = vi.fn().mockResolvedValue({
+    indices: [],
+    sectors: [],
+});
+
+const mockPeekBriefingStatic = vi.fn().mockResolvedValue(null);
+
+// Intentionally includes minutes/seconds to verify quantization strips them off
+const mockGetSectorSignalsStatic = vi.fn().mockResolvedValue({
+    computedAt: '2026-06-04T14:37:22.000Z',
+    stocks: [],
+});
 
 describe('Market page', () => {
     // 단언이 먼저 실패해도 console 스파이가 다음 테스트로 새지 않게 여기서 복원한다(TESTING.md#TE-30).

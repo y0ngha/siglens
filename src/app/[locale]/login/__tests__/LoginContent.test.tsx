@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 const { loginFormSpy, socialSpy, searchParamsRef } = vi.hoisted(() => ({
     loginFormSpy: vi.fn(),
     socialSpy: vi.fn(),
@@ -21,6 +19,8 @@ vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
         return <div data-testid="social" />;
     },
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import { LoginContent } from '../LoginContent';
 import koMessages from '@/../messages/ko.json';

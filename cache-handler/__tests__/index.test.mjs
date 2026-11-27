@@ -1,5 +1,3 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-
 const {
     getEntry,
     setEntry,
@@ -64,6 +62,8 @@ vi.mock('../upstashRest.mjs', () => ({
     serverTimeMs,
     expireKey,
 }));
+
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { createRequire } from 'node:module';
 import CacheHandler, {

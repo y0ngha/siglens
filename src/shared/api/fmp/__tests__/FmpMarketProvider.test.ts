@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MS_PER_SECOND } from '@/shared/config/time';
-
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';

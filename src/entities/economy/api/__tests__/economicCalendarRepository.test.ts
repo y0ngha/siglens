@@ -1,13 +1,5 @@
 vi.mock('server-only', () => ({}));
 
-/**
- * drizzle-orm의 gte/lte를 spy로 래핑해 listInRange 경계 계약을 단언한다.
- * ESM namespace는 vi.spyOn 불가 — vi.mock 팩토리에서 래핑한다.
- * and/asc/sql은 실제 구현을 그대로 사용해 쿼리 빌더 체인 동작을 보존한다.
- */
-const gteSpy = vi.fn();
-const lteSpy = vi.fn();
-const eqSpy = vi.fn();
 vi.mock('drizzle-orm', async importOriginal => {
     const original = await importOriginal<typeof import('drizzle-orm')>();
     return {
@@ -30,6 +22,15 @@ vi.mock('drizzle-orm', async importOriginal => {
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
+
+/**
+ * drizzle-orm의 gte/lte를 spy로 래핑해 listInRange 경계 계약을 단언한다.
+ * ESM namespace는 vi.spyOn 불가 — vi.mock 팩토리에서 래핑한다.
+ * and/asc/sql은 실제 구현을 그대로 사용해 쿼리 빌더 체인 동작을 보존한다.
+ */
+const gteSpy = vi.fn();
+const lteSpy = vi.fn();
+const eqSpy = vi.fn();
 
 const EVENT: EconomicCalendarEvent = {
     date: '2026-06-13 08:30:00',

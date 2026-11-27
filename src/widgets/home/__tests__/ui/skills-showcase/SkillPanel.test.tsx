@@ -1,3 +1,10 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { HomeSkillItem } from '../../../utils/toSkillShowcaseItems';
+
+import { SkillPanel } from '../../../ui/skills-showcase/SkillPanel';
+import { INITIAL_VISIBLE_COUNT } from '../../../utils/skillTabs';
+
 vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -6,13 +13,6 @@ vi.stubGlobal(
         disconnect = vi.fn();
     }
 );
-
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { HomeSkillItem } from '../../../utils/toSkillShowcaseItems';
-
-import { SkillPanel } from '../../../ui/skills-showcase/SkillPanel';
-import { INITIAL_VISIBLE_COUNT } from '../../../utils/skillTabs';
 
 function makeSkill(name: string, type: HomeSkillItem['type']): HomeSkillItem {
     return { name, type, description: `${name} d` };

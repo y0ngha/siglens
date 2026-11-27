@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 const { resetFormSpy, searchParamsRef } = vi.hoisted(() => ({
     resetFormSpy: vi.fn(),
     searchParamsRef: { value: new URLSearchParams() },
@@ -14,6 +12,8 @@ vi.mock('@/features/auth-password-reset/ui/ResetPasswordForm', () => ({
         return <div data-testid="reset-form" />;
     },
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import { ResetPasswordContent } from '../ResetPasswordContent';
 import { koMessage } from '@/shared/test-utils/koMessage';

@@ -1,10 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-const topViewed = vi.fn();
-const findAll = vi.fn();
-const selectFrom = vi.fn();
-const getDatabaseClient = vi.fn();
-
 vi.mock('@/entities/symbol-view/api', () => ({
     DrizzleSymbolViewRepository: class {
         topViewed = topViewed;
@@ -17,15 +10,22 @@ vi.mock('@/entities/ticker/api', () => ({
     },
 }));
 
-const endDatabaseClient = vi.fn();
-
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => getDatabaseClient(),
     endDatabaseClient: () => endDatabaseClient(),
 }));
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { loadVisitSources } from '../visitSources';
 import { MIN_WEEKLY_VIEWS } from '../visitCandidates';
+
+const topViewed = vi.fn();
+const findAll = vi.fn();
+const selectFrom = vi.fn();
+const getDatabaseClient = vi.fn();
+
+const endDatabaseClient = vi.fn();
 
 /** 2026-09-24 12:00 KST. */
 const NOW = new Date('2026-09-24T03:00:00Z');

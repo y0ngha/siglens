@@ -1,6 +1,7 @@
-import type { MockedFunction } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
+
+import type { MockedFunction } from 'vitest';
 
 import { cookies } from 'next/headers';
 import { mintGuestIdOnResponse, readGuestId } from '../guestId';

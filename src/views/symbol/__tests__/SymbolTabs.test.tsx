@@ -1,4 +1,3 @@
-import koMessages from '@/../messages/ko.json';
 vi.mock('next/navigation', () => ({
     usePathname: vi.fn(() => '/AAPL'),
 }));
@@ -62,6 +61,8 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
 vi.mock('@/views/symbol/SymbolTabPendingContext', () => ({
     usePendingSymbolTab: vi.fn(() => null),
 }));
+
+import koMessages from '@/../messages/ko.json';
 
 import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';

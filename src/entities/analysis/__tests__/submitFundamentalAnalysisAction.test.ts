@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
@@ -56,6 +54,8 @@ const { withKrValuation } = vi.hoisted(() => ({
 vi.mock('@/entities/kr-valuation/server/withKrValuation', () => ({
     withKrValuation,
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { headers } from 'next/headers';
 import {

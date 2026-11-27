@@ -1,5 +1,3 @@
-const mockFindByUser = vi.fn();
-
 vi.mock('server-only', () => ({}));
 vi.mock('@/entities/portfolio/api', () => ({
     DrizzlePortfolioRepository: vi.fn().mockImplementation(function () {
@@ -15,6 +13,8 @@ import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+
+const mockFindByUser = vi.fn();
 
 function record(symbol: string) {
     return {

@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 const { mockDeleteByUserAndProvider } = vi.hoisted(() => ({
     mockDeleteByUserAndProvider: vi.fn(),
 }));
@@ -34,6 +33,8 @@ vi.mock('@/entities/api-key/api', () => ({
         };
     }),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revalidatePath } from 'next/cache';

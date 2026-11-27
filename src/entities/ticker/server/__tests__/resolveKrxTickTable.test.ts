@@ -1,9 +1,3 @@
-const getQuoteTypeOrThrow = vi.fn();
-
-// 렌더 경로의 Next data cache 래퍼는 호출을 기록하고 그대로 통과시킨다(peekAnalysisStaticCache.test와 같은 방식).
-const unstableCache = vi.fn();
-// 설정되면 래퍼 자체가 이 오류로 거부한다 — 사고 경로(렌더 중 캐시 계층이 DSE를 던짐)를 재현한다.
-let unstableCacheError: Error | null = null;
 vi.mock('next/cache', () => ({
     unstable_cache: (
         fn: () => unknown,
@@ -23,8 +17,6 @@ vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
     },
 }));
 
-// getOrSetCache의 계약(성공한 fetcher 결과만 저장, 던지면 전파)을 메모리 맵으로 재현한다.
-const store = new Map<string, unknown>();
 vi.mock('@/shared/cache/getOrSetCache', () => ({
     getOrSetCache: async <T>(
         key: string,
@@ -44,6 +36,16 @@ import {
     resolveKrxTickTable,
     resolveKrxTickTableForDisplay,
 } from '../resolveKrxTickTable';
+
+const getQuoteTypeOrThrow = vi.fn();
+
+// 렌더 경로의 Next data cache 래퍼는 호출을 기록하고 그대로 통과시킨다(peekAnalysisStaticCache.test와 같은 방식).
+const unstableCache = vi.fn();
+// 설정되면 래퍼 자체가 이 오류로 거부한다 — 사고 경로(렌더 중 캐시 계층이 DSE를 던짐)를 재현한다.
+let unstableCacheError: Error | null = null;
+
+// getOrSetCache의 계약(성공한 fetcher 결과만 저장, 던지면 전파)을 메모리 맵으로 재현한다.
+const store = new Map<string, unknown>();
 
 describe('resolveKrxTickTable', () => {
     beforeEach(() => {

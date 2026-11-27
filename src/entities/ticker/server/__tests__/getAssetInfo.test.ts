@@ -1,11 +1,3 @@
-import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@/shared/lib/types';
-import type {
-    AssetTranslationRecord,
-    AssetTranslationRepository,
-} from '@/shared/db/types';
-import type { FmpSearchResult } from '../../model';
-
 const {
     mockCache,
     mockRepository,
@@ -38,10 +30,6 @@ const {
     translateCompanyNamesMock: vi.fn(),
     fetchKrEquityQuoteNameMock: vi.fn(),
 }));
-
-interface FakeDbClient {
-    db: unknown;
-}
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
@@ -93,6 +81,14 @@ vi.mock('../fmpCryptoMembership', () => ({
     fmpCryptoMembership: vi.fn().mockResolvedValue(null),
 }));
 
+import type { CacheProvider } from '@y0ngha/siglens-core';
+import type { AssetInfo } from '@/shared/lib/types';
+import type {
+    AssetTranslationRecord,
+    AssetTranslationRepository,
+} from '@/shared/db/types';
+import type { FmpSearchResult } from '../../model';
+
 import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
@@ -105,6 +101,10 @@ import {
 import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 import { getCryptoAsset } from '../cryptoAssetStore';
 import { fmpCryptoMembership } from '../fmpCryptoMembership';
+
+interface FakeDbClient {
+    db: unknown;
+}
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',

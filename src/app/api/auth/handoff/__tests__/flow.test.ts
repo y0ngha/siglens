@@ -1,5 +1,3 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 /**
  * start (ai) → issue (main) → consume (ai) wired together through the real
  * handoffStore against an in-memory Redis, so the state/code/cookie contract
@@ -44,6 +42,8 @@ vi.mock('@/shared/config/aiHost', () => ({
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { NextRequest } from 'next/server';
 import { GET as consume } from '@/app/api/auth/handoff/consume/route';

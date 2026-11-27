@@ -85,26 +85,6 @@ vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 
-/**
- * 디스크립터는 **실물 상수**를 쓴다. 손으로 채운 부분 객체를 `as never`로
- * 통과시키면 타입 검사가 무력화돼, 라우트가 필드를 하나 더 읽기 시작한 순간
- * 런타임에서 터진다 — 이 PR이 고친 결함이 정확히 그것이었다(`{ assetClass }`만
- * 있던 mock 4개가 `priceFormat`을 읽자 죽었다). 실물을 쓰면
- * `MarketProfileDescriptor`에 필드가 늘어도 자동으로 따라온다.
- */
-const { US_EQUITY, KR_EQUITY, CRYPTO } = await vi.hoisted(async () => {
-    const [us, kr, crypto] = await Promise.all([
-        import('@/shared/config/marketProfile/usEquity'),
-        import('@/shared/config/marketProfile/krEquity'),
-        import('@/shared/config/marketProfile/crypto'),
-    ]);
-    return {
-        US_EQUITY: us.US_EQUITY_DESCRIPTOR,
-        KR_EQUITY: kr.KR_EQUITY_DESCRIPTOR,
-        CRYPTO: crypto.CRYPTO_DESCRIPTOR,
-    };
-});
-
 vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: vi.fn().mockReturnValue(US_EQUITY),
     /**
@@ -352,6 +332,26 @@ import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLo
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+
+/**
+ * 디스크립터는 **실물 상수**를 쓴다. 손으로 채운 부분 객체를 `as never`로
+ * 통과시키면 타입 검사가 무력화돼, 라우트가 필드를 하나 더 읽기 시작한 순간
+ * 런타임에서 터진다 — 이 PR이 고친 결함이 정확히 그것이었다(`{ assetClass }`만
+ * 있던 mock 4개가 `priceFormat`을 읽자 죽었다). 실물을 쓰면
+ * `MarketProfileDescriptor`에 필드가 늘어도 자동으로 따라온다.
+ */
+const { US_EQUITY, KR_EQUITY, CRYPTO } = await vi.hoisted(async () => {
+    const [us, kr, crypto] = await Promise.all([
+        import('@/shared/config/marketProfile/usEquity'),
+        import('@/shared/config/marketProfile/krEquity'),
+        import('@/shared/config/marketProfile/crypto'),
+    ]);
+    return {
+        US_EQUITY: us.US_EQUITY_DESCRIPTOR,
+        KR_EQUITY: kr.KR_EQUITY_DESCRIPTOR,
+        CRYPTO: crypto.CRYPTO_DESCRIPTOR,
+    };
+});
 
 const decoder = new TextDecoder();
 

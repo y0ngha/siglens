@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-
 vi.mock('@/shared/api/economy/getEconomyProvider', () => ({
     getEconomyProvider: vi.fn(),
 }));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { ECONOMY_CONFIG_FINGERPRINT } from '@/entities/economy/api/economySnapshotCache';
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';

@@ -1,5 +1,3 @@
-import type { Bar } from '@y0ngha/siglens-core';
-
 const rendered = vi.hoisted(() => ({ element: null as unknown }));
 
 vi.mock('next/og', () => ({
@@ -10,6 +8,8 @@ vi.mock('next/og', () => ({
         }
     },
 }));
+
+import type { Bar } from '@y0ngha/siglens-core';
 
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 

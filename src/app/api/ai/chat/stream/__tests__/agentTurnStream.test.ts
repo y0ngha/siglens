@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { runTurn, appendMessages, setTurnAt, executorOptions } = vi.hoisted(
     () => ({
         runTurn: vi.fn(),
@@ -37,6 +35,8 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
     },
     availableToolNames: () => new Set(['get_quote']),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';

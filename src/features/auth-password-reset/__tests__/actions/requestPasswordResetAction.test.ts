@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 // 로케일을 케이스마다 바꿔야 판별력이 생긴다 — 고정 mock이면 `localePath('ko',x)===x`라
 // 로케일 전달을 통째로 지워도 통과한다.
 vi.mock('next-intl/server', async () => {
@@ -45,6 +44,8 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
+import type { MockedFunction } from 'vitest';
+
 import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { createEmailTokenStore } from '@/entities/email-token/api';
@@ -52,13 +53,15 @@ import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRate
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
 import { getLocale } from 'next-intl/server';
-const mockGetLocale = getLocale as MockedFunction<typeof getLocale>;
+
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+
+const mockGetLocale = getLocale as MockedFunction<typeof getLocale>;
 
 const mockRequest = requestPasswordReset as MockedFunction<
     typeof requestPasswordReset

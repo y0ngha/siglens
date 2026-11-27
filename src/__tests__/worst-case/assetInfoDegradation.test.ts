@@ -1,7 +1,3 @@
-const mockCacheGet = vi.fn();
-const mockCacheSet = vi.fn();
-const mockCreateCacheProvider = vi.fn();
-
 vi.mock('@y0ngha/siglens-core', () => ({
     isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
         s.thinkingApi === 'adaptive',
@@ -31,9 +27,6 @@ vi.mock('@/shared/db/client', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/db/client')>()),
     tryGetDatabaseClient: vi.fn().mockReturnValue(null),
 }));
-
-const mockSearchBySymbol = vi.fn().mockResolvedValue([]);
-const mockFilterUsExchanges = vi.fn().mockReturnValue([]);
 
 vi.mock('@/entities/ticker/server/fmpTickerApi', async () => ({
     searchBySymbol: (...args: unknown[]) => mockSearchBySymbol(...args),
@@ -68,6 +61,13 @@ import {
     getAssetInfo,
     _resetInFlightTranslationsForTest,
 } from '@/entities/ticker/server/getAssetInfo';
+
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
+const mockCreateCacheProvider = vi.fn();
+
+const mockSearchBySymbol = vi.fn().mockResolvedValue([]);
+const mockFilterUsExchanges = vi.fn().mockReturnValue([]);
 
 describe('getAssetInfo degradation chain', () => {
     beforeEach(() => {

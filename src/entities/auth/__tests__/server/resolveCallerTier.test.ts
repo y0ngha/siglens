@@ -1,5 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
 const { mockGetCurrentUser, mockResolveTierOnly } = vi.hoisted(() => ({
     mockGetCurrentUser: vi.fn(),
     mockResolveTierOnly: vi.fn(),
@@ -11,6 +9,8 @@ vi.mock('../../server/getCurrentUser', () => ({
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierOnly: mockResolveTierOnly,
 }));
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { resolveCallerTier } from '../../server/resolveCallerTier';
 import {

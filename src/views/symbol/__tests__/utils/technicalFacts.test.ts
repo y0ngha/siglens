@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 
 import koMessages from '@/../messages/ko.json';
 
+import {
+    buildTechnicalFactsNarrative,
+    buildTechnicalFactsSummaryModel,
+    formatVisibleChange,
+} from '../../utils/technicalFacts';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import {
+    buildTechnicalFacts,
+    RECENT_BARS_WINDOW,
+} from '@/entities/bars/lib/technicalFacts';
+
 /** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
 const tFacts = (key: string, values?: Record<string, string | number>) => {
     const table = koMessages.views.symbol.technicalFacts as Record<
@@ -16,17 +27,6 @@ const tFacts = (key: string, values?: Record<string, string | number>) => {
         raw
     );
 };
-
-import {
-    buildTechnicalFactsNarrative,
-    buildTechnicalFactsSummaryModel,
-    formatVisibleChange,
-} from '../../utils/technicalFacts';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import {
-    buildTechnicalFacts,
-    RECENT_BARS_WINDOW,
-} from '@/entities/bars/lib/technicalFacts';
 
 function bar(close: number, high = close, low = close): Bar {
     return { time: 0, open: close, high, low, close, volume: 100 };

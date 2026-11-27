@@ -1,3 +1,7 @@
+vi.mock('@/shared/api/fmp/httpClient', () => ({
+    fmpGet: vi.fn(),
+}));
+
 /**
  * 시간외 봉이 있어도 지표가 **정규장 봉 시각**에 찍히는지 — `seriesDataUtils`를 mock하지 않는
  * 통합 테스트. 실제 AAPL 응답(5분봉·1시간봉)을 어댑터에 통과시킨 정규장 봉·확장 봉을 쓴다.
@@ -9,10 +13,6 @@
  */
 import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('@/shared/api/fmp/httpClient', () => ({
-    fmpGet: vi.fn(),
-}));
 
 import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';

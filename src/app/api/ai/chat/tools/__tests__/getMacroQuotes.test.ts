@@ -1,3 +1,13 @@
+const { getQuotes, getQuote, getCloses } = vi.hoisted(() => ({
+    getQuotes: vi.fn(),
+    getQuote: vi.fn(),
+    getCloses: vi.fn(),
+}));
+vi.mock('@/shared/api/yahoo/yahooMacroSource', () => ({
+    getYahooMacroQuotes: getQuotes,
+    getYahooMacroDailyCloses: getCloses,
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     arrayAt,
@@ -16,16 +26,6 @@ import type {
     YahooMacroDaily,
     YahooMacroQuote,
 } from '@/shared/api/yahoo/yahooMacroSource';
-
-const { getQuotes, getQuote, getCloses } = vi.hoisted(() => ({
-    getQuotes: vi.fn(),
-    getQuote: vi.fn(),
-    getCloses: vi.fn(),
-}));
-vi.mock('@/shared/api/yahoo/yahooMacroSource', () => ({
-    getYahooMacroQuotes: getQuotes,
-    getYahooMacroDailyCloses: getCloses,
-}));
 
 import { getMacroQuotesTool } from '@/app/api/ai/chat/tools/getMacroQuotes';
 

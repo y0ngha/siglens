@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('@/shared/db/client', () => ({
@@ -19,6 +18,8 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/entities/auth/lib/findUserBySessionToken', () => ({
     findUserBySessionToken: vi.fn(),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { cookies } from 'next/headers';
 import { findUserBySessionToken } from '@/entities/auth/lib/findUserBySessionToken';

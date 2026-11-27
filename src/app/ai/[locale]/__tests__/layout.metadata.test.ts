@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-
 // `next/font` 로더는 Next 컴파일러 밖(vitest)에서 함수가 아니다. 이 테스트는 메타데이터만 본다.
 vi.mock('@/app/fontVariables', () => ({ FONT_VARIABLE_CLASSES: '' }));
+
+import { describe, expect, it, vi } from 'vitest';
+
 import { generateMetadata, viewport } from '@/app/ai/[locale]/layout';
 import { aiManifestPath } from '@/app/ai/[locale]/_lib/aiManifest';
 import { brandAiName } from '@/shared/lib/brandName';

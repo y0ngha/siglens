@@ -1,5 +1,3 @@
-import { describe, it, expect, vi } from 'vitest';
-
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) =>
         args
@@ -16,6 +14,8 @@ vi.mock('@/shared/lib/chartColors', () => ({
         text: '#a0a0b0',
     }),
 }));
+
+import { describe, it, expect, vi } from 'vitest';
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { ComponentProps } from 'react';

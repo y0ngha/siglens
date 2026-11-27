@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-
 // Redis 없이 in-flight dedup만 본다 — Redis 미구성이면 getOrSetCache는 fetch+dedup만 한다.
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => null,
 }));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {

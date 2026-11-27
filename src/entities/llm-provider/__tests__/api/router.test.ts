@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 vi.mock('@/entities/llm-provider/api/anthropic', () => ({
     callAnthropicChat: vi.fn(),
 }));
@@ -26,6 +25,8 @@ vi.mock('@y0ngha/siglens-core', async () => {
             .mockImplementation(actual.getProviderForModel),
     };
 });
+
+import type { MockedFunction } from 'vitest';
 
 import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';

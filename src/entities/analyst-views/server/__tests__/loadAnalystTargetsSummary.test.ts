@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getAnalystViews } = vi.hoisted(() => ({ getAnalystViews: vi.fn() }));
 vi.mock('@/entities/analyst-views/server/getAnalystViews', () => ({
     getAnalystViews,
@@ -7,6 +5,8 @@ vi.mock('@/entities/analyst-views/server/getAnalystViews', () => ({
 
 const { isE2EFakeMode } = vi.hoisted(() => ({ isE2EFakeMode: vi.fn() }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadAnalystTargetsSummary } from '@/entities/analyst-views/server/loadAnalystTargetsSummary';
 

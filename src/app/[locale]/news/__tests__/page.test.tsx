@@ -1,7 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-
 // staticSymbolCache: return a few headlines per category so CategoryCards render previews.
 vi.mock('@/app/[locale]/news/_lib/categoryDigests', () => ({
     // 새 의존성 — mock하지 않으면 실제 peek가 테스트 DB를 건드려
@@ -40,6 +36,10 @@ vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
+
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import NewsHubPage, { generateMetadata } from '../page';

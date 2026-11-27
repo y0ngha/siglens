@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getFmpDividendHistory, getYahooDividendData } = vi.hoisted(() => ({
     getFmpDividendHistory: vi.fn(),
     getYahooDividendData: vi.fn(),
@@ -8,6 +6,8 @@ vi.mock('@/shared/api/fmp/dividendsClient', () => ({ getFmpDividendHistory }));
 vi.mock('@/shared/api/yahoo/yahooDividendSource', () => ({
     getYahooDividendData,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     buildDividends,

@@ -1,17 +1,5 @@
 // vi.mock calls are hoisted by vitest above all imports — must appear before any import statements.
-// Variables referenced in mock factories must be declared before vi.mock so they are in scope
-// when vitest hoists the mocks to the top of the compiled module.
-
-const mockFindBySymbol = vi.fn();
-const mockSearch = vi.fn();
-const mockFmpCryptoMembership = vi.fn();
-
-// The `tryGetDatabaseClient` return value drives `tryGetRepository()`.
-// When null, the whole function returns null (no DB path). When non-null,
-// DrizzleCryptoAssetRepository is constructed from the returned `.db` value.
-// We mock both the db client AND the repository class so the class is never
-// actually instantiated against a real drizzle DB in tests.
-let mockDbClient: null | { db: unknown } = null;
+// Factories read the variables below lazily inside closures, so those declarations sit under the imports.
 
 // `importOriginal` 없이 필요한 export만 만든다. 실물을 펼치면 `cryptoAssetStore`가
 // 쓰지도 않는 export를 남기려고 DB 스택 전체(drizzle + Neon 드라이버 + 스키마)를
@@ -52,6 +40,17 @@ import {
     getCryptoAsset,
     searchCryptoAssets,
 } from '../cryptoAssetStore';
+
+const mockFindBySymbol = vi.fn();
+const mockSearch = vi.fn();
+const mockFmpCryptoMembership = vi.fn();
+
+// The `tryGetDatabaseClient` return value drives `tryGetRepository()`.
+// When null, the whole function returns null (no DB path). When non-null,
+// DrizzleCryptoAssetRepository is constructed from the returned `.db` value.
+// We mock both the db client AND the repository class so the class is never
+// actually instantiated against a real drizzle DB in tests.
+let mockDbClient: null | { db: unknown } = null;
 
 describe('cryptoAssetStore (no DB)', () => {
     beforeEach(() => {

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {

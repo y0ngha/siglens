@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const resolveAssetInfoOrNull = vi.hoisted(() => vi.fn());
@@ -38,6 +36,8 @@ vi.mock('@/app/api/ai/chat/tools/visualBlocks/heatmap', () => ({
 vi.mock('@/app/api/ai/chat/tools/visualBlocks/dividends', () => ({
     buildDividendsBlock: b.dividends,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolExecutionContext } from '@y0ngha/siglens-core';
 import type { ChatVisualBlock } from '@/entities/chat-conversation/types';

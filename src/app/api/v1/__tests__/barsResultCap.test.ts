@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const {
     profile,
     assetInfo,
@@ -99,6 +97,8 @@ vi.mock('@/shared/config/marketProfile/registry', async importOriginal => ({
     ...(await importOriginal<object>()),
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { calculateIndicators } from '@y0ngha/siglens-core';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';

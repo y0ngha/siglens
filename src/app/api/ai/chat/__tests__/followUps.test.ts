@@ -1,5 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
-
 /** core 판정 호출 횟수를 세려고 감싼다(동작은 원본 그대로). */
 const { splitCalls } = vi.hoisted(() => ({ splitCalls: vi.fn() }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
@@ -13,6 +11,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         },
     };
 });
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { splitAgentFollowUps } from '@y0ngha/siglens-core';
 import {

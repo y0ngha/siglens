@@ -1,8 +1,8 @@
+vi.mock('server-only', () => ({}));
+
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
 
 import {
     DEFAULT_EMAIL_REPORT_DAYS,

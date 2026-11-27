@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 import { createTurnCharts } from '@/app/api/ai/chat/stream/_lib/turnCharts';

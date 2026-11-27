@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 // 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
 // `getLocale()`은 next-intl config 파일을 요구한다(빌드 플러그인이 만든다).
 // 여기서는 액션 로직만 검증하므로 기본 로케일로 고정한다 — 그러면 리다이렉트
@@ -46,6 +45,8 @@ vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
         ipHash: vi.fn(),
     })),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';

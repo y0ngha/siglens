@@ -1,12 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-
 const mockSegment = vi.hoisted(() => ({ current: null as string | null }));
 
 vi.mock('next/navigation', async importOriginal => ({
     ...(await importOriginal<typeof import('next/navigation')>()),
     useSelectedLayoutSegment: () => mockSegment.current,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 import { RelatedSymbolLink } from '../RelatedSymbolLink';
 

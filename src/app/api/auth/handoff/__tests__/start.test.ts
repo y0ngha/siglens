@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('@/shared/config/aiHost', () => ({
     AI_SITE_URL: 'https://ai.siglens.io',
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/handoff/start/route';

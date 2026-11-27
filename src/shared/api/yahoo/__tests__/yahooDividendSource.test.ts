@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getYahooFundamentals, getOrSetCache, chart } = vi.hoisted(() => ({
     getYahooFundamentals: vi.fn(),
     getOrSetCache: vi.fn(),
@@ -12,6 +10,8 @@ vi.mock('@/shared/api/yahoo/createYahooClient', () => ({
     getYahooClient: () => ({ chart }),
 }));
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getYahooDividendData } from '@/shared/api/yahoo/yahooDividendSource';
 import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';

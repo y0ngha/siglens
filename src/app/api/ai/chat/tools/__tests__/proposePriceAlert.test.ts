@@ -1,7 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-const SECRET = 'price-alert-test-secret-0123456789abcdef';
-
 const m = vi.hoisted(() => ({
     secret: {
         value: 'price-alert-test-secret-0123456789abcdef' as string | null,
@@ -43,6 +39,8 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { proposePriceAlertTool } from '@/app/api/ai/chat/tools/proposePriceAlert';
 import { isChatPriceAlertProposalBlock } from '@/entities/chat-conversation/lib/chartBlock';
 import type { ChatBlock } from '@/entities/chat-conversation/types';
@@ -51,6 +49,8 @@ import {
     verifyPriceAlertProposal,
 } from '@/entities/mail-alert/server/priceAlertProposalToken';
 import { guestSubject } from '@/shared/lib/guestSubject';
+
+const SECRET = 'price-alert-test-secret-0123456789abcdef';
 
 /** 2026-11-25(수) 10:00 ET — 미국장 개장 중. 마지막 마감 세션은 11-24, 30일 뒤(12-25)는 휴장이라 12-24다. */
 const NOW = new Date('2026-11-25T15:00:00Z');

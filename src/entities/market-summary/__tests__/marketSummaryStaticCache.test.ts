@@ -1,7 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
-import type { MarketSummaryData } from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
 vi.mock('server-only', () => ({}));
 
 vi.mock('next/cache', () => ({
@@ -28,6 +24,10 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: vi.fn(() => ({})),
     scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
+
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import type { MarketSummaryData } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 import {
     getMarketSummaryStatic,

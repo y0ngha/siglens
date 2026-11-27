@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 /**
  * `recentQuarters` must come from the financials tab's own cached rows — the
  * same Redis key (`financials:income:<SYM>:quarter`) the tab's quarter toggle
@@ -65,6 +63,8 @@ vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getFundamentalsTool } from '@/app/api/ai/chat/tools/getFundamentals';
 

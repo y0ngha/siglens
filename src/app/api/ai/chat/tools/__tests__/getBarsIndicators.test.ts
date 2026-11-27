@@ -1,10 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    BARS_RESULT_MAX_CHARS,
-    TOOL_RESULT_MAX_CHARS,
-    truncateToolResult,
-} from '@/app/api/ai/chat/tools/truncate';
-
 const {
     profile,
     assetInfo,
@@ -103,6 +96,13 @@ vi.mock('@/entities/bars/lib/quantizeBars', () => ({
 vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    BARS_RESULT_MAX_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+    truncateToolResult,
+} from '@/app/api/ai/chat/tools/truncate';
 
 import {
     aggregateBarsToMonthly,

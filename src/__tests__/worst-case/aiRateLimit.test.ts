@@ -1,7 +1,3 @@
-const mockAnthropicFinalMessage = vi.fn();
-const mockOpenaiCreate = vi.fn();
-const mockGeminiGenerate = vi.fn();
-
 vi.mock('@anthropic-ai/sdk', () => ({
     default: class MockAnthropic {
         messages = {
@@ -92,6 +88,10 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 
 import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
+
+const mockAnthropicFinalMessage = vi.fn();
+const mockOpenaiCreate = vi.fn();
+const mockGeminiGenerate = vi.fn();
 
 const BASE = {
     serverApiKey: 'key',

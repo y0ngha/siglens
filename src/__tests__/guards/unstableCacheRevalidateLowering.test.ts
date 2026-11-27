@@ -1,11 +1,3 @@
-// Next 서버 부트스트랩이 하는 일을 흉내 낸다 — `async-local-storage.js`가 이 전역을 요구한다. 실제
-// `next/cache`를 import하는 `buildDegradedRevalidate`보다 **먼저** 설정돼야 하므로 `vi.hoisted`다.
-// 파일 안에서만 쓰이고(vitest 파일별 격리) 다른 테스트로 새지 않는다.
-await vi.hoisted(async () => {
-    const { AsyncLocalStorage } = await import('node:async_hooks');
-    Object.assign(globalThis, { AsyncLocalStorage });
-});
-
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,6 +6,14 @@ import {
     flagNoindexDegradedRender,
     shortenRevalidateForRuntimeDegrade,
 } from '@/shared/cache/buildDegradedRevalidate';
+
+// Next 서버 부트스트랩이 하는 일을 흉내 낸다 — `async-local-storage.js`가 이 전역을 요구한다. 실제
+// `next/cache`를 import하는 `buildDegradedRevalidate`보다 **먼저** 설정돼야 하므로 `vi.hoisted`다.
+// 파일 안에서만 쓰이고(vitest 파일별 격리) 다른 테스트로 새지 않는다.
+await vi.hoisted(async () => {
+    const { AsyncLocalStorage } = await import('node:async_hooks');
+    Object.assign(globalThis, { AsyncLocalStorage });
+});
 
 // 전역 셋업(`vitest.setup.base.ts`)이 `next/cache`를 목으로 바꿔 둔다 — 이 가드는 실제 Next 구현을
 // 실행해야 의미가 있으므로 이 파일에서만 되돌린다(`buildDegradedRevalidate`가 실제 `unstable_cache`를 쓴다).

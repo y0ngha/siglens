@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const m = vi.hoisted(() => ({ source: vi.fn(), assetOf: vi.fn() }));
@@ -9,6 +7,8 @@ vi.mock('@/app/api/ai/chat/tools/dividends', () => ({
 vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: m.assetOf,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {

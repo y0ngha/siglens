@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockGetOrSetCache, mockGetCalendarsByCountry } = vi.hoisted(() => ({
     mockGetOrSetCache: vi.fn(),
     mockGetCalendarsByCountry: vi.fn(),
@@ -13,6 +11,8 @@ vi.mock('@/shared/api/economy/getEconomyProvider', () => ({
         getCalendarsByCountry: mockGetCalendarsByCountry,
     }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     buildEconomicCalendarRangeCacheKey,

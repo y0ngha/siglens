@@ -13,12 +13,21 @@
  * Mirrors mock conventions in `cryptoAssetStore.test.ts`.
  */
 
-/** TESTING.md#TE-1: all vi.mock above imports. */
-const mockIsCryptoSymbol = vi.fn<(symbol: string) => Promise<boolean>>();
-
 vi.mock('../cryptoAssetStore', () => ({
     isCryptoSymbol: (symbol: string) => mockIsCryptoSymbol(symbol),
 }));
+
+vi.mock('next/cache', () => ({
+    unstable_cache: (...args: Parameters<typeof mockUnstableCache>) =>
+        mockUnstableCache(...args),
+}));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { isCryptoSymbolStatic } from '../isCryptoSymbolStatic';
+
+/** TESTING.md#TE-1: all vi.mock above imports. */
+const mockIsCryptoSymbol = vi.fn<(symbol: string) => Promise<boolean>>();
 
 /**
  * unstable_cache is mocked as a pass-through wrapper:
@@ -33,15 +42,6 @@ const mockUnstableCache = vi.fn(
         _options: { revalidate: number; tags: string[] }
     ) => fn
 );
-
-vi.mock('next/cache', () => ({
-    unstable_cache: (...args: Parameters<typeof mockUnstableCache>) =>
-        mockUnstableCache(...args),
-}));
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
-import { isCryptoSymbolStatic } from '../isCryptoSymbolStatic';
 
 describe('isCryptoSymbolStatic', () => {
     beforeEach(() => {

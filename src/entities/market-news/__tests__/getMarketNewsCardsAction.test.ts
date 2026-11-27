@@ -5,27 +5,6 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 
-// Mock the repository so we don't touch the real DB
-const mockListByCategory = vi.fn(async () => [
-    {
-        id: 'm1',
-        symbol: '__NEWS_CRYPTO__',
-        source: 'CoinWire',
-        url: 'https://x/btc',
-        publishedAt: '2026-06-15T10:00:00.000Z',
-        titleEn: 'BTC up',
-        bodyEn: 'body',
-        titleKo: 'BTC 상승',
-        bodyKo: null,
-        summaryKo: '요약',
-        sentiment: 'bullish' as const,
-        category: 'macro' as const,
-        priceImpact: 'high' as const,
-        tickers: ['BTCUSD'],
-        analyzedAt: new Date('2026-06-15T12:00:00.000Z'),
-    },
-]);
-
 vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: vi.fn(function () {
         return { listByCategory: mockListByCategory };
@@ -55,6 +34,27 @@ import { describe, it, expect, vi } from 'vitest';
 import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
 import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+
+// Mock the repository so we don't touch the real DB
+const mockListByCategory = vi.fn(async () => [
+    {
+        id: 'm1',
+        symbol: '__NEWS_CRYPTO__',
+        source: 'CoinWire',
+        url: 'https://x/btc',
+        publishedAt: '2026-06-15T10:00:00.000Z',
+        titleEn: 'BTC up',
+        bodyEn: 'body',
+        titleKo: 'BTC 상승',
+        bodyKo: null,
+        summaryKo: '요약',
+        sentiment: 'bullish' as const,
+        category: 'macro' as const,
+        priceImpact: 'high' as const,
+        tickers: ['BTCUSD'],
+        analyzedAt: new Date('2026-06-15T12:00:00.000Z'),
+    },
+]);
 
 // 3. Tests
 describe('getMarketNewsCardsAction은', () => {

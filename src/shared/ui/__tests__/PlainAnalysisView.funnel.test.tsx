@@ -1,7 +1,3 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import messages from '../../../../messages/ko.json';
-
 const track = vi.hoisted(() => vi.fn());
 vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
     trackFunnelEvent: track,
@@ -21,6 +17,10 @@ vi.mock('next/link', () => ({
         </a>
     ),
 }));
+
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import messages from '../../../../messages/ko.json';
 
 import { PlainAnalysisView } from '@/shared/ui/PlainAnalysisView';
 
