@@ -13,6 +13,7 @@ import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { buildExpertAnalysisReport } from '../utils/buildExpertAnalysisReport';
 import type { CopyReportState } from '../model/types';
+import { useReadingRenderContext } from './useReadingRenderContext';
 
 interface UseCopyAnalysisReportInput {
     symbol: string;
@@ -44,6 +45,7 @@ export function useCopyAnalysisReport({
     const tLabel = useTranslations('shared.enumLabel');
     const tReport = useTranslations('widgets.analysis.expertReport');
     const skillLabel = useSkillLabel();
+    const readingContext = useReadingRenderContext();
     const { copied, failed, copy } = useCopyToClipboard();
     const copyState: CopyReportState = copied
         ? 'copied'
@@ -61,6 +63,7 @@ export function useCopyAnalysisReport({
                 analysis,
                 keyLevels,
                 skillLabel,
+                readingContext,
                 // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접
                 // 호출하는 패턴"만 본다 — `tLabel`을 그대로 넘기면(참조 전달)
                 // 호출부가 다른 파일(buildExpertAnalysisReport.ts)이라 감지되지

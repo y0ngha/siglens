@@ -19,7 +19,15 @@ function snapshot(
         content: {
             summary: '기술적 요약',
             trend: 'bullish',
-            patternSummaries: [{ patternName: 'cup', summary: '컵 패턴' }],
+            // 감지되지 않은 판정은 메일에 싣지 않는다(WP-16: "이 패턴은 보이지 않아요" 문장 방지).
+            patternSummaries: [
+                {
+                    patternName: 'cup',
+                    detected: false,
+                    summary: '컵 패턴은 보이지 않아요',
+                },
+                { patternName: 'cup', detected: true, summary: '컵 패턴' },
+            ],
             strategyResults: [],
             analyzedAt: '2026-10-07T20:40:00.000Z',
         },

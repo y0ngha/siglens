@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['elderRay']
 confidence_weight: 0.45
 usage_roles: [signal, confirmation]
+computed_card: elder_ray
 gating:
   tier: gated
   signal_kind: state

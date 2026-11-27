@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['regression']
 confidence_weight: 0.45
 usage_roles: [regime]
+computed_card: regression
 gating:
   tier: gated
   signal_kind: state

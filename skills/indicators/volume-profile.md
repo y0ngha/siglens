@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['volumeProfile']
 confidence_weight: 0.85
 usage_roles: [confirmation, measurement]
+computed_card: volume_profile
 gating:
   tier: always_on
 token_cost: 425

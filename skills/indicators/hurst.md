@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['hurst']
 confidence_weight: 0.4
 usage_roles: [regime]
+computed_card: hurst
 gating:
   tier: gated
   signal_kind: state

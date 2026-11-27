@@ -1,6 +1,8 @@
 import { useTranslations } from 'next-intl';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
+import { useReadingRenderContext } from '@/widgets/analysis/hooks/useReadingRenderContext';
+import { renderCycleReading } from '@/widgets/analysis/utils/renderIndicatorReading';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../utils/liveAnalysisCrossRef';
 import { readSnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
@@ -95,6 +97,7 @@ export function TechnicalSnapshotProse({
     const tMisc = useTranslations('shared.ui.misc');
     const tLabel = useTranslations('shared.enumLabel');
     const skillLabel = useSkillLabel();
+    const readingContext = useReadingRenderContext();
     const narrowed = narrowTechnicalContent(content);
     if (narrowed === null) return null;
 
@@ -183,21 +186,42 @@ export function TechnicalSnapshotProse({
                             )}
                             className="space-y-2"
                         >
-                            {narrowed.strategyResults.map(s => (
-                                <li key={`${s.name}-${s.summary.slice(0, 32)}`}>
-                                    <span className="font-medium text-secondary-200">
-                                        <SkillName
-                                            label={skillLabel(s.name)}
-                                            guidePath={guidePathForSkill(
-                                                s.name
-                                            )}
-                                        />
-                                        {s.trend !== null &&
-                                            ` (${tLabel(TREND_LABEL_KEY[s.trend])})`}
-                                    </span>
-                                    <p>{s.summary}</p>
-                                </li>
-                            ))}
+                            {narrowed.strategyResults.map(s => {
+                                // 대순환 카드는 `summary`가 영어 정본이라 구조화된 읽기를 독자 언어로
+                                // 푼다. 읽기가 없으면(모델이 쓴 전략·옛 행) 저장된 요약을 그대로 싣는다.
+                                const cycleLines =
+                                    s.cycle === null
+                                        ? null
+                                        : renderCycleReading(
+                                              s.cycle,
+                                              readingContext
+                                          );
+                                return (
+                                    <li
+                                        key={`${s.name}-${s.summary.slice(0, 32)}`}
+                                    >
+                                        <span className="font-medium text-secondary-200">
+                                            <SkillName
+                                                label={skillLabel(s.name)}
+                                                guidePath={guidePathForSkill(
+                                                    s.name
+                                                )}
+                                            />
+                                            {s.trend !== null &&
+                                                ` (${tLabel(TREND_LABEL_KEY[s.trend])})`}
+                                        </span>
+                                        {cycleLines === null ? (
+                                            <p>{s.summary}</p>
+                                        ) : (
+                                            cycleLines.map((line, index) => (
+                                                <p key={`${s.name}-${index}`}>
+                                                    {line}
+                                                </p>
+                                            ))
+                                        )}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 )}

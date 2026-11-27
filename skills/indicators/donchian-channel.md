@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['donchianChannel']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, measurement]
+computed_card: donchian
 gating:
   tier: gated
   signal_kind: state
