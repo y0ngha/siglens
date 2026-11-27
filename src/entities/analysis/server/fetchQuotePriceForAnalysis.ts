@@ -4,6 +4,7 @@ import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { safeErrorFields } from '@/shared/lib/logToolDegrade';
 
 /**
  * `FundamentalSnapshot.currentPrice`에 넣을 현재가. core의 fundamental 축에는 자체
@@ -35,13 +36,11 @@ export async function fetchQuotePriceForAnalysis(
             ? quote.price
             : undefined;
     } catch (error) {
-        // `logToolError`/`logToolDegrade`(`shared/lib/logToolDegrade.ts`)와
-        // 같은 프라이버시 규칙: 에러 객체·`.message`·`.stack`은 남기지 않고 `name`만
-        // 남긴다 — `DrizzleQueryError` 메시지에 바인딩 파라미터가 실릴 수 있다. entities
-        // 레이어는 그 app 레이어 헬퍼를 import할 수 없어 name 추출을 인라인한다.
+        // 에러 객체, `.message`, `.stack`은 남기지 않는다. `DrizzleQueryError` 메시지에
+        // 바인딩 파라미터가 실릴 수 있어서, 도구 로그와 같은 `safeErrorFields`로 name과 code만 남긴다.
         console.error(
             '[fetchQuotePriceForAnalysis] quote lookup failed, degrading to undefined:',
-            { errorName: error instanceof Error ? error.name : 'unknown' }
+            safeErrorFields(error)
         );
         return undefined;
     }

@@ -224,7 +224,8 @@ function currentPeriodFacts(facts: readonly SecConceptFact[]): {
 } {
     const quarters = new Map<string, SeriesEntry>();
     const years = new Map<string, SecConceptFact>();
-    // CONVENTIONS.md#CP-6 예외: 접수번호 그룹을 한 번 훑으며 분기·연간 두 Map을 "기간별 최신 접수" 규칙으로 함께 채운다 — reduce로 풀면 그룹마다 Map을 복사한다(O(N²)).
+    // CONVENTIONS.md#CP-6 예외: a reduce would copy a Map per accession group, O(groups × periods).
+    // One pass fills both maps under the latest-filing-per-period rule; a 10-year 10-Q/10-K history has about 50 groups.
     for (const group of groupByAccn(facts).values()) {
         const currentEnd = group.reduce(
             (max, f) => (f.end > max ? f.end : max),
