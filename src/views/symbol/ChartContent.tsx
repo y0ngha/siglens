@@ -702,6 +702,17 @@ export function ChartContent({
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
 
+    // 언마운트 시 시트 콘텐츠를 비운다. 시트는 에러 경계 밖(부모)에 있어, 경계가 이 컴포넌트를
+    // 갈아치워도 마지막 콘텐츠(인라인 링크 포함)가 남기 때문이다. deps를 비워 mobileContent가
+    // 바뀔 때마다 비웠다 채우는(깜빡임) 일이 없게 한다 — 갱신은 위 effect가 덮어쓴다.
+    useEffect(
+        () => () => {
+            // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-prop-callback-in-effect
+            notifyMobileContent(null);
+        },
+        []
+    );
+
     // 비회원 첫 분석 회원가입 유도(Part B) — 실제 서사가 렌더된 시점("완료/렌더")에
     // 카운트한다. 캐시 HIT으로 즉시 나타나든 새로 생성됐든 동일하게 "봤으면" 카운트한다
     // (spec §1). notifiedSymbolRef는 같은 심볼에 대해 중복 카운트(불필요한 localStorage

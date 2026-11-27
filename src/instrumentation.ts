@@ -1,3 +1,5 @@
+import type { Instrumentation } from 'next';
+
 /**
  * Next.js instrumentation hook — Node 서버 프로세스에서 부팅 시 1회 실행된다.
  * (Next.js 16은 `instrumentation.ts`를 별도 config 플래그 없이 기본 인식한다.)
@@ -15,6 +17,22 @@
  */
 export async function register(): Promise<void> {
     if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-    const { registerShutdownHandlers } = await import('./instrumentation.node');
+    const { registerErrorLogRedaction, registerShutdownHandlers } =
+        await import('./instrumentation.node');
+    registerErrorLogRedaction();
     registerShutdownHandlers();
 }
+
+/**
+ * 처리되지 않은 요청 에러 훅. Next는 에러를 **먼저 찍고** 이 훅을 부르므로 로그를 막을 수 없다(막는 곳은
+ * `registerErrorLogRedaction`). 여기서는 DB 에러의 라우트 맥락만 남긴다.
+ */
+export const onRequestError: Instrumentation.onRequestError = async (
+    error,
+    _request,
+    context
+) => {
+    if (process.env.NEXT_RUNTIME !== 'nodejs') return;
+    const { reportRequestError } = await import('./instrumentation.node');
+    reportRequestError(error, context);
+};
