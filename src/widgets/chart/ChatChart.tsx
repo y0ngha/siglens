@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import type {
     ChatChartBlock,
@@ -51,6 +51,11 @@ export function ChatChart({ block }: ChatChartProps) {
     // 레벨선 제목(되돌림·지지/저항)이 마지막 캔들을 덮지 않게 오른쪽 여백을 비운다 — 종목 페이지와 같은 방식이다.
     const rightOffset = useChartRightOffset();
     const overlayItems = useChatChartOverlayItems(block);
+    // 분석 카드와 같은 판정을 서버가 블록에 담았다 — 옛 블록은 필드가 없어 흐리게 하지 않는다.
+    const referenceOnlyKeys = useMemo(
+        () => new Set(block.referenceOnlyOverlayKeys ?? []),
+        [block.referenceOnlyOverlayKeys]
+    );
     return (
         <div data-testid="chat-chart" className={CHAT_CHART_FRAME_CLASS}>
             <StockChart
@@ -62,6 +67,7 @@ export function ChatChart({ block }: ChatChartProps) {
                 chartOverlays={block.overlays}
                 overlayColors={block.overlayColors}
                 overlayItems={overlayItems}
+                referenceOnlyOverlayKeys={referenceOnlyKeys}
                 hiddenOverlayKeys={hiddenKeys}
                 onSetOverlayVisible={setVisible}
                 onChartReady={rightOffset.onChartReady}

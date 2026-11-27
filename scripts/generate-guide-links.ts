@@ -71,6 +71,8 @@ export interface SkillMeta {
     readonly name: string;
     /** `pattern` + `gating.triggers`. */
     readonly triggerIds: readonly string[];
+    /** frontmatter `pattern`(정본 차트 패턴 id). 없으면 생략. */
+    readonly patternId?: string;
 }
 
 export interface GuideLinks {
@@ -148,6 +150,23 @@ export function buildGuideLinks(
     return { byName, byTrigger, collisions };
 }
 
+/**
+ * 순수: `patterns/` 스킬의 `name` → 정본 차트 패턴 id(`pattern`). 카드의 실측 base rate를
+ * 모델이 쓴 자유 문장이 아니라 스킬 카탈로그의 id로 찾기 위한 맵이다(core가 카드에 붙일 때와
+ * 같은 키). 순서는 입력 순서를 따른다.
+ */
+export function buildPatternIdByName(
+    skills: readonly SkillMeta[]
+): Readonly<Record<string, string>> {
+    return Object.fromEntries(
+        skills.flatMap((skill): [string, string][] =>
+            skill.dir === 'patterns' && skill.patternId !== undefined
+                ? [[skill.name, skill.patternId]]
+                : []
+        )
+    );
+}
+
 const BARE_KEY = /^[\p{ID_Start}_$][\p{ID_Continue}$]*$/u;
 const MAX_LINE = 80;
 const WIDE_CHAR =
@@ -179,7 +198,10 @@ function renderRecord(
     return `export const ${name}: Readonly<Record<string, string>> = {${body}};\n`;
 }
 
-export function renderGuideLinksSource(links: GuideLinks): string {
+export function renderGuideLinksSource(
+    links: GuideLinks,
+    patternIdByName: Readonly<Record<string, string>> = {}
+): string {
     return [
         '// 이 파일은 생성물이다. 직접 고치지 않는다.',
         '// 재생성: yarn guide:links  (scripts/generate-guide-links.ts)',
@@ -189,6 +211,8 @@ export function renderGuideLinksSource(links: GuideLinks): string {
         renderRecord('GUIDE_PATH_BY_SKILL_NAME', links.byName),
         '/** 탐지 id(`pattern`·`gating.triggers`) → 가이드 경로. 겹치면 카테고리 순서상 먼저 쓴 쪽이 이긴다. */',
         renderRecord('GUIDE_PATH_BY_TRIGGER', links.byTrigger),
+        '/** 차트 패턴 스킬 `name` → 정본 패턴 id(frontmatter `pattern`). 실측 base rate 조회 키. */',
+        renderRecord('PATTERN_ID_BY_SKILL_NAME', patternIdByName),
     ].join('\n');
 }
 
@@ -223,6 +247,9 @@ export async function loadSkillMetas(
             dir: basename(dirname(file)),
             name: data.name,
             triggerIds: [...pattern, ...asStringArray(triggers)],
+            ...(typeof data.pattern === 'string'
+                ? { patternId: data.pattern }
+                : {}),
         };
     });
 }
@@ -263,7 +290,10 @@ export async function generateGuideLinks(): Promise<{
         loadSkillMetas(),
     ]);
     const links = buildGuideLinks(guides, skills);
-    return { source: renderGuideLinksSource(links), links };
+    return {
+        source: renderGuideLinksSource(links, buildPatternIdByName(skills)),
+        links,
+    };
 }
 
 async function main(): Promise<void> {

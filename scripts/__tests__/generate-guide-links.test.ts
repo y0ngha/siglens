@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildGuideLinks,
+    buildPatternIdByName,
     renderGuideLinksSource,
     type GuideSeedMeta,
     type SkillMeta,
@@ -163,5 +164,40 @@ describe('renderGuideLinksSource', () => {
         expect(source).toContain(
             `    'A fairly long skill name here':\n        '${long}',`
         );
+    });
+});
+
+describe('buildPatternIdByName', () => {
+    it('patterns 스킬의 name을 frontmatter pattern id로 잇는다', () => {
+        expect(
+            buildPatternIdByName([
+                {
+                    ...skill('double-top', '이중 천장', [], 'patterns'),
+                    patternId: 'double_top',
+                },
+                skill('rsi', 'RSI Guide'),
+            ])
+        ).toEqual({ '이중 천장': 'double_top' });
+    });
+
+    it('patterns가 아닌 디렉터리나 pattern이 없는 스킬은 넣지 않는다', () => {
+        expect(
+            buildPatternIdByName([
+                {
+                    ...skill('doji', 'Doji Guide', [], 'candlesticks'),
+                    patternId: 'doji',
+                },
+                skill('x', '이름만', [], 'patterns'),
+            ])
+        ).toEqual({});
+    });
+
+    it('생성물에 PATTERN_ID_BY_SKILL_NAME 상수로 렌더한다', () => {
+        const source = renderGuideLinksSource(
+            { byName: {}, byTrigger: {}, collisions: [] },
+            { '이중 천장': 'double_top' }
+        );
+        expect(source).toContain('export const PATTERN_ID_BY_SKILL_NAME');
+        expect(source).toContain("'이중 천장': 'double_top',");
     });
 });

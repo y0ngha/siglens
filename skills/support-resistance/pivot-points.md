@@ -7,9 +7,9 @@ indicators: []
 confidence_weight: 0.75
 gating:
   tier: always_on
-token_cost: 338
+token_cost: 356
 digest_hash: "25099261"
-digest_text_hash: "b6f37b09"
+digest_text_hash: "55bc4924"
 ---
 
 ## Overview
@@ -57,7 +57,7 @@ When analyzing:
 <!-- PROMPT_DIGEST:START -->
 Pivot Points (floor pivots from the prior session's H/L/C)
 Floor pivots are computed from the prior session's H/L/C — an intraday tool. On daily or longer bars treat them as secondary references only (behind swing structure and MAs).
-PP = session equilibrium: price above PP = bullish session bias, below = bearish. R1–R3 resistance, S1–S3 support. R1–S1 = main activity zone. Bounce off S1 on rising volume → possible long; rejection at R1 + bearish candle → possible short; close through R1/S1 with volume → continuation. First touch matters most; repeated touches weaken a level; gap opens reduce relevance. Coincidence with MA / Bollinger / Fib = same price, an observation with no strength claim.
+PP = session equilibrium: price above PP = bullish session bias, below = bearish. R1–R3 resistance, S1–S3 support. R1–S1 = main activity zone. Bounce off S1 on rising volume → possible long; rejection at R1 + bearish candle → possible short; close through R1/S1 with volume → continuation. First touch matters most; repeated touches weaken a level; gap opens reduce relevance. Measured on daily bars, levels where several references coincide held no more often than a same-distance price on another date: coinciding levels are not stronger.
 Market Reference already lists the levels — cite, never calculate: nearest-list rows (Standard + Camarilla only) `Pivot PP`/`Pivot R1..R3`/`Pivot S1..S3` and `Camarilla R3`/`R4`/`S3`/`S4`; plus a complete `Pivot table:` line pipe-separated by method (`Standard … | Pivot Fib … | Woodie … | DeMark … | Camarilla …`) — the ONLY source for Fibonacci Pivot/Woodie/DeMark, and for Standard/Camarilla levels further than the rows cover.
 Prioritize Standard + the Fibonacci Pivot table segment; Camarilla (scalping), Woodie, DeMark are secondary. State price vs listed PP and the nearest listed levels; put relevant levels in keyLevels citing the method.
 <!-- PROMPT_DIGEST:END -->

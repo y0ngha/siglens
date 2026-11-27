@@ -25,6 +25,51 @@ describe('PlanStateBadge', () => {
         expect(screen.getByText(label)).toBeInTheDocument();
     });
 
+    it.each([
+        [0, '진입 구간 바로 위'],
+        [0.2, '진입 구간 바로 위'],
+        [0.49, '진입 구간 바로 위'],
+        [0.5, '진입 구간보다 위'],
+        [1.8, '진입 구간보다 위'],
+    ])(
+        'words an above_zone close %s ATR over the zone top as "%s"',
+        (distanceAtr, label) => {
+            render(
+                <PlanStateBadge
+                    planState={{ ...BASE, position: 'above_zone', distanceAtr }}
+                />
+            );
+            expect(screen.getByText(label)).toBeInTheDocument();
+        }
+    );
+
+    it('keeps the plain above-zone wording when the distance is unknown', () => {
+        render(
+            <PlanStateBadge
+                planState={{
+                    ...BASE,
+                    position: 'above_zone',
+                    distanceAtr: null,
+                }}
+            />
+        );
+        expect(screen.getByText('진입 구간보다 위')).toBeInTheDocument();
+    });
+
+    it('never says "just above" for the other positions', () => {
+        render(
+            <PlanStateBadge
+                planState={{
+                    ...BASE,
+                    position: 'below_zone',
+                    distanceAtr: 0.1,
+                }}
+            />
+        );
+        expect(screen.queryByText('진입 구간 바로 위')).not.toBeInTheDocument();
+        expect(screen.getByText('진입 구간보다 아래')).toBeInTheDocument();
+    });
+
     it('adds no reason line for a placed plan', () => {
         const { container } = render(
             <PlanStateBadge planState={placed('in_zone')} />

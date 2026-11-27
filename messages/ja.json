@@ -3790,7 +3790,6 @@
                 "c68843": "クリップボードへのコピーに失敗しました。ブラウザの権限を確認してください。",
                 "c80f22": "{v0}個の分析手法を検出、",
                 "cfbeac": "チャート価格線表示",
-                "d39704": "収束した指標が多いほど、その価格帯のサポートとレジスタンスの信頼度が高いと\n                    考えられます。",
                 "d930e0": "レジスタンスライン",
                 "db5809": "リアルタイムの価格変動と異なる点があれば、ここで\n                            調整されます。",
                 "e5c85b": "コピーされました",
@@ -3831,6 +3830,17 @@
                 "analyzing": "AIが精密分析中です… 広告収益は、より良いAIモデルの導入とサーバー維持費に大切に使われます。",
                 "done": "分析結果はお役に立ちましたか？下部のアフィリエイトリンクのご利用は、SIGLENSの運営を続ける大きな支えになります。"
             },
+            "baseRate": {
+                "levelLine": "価格帯に触れた後に守られた割合は{held}%でした。同じ距離の別の日の価格は{placebo}%でした（{symbols}銘柄の{from}〜{to}年の日足で、{n, number}回触れた場合）。",
+                "levelNotMeasured": "日足以外のチャートはまだ測定していません。",
+                "patternLine": "この形の後に目標価格が無効化価格より先に届いた割合 {event}%（同じ距離の別の日の価格は{placebo}%、{n, number}件）",
+                "patternNotMeasured": "日足以外のチャートはまだ測定していません。",
+                "patternTooltip": "同じ銘柄で別の日に同じ距離へ目標を置いた場合と比べた値です。{symbols}銘柄の{from}〜{to}年の日足で測定しており、今後の結果を示すものではありません。",
+                "pooledNote": "件数が少ないため全パターンの値です。",
+                "targetLegend": "チャートで薄く描いた参考距離の線は、同じ距離の別の日の価格より届きやすいとは確認されていない目標です。",
+                "verdictBeats": "同じ距離の別の日の価格より届きやすい結果でしたが、今後を保証するものではありません。",
+                "verdictNoEdge": "同じ距離の別の日の価格と比べて、測定上の優位はありませんでした。"
+            },
             "duration": {
                 "minutesSeconds": "{v0}分{v1}秒",
                 "seconds": "{v0}秒"
@@ -3850,6 +3860,7 @@
                 "planBelowZone": "現在値はエントリー価格帯より下にあります。",
                 "planInZone": "現在値はエントリー価格帯の中にあります。",
                 "planNoSetupNoRoomAbove": "エントリー価格帯の上に余裕のある目標価格がないため、計画の基準にできる水準がありません。",
+                "planJustAboveZone": "現在値はエントリー価格帯のすぐ上にあります。価格帯の上端からの距離は{v0} ATR未満です。",
                 "planNoSetupNoStop": "損切りの基準を決められないため、計画の基準にできる水準がありません。",
                 "planNoSetupNoZone": "エントリー価格帯がないため、計画の基準にできる水準がありません。",
                 "planNoSetupStopped": "現在値が損切りの基準を下回っているため、計画の基準にできる水準がありません。",
@@ -3874,10 +3885,10 @@
             "panel": {
                 "analyzing": "分析中…",
                 "confidenceHigh": "信頼度 高",
-                "confidenceHighTip1": "信頼度の高いパターンです。",
-                "confidenceHighTip2": "AIがこのパターンを明確に検出したという意味です。",
+                "confidenceHighTip1": "この戦略にあらかじめ付けたスコアが高いという意味です。",
+                "confidenceHighTip2": "AIが明確に検出したという意味でも、実際によく当たるという意味でもありません。",
                 "confidenceMedium": "信頼度 中",
-                "confidenceMediumTip1": "信頼度が中程度のパターンです。",
+                "confidenceMediumTip1": "この戦略にあらかじめ付けたスコアが中程度という意味です。",
                 "confidenceMediumTip2": "単独で見るより、他の指標と合わせて参考にするのがおすすめです。",
                 "meter": {
                     "exhaustedBody": "非会員がエントリー、損切り、目標価格を確認できるのは1日{count, plural, other {#銘柄}}までです。毎日午前0時（日本時間）に再び開放されます。登録すれば、今すぐすべての銘柄で確認できます。",
@@ -4177,6 +4188,7 @@
                 "aboveZone": "エントリー価格帯より上",
                 "belowZone": "エントリー価格帯より下",
                 "inZone": "エントリー価格帯の中",
+                "justAboveZone": "エントリー価格帯のすぐ上",
                 "label": "計画の状態",
                 "noSetup": "計画の基準にできる水準なし",
                 "reasonNoRoomAbove": "エントリー価格帯の上に余裕のある目標価格がありません",
@@ -4184,6 +4196,9 @@
                 "reasonNoZone": "エントリー価格帯がありません",
                 "reasonStopped": "現在値が損切りの基準を下回っています",
                 "stopAtr": "損切りは価格帯ではなく値幅(ATR)が基準です"
+            },
+            "RecordEntryLink": {
+                "entry": "分析の記録と測定方法"
             }
         },
         "backtesting": {
@@ -4314,6 +4329,48 @@
                     "bearish": "下落トレンド",
                     "neutral": "中立"
                 }
+            },
+            "record": {
+                "candleRow": "{event}%({n, number}件)、同じ銘柄の別の日は{placebo}%",
+                "candleVerdictBeats": "同じ銘柄の別の日より当たる割合が高かったものの、今後を保証するものではありません。",
+                "candleVerdictNoEdge": "同じ銘柄の別の日と比べて、測定された優位性はありません。",
+                "candlesAll": "方向のあるローソク足パターン全体",
+                "candlesDefinition": "ローソク足が現れたあと{bars}営業日の間に、そのローソク足が示す方向へ価格が動いた割合です。",
+                "candlesHeading": "ローソク足パターン",
+                "candlesName": "ローソク足",
+                "candlesRegion": "ローソク足パターンの測定記録",
+                "caution": "過去に測った値であり、今後の結果を示すものではありません。",
+                "colResult": "測定結果",
+                "colVerdict": "判定",
+                "heading": "分析の記録と測定方法",
+                "insufficient": "件数が少ないため、割合は載せていません。",
+                "intro": "分析に出てくるパターン、ローソク足、価格帯が過去にどうなったかを測った記録です。各表には割合を一つ載せています。パターンは目標価格に届いた割合、価格帯は触れたあとに守られた割合、ローソク足はその後{bars}営業日の間にそのローソク足が示す方向へ動いた割合で、いずれも同じ銘柄の別の日と並べています。値動きの大きさは載せていません。",
+                "levelFamily": {
+                    "avwap": "アンカードVWAP",
+                    "band": "バンドの上限と下限",
+                    "fib": "フィボナッチ",
+                    "ichimoku": "一目均衡表",
+                    "ma": "移動平均線",
+                    "pivot": "ピボット",
+                    "round": "キリの良い価格",
+                    "supertrend": "スーパートレンド",
+                    "swing": "直近の高値と安値",
+                    "vp": "出来高プロファイル",
+                    "vwap": "VWAP"
+                },
+                "levelsAll": "すべての価格帯の合算",
+                "levelsDefinition": "価格が価格帯に触れたあと、その価格帯を守った割合です。価格帯は種類ごとに測りました。",
+                "levelsHeading": "価格帯",
+                "levelsName": "価格帯の種類",
+                "levelsRegion": "価格帯の種類別の測定記録",
+                "patternsDefinition": "パターンが現れたあと、無効化価格より先に目標価格に届いた割合です。",
+                "patternsHeading": "チャートパターン",
+                "patternsName": "パターン",
+                "patternsRegion": "チャートパターン別の測定記録",
+                "pooledPatterns": "全パターンの合算",
+                "pooledPatternsNote": "件数の少ないパターン({names})の基準にも、この値を使っています。",
+                "row": "{event}%({n, number}件)、同じ距離の別の日は{placebo}%",
+                "scope": "{symbols}銘柄の日足で、{from}から{to}まで測りました。"
             }
         },
         "benchmark-summary": {
@@ -4370,7 +4427,9 @@
                 "6e96f3": "トライアングル",
                 "2751c7": "ダイアゴナル",
                 "a8aa4c": "複合修正",
-                "reachedLevel": "{v0} 到達"
+                "reachedLevel": "{v0} 到達",
+                "referenceDistance": "参考距離",
+                "referenceDistanceOf": "{v0} 参考距離"
             },
             "TimeframeSelector": {
                 "a4632e": "会員専用の時間枠です。",

@@ -65,7 +65,11 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-import { buildPlanCheck, TIER_CONFIG } from '@y0ngha/siglens-core';
+import {
+    buildPlanCheck,
+    measuredBaseRateFor,
+    TIER_CONFIG,
+} from '@y0ngha/siglens-core';
 import {
     getCachedAnalysisTool,
     withLevelLadder,
@@ -227,11 +231,25 @@ describe('getCachedAnalysisTool', () => {
                 candlePatterns: { name: string }[];
             };
         };
+        // The stored card predates `baseRate`: it gets the same daily table row the panel
+        // shows (default timeframe 1Day), not a stored value it never had.
+        const rate = measuredBaseRateFor(
+            'chart_pattern',
+            'head_and_shoulders',
+            '1Day'
+        );
+        expect(rate).not.toBeNull();
         expect(r.analysis.patterns).toEqual([
             {
                 name: 'head_and_shoulders',
                 trend: 'bearish',
-                confidence: 0.9,
+                baseRate: {
+                    eventShare: rate?.eventShare,
+                    placeboShare: rate?.placeboShare,
+                    n: rate?.n,
+                    verdict: rate?.verdict,
+                    pooled: false,
+                },
                 summary: '헤드앤숄더 패턴이 감지되었습니다.',
             },
         ]);
@@ -1123,7 +1141,7 @@ describe('getCachedAnalysisTool', () => {
             expect(r.sinceAnalysis).not.toHaveProperty('nearestSupport');
             expect(r.sinceAnalysis).not.toHaveProperty('nearestResistance');
             // entryPrices=[95,105] → entry mid 100; entryZoneTop=105.
-            // priceNow=120 > 105*1.01 → exceedsEntryZone; stopLoss=90 < priceNow → not belowStopLoss.
+            // priceNow=120 > 105 (the zone top, exact edge) → exceedsEntryZone; stopLoss=90 < priceNow → not belowStopLoss.
             // riskRewardAtCurrent = (nearest target above 120=130 - 120) / (120 - 90) = 10/30.
             const expected = buildPlanCheck(
                 {
