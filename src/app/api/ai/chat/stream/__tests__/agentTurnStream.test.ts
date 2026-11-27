@@ -267,6 +267,14 @@ describe('agentTurnStream', () => {
         });
     });
 
+    it('전역 web_search 예산은 게이트가 아니라 실행기가 차감하도록 core에 알린다', async () => {
+        await readAll(start().stream);
+        expect(runTurn).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ webSearchMetering: 'executor' })
+        );
+    });
+
     it('이번 턴 이미지는 base64로 runAgentTurn의 userImages에 실리고, 없으면 키가 없다', async () => {
         const bytes = Buffer.from([1, 2, 3, 4, 5]);
         const { stream } = start({
