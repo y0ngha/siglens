@@ -222,6 +222,7 @@ describe('peekChartDrawings', () => {
         tier: 'free' as const,
         positionBucket: 'profit' as const,
         locale: 'ko' as const,
+        benchmarkSymbol: 'SPY',
     };
     const received = { analyzedAt: 'a1', chartOverlays: [] };
 
@@ -243,7 +244,8 @@ describe('peekChartDrawings', () => {
                 },
             },
             'profit',
-            'ko'
+            'ko',
+            { benchmarkSymbol: 'SPY' }
         );
     });
 

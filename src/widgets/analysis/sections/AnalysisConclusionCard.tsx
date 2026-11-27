@@ -18,6 +18,12 @@
  * 첫 분석이 오류로 끝나면 `pending` 카드가 사라져 아래 내용이 카드 높이만큼(약 249px) 올라온다.
  * 오류일 때만 생기는 움직임이라 받아들인다 — 값이 없는 행을 지어내 카드를 남기지 않는다.
  *
+ * 상위 시간대·시장 배경 줄(`useAnalysisContextLines`)은 이 규칙의 예외다. 결과에 두 필드 중 하나라도 있을 때만 가격 행 아래에
+ * 한 블록으로 붙고(옛 결과·크립토의 시장 줄은 없다), 줄 수만큼 카드가 길어진다. 이 줄들은 가격 행과 **같은
+ * `analysis` prop에서 같은 렌더로** 나온다(별도 조회가 아니다). 그래서 결과가 도착해 `ready`가 되는 그 커밋에서
+ * 가격 행과 함께 한 번만 높이가 바뀌고, 결과를 이미 보여 준 카드가 뒤늦게 다시 움직이지 않는다. 자리를 미리 잡지
+ * 않는 것은 없는 결과(옛 항목·크립토)에 빈 줄을 남기지 않기 위해서다. 레이아웃 안정성 규칙: `DESIGN.md#DS-5`.
+ *
  * 패널 카드(`AnalysisPanel`) 안이 아니라 형제로 놓인다 — 카드 면 위에 카드 면을 겹치지 않는다
  * (`DESIGN.md#DS-17`).
  */
@@ -42,6 +48,7 @@ import {
     type ConclusionModel,
     type ConclusionValue,
 } from '../utils/conclusionModel';
+import { useAnalysisContextLines } from '../hooks/useAnalysisContextLines';
 import { resolveLockedSections } from '../utils/lockedSections';
 import { resolveTrendDisplay } from '../utils/trendUtils';
 
@@ -188,6 +195,7 @@ export function AnalysisConclusionCard({
     const tProgress = useTranslations('widgets.analysis.AnalysisProgress');
     const headingId = useId();
     const isPending = status === 'pending';
+    const contextLines = useAnalysisContextLines(analysis, symbol);
 
     const model = isPending
         ? null
@@ -311,6 +319,16 @@ export function AnalysisConclusionCard({
                     </dd>
                 </div>
             </dl>
+            {!isPending && contextLines.length > 0 && (
+                <div
+                    data-conclusion-context
+                    className="mt-3 flex flex-col gap-1 border-t border-secondary-700 pt-3 text-xs leading-4 text-secondary-300"
+                >
+                    {contextLines.map(line => (
+                        <p key={line.key}>{line.text}</p>
+                    ))}
+                </div>
+            )}
             <p className="mt-3 min-h-8 text-xs leading-4 text-secondary-400">
                 {t('caveat')}
             </p>

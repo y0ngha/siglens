@@ -5,6 +5,11 @@ import { renderToString } from 'react-dom/server';
 import { createElement } from 'react';
 import { useTimeframeFromUrl } from '@/widgets/overall/hooks/useTimeframeFromUrl';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+
+const US = getDescriptor('us-equity').allowedTimeframes;
+const KR = getDescriptor('kr-equity').allowedTimeframes;
+const CRYPTO = getDescriptor('crypto').allowedTimeframes;
 
 // 훅은 `useUrlSearchParam`(window.location)으로 읽는다. 스파이가 replaceState를 막기 전에
 // 원본을 잡아 두고 테스트 URL을 세팅하는 데 쓴다.
@@ -36,15 +41,45 @@ describe('useTimeframeFromUrl', () => {
     it('유효한 tf 쿼리는 그대로 반환한다', () => {
         setSearch('tf=1Hour');
         const { result } = renderHook(() =>
-            useTimeframeFromUrl('AAPL', false, true)
+            useTimeframeFromUrl('AAPL', false, true, US)
         );
         expect(result.current).toBe('1Hour');
+    });
+
+    it('한국 종목의 tf=4Hour는 시장 프로필이 허용하지 않아 DEFAULT_TIMEFRAME이다', () => {
+        setSearch('tf=4Hour');
+        const { result } = renderHook(() =>
+            useTimeframeFromUrl('005930.KS', false, true, KR)
+        );
+        expect(result.current).toBe(DEFAULT_TIMEFRAME);
+    });
+
+    it('크립토의 tf=15Min은 DEFAULT_TIMEFRAME이고 tf=1Week는 그대로다', () => {
+        setSearch('tf=15Min');
+        const first = renderHook(() =>
+            useTimeframeFromUrl('BTCUSD', false, true, CRYPTO)
+        );
+        expect(first.result.current).toBe(DEFAULT_TIMEFRAME);
+
+        setSearch('tf=1Week');
+        const second = renderHook(() =>
+            useTimeframeFromUrl('BTCUSD', false, true, CRYPTO)
+        );
+        expect(second.result.current).toBe('1Week');
+    });
+
+    it('미국 종목의 tf=4Hour는 그대로 둔다', () => {
+        setSearch('tf=4Hour');
+        const { result } = renderHook(() =>
+            useTimeframeFromUrl('AAPL', false, true, US)
+        );
+        expect(result.current).toBe('4Hour');
     });
 
     it('유효하지 않은 tf는 DEFAULT_TIMEFRAME으로 폴백한다', () => {
         setSearch('tf=not-a-timeframe');
         const { result } = renderHook(() =>
-            useTimeframeFromUrl('AAPL', false, true)
+            useTimeframeFromUrl('AAPL', false, true, US)
         );
         expect(result.current).toBe(DEFAULT_TIMEFRAME);
     });
@@ -52,7 +87,7 @@ describe('useTimeframeFromUrl', () => {
     it('tf가 없으면 DEFAULT_TIMEFRAME으로 폴백한다', () => {
         setSearch('');
         const { result } = renderHook(() =>
-            useTimeframeFromUrl('AAPL', false, true)
+            useTimeframeFromUrl('AAPL', false, true, US)
         );
         expect(result.current).toBe(DEFAULT_TIMEFRAME);
     });
@@ -60,7 +95,7 @@ describe('useTimeframeFromUrl', () => {
     it('free query is canonicalized to daily after tier hydration', async () => {
         setSearch('tf=1Hour');
         const { result } = renderHook(() =>
-            useTimeframeFromUrl('AAPL', true, true)
+            useTimeframeFromUrl('AAPL', true, true, US)
         );
 
         expect(result.current).toBe(DEFAULT_TIMEFRAME);
@@ -75,7 +110,7 @@ describe('useTimeframeFromUrl', () => {
 
     it('free query 정규화는 tf만 바꾸고 다른 쿼리 파라미터를 지킨다', async () => {
         realReplaceState(null, '', '/AAPL/overall?ref=newsletter&tf=1Hour&x=1');
-        renderHook(() => useTimeframeFromUrl('AAPL', true, true));
+        renderHook(() => useTimeframeFromUrl('AAPL', true, true, US));
 
         await waitFor(() => {
             expect(replaceState).toHaveBeenCalledWith(
@@ -88,7 +123,7 @@ describe('useTimeframeFromUrl', () => {
 
     it('free query 정규화는 해시를 지킨다', async () => {
         realReplaceState(null, '', '/AAPL/overall?tf=1Hour#risk-factors');
-        renderHook(() => useTimeframeFromUrl('AAPL', true, true));
+        renderHook(() => useTimeframeFromUrl('AAPL', true, true, US));
 
         await waitFor(() => {
             expect(replaceState).toHaveBeenCalledWith(
@@ -102,7 +137,7 @@ describe('useTimeframeFromUrl', () => {
     it('uses daily until tier hydration completes', () => {
         setSearch('tf=1Hour');
         const { result } = renderHook(() =>
-            useTimeframeFromUrl('AAPL', false, false)
+            useTimeframeFromUrl('AAPL', false, false, US)
         );
 
         expect(result.current).toBe(DEFAULT_TIMEFRAME);
@@ -113,7 +148,7 @@ describe('useTimeframeFromUrl', () => {
         setSearch('tf=1Hour');
         const seen: string[] = [];
         function Probe() {
-            seen.push(useTimeframeFromUrl('AAPL', false, true));
+            seen.push(useTimeframeFromUrl('AAPL', false, true, US));
             return null;
         }
         renderToString(createElement(Probe));
@@ -123,7 +158,7 @@ describe('useTimeframeFromUrl', () => {
     it('뒤로/앞으로 가기(popstate)로 tf가 바뀌면 따라간다', () => {
         setSearch('tf=1Hour');
         const { result } = renderHook(() =>
-            useTimeframeFromUrl('AAPL', false, true)
+            useTimeframeFromUrl('AAPL', false, true, US)
         );
         expect(result.current).toBe('1Hour');
 

@@ -2546,6 +2546,47 @@ describe('POST /api/analysis/stream', () => {
             );
         });
 
+        it.each([
+            ['us-equity', 'AAPL', { symbol: 'SPY', label: 'S&P 500 (SPY)' }],
+            [
+                'kr-equity',
+                '005930.KS',
+                { symbol: 'KS11', fmpSymbol: '^KS11', label: 'KOSPI' },
+            ],
+            [
+                'kr-equity',
+                '247540.KQ',
+                { symbol: 'KQ11', fmpSymbol: '^KQ11', label: 'KOSDAQ' },
+            ],
+            ['crypto', 'BTC-USD', undefined],
+        ] as const)(
+            '%s %s는 시장 프로필이 고른 benchmark를 runAnalysis에 넘긴다',
+            async (profile, symbol, benchmark) => {
+                vi.mocked(resolveMarketProfile).mockResolvedValue(
+                    profile as never
+                );
+
+                const body = JSON.stringify({
+                    type: 'technical',
+                    params: {
+                        symbol,
+                        companyName: symbol,
+                        timeframe: '1Day',
+                    },
+                });
+                const response = await POST(makeRequest(undefined, body));
+                await collectSseEvents(response);
+
+                const call = vi
+                    .mocked(runAnalysis)
+                    .mock.calls.find(c => c[0] === symbol);
+                expect(call).toBeDefined();
+                expect(
+                    (call?.[5] as Record<string, unknown>).benchmark
+                ).toEqual(benchmark);
+            }
+        );
+
         it('us-equity 프로필 → currency: "USD"로 runAnalysis를 호출한다', async () => {
             const response = await POST(makeRequest());
             await collectSseEvents(response);

@@ -327,6 +327,8 @@ describe('prewarmTechnical', () => {
                 assetClass: 'equity',
                 currency: 'USD',
                 krxTickTable: 'share',
+                // 방문자 경로와 같은 비교 지수(core 캐시 키 `:bm=`).
+                benchmark: { symbol: 'SPY', label: 'S&P 500 (SPY)' },
                 tierContext: { userId: null, tier: 'free' },
                 reasoning: false,
                 // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.

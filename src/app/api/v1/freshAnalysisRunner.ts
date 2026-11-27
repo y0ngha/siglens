@@ -18,6 +18,7 @@ import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
 import {
@@ -114,6 +115,7 @@ export async function prepareRunner(input: RunnerInput): Promise<Runner> {
                     assetClass: descriptor.assetClass,
                     currency: descriptor.priceFormat.currency,
                     krxTickTable,
+                    benchmark: benchmarkFor(profile, symbol),
                     tierContext: {
                         userId: principal.userId,
                         tier: caller.tier,

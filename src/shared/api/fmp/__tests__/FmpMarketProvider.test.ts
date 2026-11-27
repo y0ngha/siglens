@@ -149,6 +149,32 @@ describe('FmpMarketProvider', () => {
             expect(bars[1]!.time).toBe(Date.UTC(2026, 3, 15) / MS_PER_SECOND); // 2026-04-15
         });
 
+        it('[1Week 집계 전제] 일봉 시각은 EOD 봉·오늘 봉 모두 time % 86400 === 0 (UTC 자정)', async () => {
+            // core가 주봉을 일봉에서 집계할 때 ISO 주 버킷은 UTC 자정 시각에 의존한다(§3.2).
+            // EOD 봉은 날짜 문자열, 오늘 봉은 ET 거래일에서 만든다 — 둘 다 자정이어야 한다.
+            mockFmpGet
+                .mockResolvedValueOnce([
+                    makeOhlcvBar('2026-01-16'),
+                    makeOhlcvBar('2026-01-15'),
+                    makeOhlcvBar('2026-07-10'),
+                ])
+                .mockResolvedValueOnce([
+                    makeQuote(Date.UTC(2026, 6, 15, 0, 30) / MS_PER_SECOND),
+                ]);
+
+            const bars = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2026-01-01T00:00:00Z',
+            });
+
+            expect(bars.length).toBeGreaterThan(3);
+            const SECONDS_PER_DAY = 86_400;
+            expect(bars.map(b => b.time % SECONDS_PER_DAY)).toEqual(
+                bars.map(() => 0)
+            );
+        });
+
         it('today-quote MERGE: no endDate, EOD last bar older than today-quote → today bar appended last', async () => {
             // EOD returns one older bar; quote is from a later day
             const eodDateStr = '2026-04-14';

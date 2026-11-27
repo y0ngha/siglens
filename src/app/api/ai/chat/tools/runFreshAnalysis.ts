@@ -14,6 +14,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
@@ -463,6 +464,9 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                     positionBucketLogTag:
                         '[AgentTool] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
                 });
+                // 쓰는 쪽(`runAnalysis`)이 `benchmark.symbol`을 캐시 키(`:bm=`)에 접으므로, 작도를 다시 꺼내는
+                // 읽는 쪽(`peekChartDrawings`)도 같은 값을 써야 적중한다 — 한 번 구해 양쪽에 쓴다.
+                const benchmark = benchmarkFor(profile, symbol);
                 const options: SubmitAnalysisOptions = {
                     modelId: runtime.analysisModel,
                     marketDataProvider: getCachedMarketDataProvider(session),
@@ -471,6 +475,7 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                     assetClass: descriptor.assetClass,
                     currency: descriptor.priceFormat.currency,
                     krxTickTable,
+                    benchmark,
                     tierContext: { userId: ctx.userId, tier: ctx.tier },
                     reasoning: false,
                     locale: ctx.locale,
@@ -513,6 +518,7 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                                         tier: ctx.tier,
                                         positionBucket,
                                         locale: ctx.locale,
+                                        benchmarkSymbol: benchmark?.symbol,
                                     },
                                     analysis
                                 ),

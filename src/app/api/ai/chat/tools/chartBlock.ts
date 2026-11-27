@@ -75,6 +75,8 @@ interface ChartPeekKey {
     tier: PeekArgs[5];
     positionBucket: PeekArgs[7];
     locale: PeekArgs[8];
+    /** 쓴 쪽 `benchmark.symbol` — core 캐시 키(`:bm=`)에 접히므로 어긋나면 미스다. */
+    benchmarkSymbol: string | undefined;
 }
 
 /**
@@ -95,7 +97,8 @@ export async function peekChartDrawings(
         key.tier,
         CHART_DRAWINGS_TIER_CONFIG,
         key.positionBucket,
-        key.locale
+        key.locale,
+        { benchmarkSymbol: key.benchmarkSymbol }
     );
     return hit !== null && hit.result.analyzedAt === received.analyzedAt
         ? hit.result

@@ -348,6 +348,7 @@ describe('runFreshAnalysisTool', () => {
                 tier: ctx.tier,
                 positionBucket: 'profit',
                 locale: ctx.locale,
+                benchmarkSymbol: 'SPY',
             },
             result
         );
@@ -436,6 +437,8 @@ describe('runFreshAnalysisTool', () => {
             priorAnalyses: history,
             marketEvents: events,
             positionBucket: 'above_avg_10_25',
+            // writer가 쓰는 비교 지수 — peek 쪽(`get_cached_analysis`)이 같은 심볼을 넘겨야 core 캐시 키가 맞는다.
+            benchmark: { symbol: 'SPY', label: 'S&P 500 (SPY)' },
         });
     });
 

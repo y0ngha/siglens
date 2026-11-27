@@ -49,6 +49,7 @@ describe('kr-equity market profile', () => {
                 '30Min',
                 '1Hour',
                 '1Day',
+                '1Week',
             ]);
             expect(d.defaultTimeframe).toBe('1Day');
         });

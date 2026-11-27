@@ -25,7 +25,7 @@ const IDENTICAL: TierConfig = {
 describe('signupBenefits', () => {
     it('실제 등급 설정에서 네 항목을 화면 순서대로 돌려준다', () => {
         expect(signupBenefits()).toEqual([
-            { kind: 'timeframes', from: '5Min', to: '4Hour' },
+            { kind: 'timeframes', from: '5Min', to: '1Week' },
             { kind: 'detail' },
             { kind: 'models', count: 5 },
             { kind: 'emailReport' },
@@ -47,6 +47,21 @@ describe('signupBenefits', () => {
         );
         ['한도', '무제한', '횟수', '하루'].forEach(word => {
             expect(catalog).not.toContain(word);
+        });
+    });
+
+    it('core가 회원 등급에 열어 둔 주기라도 siglens 화면 목록(TIMEFRAMES) 밖이면 범위에 넣지 않는다', () => {
+        const [first] = signupBenefits({
+            ...TIER_CONFIG,
+            timeframes: {
+                ...TIER_CONFIG.timeframes,
+                member: [...TIER_CONFIG.timeframes.member, '1Month' as never],
+            },
+        });
+        expect(first).toEqual({
+            kind: 'timeframes',
+            from: '5Min',
+            to: '1Week',
         });
     });
 

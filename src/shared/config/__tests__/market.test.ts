@@ -21,6 +21,7 @@ describe('TIMEFRAMES', () => {
         '1Hour',
         '4Hour',
         '1Day',
+        '1Week',
     ];
 
     it('Timeframe 유니언의 모든 값을 포함한다', () => {
@@ -46,6 +47,14 @@ describe('isValidTimeframe', () => {
 
         it("'4Hour'에 대해 true를 반환한다", () => {
             expect(isValidTimeframe('4Hour')).toBe(true);
+        });
+
+        it("'1Week'에 대해 true를 반환한다", () => {
+            expect(isValidTimeframe('1Week')).toBe(true);
+        });
+
+        it("'1Month'는 차트 타임프레임이 아니므로 false를 반환한다", () => {
+            expect(isValidTimeframe('1Month')).toBe(false);
         });
     });
 

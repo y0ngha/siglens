@@ -10,7 +10,8 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Timeframe } from '@y0ngha/siglens-core';
-import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { requestedTimeframeOf } from '@/shared/config/marketProfile/requestedTimeframe';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
@@ -48,7 +49,9 @@ interface UseTimeframeChangeResult {
 export function useTimeframeChange(
     symbol: string,
     isFreeTier: boolean,
-    isTierHydrated: boolean
+    isTierHydrated: boolean,
+    /** 종목의 시장 프로필이 허용하는 프레임. 밖의 `?tf=`는 기본 프레임으로 떨어진다. */
+    allowedTimeframes: readonly Timeframe[]
 ): UseTimeframeChangeResult {
     const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
@@ -66,7 +69,7 @@ export function useTimeframeChange(
     const queryClient = useQueryClient();
     const toLocalePath = useLocalePath();
 
-    const urlTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
+    const urlTimeframe = requestedTimeframeOf(tf, allowedTimeframes);
     const requestedTimeframe = pickedTimeframe ?? urlTimeframe;
     const gatedTimeframe =
         (!isTierHydrated || isFreeTier) &&

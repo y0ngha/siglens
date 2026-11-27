@@ -4,7 +4,7 @@ import type {
     Bar,
     GetBarsOptions,
     MarketQuote,
-    Timeframe,
+    ProviderTimeframe,
 } from '@y0ngha/siglens-core';
 import type {
     QuoteSnapshot,
@@ -21,15 +21,15 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 const yahooFinance = getYahooClient();
 
 /**
- * core `Timeframe` → yahoo chart interval.
+ * core `ProviderTimeframe` → yahoo chart interval(`1Week`은 provider에 묻지 않는다 — core가 일봉에서 집계한다).
  *
  * `4Hour`가 빠져 있는 것은 의도적이다 — yahoo chart의 interval enum에 4시간이 없다
  * (1m/2m/5m/15m/30m/60m/90m/1h/1d/5d/1wk/1mo/3mo). `KR_EQUITY_DESCRIPTOR`의
  * `allowedTimeframes`에서도 제외했으므로 정상 경로로는 도달하지 않지만,
- * 타입상 `Timeframe`은 여전히 `4Hour`를 포함하므로 `getBars`가 방어한다.
+ * 타입상 `ProviderTimeframe`은 여전히 `4Hour`를 포함하므로 `getBars`가 방어한다.
  */
 const YAHOO_INTERVAL: Partial<
-    Record<Timeframe, '5m' | '15m' | '30m' | '1h' | '1d'>
+    Record<ProviderTimeframe, '5m' | '15m' | '30m' | '1h' | '1d'>
 > = {
     '5Min': '5m',
     '15Min': '15m',
@@ -208,7 +208,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
      * yahoo `chart`는 `period1`이 필수이므로 방어값이 필요하다. 일봉은 2년,
      * 인트라데이는 60일 — yahoo가 인트라데이에 두는 조회 한계와 같은 크기다.
      */
-    private defaultPeriod1(timeframe: Timeframe): string {
+    private defaultPeriod1(timeframe: ProviderTimeframe): string {
         const days = timeframe === '1Day' ? 730 : 60;
         const from = new Date(Date.now() - days * 24 * MS_PER_HOUR);
         return toUtcIsoDate(from);

@@ -7,6 +7,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     resolveReasoning,
@@ -204,6 +205,8 @@ async function streamTechnical(
         currency: descriptor.priceFormat.currency,
         // 표는 core 캐시 키에 접히지 않는다 — 모든 진입점이 같은 값을 넘겨야 한다.
         krxTickTable,
+        // 시장 배경 블록의 비교 지수. peek 쪽도 같은 `benchmarkFor`를 거쳐야 core 캐시 키(`:bm=`)가 맞는다.
+        benchmark: benchmarkFor(marketProfile, symbol),
         tierContext: { userId, tier },
         reasoning: resolveReasoning(tier, reasoning),
         positionBucket,

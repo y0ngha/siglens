@@ -58,6 +58,28 @@ describe('YahooMarketProvider', () => {
             ]);
         });
 
+        it('[1Week 집계 전제] KRX 일봉(09:00 KST 시가 시각)은 time % 86400 === 0 (UTC 자정)', async () => {
+            // core가 주봉을 일봉에서 집계할 때 ISO 주 버킷은 UTC 자정 시각에 의존한다(§3.2).
+            // yahoo 과거 일봉은 yahoo 자체 시각을 그대로 쓰므로(`toBar`) 어긋나면 주 경계가 밀린다.
+            chart.mockResolvedValue({
+                quotes: [
+                    bar({ date: new Date('2026-08-10T00:00:00Z') }),
+                    bar({ date: new Date('2026-08-11T00:00:00Z') }),
+                    bar({ date: new Date('2026-08-14T00:00:00Z') }),
+                ],
+            });
+
+            const bars = await new YahooMarketProvider().getBars({
+                symbol: '005930.KS',
+                timeframe: '1Day',
+                from: '2026-08-01T00:00:00Z',
+            });
+
+            expect(bars).toHaveLength(3);
+            const SECONDS_PER_DAY = 86_400;
+            expect(bars.map(b => b.time % SECONDS_PER_DAY)).toEqual([0, 0, 0]);
+        });
+
         it('drops bars with null OHLC', async () => {
             // 실측(2026-08-16, 005930.KS): 15분봉 405개 중 2개, 일봉 484개 중 1개가
             // close=null이었다. 통과시키면 core 지표 계산이 NaN으로 오염된다.
@@ -278,7 +300,7 @@ describe('YahooMarketProvider', () => {
 
         it('returns empty for 4Hour instead of calling yahoo', async () => {
             // yahoo chart의 interval enum에 4h가 없다. descriptor에서도 제외했지만
-            // core Timeframe 타입은 여전히 4Hour를 포함하므로 방어한다.
+            // core ProviderTimeframe 타입은 여전히 4Hour를 포함하므로 방어한다.
             const bars = await new YahooMarketProvider().getBars({
                 symbol: '005930.KS',
                 timeframe: '4Hour',

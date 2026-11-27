@@ -283,6 +283,9 @@ describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)'
         expect((content?.props as { hasOptions: boolean }).hasOptions).toBe(
             false
         );
+        expect(
+            (content?.props as { marketProfile: string }).marketProfile
+        ).toBe('kr-equity');
 
         const fallback = findSuspenseFallback(tree);
         const factualFallback = findElementByType(
@@ -306,6 +309,9 @@ describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)'
         expect((content?.props as { hasOptions: boolean }).hasOptions).toBe(
             true
         );
+        expect(
+            (content?.props as { marketProfile: string }).marketProfile
+        ).toBe('us-equity');
 
         const fallback = findSuspenseFallback(tree);
         const factualFallback = findElementByType(
