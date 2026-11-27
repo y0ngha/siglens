@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { defined } from '@/shared/test-utils/defined';
 import {
     findSignalHub,
+    isHubGuide,
     isSignalHubIndexable,
     SIGNAL_HUB_MIN_INDEXABLE_ROWS,
     SIGNAL_HUBS,
@@ -75,5 +77,21 @@ describe('isSignalHubIndexable', () => {
             false
         );
         expect(isSignalHubIndexable(SIGNAL_HUB_MIN_INDEXABLE_ROWS)).toBe(true);
+    });
+});
+
+describe('isHubGuide', () => {
+    const golden = defined(findSignalHub('golden-cross'), 'golden-cross hub');
+
+    it('가이드 카테고리와 슬러그가 모두 같을 때만 참이다', () => {
+        expect(isHubGuide(golden, { category: 'indicators', slug: 'ma' })).toBe(
+            true
+        );
+        expect(isHubGuide(golden, { category: 'howto', slug: 'ma' })).toBe(
+            false
+        );
+        expect(
+            isHubGuide(golden, { category: 'indicators', slug: 'rsi' })
+        ).toBe(false);
     });
 });
