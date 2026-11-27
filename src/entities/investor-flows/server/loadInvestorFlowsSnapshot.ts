@@ -40,11 +40,8 @@ import {
     type AggregateRecord,
     type HolderRecord,
 } from '../lib/snapshot/institutional';
-import {
-    addDays,
-    isPeriodComplete,
-    positionsRetentionFloor,
-} from '../lib/investorFlowsDates';
+import { addDays, isPeriodComplete } from '../lib/investorFlowsDates';
+import { resolveHoldersPeriod } from './resolveHoldersPeriod';
 import { INVESTOR_FLOWS_REG_SHO_RETENTION_DAYS } from '../lib/investorFlowsPolicy';
 import { summarizeThresholdListings } from '../lib/regShoParsers';
 
@@ -156,14 +153,7 @@ async function loadInstitutional(
                 return null;
             }),
     ]);
-    const floor = positionsRetentionFloor(today);
-    const latestComplete = aggregates
-        .filter(a => isPeriodComplete(a.period, today) && a.period >= floor)
-        .map(a => a.period)
-        .sort()
-        .at(-1);
-    const period =
-        latestComplete ?? (await reads.findLatestPositionPeriod(cusip));
+    const period = await resolveHoldersPeriod(reads, cusip, aggregates, today);
     if (period === null) return { aggregates, optionAggregates, ...empty };
     const [topHolders, exitedHolders] = await Promise.all([
         reads.findTopHolders(cusip, period, SNAPSHOT_MAX_TOP_HOLDERS),

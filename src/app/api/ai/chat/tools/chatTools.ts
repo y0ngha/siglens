@@ -24,6 +24,8 @@ import {
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+    FUNDAMENTALS_RESULT_MAX_CHARS,
+    NEWS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
     truncateToolResult,
 } from './truncate';
@@ -147,6 +149,10 @@ export interface ToolResultCaps {
     swingHistory: number;
     /** `get_analyst_views` (up to 15 actions plus four estimate periods). */
     analystViews: number;
+    /** `get_fundamentals` (every section filled plus the earnings tally). */
+    fundamentals: number;
+    /** `get_news` (up to 20 items with summaries plus the symbol price-move block; the tool fits itself under this). */
+    news: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -167,6 +173,8 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     indexHistory: INDEX_HISTORY_RESULT_MAX_CHARS,
     swingHistory: SWING_HISTORY_RESULT_MAX_CHARS,
     analystViews: ANALYST_VIEWS_RESULT_MAX_CHARS,
+    fundamentals: FUNDAMENTALS_RESULT_MAX_CHARS,
+    news: NEWS_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -373,6 +381,8 @@ export function createToolExecutor(
         if (name === 'get_index_history_stats') return resultCaps.indexHistory;
         if (name === 'get_swing_history') return resultCaps.swingHistory;
         if (name === 'get_analyst_views') return resultCaps.analystViews;
+        if (name === 'get_news') return resultCaps.news;
+        if (name === 'get_fundamentals') return resultCaps.fundamentals;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

@@ -63,6 +63,7 @@
         "scripts/__tests__/generate-env-gate.test.ts",
         "scripts/__tests__/rule-doc-size.test.ts",
         "scripts/__tests__/rule-ratchet.test.ts",
+        "scripts/__tests__/agent-eval-replay.test.ts",
         "scripts/__tests__/pattern-index.test.ts",
         "scripts/__tests__/seed-crypto-korean-names.test.ts",
         "scripts/__tests__/skills-digest.test.ts",

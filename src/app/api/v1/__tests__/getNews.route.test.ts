@@ -76,6 +76,19 @@ vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+// `get_news`가 심볼 요청에 싣는 가격 움직임(priceMoves)은 일봉을 읽는다 — 시장 호출이 새지 않게 빈 봉으로 막는다.
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
+    getCachedBarsWithIndicators: async () => ({ bars: [], indicators: {} }),
+}));
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
+    resolveMarketProfile: async () => 'us-equity',
+}));
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: () => ({}),
+}));
+vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+    resolveAssetInfoOrNull: async () => null,
+}));
 // 나머지 실행기 모듈 — 이 테스트와 무관하다.
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
     searchTickerTool: vi.fn(),
@@ -155,6 +168,9 @@ function getNews(body: unknown): Promise<Response> {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // 심볼 뉴스는 지금부터 30일 창이다 — 저장 기사(2026-10-14)가 창 안에 들도록 시계를 고정한다.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-15T00:00:00Z'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockAuth.mockResolvedValue({ status: 'ok', principal });
     mockConsume.mockResolvedValue({
@@ -170,6 +186,10 @@ beforeEach(() => {
     mockIngest.mockResolvedValue({ inserted: 3, updated: 0 });
     mockListCardsBySymbol.mockResolvedValue([storedCard]);
     mockListBySymbol.mockResolvedValue([]);
+});
+
+afterEach(() => {
+    vi.useRealTimers();
 });
 
 describe('POST /api/v1/tools/get_news — 서버 비용 경로 차단', () => {
@@ -189,6 +209,18 @@ describe('POST /api/v1/tools/get_news — 서버 비용 경로 차단', () => {
         };
         expect(mockListCardsBySymbol).toHaveBeenCalledTimes(1);
         expect(JSON.stringify(body.data)).toContain('Apple unveils a chip');
+    });
+
+    it('봉이 없으면 priceMoves는 null이고 기사에는 session 키가 없다(null이면 마감 뒤 기사로 읽히므로)', async () => {
+        const response = await getNews({ symbol: 'AAPL' });
+        const body = (await response.json()) as {
+            data: {
+                priceMoves: unknown;
+                items: Array<Record<string, unknown>>;
+            };
+        };
+        expect(body.data.priceMoves).toBeNull();
+        expect(body.data.items[0]).not.toHaveProperty('session');
     });
 
     it('대조군: 같은 도구를 에이전트 기본 옵션으로 만들면 적재가 실제로 불린다', async () => {

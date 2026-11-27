@@ -66,7 +66,10 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { buildPlanCheck, TIER_CONFIG } from '@y0ngha/siglens-core';
-import { getCachedAnalysisTool } from '@/app/api/ai/chat/tools/getCachedAnalysis';
+import {
+    getCachedAnalysisTool,
+    withLevelLadder,
+} from '@/app/api/ai/chat/tools/getCachedAnalysis';
 import { CACHED_ANALYSIS_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
@@ -127,7 +130,7 @@ describe('getCachedAnalysisTool', () => {
         profile.mockResolvedValue('us-equity');
         mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
         getQuote.mockResolvedValue(undefined);
-        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        getCachedBars.mockResolvedValue({ bars: [], indicators: { ma: {} } });
         assetInfo.mockResolvedValue(null);
     });
 
@@ -482,7 +485,7 @@ describe('getCachedAnalysisTool', () => {
                     volume: 1,
                 },
             ],
-            indicators: {},
+            indicators: { ma: {} },
         });
         const r = (await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
@@ -688,7 +691,7 @@ describe('getCachedAnalysisTool', () => {
                     volume: 1,
                 },
             ],
-            indicators: {},
+            indicators: { ma: {} },
         });
         const r = (await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
@@ -761,7 +764,7 @@ describe('getCachedAnalysisTool', () => {
                     barAt(generatedAt.getTime() / 1000 - 3600), // older
                     barAt(generatedAt.getTime() / 1000 + 3600), // newer — 1 new bar
                 ],
-                indicators: {},
+                indicators: { ma: {} },
             });
             const r = (await getCachedAnalysisTool(
                 { symbol: 'AAPL', tab: 'technical' },
@@ -788,7 +791,7 @@ describe('getCachedAnalysisTool', () => {
             });
             getCachedBars.mockResolvedValue({
                 bars: [barAt(generatedAt.getTime() / 1000 - 3600)],
-                indicators: {},
+                indicators: { ma: {} },
             });
             const r = (await getCachedAnalysisTool(
                 { symbol: 'AAPL', tab: 'technical' },
@@ -878,7 +881,10 @@ describe('getCachedAnalysisTool', () => {
                 },
                 lockedInfoDepth: [],
             });
-            getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+            getCachedBars.mockResolvedValue({
+                bars: [],
+                indicators: { ma: {} },
+            });
             const r = (await getCachedAnalysisTool(
                 { symbol: 'AAPL', tab: 'technical' },
                 ctx,
@@ -913,7 +919,7 @@ describe('getCachedAnalysisTool', () => {
                     barAt(Date.parse('2026-09-17T00:00:00.000Z') / 1000), // same trading day as the analysis — must NOT count
                     barAt(Date.parse('2026-09-18T00:00:00.000Z') / 1000), // next trading day — must count
                 ],
-                indicators: {},
+                indicators: { ma: {} },
             });
             const r = (await getCachedAnalysisTool(
                 { symbol: 'AAPL', tab: 'technical' },
@@ -951,7 +957,7 @@ describe('getCachedAnalysisTool', () => {
             });
             getCachedBars.mockResolvedValue({
                 bars: [barAt(Date.parse('2026-09-18T00:00:00.000Z') / 1000)],
-                indicators: {},
+                indicators: { ma: {} },
             });
             const r = (await getCachedAnalysisTool(
                 { symbol: '005930.KS', tab: 'technical' },
@@ -983,7 +989,7 @@ describe('getCachedAnalysisTool', () => {
             });
             getCachedBars.mockResolvedValue({
                 bars: [barAt(generatedAt.getTime() / 1000 + 3600)],
-                indicators: {},
+                indicators: { ma: {} },
             });
             const r = (await getCachedAnalysisTool(
                 { symbol: 'AAPL', tab: 'overall' },
@@ -996,7 +1002,7 @@ describe('getCachedAnalysisTool', () => {
     });
 
     describe('sinceAnalysis (spec §3.2, B4)', () => {
-        it('quote가 있으면 analysisPrice/priceNow/movePct/levelsBroken/nearest*를 계산하고 planNow는 buildPlanCheck로 채워진다', async () => {
+        it('quote가 있으면 analysisPrice/priceNow/movePct/levelsBroken/levelLadder를 계산하고 planNow는 buildPlanCheck로 채워진다', async () => {
             getQuote.mockResolvedValue({ price: 120 });
             peekAnalysis.mockResolvedValue({
                 result: {
@@ -1005,13 +1011,13 @@ describe('getCachedAnalysisTool', () => {
                     riskLevel: 'low',
                     keyLevels: {
                         support: [
-                            { price: 100, reason: 'r' }, // below priceNow=120 → still support, nearestSupport candidate
-                            { price: 125, reason: 'r' }, // ABOVE priceNow=120 → broken (fell through); must NOT be nearestSupport
+                            { price: 100, reason: 'r' }, // below priceNow=120 → still support (a `below` rung)
+                            { price: 125, reason: 'r' }, // ABOVE priceNow=120 → broken (fell through); lands in `above` whatever its role
                         ],
                         resistance: [
-                            { price: 115, reason: 'r' }, // below priceNow=120 → broken (broke above); must NOT be nearestResistance
-                            { price: 130, reason: 'r' }, // above priceNow=120 → nearestResistance candidate
-                            { price: 140, reason: 'r' }, // further above → not nearest
+                            { price: 115, reason: 'r' }, // below priceNow=120 → broken (broke above); lands in `below` whatever its role
+                            { price: 130, reason: 'r' }, // above priceNow=120 → an `above` rung
+                            { price: 140, reason: 'r' }, // further above → a farther `above` rung
                         ],
                     },
                     priceTargets: {},
@@ -1039,8 +1045,10 @@ describe('getCachedAnalysisTool', () => {
                         kind: string;
                         price: number;
                     }>;
-                    nearestSupport: { price: number } | null;
-                    nearestResistance: { price: number } | null;
+                    levelLadder: {
+                        above: Array<{ price: number }>;
+                        below: Array<{ price: number }>;
+                    };
                     planNow: {
                         riskReward: number | null;
                         belowStopLoss: boolean;
@@ -1058,19 +1066,16 @@ describe('getCachedAnalysisTool', () => {
                 ])
             );
             expect(r.sinceAnalysis.levelsBroken).toHaveLength(2);
-            // A broken support (125, ABOVE price) must never surface as
-            // "nearest support" — only 100 (still at/below price) qualifies.
-            expect(r.sinceAnalysis.nearestSupport).toEqual({
-                price: 100,
-                distancePct: expect.any(Number),
-            });
-            // A broken resistance (115, BELOW price) must never surface as
-            // "nearest resistance" — only 130 (at/above price) qualifies,
-            // not 140 (further away).
-            expect(r.sinceAnalysis.nearestResistance).toEqual({
-                price: 130,
-                distancePct: expect.any(Number),
-            });
+            // The side comes from the price, never from the role: the broken support (125) is the
+            // nearest level ABOVE 120, the broken resistance (115) the nearest BELOW; the stop (90) is a rung too.
+            expect(r.sinceAnalysis.levelLadder.above.map(l => l.price)).toEqual(
+                [125, 130, 140]
+            );
+            expect(r.sinceAnalysis.levelLadder.below.map(l => l.price)).toEqual(
+                [115, 100, 90]
+            );
+            expect(r.sinceAnalysis).not.toHaveProperty('nearestSupport');
+            expect(r.sinceAnalysis).not.toHaveProperty('nearestResistance');
             // entryPrices=[95,105] → entry mid 100; entryZoneTop=105.
             // priceNow=120 > 105*1.01 → exceedsEntryZone; stopLoss=90 < priceNow → not belowStopLoss.
             // riskRewardAtCurrent = (nearest target above 120=130 - 120) / (120 - 90) = 10/30.
@@ -1150,14 +1155,14 @@ describe('getCachedAnalysisTool', () => {
             expect(r.sinceAnalysis.planNow).toBeNull();
         });
 
-        it('nearestSupport/nearestResistance: 유효한 후보가 priceNow 쪽에 없으면 null', async () => {
+        it('N19: priceNow 위의 분석 지지선은 above 칸에, 아래의 저항선은 below 칸에 놓인다 (역할이 아니라 가격으로 쪽을 가른다)', async () => {
             getQuote.mockResolvedValue({ price: 120 });
             peekAnalysis.mockResolvedValue({
                 result: {
                     ...technicalCachedResult.result,
                     keyLevels: {
-                        support: [{ price: 125, reason: 'r' }], // only above price → no valid support candidate
-                        resistance: [{ price: 115, reason: 'r' }], // only below price → no valid resistance candidate
+                        support: [{ price: 125, reason: 'r' }],
+                        resistance: [{ price: 115, reason: 'r' }],
                     },
                     analyzedAt: '2026-09-01T00:00:00.000Z',
                 },
@@ -1169,15 +1174,38 @@ describe('getCachedAnalysisTool', () => {
                 rt
             )) as {
                 sinceAnalysis: {
-                    nearestSupport: unknown;
-                    nearestResistance: unknown;
+                    levelLadder: {
+                        above: Array<{ price: number; sources: string[] }>;
+                        below: Array<{ price: number; sources: string[] }>;
+                    };
                 };
             };
-            expect(r.sinceAnalysis.nearestSupport).toBeNull();
-            expect(r.sinceAnalysis.nearestResistance).toBeNull();
+            expect(r.sinceAnalysis.levelLadder.above).toMatchObject([
+                { price: 125, sources: ['analysis support'] },
+            ]);
+            expect(r.sinceAnalysis.levelLadder.below).toMatchObject([
+                { price: 115, sources: ['analysis resistance'] },
+            ]);
         });
 
-        it('가격이 비유한값이거나 0 이하인 레벨은 nearest/levelsBroken 어디에도 나타나지 않는다', async () => {
+        it('분석 레벨도 차트 기준도 없으면 levelLadder 키가 없다', async () => {
+            getQuote.mockResolvedValue({ price: 120 });
+            peekAnalysis.mockResolvedValue({
+                result: {
+                    ...technicalCachedResult.result,
+                    analyzedAt: '2026-09-01T00:00:00.000Z',
+                },
+                lockedInfoDepth: [],
+            });
+            const r = (await getCachedAnalysisTool(
+                { symbol: 'AAPL', tab: 'technical' },
+                ctx,
+                rt
+            )) as { sinceAnalysis: Record<string, unknown> };
+            expect(r.sinceAnalysis).not.toHaveProperty('levelLadder');
+        });
+
+        it('가격이 비유한값이거나 0 이하인 레벨은 levelLadder·levelsBroken 어디에도 나타나지 않는다', async () => {
             getQuote.mockResolvedValue({ price: 120 });
             peekAnalysis.mockResolvedValue({
                 result: {
@@ -1204,16 +1232,17 @@ describe('getCachedAnalysisTool', () => {
                 rt
             )) as {
                 sinceAnalysis: {
-                    nearestSupport: { price: number } | null;
-                    nearestResistance: unknown;
+                    levelLadder: {
+                        above: unknown[];
+                        below: Array<{ price: number }>;
+                    };
                     levelsBroken: unknown[];
                 };
             };
-            expect(r.sinceAnalysis.nearestSupport).toEqual({
-                price: 90,
-                distancePct: expect.any(Number),
-            });
-            expect(r.sinceAnalysis.nearestResistance).toBeNull();
+            expect(r.sinceAnalysis.levelLadder.below.map(l => l.price)).toEqual(
+                [90]
+            );
+            expect(r.sinceAnalysis.levelLadder.above).toEqual([]);
             expect(r.sinceAnalysis.levelsBroken).toEqual([]);
         });
 
@@ -1235,7 +1264,7 @@ describe('getCachedAnalysisTool', () => {
             expect(r.sinceAnalysis.movePct).toBeNull();
         });
 
-        it('nearestSupport/nearestResistance의 distancePct는 core 컨벤션(level−price)/price를 따른다 — 위쪽 레벨은 양수, 아래쪽은 음수', async () => {
+        it('levelLadder의 distancePct는 (level−price)/price × 100, 소수 2자리 — 위쪽 레벨은 양수, 아래쪽은 음수', async () => {
             getQuote.mockResolvedValue({ price: 120 });
             peekAnalysis.mockResolvedValue({
                 result: {
@@ -1254,26 +1283,124 @@ describe('getCachedAnalysisTool', () => {
                 rt
             )) as {
                 sinceAnalysis: {
-                    nearestSupport: { price: number; distancePct: number };
-                    nearestResistance: { price: number; distancePct: number };
+                    levelLadder: {
+                        above: Array<{ price: number; distancePct: number }>;
+                        below: Array<{ price: number; distancePct: number }>;
+                    };
                 };
             };
-            // (130-120)/120*100 = 8.33333...  →  roundNumber (6 significant
-            // digits, not 2 decimals) = 8.33333, not the naive 8.33.
-            expect(r.sinceAnalysis.nearestResistance).toEqual({
-                price: 130,
-                distancePct: 8.33333,
+            // (130-120)/120*100 = 8.3333 → 8.33; (110-120)/120*100 → -8.33.
+            expect(r.sinceAnalysis.levelLadder.above).toMatchObject([
+                { price: 130, distancePct: 8.33 },
+            ]);
+            expect(r.sinceAnalysis.levelLadder.below).toMatchObject([
+                { price: 110, distancePct: -8.33 },
+            ]);
+        });
+
+        describe('levelLadder chart references', () => {
+            // 30 daily bars: close = 100 + i, high = close + 1, low = close - 1 (i = 0..29), so the whole
+            // series (the 52-week window) has high 130 / low 99, and the last 20 bars (i = 10..29) have
+            // high 130 / low 109.
+            const dailyBars = Array.from({ length: 30 }, (_, i) => ({
+                time: Date.UTC(2026, 0, 1 + i) / 1000,
+                open: 100 + i,
+                high: 101 + i,
+                low: 99 + i,
+                close: 100 + i,
+                volume: 1,
+            }));
+            const indicators = {
+                ma: { 20: [117.5], 50: [112], 200: [] },
+            };
+            const peekRecent = (timeframe: string) =>
+                peekAnalysis.mockResolvedValue({
+                    result: {
+                        ...technicalCachedResult.result,
+                        keyLevels: {
+                            support: [{ price: 120, reason: 'r' }],
+                            resistance: [],
+                        },
+                        analyzedAt: new Date().toISOString(),
+                        timeframe,
+                    },
+                    lockedInfoDepth: [],
+                });
+            type Ladder = {
+                above: Array<{ price: number; sources: string[] }>;
+                below: Array<{ price: number; sources: string[] }>;
+            };
+
+            it('일봉 분석은 52주·20일 고저와 20/50/200일 평균을 사다리에 싣고, 봉은 한 번만 읽는다', async () => {
+                getQuote.mockResolvedValue({ price: 125 });
+                getCachedBars.mockResolvedValue({
+                    bars: dailyBars,
+                    indicators,
+                });
+                peekRecent('1Day');
+                const r = (await getCachedAnalysisTool(
+                    { symbol: 'AAPL', tab: 'technical' },
+                    ctx,
+                    rt
+                )) as { sinceAnalysis: { levelLadder: Ladder } };
+                const { above, below } = r.sinceAnalysis.levelLadder;
+                expect(above).toMatchObject([
+                    { price: 130, sources: ['52-week high', '20-day high'] },
+                ]);
+                // cap of 4 per side, nearest first: 120 (analysis), 117.5 (20-day average), 112 (50-day
+                // average), 109 (20-day low); 99 (52-week low) is the fifth and not listed. No 200-day average:
+                // the series has none.
+                expect(below.map(l => l.price)).toEqual([120, 117.5, 112, 109]);
+                expect(below[1]?.sources).toEqual(['20-day average']);
+                // One bars read served both the staleness check and the ladder.
+                expect(getCachedBars).toHaveBeenCalledTimes(1);
             });
-            // (110-120)/120*100 = -8.33333...
-            expect(r.sinceAnalysis.nearestSupport).toEqual({
-                price: 110,
-                distancePct: -8.33333,
+
+            it('일봉이 아닌 분석에는 차트 기준(…일 …)을 싣지 않는다', async () => {
+                getQuote.mockResolvedValue({ price: 125 });
+                getCachedBars.mockResolvedValue({
+                    bars: dailyBars,
+                    indicators,
+                });
+                peekRecent('1Hour');
+                const r = (await getCachedAnalysisTool(
+                    { symbol: 'AAPL', tab: 'technical', timeframe: '1Hour' },
+                    ctx,
+                    rt
+                )) as { sinceAnalysis: { levelLadder: Ladder } };
+                const { above, below } = r.sinceAnalysis.levelLadder;
+                expect(above).toEqual([]);
+                expect(below).toMatchObject([
+                    { price: 120, sources: ['analysis support'] },
+                ]);
+            });
+
+            it('봉 조회가 실패하면 분석 레벨만으로 사다리를 만들고 stale은 나이 규칙으로 폴백한다', async () => {
+                getQuote.mockResolvedValue({ price: 125 });
+                getCachedBars.mockRejectedValue(new Error('bars down'));
+                peekRecent('1Day');
+                const r = (await getCachedAnalysisTool(
+                    { symbol: 'AAPL', tab: 'technical' },
+                    ctx,
+                    rt
+                )) as {
+                    stale: boolean;
+                    sinceAnalysis: { levelLadder: Ladder };
+                };
+                expect(r.stale).toBe(false);
+                expect(r.sinceAnalysis.levelLadder.above).toEqual([]);
+                expect(r.sinceAnalysis.levelLadder.below).toMatchObject([
+                    { price: 120, sources: ['analysis support'] },
+                ]);
             });
         });
 
         it('quote도 last close도 못 구하면 sinceAnalysis 자체가 없다', async () => {
             getQuote.mockResolvedValue(undefined);
-            getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+            getCachedBars.mockResolvedValue({
+                bars: [],
+                indicators: { ma: {} },
+            });
             peekAnalysis.mockResolvedValue(technicalCachedResult);
             const r = (await getCachedAnalysisTool(
                 { symbol: 'AAPL', tab: 'technical' },
@@ -1297,7 +1424,7 @@ describe('getCachedAnalysisTool', () => {
                         volume: 1,
                     },
                 ],
-                indicators: {},
+                indicators: { ma: {} },
             });
             peekAnalysis.mockResolvedValue(technicalCachedResult);
             const r = (await getCachedAnalysisTool(
@@ -1314,7 +1441,7 @@ describe('getCachedAnalysisTool', () => {
                 bars: [
                     { time: 1, open: 1, high: 1, low: 1, close: 0, volume: 1 },
                 ],
-                indicators: {},
+                indicators: { ma: {} },
             });
             peekAnalysis.mockResolvedValue(technicalCachedResult);
             const r = (await getCachedAnalysisTool(
@@ -1331,7 +1458,7 @@ describe('getCachedAnalysisTool', () => {
                 bars: [
                     { time: 1, open: 1, high: 1, low: 1, close: 88, volume: 1 },
                 ],
-                indicators: {},
+                indicators: { ma: {} },
             });
             peekAnalysis.mockResolvedValue(technicalCachedResult);
             let r = (await getCachedAnalysisTool(
@@ -1448,7 +1575,7 @@ describe('getCachedAnalysisTool — 회원 호출자 (공개 분석으로 대체
         profile.mockResolvedValue('us-equity');
         mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
         getQuote.mockResolvedValue(undefined);
-        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        getCachedBars.mockResolvedValue({ bars: [], indicators: { ma: {} } });
         assetInfo.mockResolvedValue(null);
     });
 
@@ -1680,7 +1807,7 @@ describe('getCachedAnalysisTool — overall이 새 생성으로 이어질 때 �
         profile.mockResolvedValue('us-equity');
         mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
         getQuote.mockResolvedValue(undefined);
-        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        getCachedBars.mockResolvedValue({ bars: [], indicators: { ma: {} } });
         assetInfo.mockResolvedValue(null);
     });
 
@@ -1913,7 +2040,7 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
         profile.mockResolvedValue('us-equity');
         mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
         getQuote.mockResolvedValue(undefined);
-        getCachedBars.mockResolvedValue({ bars, indicators: {} });
+        getCachedBars.mockResolvedValue({ bars, indicators: { ma: {} } });
         assetInfo.mockResolvedValue(null);
     });
 
@@ -2079,7 +2206,7 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
         expect(accepted.emitChart).toHaveBeenCalledTimes(1);
 
         // 봉이 없으면 신선도가 나이 규칙(1일)으로 떨어져 3일 전 분석은 낡았다 — 대체가 버려진다.
-        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        getCachedBars.mockResolvedValue({ bars: [], indicators: { ma: {} } });
         peekAnalysis.mockResolvedValue(
             technical(new Date(Date.now() - 3 * 24 * HOUR_MS).toISOString())
         );
@@ -2106,5 +2233,76 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
             runtime
         );
         await expect(emitted.block).resolves.toBeNull();
+    });
+});
+
+describe('withLevelLadder (evaluation replay enricher)', () => {
+    const analysis = {
+        keyLevels: {
+            support: [{ price: 125, reason: 'r' }],
+            resistance: [{ price: 115, reason: 'r' }],
+        },
+        priceTargets: null,
+        actionRecommendation: null,
+    };
+    const recorded = {
+        found: true,
+        analysis,
+        sinceAnalysis: {
+            priceNow: 120,
+            movePct: 1,
+            nearestSupport: { price: 100, distancePct: -16.67 },
+            nearestResistance: { price: 130, distancePct: 8.33 },
+        },
+    };
+
+    it('swaps the old nearest pair for a ladder built from the recorded analysis and priceNow', () => {
+        const out = withLevelLadder(recorded, null);
+        expect(out.sinceAnalysis).not.toHaveProperty('nearestSupport');
+        expect(out.sinceAnalysis).not.toHaveProperty('nearestResistance');
+        expect(out.sinceAnalysis).toMatchObject({
+            priceNow: 120,
+            movePct: 1,
+            levelLadder: {
+                above: [{ price: 125 }],
+                below: [{ price: 115 }],
+            },
+        });
+        // the input is not mutated
+        expect(recorded.sinceAnalysis).toHaveProperty('nearestSupport');
+    });
+
+    it('adds chart references when given', () => {
+        const out = withLevelLadder(recorded, {
+            high52w: 140,
+            low52w: null,
+            high20: null,
+            low20: null,
+            sma20: null,
+            sma50: null,
+            sma200: null,
+        });
+        expect(
+            (
+                out.sinceAnalysis as unknown as {
+                    levelLadder: { above: Array<{ price: number }> };
+                }
+            ).levelLadder.above.map(l => l.price)
+        ).toEqual([125, 140]);
+    });
+
+    it('drops the pair and adds no ladder when no level survives', () => {
+        const out = withLevelLadder(
+            { ...recorded, analysis: { keyLevels: null } },
+            null
+        );
+        expect(out.sinceAnalysis).toEqual({ priceNow: 120, movePct: 1 });
+    });
+
+    it('returns a result without sinceAnalysis or analysis unchanged', () => {
+        const noSince = { found: true, analysis };
+        expect(withLevelLadder(noSince, null)).toBe(noSince);
+        const noAnalysis = { found: false, sinceAnalysis: { priceNow: 1 } };
+        expect(withLevelLadder(noAnalysis, null)).toBe(noAnalysis);
     });
 });

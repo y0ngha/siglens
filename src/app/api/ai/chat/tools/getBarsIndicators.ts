@@ -83,6 +83,7 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
 import { pctVs, ratioPct } from './percent';
+import { computeRangeWindow, type RangeWindow } from './rangeWindow';
 import {
     resolveAssetInfoOrNull,
     resolvedInstrumentFields,
@@ -697,37 +698,6 @@ function higherTimeframeView(
 }
 
 /**
- * High/low over a window, the bar each was set on, and the last close's
- * distance from each — shared shape for `range` (which also carries `bars`,
- * the window size actually used) and every entry of `ranges`.
- *
- * `highDate`/`lowDate` (dev-2026-10-22 A4): without them a "when was the
- * 52-week low" question had no answer once the low fell outside the returned
- * raw `bars`, and the model borrowed a fear & greed date instead. Same format
- * as the bar timestamps (`YYYY-MM-DD` on 1Day, ISO instant intraday); a tie
- * resolves to the MOST RECENT bar.
- *
- * `high`/`low` are INTRADAY extremes (the bars' high/low). The `*Close`
- * fields are the same window's CLOSING-price extremes ("종가 기준 최고가/최저가")
- * with the same date format, tie rule and distance-from-last-close semantics:
- * a "highest close in 52 weeks" question must read `highClose`, never `high`.
- */
-interface RangeWindow {
-    high: number | null;
-    highDate: string | null;
-    low: number | null;
-    lowDate: string | null;
-    fromHighPct: number | null;
-    fromLowPct: number | null;
-    highClose: number | null;
-    highCloseDate: string | null;
-    fromHighClosePct: number | null;
-    lowClose: number | null;
-    lowCloseDate: string | null;
-    fromLowClosePct: number | null;
-}
-
-/**
  * Consecutive-close streak ending at the last COMPLETED daily bar, so "며칠
  * 연속 하락" questions need no hand counting. `days` counts consecutive closes
  * moving in `direction` (closes 10,9,8 → down, 2; a single down day after an up
@@ -867,81 +837,6 @@ const RANGES_BARS_BACK: Record<keyof DerivedView['ranges'], number> = {
  */
 export const MA50_PERIOD = 50;
 
-/**
- * The bar holding the extreme of `value` over `window`. Only finite values
- * count; `beats` uses `>=`/`<=` so a LATER bar wins a tie (the date is the most
- * recent touch). One helper serves intraday high/low and the close extremes.
- */
-function extremeBar(
-    window: readonly Bar[],
-    value: (bar: Bar) => number,
-    beats: (candidate: number, best: number) => boolean
-): Bar | null {
-    return window.reduce<Bar | null>((best, b) => {
-        const v = value(b);
-        if (!Number.isFinite(v)) return best;
-        return best === null || beats(v, value(best)) ? b : best;
-    }, null);
-}
-
-/**
- * High/low over `window`, the bar each was set on, and the last close's
- * distance from each. Only finite highs/lows count — a single bad bar
- * (NaN/Infinity from an upstream data glitch) must not poison the whole
- * window's max/min. `>=`/`<=` let a later bar win a tie, so the date is the
- * most recent touch. Shared by `range` (the 252-bar-on-1Day /
- * all-loaded-intraday window) and `ranges` (fixed 20/60-bar windows) so this
- * filtering logic lives once.
- */
-function computeRangeWindow(
-    window: readonly Bar[],
-    lastClose: number | null,
-    timeframe: AgentBarsTimeframe
-): RangeWindow {
-    const highBar = extremeBar(
-        window,
-        b => b.high,
-        (a, best) => a >= best
-    );
-    const lowBar = extremeBar(
-        window,
-        b => b.low,
-        (a, best) => a <= best
-    );
-    const highCloseBar = extremeBar(
-        window,
-        b => b.close,
-        (a, best) => a >= best
-    );
-    const lowCloseBar = extremeBar(
-        window,
-        b => b.close,
-        (a, best) => a <= best
-    );
-    const high = highBar?.high ?? null;
-    const low = lowBar?.low ?? null;
-    const highClose = highCloseBar?.close ?? null;
-    const lowClose = lowCloseBar?.close ?? null;
-    return {
-        high,
-        highDate: highBar ? isoTimestamp(highBar.time, timeframe) : null,
-        low,
-        lowDate: lowBar ? isoTimestamp(lowBar.time, timeframe) : null,
-        fromHighPct: pctVs(lastClose, high),
-        fromLowPct: pctVs(lastClose, low),
-        highClose,
-        highCloseDate: highCloseBar
-            ? isoTimestamp(highCloseBar.time, timeframe)
-            : null,
-        fromHighClosePct: pctVs(lastClose, highClose),
-        lowClose,
-        lowCloseDate: lowCloseBar
-            ? isoTimestamp(lowCloseBar.time, timeframe)
-            : null,
-        fromLowClosePct: pctVs(lastClose, lowClose),
-    };
-}
-
 function directionOf(sign: number): CloseStreakView['direction'] {
     if (sign > 0) return 'up';
     return sign < 0 ? 'down' : 'flat';
@@ -1008,10 +903,12 @@ function computeDerived(
         })
     ) as DerivedView['changePct'];
 
+    const formatDate = (unixSeconds: number): string =>
+        isoTimestamp(unixSeconds, timeframe);
     const rangeWindow =
         timeframe === '1Day' ? bars.slice(-RANGE_MAX_DAILY_BARS) : bars;
     const range = {
-        ...computeRangeWindow(rangeWindow, lastClose, timeframe),
+        ...computeRangeWindow(rangeWindow, lastClose, formatDate),
         bars: rangeWindow.length,
     };
 
@@ -1019,7 +916,7 @@ function computeDerived(
         Object.entries(RANGES_BARS_BACK).map(([key, n]) => [
             key,
             bars.length >= n
-                ? computeRangeWindow(bars.slice(-n), lastClose, timeframe)
+                ? computeRangeWindow(bars.slice(-n), lastClose, formatDate)
                 : null,
         ])
     ) as DerivedView['ranges'];
