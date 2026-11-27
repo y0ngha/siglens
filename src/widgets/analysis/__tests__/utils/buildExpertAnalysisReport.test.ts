@@ -348,6 +348,24 @@ describe('buildExpertAnalysisReport', () => {
         }
     );
 
+    it('above_zone within 0.5 ATR writes the just-above sentence with its basis, like the badge', () => {
+        const report = stanceFor({
+            ...base,
+            position: 'above_zone',
+            distanceAtr: 0.49,
+        });
+        expect(report).toContain(
+            '현재가가 진입 구간 바로 위에 있습니다. 구간 상단과의 거리가 0.5 ATR 미만입니다.'
+        );
+        expect(report).not.toContain('구간보다 위에 있습니다');
+    });
+
+    it('above_zone with unknown distance keeps the generic sentence', () => {
+        expect(
+            stanceFor({ ...base, position: 'above_zone', distanceAtr: null })
+        ).toContain('현재가가 진입 구간보다 위에 있습니다.');
+    });
+
     it.each([
         ['no_zone', '진입 구간이 없어 근거 있는 자리가 없습니다.'],
         ['no_stop', '손절 기준을 정할 수 없어 근거 있는 자리가 없습니다.'],

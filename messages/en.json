@@ -3768,7 +3768,6 @@
                 "c68843": "Failed to copy to clipboard. Please check browser permissions.",
                 "c80f22": "{v0} analysis techniques detected, ",
                 "cfbeac": "Show Chart Price Lines",
-                "d39704": "The more indicators converge, the higher the reliability of Support and Resistance at that price level.\n                    ",
                 "d930e0": "Resistance",
                 "db5809": "If there are discrepancies with real-time price movements, they are adjusted here.\n                            ",
                 "e5c85b": "Copied",
@@ -3809,6 +3808,17 @@
                 "analyzing": "The AI is running a detailed analysis… Ad revenue funds better AI models and server costs.",
                 "done": "Was this analysis useful? Using the affiliate links below helps keep SIGLENS running."
             },
+            "baseRate": {
+                "levelLine": "After price touched a level, it held {held}% of the time. A price at the same distance on another date held {placebo}% ({symbols} symbols, daily bars {from} to {to}, {n, number} touches).",
+                "levelNotMeasured": "Not measured yet on charts other than daily.",
+                "patternLine": "How often the target price came before the invalidation price after this shape: {event}% (a price at the same distance on other dates: {placebo}%, {n, number} cases)",
+                "patternNotMeasured": "Not measured yet on charts other than daily.",
+                "patternTooltip": "Compared with placing a target at the same distance on other dates for the same stock. Measured on daily bars of {symbols} symbols from {from} to {to}. It does not say what happens next.",
+                "pooledNote": "Too few cases, so this uses all patterns together.",
+                "targetLegend": "Faded lines labeled reference distance are targets that were not shown to be reached more often than a price at the same distance on another date.",
+                "verdictBeats": "It beat a price at the same distance on other dates, but that is not a promise for what comes next.",
+                "verdictNoEdge": "No edge over a price at the same distance on other dates was measured."
+            },
             "duration": {
                 "minutesSeconds": "{v0}m {v1}s",
                 "seconds": "{v0}s"
@@ -3828,6 +3838,7 @@
                 "planBelowZone": "The current price is below the entry zone.",
                 "planInZone": "The current price is inside the entry zone.",
                 "planNoSetupNoRoomAbove": "No target sits far enough above the entry zone, so there is no level to plan from.",
+                "planJustAboveZone": "The current price is just above the entry zone, less than {v0} ATR above its top.",
                 "planNoSetupNoStop": "A stop loss level cannot be set, so there is no level to plan from.",
                 "planNoSetupNoZone": "There is no entry zone, so there is no level to plan from.",
                 "planNoSetupStopped": "The current price is below the stop loss level, so there is no level to plan from.",
@@ -3851,10 +3862,10 @@
             "panel": {
                 "analyzing": "Analyzing…",
                 "confidenceHigh": "High confidence",
-                "confidenceHighTip1": "This is a high-confidence pattern.",
-                "confidenceHighTip2": "It means the AI detected the pattern clearly.",
+                "confidenceHighTip1": "This strategy has a high preset score.",
+                "confidenceHighTip2": "It does not mean the AI detected it clearly, or that it works well in practice.",
                 "confidenceMedium": "Medium confidence",
-                "confidenceMediumTip1": "This is a medium-confidence pattern.",
+                "confidenceMediumTip1": "This strategy has a medium preset score.",
                 "confidenceMediumTip2": "Read it alongside other indicators rather than on its own.",
                 "meter": {
                     "exhaustedBody": "Without an account, you can see entry, stop loss and target prices for {count, plural, one {# symbol} other {# symbols}} a day. It resets at midnight Korea time (KST), or sign up to see every symbol right now.",
@@ -3948,6 +3959,7 @@
                 "aboveZone": "Above the entry zone",
                 "belowZone": "Below the entry zone",
                 "inZone": "Inside the entry zone",
+                "justAboveZone": "Just above the entry zone",
                 "label": "Plan status",
                 "noSetup": "No level to plan from",
                 "reasonNoRoomAbove": "No target sits far enough above the entry zone",
@@ -3955,6 +3967,9 @@
                 "reasonNoZone": "There is no entry zone",
                 "reasonStopped": "The current price is below the stop loss level",
                 "stopAtr": "The stop loss is based on price range (ATR), not on a price level"
+            },
+            "RecordEntryLink": {
+                "entry": "Analysis record and how we measure"
             }
         },
         "backtesting": {
@@ -4085,6 +4100,48 @@
                     "bearish": "Bearish",
                     "neutral": "Neutral"
                 }
+            },
+            "record": {
+                "candleRow": "{event}% ({n, number} cases), {placebo}% on other days of the same stock",
+                "candleVerdictBeats": "It matched more often than on other days of the same stock, but this does not guarantee what happens next.",
+                "candleVerdictNoEdge": "No measured edge over other days of the same stock.",
+                "candlesAll": "All directional candlestick patterns",
+                "candlesDefinition": "The share of cases where, over the {bars} trading days after the candle appeared, the price moved in the direction the candle points to.",
+                "candlesHeading": "Candlestick patterns",
+                "candlesName": "Candle",
+                "candlesRegion": "Measured record of candlestick patterns",
+                "caution": "These are values measured in the past and do not tell you what happens next.",
+                "colResult": "Measured result",
+                "colVerdict": "Verdict",
+                "heading": "Analysis record and how we measure",
+                "insufficient": "Too few cases, so no rate is shown.",
+                "intro": "This is a record of what happened in the past after the patterns, candles and price levels shown in the analysis. Each table reports one share of cases: for patterns, how often the target price was reached; for price levels, how often the level held after a touch; for candles, how often the price moved in the candle's direction over the next {bars} trading days. Each is set against other days of the same stock. No price moves are reported.",
+                "levelFamily": {
+                    "avwap": "Anchored VWAP",
+                    "band": "Band upper and lower",
+                    "fib": "Fibonacci",
+                    "ichimoku": "Ichimoku",
+                    "ma": "Moving averages",
+                    "pivot": "Pivot points",
+                    "round": "Round numbers",
+                    "supertrend": "Supertrend",
+                    "swing": "Recent highs and lows",
+                    "vp": "Volume profile",
+                    "vwap": "VWAP"
+                },
+                "levelsAll": "All price levels combined",
+                "levelsDefinition": "The share of cases where price held a level after touching it. Levels are measured by type.",
+                "levelsHeading": "Price levels",
+                "levelsName": "Level type",
+                "levelsRegion": "Measured record by price level type",
+                "patternsDefinition": "The share of cases where the target price was reached before the invalidation price after the pattern appeared.",
+                "patternsHeading": "Chart patterns",
+                "patternsName": "Pattern",
+                "patternsRegion": "Measured record by chart pattern",
+                "pooledPatterns": "All patterns combined",
+                "pooledPatternsNote": "This figure also stands in for patterns with few cases ({names}).",
+                "row": "{event}% ({n, number} cases), {placebo}% on other days at the same distance",
+                "scope": "Measured on daily bars of {symbols} stocks, from {from} to {to}."
             }
         },
         "benchmark-summary": {
@@ -4141,7 +4198,9 @@
                 "6e96f3": "Triangle",
                 "2751c7": "Diagonal",
                 "a8aa4c": "Combination",
-                "reachedLevel": "{v0} reached"
+                "reachedLevel": "{v0} reached",
+                "referenceDistance": "Reference distance",
+                "referenceDistanceOf": "{v0} reference distance"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",

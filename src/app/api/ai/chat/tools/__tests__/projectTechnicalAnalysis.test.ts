@@ -1,3 +1,4 @@
+import { PATTERN_BASE_RATES, measuredBaseRateFor } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
 import { projectTechnicalAnalysis } from '@/app/api/ai/chat/tools/projectTechnicalAnalysis';
 
@@ -18,6 +19,22 @@ const pattern = (id: string, confidenceWeight: number, detected = true) => ({
     summary: `summary-${id}`,
     confidenceWeight,
 });
+
+const BASE_RATE = {
+    subject: 'chart_pattern',
+    key: 'pooled',
+    n: 3594,
+    eventShare: 0.2259,
+    placeboShare: 0.2238,
+    difference: { mean: 0.0021, low: -0.0181, high: 0.0224 },
+    verdict: 'no_edge',
+    scope: {
+        timeframe: '1Day',
+        symbols: 65,
+        from: '2018-12-28',
+        to: '2026-08-27',
+    },
+} as const;
 
 const strategy = (id: string, confidenceWeight: number) => ({
     id,
@@ -53,7 +70,7 @@ describe('projectTechnicalAnalysis', () => {
         expect(r.actionRecommendation).toBeNull();
     });
 
-    it('patterns: filters detected===false, sorts by confidenceWeight desc, caps at 5', () => {
+    it('patterns: filters detected===false and caps at 5, in detection order (not by catalog weight)', () => {
         const patterns = [
             pattern('low', 0.2),
             pattern('undetected', 0.9, false),
@@ -71,19 +88,123 @@ describe('projectTechnicalAnalysis', () => {
         } as never);
         expect(r.patterns).toHaveLength(5);
         expect(r.patterns.map(p => p.name)).toEqual([
+            'low',
             'high',
             'mid',
             'p5',
             'p6',
-            'low',
         ]);
+    });
+
+    it('patterns: carries the measured base rate and never the catalog confidence weight', () => {
+        const r = projectTechnicalAnalysis({
+            ...BASE,
+            patternSummaries: [
+                { ...pattern('high', 0.8), baseRate: BASE_RATE },
+            ],
+            strategyResults: [],
+            candlePatterns: [],
+        } as never);
         expect(r.patterns[0]).toEqual({
             name: 'high',
             trend: 'bullish',
-            confidence: 0.8,
+            baseRate: {
+                eventShare: 0.2259,
+                placeboShare: 0.2238,
+                n: 3594,
+                verdict: 'no_edge',
+                pooled: true,
+            },
             summary: 'summary-high',
         });
+        expect(r.patterns[0]).not.toHaveProperty('confidence');
     });
+
+    it.each([
+        ['not measured (null)', { baseRate: null }],
+        ['a stored card that predates the field', {}],
+    ])('patterns: baseRate is null for %s', (_label, extra) => {
+        const r = projectTechnicalAnalysis({
+            ...BASE,
+            patternSummaries: [{ ...pattern('p', 0.8), ...extra }],
+            strategyResults: [],
+            candlePatterns: [],
+        } as never);
+        expect(r.patterns[0]?.baseRate).toBeNull();
+    });
+
+    it.each([
+        // bull_flag has too few samples of its own: core hands back the all-pattern row.
+        ['bull_flag', true],
+        ['head_and_shoulders', false],
+    ] as const)(
+        'patterns: flags whether %s carries the all-pattern pooled row (pooled=%s)',
+        (id, pooled) => {
+            const rate = PATTERN_BASE_RATES[id];
+            expect(rate).toBeDefined();
+            const r = projectTechnicalAnalysis({
+                ...BASE,
+                patternSummaries: [{ ...pattern(id, 0.8), baseRate: rate }],
+                strategyResults: [],
+                candlePatterns: [],
+            } as never);
+            expect(r.patterns[0]?.baseRate).toEqual({
+                eventShare: rate?.eventShare,
+                placeboShare: rate?.placeboShare,
+                n: rate?.n,
+                verdict: rate?.verdict,
+                pooled,
+            });
+        }
+    );
+
+    it('patterns: a stored card without baseRate gets the same table row the panel shows', () => {
+        const r = projectTechnicalAnalysis(
+            {
+                ...BASE,
+                patternSummaries: [
+                    { ...pattern('x', 0.8), skillName: '상승깃발' },
+                ],
+                strategyResults: [],
+                candlePatterns: [],
+            } as never,
+            '1Day'
+        );
+        const rate = measuredBaseRateFor('chart_pattern', 'bull_flag', '1Day');
+        expect(rate).not.toBeNull();
+        expect(r.patterns[0]?.baseRate).toEqual({
+            eventShare: rate?.eventShare,
+            placeboShare: rate?.placeboShare,
+            n: rate?.n,
+            verdict: rate?.verdict,
+            pooled: true,
+        });
+    });
+
+    it.each([
+        ['an intraday timeframe (nothing measured)', {}, '1Hour'],
+        ['a card core marked as not measured', { baseRate: null }, '1Day'],
+    ] as const)(
+        'patterns: baseRate stays null for %s',
+        (_label, extra, timeframe) => {
+            const r = projectTechnicalAnalysis(
+                {
+                    ...BASE,
+                    patternSummaries: [
+                        {
+                            ...pattern('x', 0.8),
+                            skillName: '헤드앤숄더',
+                            ...extra,
+                        },
+                    ],
+                    strategyResults: [],
+                    candlePatterns: [],
+                } as never,
+                timeframe
+            );
+            expect(r.patterns[0]?.baseRate).toBeNull();
+        }
+    );
 
     it('candlePatterns: filters detected===false, caps at 5, no sort by confidence (none carried)', () => {
         const candles = [

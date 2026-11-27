@@ -8,6 +8,7 @@ import {
 const texts: OutcomeLevelTexts = {
     invalidation: owner => (owner ? `${owner} 무효화` : '무효화'),
     target: owner => (owner ? `${owner} 목표` : '목표'),
+    referenceTarget: owner => (owner ? `${owner} 참고 거리` : '참고 거리'),
     wave5Cap: owner => (owner ? `${owner} 5파 상한` : '5파 상한'),
     elliottStructure: {
         impulse: '임펄스',
@@ -48,6 +49,24 @@ describe('formatOutcomeLevelLabel', () => {
         expect(
             formatOutcomeLevelLabel('target', pattern, '이중천장', texts)
         ).toBe('이중천장 목표');
+    });
+
+    it('위약 대비 우위가 확인되지 않은 목표는 "목표" 대신 참고 거리로 부른다', () => {
+        expect(
+            formatOutcomeLevelLabel('target', pattern, '이중천장', texts, true)
+        ).toBe('이중천장 참고 거리');
+        expect(
+            formatOutcomeLevelLabel('target', pattern, undefined, texts, true)
+        ).toBe('참고 거리');
+        expect(
+            formatOutcomeLevelLabel(
+                'invalidation',
+                pattern,
+                '이중천장',
+                texts,
+                true
+            )
+        ).toBe('이중천장 무효화');
     });
 
     it('카드 이름을 모르면 종류만', () => {

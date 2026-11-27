@@ -97,6 +97,41 @@ describe('PlanCheckBlock', () => {
         ).toBeInTheDocument();
     });
 
+    it.each([
+        // 정확한 경계에서는 한 틱만 넘어도 exceedsEntryZone이 참이다. 한 자리로 쓰면 "0.0%"가 찍힌다.
+        ['a tick over the top', 100.02],
+        ['a gap that rounds to 0.0', 100.04],
+    ])('does not print a 0.0%% notice for %s', (_label, currentPrice) => {
+        render(
+            <PlanCheckBlock
+                planCheck={planCheck({
+                    currentPrice,
+                    entryZoneTop: 100,
+                    exceedsEntryZone: true,
+                })}
+            />
+        );
+        expect(
+            screen.queryByText(/권장 진입 구간보다/)
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/0\.0%/)).not.toBeInTheDocument();
+    });
+
+    it('prints the notice from 0.1% over the zone top', () => {
+        render(
+            <PlanCheckBlock
+                planCheck={planCheck({
+                    currentPrice: 100.1,
+                    entryZoneTop: 100,
+                    exceedsEntryZone: true,
+                })}
+            />
+        );
+        expect(
+            screen.getByText(/권장 진입 구간보다 0\.1% 높아요/)
+        ).toBeInTheDocument();
+    });
+
     it('stays quiet about the zone when there is no zone top to measure against', () => {
         // 두 필드는 타입상 독립이라 캐시된 옛 페이로드가 이 조합을 들고 올 수 있다.
         // 가드가 빠지면 화면에 `NaN%`가 찍힌다.

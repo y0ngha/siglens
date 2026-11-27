@@ -261,6 +261,36 @@ describe('buildOverlayLineSpecs', () => {
         );
     });
 
+    it('a reference level is drawn faded and titled as a reference, not as reached', () => {
+        const specs = buildOverlayLineSpecs([overlay({})], {
+            ...base,
+            barTimes: BAR_TIMES,
+            levelLabelFor: (label, _owner, reached, reference) =>
+                `${label}|reached=${reached}|reference=${reference}`,
+            isReferenceLevel: () => true,
+        });
+        expect(specs[1]).toMatchObject({
+            opacity: 0.5,
+            title: 'breakout|reached=false|reference=true',
+        });
+        const target = overlay({
+            levels: [{ price: 11, fromTime: 1, label: 'target' }],
+        });
+        const [referenceTarget] = buildOverlayLineSpecs([target], {
+            ...base,
+            barTimes: BAR_TIMES,
+            isReferenceLevel: () => true,
+        }).slice(1);
+        const [liveTarget] = buildOverlayLineSpecs([target], {
+            ...base,
+            barTimes: BAR_TIMES,
+        }).slice(1);
+        expect(referenceTarget.labelPriority).toBeLessThan(
+            liveTarget.labelPriority
+        );
+        expect(liveTarget.opacity).toBe(1);
+    });
+
     it('levelLabelFor receives the overlay that owns the level', () => {
         const a = overlay({ id: 'a', sourceRef: 'a' });
         const b = overlay({ id: 'b', sourceRef: 'b' });

@@ -23,6 +23,7 @@ import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { selectPanelSkillResults } from './panelSkillResults';
+import { NEAR_ZONE_ATR, isJustAboveZone } from './planZoneProximity';
 import { TREND_LABEL_KEY } from './trendUtils';
 
 interface BuildExpertAnalysisReportInput {
@@ -94,6 +95,8 @@ const PLAN_NO_SETUP_KEY: Record<NoSetupReason, string> = {
 };
 
 function planStateStanceKey(planState: PlanState): string {
+    // 배지와 같은 판정(`isJustAboveZone`) — 화면이 "바로 위"면 복사본도 같은 말을 한다.
+    if (isJustAboveZone(planState)) return 'planJustAboveZone';
     if (planState.position !== 'no_setup') {
         return PLAN_POSITION_KEY[planState.position];
     }
@@ -309,8 +312,10 @@ function buildResponseStance(
     // 판정(`entryRecommendation`)이 아니라 계획 상태로 쓴다. `planState`가 없는 옛 결과는
     // 아래 추세 기반 문장으로 내려가, 이전 판정 문구가 되살아나지 않는다.
     if (actionRecommendation?.planState !== undefined) {
+        // `v0`는 "바로 위" 문장만 쓴다(근거로 문턱을 밝힌다) — 다른 문장은 무시한다.
         const base = tReport(
-            planStateStanceKey(actionRecommendation.planState)
+            planStateStanceKey(actionRecommendation.planState),
+            { v0: NEAR_ZONE_ATR }
         );
         const entryAnchor = effectiveLevels.entryPrices?.length
             ? tReport('entryAnchor', {

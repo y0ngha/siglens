@@ -55,7 +55,14 @@ export function isChatChartBlock(value: unknown): value is ChatChartBlock {
         typeof v.overlayColors === 'object' &&
         v.overlayColors !== null &&
         typeof v.overlayLabels === 'object' &&
-        v.overlayLabels !== null
+        v.overlayLabels !== null &&
+        // 이 필드가 생기기 전에 저장된 블록에는 필드가 없다(undefined).
+        // 그런 블록은 흐리게 하지 않고 그대로 그린다.
+        (v.referenceOnlyOverlayKeys === undefined ||
+            (Array.isArray(v.referenceOnlyOverlayKeys) &&
+                v.referenceOnlyOverlayKeys.every(
+                    key => typeof key === 'string'
+                )))
     );
 }
 

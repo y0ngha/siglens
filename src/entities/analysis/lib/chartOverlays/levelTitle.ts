@@ -22,7 +22,8 @@ export interface LevelTitleContext {
 
 /**
  * 레벨선 제목 결정: 돌파선 → 결과선(무효화·목표) → 피보나치 → 원문. `reached`(현재가가
- * 이미 지나간 목표)면 그 제목에 "도달"을 붙인다.
+ * 이미 지나간 목표)면 그 제목에 "도달"을 붙인다. `reference`(위약 대비 우위가 확인되지
+ * 않은 패턴 목표)면 "목표" 대신 "참고 거리"로 부른다.
  *
  * 라벨끼리 겹칠 때 무엇을 숨길지는 여기서 정하지 않는다 — 겹침은 지금 화면의 좌표로만
  * 알 수 있어 `useChartOverlays`가 그릴 때 판정한다(`visibleLevelLabels`).
@@ -31,23 +32,26 @@ export function levelTitleFor(
     label: string,
     overlay: ChartOverlay,
     ctx: LevelTitleContext,
-    reached = false
+    reached = false,
+    reference = false
 ): string {
-    const title = baseLevelTitle(label, overlay, ctx);
+    const title = baseLevelTitle(label, overlay, ctx, reference);
     return reached ? ctx.reachedTitle(title) : title;
 }
 
 function baseLevelTitle(
     label: string,
     overlay: ChartOverlay,
-    ctx: LevelTitleContext
+    ctx: LevelTitleContext,
+    reference: boolean
 ): string {
     if (label === BREAKOUT_LEVEL_LABEL) return ctx.breakoutTitle(ctx.cardName);
     const outcome = formatOutcomeLevelLabel(
         label,
         overlay,
         ctx.cardName,
-        ctx.outcomeTexts
+        ctx.outcomeTexts,
+        reference
     );
     if (outcome !== null) return outcome;
     return formatFibLevelLabel(label, overlay, ctx.fibTexts) ?? label;

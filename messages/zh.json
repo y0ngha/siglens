@@ -3768,7 +3768,6 @@
                 "c68843": "复制到剪贴板失败。请检查浏览器权限。",
                 "c80f22": "已检测到{v0}个分析方法，",
                 "cfbeac": "显示图表价格线",
-                "d39704": "汇聚的指标越多，该价位作为支撑或阻力的可靠性越高。",
                 "d930e0": "阻力",
                 "db5809": "如果与实时价格走势不符，将在此处\n                            调整。",
                 "e5c85b": "已复制",
@@ -3809,6 +3808,17 @@
                 "analyzing": "AI 正在进行精细分析… 广告收入将用于引入更好的 AI 模型与服务器维护。",
                 "done": "这份分析有帮助吗？通过下方联盟链接的操作能帮助 SIGLENS 持续运营。"
             },
+            "baseRate": {
+                "levelLine": "价格触及该价位后守住的比例为{held}%，同样距离的其他日期价格为{placebo}%（{symbols}只股票{from}~{to}年日线，触及{n, number}次）。",
+                "levelNotMeasured": "日线以外的图表尚未测量。",
+                "patternLine": "出现这个形态后目标价先于失效价到达的比例 {event}%（同样距离的其他日期价格为{placebo}%，{n, number}次）",
+                "patternNotMeasured": "日线以外的图表尚未测量。",
+                "patternTooltip": "与在同一只股票的其他日期把目标放在同样距离时相比的结果。基于{symbols}只股票{from}~{to}年的日线测量，不代表未来结果。",
+                "pooledNote": "样本较少，使用全部形态的整体数据。",
+                "targetLegend": "图表中淡色的参考距离线，是尚未证实比同样距离的其他日期价格更容易到达的目标。",
+                "verdictBeats": "比同样距离的其他日期价格更容易到达，但这并不保证未来结果。",
+                "verdictNoEdge": "与同样距离的其他日期价格相比，未测得优势。"
+            },
             "duration": {
                 "minutesSeconds": "{v0} 分 {v1} 秒",
                 "seconds": "{v0} 秒"
@@ -3828,6 +3838,7 @@
                 "planBelowZone": "现价低于入场区间。",
                 "planInZone": "现价位于入场区间内。",
                 "planNoSetupNoRoomAbove": "入场区间上方没有足够远的目标价，因此暂无可依据的价位。",
+                "planJustAboveZone": "现价紧邻入场区间上方，与区间上沿的距离不足 {v0} ATR。",
                 "planNoSetupNoStop": "无法确定止损位，因此暂无可依据的价位。",
                 "planNoSetupNoZone": "没有入场区间，因此暂无可依据的价位。",
                 "planNoSetupStopped": "现价已低于止损位，因此暂无可依据的价位。",
@@ -3851,10 +3862,10 @@
             "panel": {
                 "analyzing": "分析中…",
                 "confidenceHigh": "高置信度",
-                "confidenceHighTip1": "这是高置信度的形态。",
-                "confidenceHighTip2": "表示 AI 明确识别到了该形态。",
+                "confidenceHighTip1": "表示该策略预先设定的分数较高。",
+                "confidenceHighTip2": "并不代表 AI 清楚地识别出它，也不代表实际效果好。",
                 "confidenceMedium": "中等置信度",
-                "confidenceMediumTip1": "这是中等置信度的形态。",
+                "confidenceMediumTip1": "表示该策略预先设定的分数为中等。",
                 "confidenceMediumTip2": "建议与其他指标结合参考，而非单独使用。",
                 "meter": {
                     "exhaustedBody": "未注册用户每天只能查看{count, plural, other {#个标的}}的入场、止损和目标价。韩国时间（KST）零点重新开放，注册后即可立即查看所有标的。",
@@ -3948,6 +3959,7 @@
                 "aboveZone": "高于入场区间",
                 "belowZone": "低于入场区间",
                 "inZone": "在入场区间内",
+                "justAboveZone": "紧邻入场区间上方",
                 "label": "计划状态",
                 "noSetup": "暂无可依据的价位",
                 "reasonNoRoomAbove": "入场区间上方没有足够远的目标价",
@@ -3955,6 +3967,9 @@
                 "reasonNoZone": "没有入场区间",
                 "reasonStopped": "现价已低于止损位",
                 "stopAtr": "止损按波动幅度(ATR)而非价位设定"
+            },
+            "RecordEntryLink": {
+                "entry": "分析记录与测量方法"
             }
         },
         "backtesting": {
@@ -4085,6 +4100,48 @@
                     "bearish": "下降趋势",
                     "neutral": "中性"
                 }
+            },
+            "record": {
+                "candleRow": "{event}%（{n, number}次），同一只股票其他日期为{placebo}%",
+                "candleVerdictBeats": "比同一只股票的其他日期更常应验，但并不保证未来。",
+                "candleVerdictNoEdge": "与同一只股票的其他日期相比，没有测得优势。",
+                "candlesAll": "有方向的K线形态整体",
+                "candlesDefinition": "K线出现后的{bars}个交易日内，价格朝该K线所指方向运动的比例。",
+                "candlesHeading": "K线形态",
+                "candlesName": "K线",
+                "candlesRegion": "K线形态测量记录",
+                "caution": "这是过去测得的数值，并不代表未来的结果。",
+                "colResult": "测量结果",
+                "colVerdict": "判定",
+                "heading": "分析记录与测量方法",
+                "insufficient": "样本较少，因此不显示比例。",
+                "intro": "这是对分析中出现的形态、K线和价位过去表现的测量记录。每张表给出一个比例：形态是触及目标价的比例，价位是触及后守住的比例，K线是之后{bars}个交易日内朝其所指方向运动的比例，并且都与同一只股票的其他日期并列比较。不显示价格涨跌幅度。",
+                "levelFamily": {
+                    "avwap": "锚定VWAP",
+                    "band": "通道上轨与下轨",
+                    "fib": "斐波那契",
+                    "ichimoku": "一目均衡表",
+                    "ma": "移动平均线",
+                    "pivot": "枢轴点",
+                    "round": "整数关口",
+                    "supertrend": "超级趋势",
+                    "swing": "近期高点与低点",
+                    "vp": "成交量分布",
+                    "vwap": "VWAP"
+                },
+                "levelsAll": "所有价位合计",
+                "levelsDefinition": "价格触及价位后守住该价位的比例。价位按类型分别测量。",
+                "levelsHeading": "价位",
+                "levelsName": "价位类型",
+                "levelsRegion": "按价位类型划分的测量记录",
+                "patternsDefinition": "形态出现后，目标价先于失效价被触及的比例。",
+                "patternsHeading": "图表形态",
+                "patternsName": "形态",
+                "patternsRegion": "按图表形态划分的测量记录",
+                "pooledPatterns": "全部形态合计",
+                "pooledPatternsNote": "样本较少的形态（{names}）也采用这个数值。",
+                "row": "{event}%（{n, number}次），相同距离的其他日期为{placebo}%",
+                "scope": "基于{symbols}只股票的日线，测量期间为{from}至{to}。"
             }
         },
         "benchmark-summary": {
@@ -4141,7 +4198,9 @@
                 "6e96f3": "三角形",
                 "2751c7": "倾斜三角形",
                 "a8aa4c": "复合调整",
-                "reachedLevel": "{v0} 已到达"
+                "reachedLevel": "{v0} 已到达",
+                "referenceDistance": "参考距离",
+                "referenceDistanceOf": "{v0}参考距离"
             },
             "TimeframeSelector": {
                 "a4632e": "会员专属时间范围。",

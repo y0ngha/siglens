@@ -10,12 +10,16 @@ import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { GuideHintLink } from '../GuideHintLink';
 import type { OverlayCardControls } from '../model/types';
 import { parseStructuredSummary } from '../utils/parseStructuredSummary';
+import { ConfidenceBadge } from './ConfidenceBadge';
 import { SkillAccordionCard } from './SkillAccordionCard';
 import { StructuredSkillSummary } from './StructuredSkillSummary';
 
 interface StrategyAccordionItemProps {
     strategy: StrategyResult;
-    /** 잠긴 티어의 마스킹된 confidenceWeight(0) 오표시 방지. `SkillAccordionCard` 참조. */
+    /**
+     * 배지를 그릴지. `confidence` 깊이가 잠긴 티어는 `confidenceWeight`가 0으로 마스킹돼 오므로
+     * 그 0을 "낮은 점수"로 오표시하지 않게 끈다(`utils/lockedSections.ts`의 `hasLockedConfidence`).
+     */
     showConfidence: boolean;
     /** 차트 작도 제어 — 이 항목에 그려지는 작도가 없으면 undefined(버튼 없음). */
     overlay?: OverlayCardControls;
@@ -36,8 +40,13 @@ export function StrategyAccordionItem({
             id={strategy.id}
             title={title}
             trend={strategy.trend}
-            confidenceWeight={strategy.confidenceWeight}
-            showConfidence={showConfidence}
+            badge={
+                showConfidence ? (
+                    <ConfidenceBadge
+                        confidenceWeight={strategy.confidenceWeight}
+                    />
+                ) : undefined
+            }
             overlay={overlay}
         >
             {sections !== null ? (

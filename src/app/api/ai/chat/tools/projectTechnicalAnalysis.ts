@@ -1,12 +1,16 @@
 import 'server-only';
 import type {
     AnalysisResponse,
+    BaseRateVerdict,
     FilteredAnalysisResponse,
     KeyLevels,
+    MeasuredBaseRate,
     PriceTargets,
     RiskLevel,
+    Timeframe,
     Trend,
 } from '@y0ngha/siglens-core';
+import { resolvePatternBaseRate } from '@/shared/lib/patternBaseRate';
 import { fitProse, type ProseSpec } from './fitProse';
 
 /**
@@ -17,12 +21,48 @@ import { fitProse, type ProseSpec } from './fitProse';
  */
 type ProjectableAnalysis = AnalysisResponse | FilteredAnalysisResponse;
 
-/** One capped, confidence-sorted entry of `ProjectedTechnicalAnalysis['patterns']`. */
+/**
+ * What the agent may say about how a detected pattern's target has fared: the share of
+ * past targets that came before the invalidation, the share a target at the same distance
+ * on other dates reached first, and the sample size. `verdict` says whether that beats the
+ * placebo; the model must not present a target as likely unless it does.
+ *
+ * `pooled` is true when this pattern has too few samples of its own and core hands back the
+ * all-pattern row (`MeasuredBaseRate.key === 'pooled'`): the shares are then the figure for
+ * every pattern combined, not this pattern's own rate. Without the flag the agent would quote
+ * the pooled number as if it had been measured for this pattern.
+ */
+interface ProjectedBaseRate {
+    eventShare: number;
+    placeboShare: number;
+    n: number;
+    verdict: BaseRateVerdict;
+    pooled: boolean;
+}
+
+/** `MeasuredBaseRate.key` of the all-pattern row core substitutes for a small-sample pattern. */
+const POOLED_BASE_RATE_KEY = 'pooled';
+
+/** One capped entry of `ProjectedTechnicalAnalysis['patterns']`, in detection order. */
 interface ProjectedPatternSummary {
     name: string;
     trend: Trend;
-    confidence: number;
+    /** `null` when nothing was measured (non-daily bars) or the stored card predates the field. */
+    baseRate: ProjectedBaseRate | null;
     summary: string;
+}
+
+function projectBaseRate(
+    rate: MeasuredBaseRate | null | undefined
+): ProjectedBaseRate | null {
+    if (rate === null || rate === undefined) return null;
+    return {
+        eventShare: rate.eventShare,
+        placeboShare: rate.placeboShare,
+        n: rate.n,
+        verdict: rate.verdict,
+        pooled: rate.key === POOLED_BASE_RATE_KEY,
+    };
 }
 
 /** One capped entry of `ProjectedTechnicalAnalysis['candlePatterns']` (the AI analysis's own candle-pattern verdicts — distinct from `BarCandlePattern` in `getBarsIndicators.ts`, which is raw bar-level pattern detection). */
@@ -32,7 +72,7 @@ interface ProjectedCandlePatternSummary {
     summary: string;
 }
 
-/** One capped, confidence-sorted entry of `ProjectedTechnicalAnalysis['strategies']`. */
+/** One capped, weight-sorted entry of `ProjectedTechnicalAnalysis['strategies']`. */
 interface ProjectedStrategySummary {
     name: string;
     trend: Trend;
@@ -72,12 +112,20 @@ const MAX_STRATEGIES = 5;
  *
  * Drops `indicatorResults` and `trendlines` — the bulk of the payload and
  * never needed by the model, which only reads the summarized verdict. Keeps
- * a capped, confidence-sorted slice of `patternSummaries`/`strategyResults`/
- * `candlePatterns` so the model can answer "is there a head-and-shoulders?"
- * without the prose summary having to mention it.
+ * a capped slice of `patternSummaries`/`strategyResults`/`candlePatterns` so
+ * the model can answer "is there a head-and-shoulders?" without the prose
+ * summary having to mention it. Patterns keep detection order and carry their
+ * measured `baseRate` instead of the catalog `confidenceWeight` (a literature
+ * value, not a measurement); strategies still sort by their catalog weight.
+ *
+ * A stored card that predates `baseRate` gets its row from the same table the panel and the
+ * chart use (`resolvePatternBaseRate`), so the agent never reads a different rate from the
+ * one on screen. That lookup needs the analysis timeframe; without one the stored value
+ * (or `null`) is passed through unchanged.
  */
 export function projectTechnicalAnalysis(
-    a: ProjectableAnalysis
+    a: ProjectableAnalysis,
+    timeframe?: Timeframe
 ): ProjectedTechnicalAnalysis {
     return {
         summary: a.summary,
@@ -88,12 +136,15 @@ export function projectTechnicalAnalysis(
         actionRecommendation: a.actionRecommendation ?? null,
         patterns: (a.patternSummaries ?? [])
             .filter(p => p.detected === true)
-            .toSorted((x, y) => y.confidenceWeight - x.confidenceWeight)
             .slice(0, MAX_PATTERNS)
             .map(p => ({
                 name: p.patternName,
                 trend: p.trend,
-                confidence: p.confidenceWeight,
+                baseRate: projectBaseRate(
+                    timeframe === undefined
+                        ? p.baseRate
+                        : resolvePatternBaseRate(p, timeframe)
+                ),
                 summary: p.summary,
             })),
         candlePatterns: (a.candlePatterns ?? [])

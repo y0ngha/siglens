@@ -142,6 +142,59 @@ describe('chartBlockFrom', () => {
     });
 });
 
+describe('chartBlockFrom — 참고 거리 판정', () => {
+    // 분석 카드(`isTargetReferenceOnly`)와 같은 판정: 위약 대비 우위(`beats_placebo`)가 아니면 참고 거리다.
+    const patterns = [
+        { id: 'beats', skillName: 'a', baseRate: { verdict: 'beats_placebo' } },
+        { id: 'noEdge', skillName: 'b', baseRate: { verdict: 'no_edge' } },
+        { id: 'unmeasured', skillName: 'c', baseRate: null },
+    ] as never;
+
+    it('분석 주기를 주면 우위가 확인되지 않은 패턴 id를 싣는다', () => {
+        const block = chartBlockFrom(
+            source(200),
+            { chartOverlays: [], patternSummaries: patterns },
+            '1Day'
+        );
+        expect(block?.referenceOnlyOverlayKeys).toEqual([
+            'noEdge',
+            'unmeasured',
+        ]);
+    });
+
+    it('패턴이 없는 분석은 빈 목록을 싣는다(필드가 있어 흐리게 할 것이 없다는 뜻)', () => {
+        const block = chartBlockFrom(
+            source(200),
+            { chartOverlays: [] },
+            '1Day'
+        );
+        expect(block?.referenceOnlyOverlayKeys).toEqual([]);
+    });
+
+    it('분석 주기가 없으면(봉 지표) 필드를 두지 않는다', () => {
+        const block = chartBlockFrom(source(200), {
+            chartOverlays: [],
+            patternSummaries: patterns,
+        });
+        expect(block).not.toHaveProperty('referenceOnlyOverlayKeys');
+        expect(chartBlockFrom(source(200))).not.toHaveProperty(
+            'referenceOnlyOverlayKeys'
+        );
+    });
+
+    it('블록에 더한 필드는 작아서 블록 크기를 키우지 않는다(패턴 id 몇 개)', () => {
+        const without = chartBlockFrom(source(200), { chartOverlays: [] });
+        const withKeys = chartBlockFrom(
+            source(200),
+            { chartOverlays: [], patternSummaries: patterns },
+            '1Day'
+        );
+        const grew =
+            JSON.stringify(withKeys).length - JSON.stringify(without).length;
+        expect(grew).toBeLessThan(200);
+    });
+});
+
 describe('chartBlockFrom — 봉 필드', () => {
     it('차트가 그리는 필드만 싣는다(VWAP 같은 부가 필드는 뺀다)', () => {
         const block = chartBlockFrom({
@@ -232,6 +285,20 @@ describe('loadAnalysisChartBlock', () => {
                 }))
             )
         ).resolves.toMatchObject({ overlays: [{ id: 't1' }] });
+    });
+
+    it('분석의 주기로 참고 거리 패턴을 판정해 싣는다', async () => {
+        deps.getBars.mockResolvedValue({ bars: bars(200) });
+        await expect(
+            loadAnalysisChartBlock(
+                input(async () => ({
+                    chartOverlays: [],
+                    patternSummaries: [
+                        { id: 'p1', skillName: 'a', baseRate: null },
+                    ] as never,
+                }))
+            )
+        ).resolves.toMatchObject({ referenceOnlyOverlayKeys: ['p1'] });
     });
 
     it('봉 조회가 실패하면 던지지 않고 null', async () => {

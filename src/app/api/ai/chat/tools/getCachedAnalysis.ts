@@ -664,7 +664,7 @@ async function peekTechnicalResult(
             stale: isStale,
             personalized: positionBucket !== undefined,
             ...(memberCaller ? { reasoning } : {}),
-            analysis: projectTechnicalAnalysis(a),
+            analysis: projectTechnicalAnalysis(a, timeframe),
             ...(sinceAnalysis ? { sinceAnalysis } : {}),
         });
         return {

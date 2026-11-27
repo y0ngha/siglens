@@ -16,6 +16,14 @@ import { cn } from '@/shared/lib/cn';
 const PERCENT = 100;
 
 /**
+ * 진입 구간 위 알림을 띄우는 최소 거리(%). 구간 경계가 정확해서(허용 오차 없음) 종가가
+ * 구간 상단을 한 틱만 넘어도 `exceedsEntryZone`이 참이 되는데, 그 거리를 한 자리로 쓰면
+ * "0.0% 높아요"가 찍힌다. 이 아래는 알릴 만한 차이가 아니라 알림을 숨긴다 — 구간과 현재가의
+ * 위치는 계획 상태 배지("진입 구간 바로 위")가 따로 말한다.
+ */
+const MIN_OVER_ZONE_PERCENT = 0.1;
+
+/**
  * 손익분기 손익비. 이 아래면 감수하는 손실이 노리는 수익보다 크다.
  *
  * 이름을 붙이는 이유는 `< 1`과 `<= 1`의 차이가 리터럴로는 안 보이기 때문이다 —
@@ -64,9 +72,15 @@ function buildNotices(
     // `> 0`까지 본다. 이 값은 캐시된 JSON과 공유 스냅샷을 타고 오므로 코어가 지금
     // 무엇을 보장하든 옛 페이로드가 0이나 null을 들고 올 수 있고, 그대로 나누면
     // 화면에 `Infinity%` 또는 `NaN%`가 찍힌다.
-    const overZone =
+    const overZoneText =
         planCheck.exceedsEntryZone && entryZoneTop !== null && entryZoneTop > 0
             ? ((currentPrice / entryZoneTop - 1) * PERCENT).toFixed(1)
+            : null;
+    // 화면에 찍을 한 자리 값으로 판정한다 — 원값으로 가르면 정확히 0.1%가 부동소수점
+    // 오차로 0.0999…가 되어 사라진다.
+    const overZone =
+        overZoneText !== null && Number(overZoneText) >= MIN_OVER_ZONE_PERCENT
+            ? overZoneText
             : null;
 
     // 심각한 것이 앞이다. 조건이 맞지 않는 항목은 null로 두고 걸러낸다.
