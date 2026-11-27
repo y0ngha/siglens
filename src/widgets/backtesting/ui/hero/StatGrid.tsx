@@ -28,10 +28,10 @@ const MEAN_RETURN_DIGITS = 2;
  *   저장된 첫 번째 절반의 익절 비율(`storedTargetFirstShare`)은 보유 중 재분석으로 가격이 바뀐
  *   값이라 임의의 날과 견줄 수 없어 이 카드에 싣지 않는다. 두 비율의 분모(끝까지 결판난 경기 수)가
  *   서로 달라서(임의의 날은 매매당 최대 3번) 각각 적는다.
- * - 거래당 평균 수익률: 같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균(`same_length_drift`)과의
- *   차이(`perTradeExcess.meanPct`)와 그 95% 범위. 기준선 평균 자체(`perTradeExcess.baselineMeanPct`)도
- *   블록에 있지만, 판정의 근거는 차이와 그 범위라 카드에는 그 둘만 적는다. 화면은 통계를 다시 계산하지
- *   않는다.
+ * - 거래당 평균 수익률: 같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균
+ *   (`perTradeExcess.baselineMeanPct`, `same_length_drift`의 평균)과 그와의 차이(`perTradeExcess.meanPct`),
+ *   그 95% 범위. 차이만 적으면 무엇과 비교했는지 숫자가 없어, 기준선 값 자체를 같은 문장에 둔다(CS-18).
+ *   화면은 통계를 다시 계산하지 않는다 — 기준선도 생성기가 낸 값을 그대로 쓴다.
  */
 export function StatGrid({ stats }: StatGridProps) {
     const t = useTranslations('widgets.backtesting.hero');
@@ -104,6 +104,10 @@ export function StatGrid({ stats }: StatGridProps) {
                     ),
                     v2: returnText(
                         benchmarks.perTradeExcess.ci95.high,
+                        MEAN_RETURN_DIGITS
+                    ),
+                    v3: returnText(
+                        benchmarks.perTradeExcess.baselineMeanPct,
                         MEAN_RETURN_DIGITS
                     ),
                 })}

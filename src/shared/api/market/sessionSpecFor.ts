@@ -12,6 +12,8 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 const KR_MARKET_OPEN_MINUTE = 9 * 60; // 09:00 KST
 const KR_MARKET_CLOSE_MINUTE = 15 * 60 + 30; // 15:30 KST
+const KR_LATE_OPEN_MINUTE = 10 * 60; // 10:00 KST — 연초 첫 거래일·수능일
+const KR_CSAT_CLOSE_MINUTE = 16 * 60 + 30; // 16:30 KST — 수능일(개장·마감 1시간씩 늦춤)
 
 /**
  * `KR_MARKET_HOLIDAYS`가 커버를 마친 마지막 날짜(포함, `YYYY-MM-DD`). 이 날짜를
@@ -63,6 +65,47 @@ const KR_MARKET_HOLIDAYS = new Set<string>([
     '2026-12-31', // KRX 연말 폐장일
 ]);
 
+/** 정규 시간과 다른 KRX 거래일 하루의 개장·마감 분(KST 자정 기준). */
+interface KrSpecialSession {
+    readonly openMinute: number;
+    readonly closeMinute: number;
+}
+
+/** 연초 첫 거래일: 개장식 때문에 10:00 개장, 마감은 평소대로 15:30. */
+const KR_FIRST_TRADING_DAY: KrSpecialSession = {
+    openMinute: KR_LATE_OPEN_MINUTE,
+    closeMinute: KR_MARKET_CLOSE_MINUTE,
+};
+
+/** 대학수학능력시험일: 수험생 교통을 위해 개장·마감을 1시간씩 늦춘다(10:00~16:30). */
+const KR_CSAT_DAY: KrSpecialSession = {
+    openMinute: KR_LATE_OPEN_MINUTE,
+    closeMinute: KR_CSAT_CLOSE_MINUTE,
+};
+
+/**
+ * KRX가 정규 시간(09:00~15:30)과 다르게 연 거래일 — `KR_MARKET_HOLIDAYS`처럼 리터럴
+ * 목록이다. 수능일은 교육부가 해마다 고시하고 첫 거래일은 1/1 휴장 뒤 첫 평일이라,
+ * 둘 다 규칙으로 미리 정하지 않고 KRX 공지가 나온 날짜만 넣는다.
+ *
+ * 휴장일과 같은 `KR_CALENDAR_HORIZON` 안에서만 의미가 있다 — 지평선 밖 날짜는 이 표에
+ * 없을 뿐 아니라 조회 전에 정상 시간으로 폴백하고 경고한다. 다음 해 수능일·첫 거래일이
+ * 공지되면 휴장일 목록·지평선과 함께 늘린다.
+ *
+ * 이 표가 없으면 그날 09:00~10:00을 에이전트 시계 노트가 "개장"으로 적고, 수능일
+ * 15:30~16:30에 낸 분석이 아직 열린 세션의 봉을 "마감된 봉"으로 취급한다.
+ */
+const KR_SPECIAL_SESSIONS: ReadonlyMap<string, KrSpecialSession> = new Map([
+    ['2023-01-02', KR_FIRST_TRADING_DAY],
+    ['2023-11-16', KR_CSAT_DAY],
+    ['2024-01-02', KR_FIRST_TRADING_DAY],
+    ['2024-11-14', KR_CSAT_DAY],
+    ['2025-01-02', KR_FIRST_TRADING_DAY],
+    ['2025-11-13', KR_CSAT_DAY],
+    ['2026-01-02', KR_FIRST_TRADING_DAY],
+    ['2026-11-19', KR_CSAT_DAY],
+]);
+
 const krDateFormatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
     year: 'numeric',
@@ -84,24 +127,42 @@ function krCalendarDate(now: Date): string {
 const warnedBeyondHorizon = new Set<string>();
 
 /**
+ * `date`가 관측 지평선(`KR_CALENDAR_HORIZON`) 밖이면 날짜당 한 번 경고하고 `true`.
+ * 개장·마감 조회가 같은 dedup을 써서, 한 날짜에 둘 다 불려도 경고는 한 줄이다.
+ */
+function isBeyondKrHorizon(date: string): boolean {
+    if (date <= KR_CALENDAR_HORIZON) return false;
+    if (!warnedBeyondHorizon.has(date)) {
+        warnedBeyondHorizon.add(date);
+        console.warn(
+            `[KR_EQUITY_SESSION] ${date}는 KR_MARKET_HOLIDAYS 관측 지평선(${KR_CALENDAR_HORIZON}) 밖입니다 — sessionSpecFor.ts의 KR_MARKET_HOLIDAYS/KR_SPECIAL_SESSIONS/KR_CALENDAR_HORIZON을 갱신하세요. 정상 개장으로 폴백합니다.`
+        );
+    }
+    return true;
+}
+
+/**
  * `now`가 속한 KST 달력일의 마감 분. `MarketSessionSpec.closeMinuteFor`와 core
- * `usMarketCloseMinute`가 쓰는 것과 같은 신호(0 = 휴장)를 낸다.
+ * `usMarketCloseMinute`가 쓰는 것과 같은 신호(0 = 휴장)를 낸다. 수능일은 16:30이다.
  *
  * 관측 지평선(`KR_CALENDAR_HORIZON`) 밖 날짜는 휴장 여부를 알 수 없으므로 정상
  * 개장으로 폴백하되, `console.warn`으로 CloudWatch에 남겨 조용히 틀리지 않게 한다.
  */
 function krMarketCloseMinuteFor(now: Date): number {
     const date = krCalendarDate(now);
-    if (date > KR_CALENDAR_HORIZON) {
-        if (!warnedBeyondHorizon.has(date)) {
-            warnedBeyondHorizon.add(date);
-            console.warn(
-                `[KR_EQUITY_SESSION] ${date}는 KR_MARKET_HOLIDAYS 관측 지평선(${KR_CALENDAR_HORIZON}) 밖입니다 — sessionSpecFor.ts의 KR_MARKET_HOLIDAYS/KR_CALENDAR_HORIZON을 갱신하세요. 정상 개장으로 폴백합니다.`
-            );
-        }
-        return KR_MARKET_CLOSE_MINUTE;
-    }
-    return KR_MARKET_HOLIDAYS.has(date) ? 0 : KR_MARKET_CLOSE_MINUTE;
+    if (isBeyondKrHorizon(date)) return KR_MARKET_CLOSE_MINUTE;
+    if (KR_MARKET_HOLIDAYS.has(date)) return 0;
+    return KR_SPECIAL_SESSIONS.get(date)?.closeMinute ?? KR_MARKET_CLOSE_MINUTE;
+}
+
+/**
+ * `now`가 속한 KST 달력일의 개장 분(`MarketSessionSpec.openMinuteFor`). 연초 첫
+ * 거래일과 수능일은 10:00, 나머지는 09:00. 지평선 밖은 마감과 같이 정상 개장으로 폴백한다.
+ */
+function krMarketOpenMinuteFor(now: Date): number {
+    const date = krCalendarDate(now);
+    if (isBeyondKrHorizon(date)) return KR_MARKET_OPEN_MINUTE;
+    return KR_SPECIAL_SESSIONS.get(date)?.openMinute ?? KR_MARKET_OPEN_MINUTE;
 }
 
 /** 테스트 전용 — 모듈 레벨 dedup 상태를 비운다. */
@@ -110,11 +171,12 @@ export function __resetKrHorizonWarnings(): void {
 }
 
 /**
- * KRX 정규장 세션 — 09:00~15:30 KST, 주말 휴장, `closeMinuteFor`로 휴장일까지 반영.
+ * KRX 정규장 세션 — 09:00~15:30 KST, 주말 휴장, `closeMinuteFor`로 휴장일과 수능일
+ * 16:30 마감을, `openMinuteFor`로 첫 거래일·수능일 10:00 개장을 반영.
  *
  * core에 상수를 추가하지 않고 siglens에 두는 이유: `MarketSessionSpec`은 순수
  * 데이터 유니온(`kind`/`timeZone`/`openMinute`/`closeMinute`/`weekendDays`/
- * `closeMinuteFor`)이고, 이 값은 계산식이 아니라 시장 메타데이터다. core로 보내야 하는
+ * `closeMinuteFor`/`openMinuteFor`)이고, 이 값은 계산식이 아니라 시장 메타데이터다. core로 보내야 하는
  * 작업(지표 계산식·신호 임계값·프롬프트·캐시 정책)에 해당하지 않는다.
  *
  * `getCachedMarketDataProvider`가 `US_EQUITY_SESSION`/`CRYPTO_SESSION`과 마찬가지로
@@ -135,6 +197,7 @@ export const KR_EQUITY_SESSION: MarketSessionSpec = {
     closeMinute: KR_MARKET_CLOSE_MINUTE,
     weekendDays: [0, 6],
     closeMinuteFor: krMarketCloseMinuteFor,
+    openMinuteFor: krMarketOpenMinuteFor,
 };
 
 /**

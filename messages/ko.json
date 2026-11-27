@@ -4368,7 +4368,7 @@
                 "maxDrawdownSub": "청산 기준 {v0}, 계속 보유 {v1}",
                 "meanHoldingLabel": "평균 보유 기간",
                 "meanReturnLabel": "거래당 평균 수익률",
-                "meanReturnSub": "같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 {v0} (95% 범위 {v1}~{v2})",
+                "meanReturnSub": "같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균({v3})과 비교하면 거래당 평균 차이는 {v0} (95% 범위 {v1}~{v2})",
                 "portfolioLabel": "포트폴리오 수익률 ({v0, number}종목 균등)",
                 "portfolioSub": "같은 {v0, number}종목을 계속 들고 있었다면 {v1}, AI 전략의 투자 비중({v2})만큼만 들고 있었다면 {v3}",
                 "title": "AI 분석을 {v0}년 동안 그대로 따랐다면",

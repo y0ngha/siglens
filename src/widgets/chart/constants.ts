@@ -9,6 +9,22 @@ export const DEFAULT_POINT_MARKERS_RADIUS = 2;
 export const INACTIVE_PANE_INDEX = -1;
 export const FIRST_INDICATOR_PANE_INDEX = 1;
 
+/**
+ * 차트 MA 메뉴에 띄우는 기간. core `MA_DEFAULT_PERIODS`(5·20·60·120·200)에 50일선을 더했다.
+ *
+ * 골든크로스가 50일선/200일선 교차라 가이드·허브 문구가 50일선을 가리키는데, core 기본
+ * 기간은 분석 프롬프트에도 쓰여 거기에 50을 넣지 않는다. 그래서 50은 차트에서만 봉으로
+ * 계산한다(`withChartOnlyMaPeriods`).
+ *
+ * core 상수를 모듈 최상위에서 펼치지 않고 리터럴로 둔다 — 널리 import되는 이 파일이 로드
+ * 시점에 core 값을 읽으면 core를 부분 목하는 테스트가 import만으로 깨진다. core 기본
+ * 기간과 어긋나지 않는지는 `chartMaPeriods.test.ts`가 고정한다.
+ */
+export const CHART_MA_PERIODS = [5, 20, 50, 60, 120, 200] as const;
+
+/** `CHART_MA_PERIODS` 중 core가 내지 않아 차트가 봉으로 직접 계산하는 기간. */
+export const CHART_ONLY_MA_PERIODS = [50] as const;
+
 // 차트 보조지표 선택을 새로고침 후에도 복원하기 위한 localStorage 키.
 // 'siglens.chart.*' 단일 네임스페이스로 모아 오타·충돌을 막고 영속 대상을 한눈에 보이게 한다.
 // 영속 자체는 usePersistentState가 담당하고, 여기서는 키 목록만 단일 소스로 관리한다.

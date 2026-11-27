@@ -63,11 +63,31 @@ describe('BacktestHero', () => {
         expect(screen.queryByText(/지표 신호/)).not.toBeInTheDocument();
     });
 
-    it('shows the per-trade mean with its difference from holding the same days', () => {
+    it('shows the per-trade mean with the same-days baseline value and the difference from it', () => {
         render(<BacktestHero stats={STATS} />);
         const card = screen.getByText('+0.39%').closest('div')?.parentElement;
+        // 기준선 값은 baselineMeanPct(0.4457)를 두 자리로 찍은 +0.45%다. 이 픽스처에서는 평균에서
+        // 차이를 빼도 같은 값이 나오므로, 재계산하지 않는다는 것은 아래 테스트가 따로 본다.
         expect(card).toHaveTextContent(
-            '같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 -0.06% (95% 범위 -0.40%~+0.30%)'
+            '같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균(+0.45%)과 비교하면 거래당 평균 차이는 -0.06% (95% 범위 -0.40%~+0.30%)'
+        );
+    });
+
+    it('prints the baseline from the benchmark block, not from the mean minus the difference', () => {
+        const stats = makeStats({
+            perTicker: STATS.perTicker,
+            benchmarks: {
+                ...STATS.benchmarks,
+                perTradeExcess: {
+                    ...STATS.benchmarks.perTradeExcess,
+                    baselineMeanPct: 1.2345,
+                },
+            },
+        });
+        render(<BacktestHero stats={stats} />);
+        const card = screen.getByText('+0.39%').closest('div')?.parentElement;
+        expect(card).toHaveTextContent(
+            '들고 있었을 때의 평균(+1.23%)과 비교하면'
         );
     });
 

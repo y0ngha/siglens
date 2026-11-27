@@ -4184,7 +4184,7 @@
                 "tradesLabel": "Trades",
                 "tradesValue": "{v0, number}",
                 "meanReturnLabel": "Mean return per trade",
-                "meanReturnSub": "Compared with the average of holding the same ticker for the same number of days from any start day in the period, the difference per trade averaged {v0} (95% range {v1} to {v2})",
+                "meanReturnSub": "Compared with the average of holding the same ticker for the same number of days from any start day in the period ({v3}), the difference per trade averaged {v0} (95% range {v1} to {v2})",
                 "meanHoldingLabel": "Mean holding period",
                 "tradingDays": "{v0} trading days"
             },
