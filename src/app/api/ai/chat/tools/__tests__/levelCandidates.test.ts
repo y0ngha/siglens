@@ -103,6 +103,28 @@ describe('technicalLevelCandidates', () => {
         ]);
     });
 
+    it('uses the reconciled stop over the model stop', () => {
+        const reconciled = analysis({
+            actionRecommendation: {
+                stopLoss: 85,
+                reconciledLevels: { stopLoss: 82 },
+            } as never,
+        });
+        expect(technicalLevelCandidates(reconciled, null)).toEqual([
+            { price: 82, kind: 'analysis_stop' },
+        ]);
+    });
+
+    it('drops the stop when core rejected it (stopLossRejected)', () => {
+        const rejected = analysis({
+            actionRecommendation: {
+                stopLoss: 85,
+                reconciledLevels: { stopLossRejected: true },
+            } as never,
+        });
+        expect(technicalLevelCandidates(rejected, null)).toEqual([]);
+    });
+
     it('adds the chart references (skipping the null ones) only when given', () => {
         const chart = {
             high52w: 200,
