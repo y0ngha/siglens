@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-
 import { GET } from '@/app/api/sse-probe/route';
 
 const SECRET = 'probe-secret';

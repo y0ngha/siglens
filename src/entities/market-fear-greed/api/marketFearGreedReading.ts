@@ -1,20 +1,20 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import type { FearGreedReading } from '@y0ngha/siglens-core';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { unstable_cache } from 'next/cache';
 import { requestSessionWindow } from '@/shared/api/market/requestSessionWindow';
-import { SESSION_KEYED_CACHE_REVALIDATE_SECONDS } from '@/shared/config/time';
 import { shortenRevalidateForIncompleteSession } from '@/shared/cache/buildDegradedRevalidate';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { SESSION_KEYED_CACHE_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import {
     isStorableCoverage,
     sessionCoverage,
 } from '@/shared/lib/sessionCoverage';
-import { getMarketFearGreedStatic } from './marketFearGreedStaticCache';
-import { getMarketFearGreedKrStatic } from './marketFearGreedKrStaticCache';
-import { getMarketFearGreedCryptoStatic } from './marketFearGreedCryptoStaticCache';
 import type { MarketFearGreedViewSnapshot } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getMarketFearGreedCryptoStatic } from './marketFearGreedCryptoStaticCache';
+import { getMarketFearGreedKrStatic } from './marketFearGreedKrStaticCache';
+import { getMarketFearGreedStatic } from './marketFearGreedStaticCache';
 
 interface MarketReadingSource {
     readonly load: () => Promise<{

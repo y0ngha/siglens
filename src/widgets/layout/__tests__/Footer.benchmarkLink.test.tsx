@@ -25,8 +25,8 @@ vi.mock('@/shared/config/benchmark', () => ({
     BENCHMARK_PATH: '/benchmark',
 }));
 
-import React from 'react';
 import { screen } from '@testing-library/react';
+import React from 'react';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';

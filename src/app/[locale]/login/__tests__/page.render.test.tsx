@@ -51,7 +51,6 @@ vi.mock('next/link', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import LoginPage from '@/app/[locale]/login/page';
 
 describe('LoginPage render', () => {

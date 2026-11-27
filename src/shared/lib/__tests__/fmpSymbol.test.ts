@@ -1,12 +1,12 @@
 import {
+    isAdmissibleSymbolShape,
+    SUPPORTED_DOT_SUFFIXES,
+} from '@/shared/config/ticker';
+import {
     fromFmpSymbol,
     toFmpSearchSymbol,
     toFmpSymbol,
 } from '@/shared/lib/fmpSymbol';
-import {
-    isAdmissibleSymbolShape,
-    SUPPORTED_DOT_SUFFIXES,
-} from '@/shared/config/ticker';
 
 describe('toFmpSymbol', () => {
     it('maps verified US dual-class aliases to FMP notation', () => {

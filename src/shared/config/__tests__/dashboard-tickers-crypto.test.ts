@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { CRYPTO_CATEGORIES } from '../crypto-categories';
 import {
     CRYPTO_MARKET_INDICES,
     CRYPTO_SIGNAL_SECTORS,
     CRYPTO_SECTOR_STOCKS,
 } from '../dashboard-tickers-crypto';
-import { CRYPTO_CATEGORIES } from '../crypto-categories';
 
 describe('CRYPTO_MARKET_INDICES', () => {
     it('uses BTC and ETH as the index proxies (no crypto benchmark index exists)', () => {

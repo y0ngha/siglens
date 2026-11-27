@@ -27,16 +27,16 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
 
-import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { renderToStaticMarkup } from 'react-dom/server';
 import SymbolsDirectoryPage, {
     generateMetadata,
 } from '@/app/[locale]/symbols/page';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { SITE_URL } from '@/shared/lib/seo';
+import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 
 const jsonLdSpy = vi.fn();
 

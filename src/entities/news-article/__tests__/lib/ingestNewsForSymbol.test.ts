@@ -17,13 +17,13 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
 }));
 
-import type { Mock, MockedFunction } from 'vitest';
 import type { NewsItem } from '@y0ngha/siglens-core';
+import type { Mock, MockedFunction } from 'vitest';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
+import type { DrizzleNewsRepository } from '../../api';
 import { ingestNewsForSymbol } from '../../lib/ingestNewsForSymbol';
 import { getNewsClient } from '../../server/getNewsClient';
 import { markFetched } from '../../server/newsRefreshFlag';
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
-import type { DrizzleNewsRepository } from '../../api';
 
 const mockGetNewsClient = getNewsClient as Mock;
 const mockMarkFetched = markFetched as Mock;

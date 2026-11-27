@@ -1,5 +1,5 @@
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
@@ -13,8 +13,8 @@ import {
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { DEVELOPERS_PAGE_URL } from './developersUrls';
 import { developersFullTitle } from './developersSeo';
+import { DEVELOPERS_PAGE_URL } from './developersUrls';
 
 /**
  * `/developers` 라우트의 `generateMetadata` 본체.

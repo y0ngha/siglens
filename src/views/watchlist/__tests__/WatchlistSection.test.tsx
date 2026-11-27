@@ -33,13 +33,13 @@ import {
     waitFor,
     within,
 } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useState, type ReactElement } from 'react';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
-import userEvent from '@testing-library/user-event';
-import { WatchlistSection } from '@/views/watchlist/WatchlistSection';
+import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { useWatchlistQuote } from '@/features/watchlist/hooks/useWatchlistQuote';
-import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
+import { WatchlistSection } from '@/views/watchlist/WatchlistSection';
 
 function render(ui: ReactElement) {
     return rtlRender(ui, { wrapper: createQueryClientWrapper().wrapper });

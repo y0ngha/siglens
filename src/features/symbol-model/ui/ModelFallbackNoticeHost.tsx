@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useEffectEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import type { ModelId } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { useEffect, useEffectEvent } from 'react';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { subscribeAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';

@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { isRecord } from '@/shared/lib/isRecord';
 import type {
     ExpectedMigration,
     JournalEntry,
 } from '@/shared/db/migrations/types';
+import { isRecord } from '@/shared/lib/isRecord';
 
 /**
  * 저널이나 SQL 파일을 읽지 못했을 때. 이미지·체크아웃이 깨졌다는 뜻이라 호출부가

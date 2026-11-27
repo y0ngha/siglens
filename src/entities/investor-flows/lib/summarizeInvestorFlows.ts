@@ -3,14 +3,7 @@ import type {
     InvestorFlowsSnapshot,
 } from '@y0ngha/siglens-core';
 import { compareIsoDate } from './investorFlowsDates';
-import type { InvestorFlowsSummary } from './summary/types';
-import {
-    SUMMARY_MAX_TOP_HOLDERS,
-    SUMMARY_MAX_QUARTERS,
-    summarizeQuarter,
-    summarizeHolder,
-    summarizePutCall,
-} from './summary/institutional';
+import { SUMMARY_MAX_OFFERINGS, summarizeOffering } from './summary/dilution';
 import {
     SUMMARY_MAX_INSIDER_TRANSACTIONS,
     SUMMARY_MAX_LARGE_HOLDERS,
@@ -20,7 +13,13 @@ import {
     countProposedSales,
     summarizeProposedSale,
 } from './summary/insider';
-import { SUMMARY_MAX_OFFERINGS, summarizeOffering } from './summary/dilution';
+import {
+    SUMMARY_MAX_TOP_HOLDERS,
+    SUMMARY_MAX_QUARTERS,
+    summarizeQuarter,
+    summarizeHolder,
+    summarizePutCall,
+} from './summary/institutional';
 import {
     summarizeShort,
     summarizeFailsToDeliver,
@@ -28,6 +27,7 @@ import {
     summarizeSqueezeRisk,
 } from './summary/short';
 import { pickSummarySignals, summarizeAxis } from './summary/signals';
+import type { InvestorFlowsSummary } from './summary/types';
 
 /**
  * 에이전트 도구 `get_investor_flows`가 모델에 주는 **압축 요약**. 모델이 계산하지 않도록 점수·라벨·공매도 비율은

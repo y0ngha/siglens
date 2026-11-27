@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    SEC_FILING_HEAD_MAX_BYTES,
+    SEC_HEADER_TIMEOUT_MS,
+    SEC_MAX_FILE_BYTES,
+    SEC_MAX_INFO_TABLE_BYTES,
+} from '@/shared/config/investorFlows';
+import {
     __resetSecThrottleForTests,
     dailyFormIndexUrl,
     fetchDailyFormIndex,
@@ -20,12 +26,6 @@ import {
     SecSlotTimeoutError,
     streamWithLimits,
 } from '../secClient';
-import {
-    SEC_FILING_HEAD_MAX_BYTES,
-    SEC_HEADER_TIMEOUT_MS,
-    SEC_MAX_FILE_BYTES,
-    SEC_MAX_INFO_TABLE_BYTES,
-} from '@/shared/config/investorFlows';
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/lib/sleep', () => ({

@@ -1,7 +1,7 @@
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { cn } from '@/shared/lib/cn';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /**
  * Empty-state renderer for the `no_trades` branch unique to congress.

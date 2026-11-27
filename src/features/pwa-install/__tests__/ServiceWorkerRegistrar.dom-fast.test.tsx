@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
-import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
 import { registerServiceWorker } from '@/features/pwa-install/lib/registerServiceWorker';
+import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
 
 vi.mock('@/features/pwa-install/lib/registerServiceWorker', () => ({
     registerServiceWorker: vi.fn(),

@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-
 import { FundamentalAiSummarySkeleton } from '../FundamentalAiSummarySkeleton';
 
 describe('FundamentalAiSummarySkeleton', () => {

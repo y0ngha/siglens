@@ -1,8 +1,8 @@
-import { KR_SHORT_CODE_RE } from '@/shared/config/ticker';
 import {
     KR_INDEX_COUNT_TOLERANCE,
     KR_INDEX_SIZE,
 } from '@/shared/config/signalScanUniverse/signalScanUniverseConstants';
+import { KR_SHORT_CODE_RE } from '@/shared/config/ticker';
 
 /**
  * 코스피 200·코스닥 150 스냅샷 생성기의 순수 부분. 네트워크는 `build-kr-index.ts`가 맡는다.

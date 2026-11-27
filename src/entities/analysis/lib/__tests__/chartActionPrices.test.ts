@@ -1,6 +1,5 @@
 import type { ActionRecommendation } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-
 import { validateChartActionPrices } from '@/entities/analysis/lib/chartActionPrices';
 
 const rec = (over: Partial<ActionRecommendation>): ActionRecommendation =>

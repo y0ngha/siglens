@@ -20,14 +20,13 @@ vi.mock('@/shared/api/economy/getEconomyProvider', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     buildTreasuryCacheKey,
     getFreshTreasuryRates,
     TREASURY_CACHE_TTL_SECONDS,
     TREASURY_FALLBACK_TTL_SECONDS,
 } from '../treasuryRatesCache';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 describe('treasuryRatesCache', () => {
     beforeEach(() => {

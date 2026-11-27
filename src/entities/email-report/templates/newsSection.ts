@@ -1,5 +1,5 @@
-import { escapeHtml } from '@/shared/lib/escapeHtml';
 import type { NewsSentiment } from '@y0ngha/siglens-core';
+import { escapeHtml } from '@/shared/lib/escapeHtml';
 import type { SymbolReportNews } from '../reportModel';
 import { COLORS } from './emailTheme';
 import { sectionTitle } from './htmlBlocks';

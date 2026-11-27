@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { TIER_CONFIG } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import {
     FREE_LOCKED_INFO_DEPTH,

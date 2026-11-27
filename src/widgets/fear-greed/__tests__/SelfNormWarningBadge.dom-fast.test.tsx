@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
-import { SelfNormWarningBadge } from '@/widgets/fear-greed/SelfNormWarningBadge';
 import { WARNING_TEXT_KEY } from '@/shared/lib/fearGreedLabels';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { SelfNormWarningBadge } from '@/widgets/fear-greed/SelfNormWarningBadge';
 
 // 문구는 `shared.lib.fearGreed` 카탈로그에서 온다 — 예전엔 모듈 상수라
 // 비-ko 로케일에서도 한국어 경고가 그대로 나갔다.

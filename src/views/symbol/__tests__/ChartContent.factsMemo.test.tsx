@@ -175,8 +175,8 @@ vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
 
 import { render, screen } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import { ChartContent } from '@/views/symbol/ChartContent';
 import { useBars } from '@/entities/bars/hooks/useBars';
+import { ChartContent } from '@/views/symbol/ChartContent';
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 
 describe('ChartContent 지표 요약', () => {

@@ -1,11 +1,11 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import {
     runInvestorFlowsAnalysis,
     type ModelId,
     type RunInvestorFlowsAnalysisResult,
 } from '@y0ngha/siglens-core';
+import { cookies } from 'next/headers';
 import { investorFlowsCachedProvider } from '@/entities/investor-flows/server/getInvestorFlowsCachedProvider';
 import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
 import type { Locale } from '@/shared/i18n/locales';

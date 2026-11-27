@@ -8,7 +8,19 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { formatSignedPercent } from '@/shared/lib/priceFormat';
-import type { PositionModel } from '../utils/positionGeometry';
+import { useFloorTooltip } from '../hooks/useFloorTooltip';
+import {
+    CENTER_X,
+    computeMarkerLayout,
+    HIGH_LABEL_Y,
+    LOW_LABEL_Y,
+    VIEWBOX_H,
+    VIEWBOX_W,
+} from '../utils/buildingGeometry';
+import {
+    formatAmount,
+    formatCompactForSvgLabel,
+} from '../utils/buildingPriceFormat';
 import {
     AVG_LABEL_PREFIX_KEY,
     avgFloorVisualNote,
@@ -22,24 +34,12 @@ import {
     outOfRangeGlyph,
     outOfRangeNote,
 } from '../utils/positionBuildingNotes';
-import {
-    formatAmount,
-    formatCompactForSvgLabel,
-} from '../utils/buildingPriceFormat';
-import {
-    CENTER_X,
-    computeMarkerLayout,
-    HIGH_LABEL_Y,
-    LOW_LABEL_Y,
-    VIEWBOX_H,
-    VIEWBOX_W,
-} from '../utils/buildingGeometry';
+import type { PositionModel } from '../utils/positionGeometry';
 import { currentMarkerClass, returnTextClass } from '../utils/returnTone';
-import { useFloorTooltip } from '../hooks/useFloorTooltip';
 import { BuildingFloor } from './building/BuildingFloor';
 import { BuildingFrame } from './building/BuildingFrame';
-import { AvgMarker, CurrentMarker } from './building/PriceMarkers';
 import { FloorTooltip } from './building/FloorTooltip';
+import { AvgMarker, CurrentMarker } from './building/PriceMarkers';
 
 interface PositionBuildingProps {
     symbol: string;

@@ -1,5 +1,5 @@
-import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { hasFearGreedScore } from '../utils/hasFearGreedScore';
 
 describe('hasFearGreedScore', () => {

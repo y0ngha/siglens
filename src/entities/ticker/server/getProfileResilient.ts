@@ -1,11 +1,11 @@
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
-import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 
 /**
  * 프로필 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

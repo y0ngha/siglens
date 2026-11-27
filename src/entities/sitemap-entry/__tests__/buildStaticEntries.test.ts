@@ -13,26 +13,26 @@ vi.mock('@/shared/lib/legal', async importOriginal => ({
     METHODOLOGY_UPDATED_AT: new Date('2026-10-07T00:00:00+09:00'),
 }));
 
+import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
-import { buildStaticEntries } from '../lib/buildStaticEntries';
-import { NEWS_PAGE_MAX_STALENESS_HOURS } from '../lib/buildNewsSitemapEntries';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import {
+    DEVELOPERS_PATH,
+    DEVELOPERS_UPDATED_AT,
+} from '@/shared/config/publicApi';
 import { MS_PER_HOUR } from '@/shared/config/time';
-import { SITE_URL } from '@/shared/lib/seo';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     ABOUT_UPDATED_AT,
     METHODOLOGY_PATH,
     METHODOLOGY_UPDATED_AT,
 } from '@/shared/lib/legal';
-import {
-    DEVELOPERS_PATH,
-    DEVELOPERS_UPDATED_AT,
-} from '@/shared/config/publicApi';
-import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { sitemapAlternates } from '../lib/sitemapAlternates';
-import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
-import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { SITE_URL } from '@/shared/lib/seo';
+import { NEWS_PAGE_MAX_STALENESS_HOURS } from '../lib/buildNewsSitemapEntries';
+import { buildStaticEntries } from '../lib/buildStaticEntries';
+import { sitemapAlternates } from '../lib/sitemapAlternates';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 

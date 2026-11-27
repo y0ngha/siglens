@@ -10,11 +10,11 @@ vi.mock('@y0ngha/siglens-core', async () => {
     return { ...actual, runMacroBriefing: vi.fn() };
 });
 
+import { runMacroBriefing, type EconomySnapshot } from '@y0ngha/siglens-core';
+import { headers } from 'next/headers';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
-import { headers } from 'next/headers';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
-import { runMacroBriefing, type EconomySnapshot } from '@y0ngha/siglens-core';
 
 const mockHeaders = vi.mocked(headers);
 const mockGetSnapshot = vi.mocked(getEconomySnapshot);

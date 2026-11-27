@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { toKoreanTickerRows } from '../toKoreanTickerRows';
 import type { KrxListedItem } from '../krxListedInfoClient';
+import { toKoreanTickerRows } from '../toKoreanTickerRows';
 
 function item(overrides: Partial<KrxListedItem> = {}): KrxListedItem {
     return {

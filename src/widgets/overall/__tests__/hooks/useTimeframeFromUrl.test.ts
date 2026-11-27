@@ -1,11 +1,11 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { renderToString } from 'react-dom/server';
-import { createElement } from 'react';
-import { useTimeframeFromUrl } from '@/widgets/overall/hooks/useTimeframeFromUrl';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { useTimeframeFromUrl } from '@/widgets/overall/hooks/useTimeframeFromUrl';
 
 const US = getDescriptor('us-equity').allowedTimeframes;
 const KR = getDescriptor('kr-equity').allowedTimeframes;

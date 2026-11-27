@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { E2E_FORCE_MARKET_PARTIAL_COOKIE } from '@/shared/api/e2eMarketStub';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Market overview (`/market`) — Tier 3 render outcomes.

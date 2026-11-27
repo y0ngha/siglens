@@ -3,14 +3,14 @@
 /** The auto-playing example analysis on siglens.io `/about` and the `/lp` analysis landing. */
 
 import type { ReactNode } from 'react';
+import { cn } from '@/shared/lib/cn';
 import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
 import { useReplayPlayback } from '@/widgets/replay/hooks/useReplayPlayback';
-import { deriveReplayView } from '@/widgets/replay/utils/replayView';
 import { ReplayAnswer } from '@/widgets/replay/ui/body/ReplayAnswer';
 import { ReplayCaret } from '@/widgets/replay/ui/body/ReplayCaret';
 import { ReplayPauseButton } from '@/widgets/replay/ui/controls/ReplayPauseButton';
+import { deriveReplayView } from '@/widgets/replay/utils/replayView';
 
 interface ReportReplayLabels {
     /** `SITE_HOST`, passed down so this client module doesn't pull in `shared/lib/seo`. */

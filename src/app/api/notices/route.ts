@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
-import { getActiveNoticesMemoized } from '@/entities/notice/server/activeNoticesMemo';
 import type { NoticeWireRecord } from '@/entities/notice/model/types';
+import { getActiveNoticesMemoized } from '@/entities/notice/server/activeNoticesMemo';
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import { resolveLocale } from '@/shared/i18n/locales';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { resolveLocale } from '@/shared/i18n/locales';
 
 // 요청 URL(`?locale=`)을 읽으므로 빌드 시점에 굳을 수 없다. 캐시는 아래 `Cache-Control`로
 // CDN이 맡는다.

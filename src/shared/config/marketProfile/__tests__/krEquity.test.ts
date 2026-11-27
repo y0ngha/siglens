@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getDescriptor, marketProfileOf, isKrEquitySymbol } from '../registry';
 import { isAdmissibleSymbolShape, KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { getDescriptor, marketProfileOf, isKrEquitySymbol } from '../registry';
 
 describe('kr-equity market profile', () => {
     describe('descriptor', () => {

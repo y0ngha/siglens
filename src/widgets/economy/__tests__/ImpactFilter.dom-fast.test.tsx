@@ -1,7 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { CalendarImpact } from '@y0ngha/siglens-core';
-
+import { describe, it, expect, vi } from 'vitest';
 import { ImpactFilter } from '@/widgets/economy/sections/ImpactFilter';
 
 const ALL_ON = new Set<CalendarImpact>(['High', 'Medium', 'Low']);

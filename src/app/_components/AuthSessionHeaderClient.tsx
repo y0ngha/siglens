@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { Header } from '@/widgets/layout/Header';
-import type { HeaderUserMenuUser } from '@/widgets/layout/types';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { setAuthHintAttribute } from '@/shared/lib/auth/authHintAttribute';
+import { Header } from '@/widgets/layout/Header';
+import type { HeaderUserMenuUser } from '@/widgets/layout/types';
 
 /**
  * 메인·ai 호스트 루트 레이아웃의 헤더를 클라이언트에서 렌더한다.

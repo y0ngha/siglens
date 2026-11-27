@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { StrikeTooltipRows } from '../strike-chart/StrikeTooltipRows';
 
 interface OpenInterestTooltipBodyProps {

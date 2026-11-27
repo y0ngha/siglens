@@ -1,17 +1,17 @@
+import type { KrMajorHolderReport } from '@y0ngha/siglens-core';
 /**
  * 한국 대량보유 보고 섹션(DART `majorstock`).
  */
 import { useTranslations } from 'next-intl';
-import type { KrMajorHolderReport } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { formatInteger } from '../utils/flowFormat';
-import { buildMajorHolderRows } from '../utils/krMajorHolders';
 import { MajorHolderRecords } from '../ui/kr/MajorHolderRecords';
 import { OmittedNote } from '../ui/notes/OmittedNote';
+import { formatInteger } from '../utils/flowFormat';
+import { buildMajorHolderRows } from '../utils/krMajorHolders';
 import { CollectingNotice } from './CollectingNotice';
 
 const HEADING_ID = 'flows-kr-major-holders-heading';

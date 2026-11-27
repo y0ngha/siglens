@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { hashUsageIp } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import { createUserEmailLookup } from '@/entities/auth/server/createUserEmailLookup';
@@ -17,12 +16,12 @@ import {
     DrizzleMailAlertSubscriberRepository,
     DrizzlePriceAlertRepository,
 } from '../api';
-import { isSubscriberId } from '../lib/mailAlertCookie';
 import { isMailAlertLaunched } from '../lib/mailAlertConstants';
+import { isSubscriberId } from '../lib/mailAlertCookie';
 import { isPriceAlertLaunched } from '../lib/priceAlertConstants';
 import { buildMailAlertCodeEmail } from '../templates/mailAlertCodeEmail';
-import { createMailAlertGuestCookie } from './mailAlertGuestCookie';
 import type { MailAlertFlowDeps } from './mailAlertFlows';
+import { createMailAlertGuestCookie } from './mailAlertGuestCookie';
 
 const RATE_LIMIT_LOG_TAG = 'mailAlertRateLimit';
 

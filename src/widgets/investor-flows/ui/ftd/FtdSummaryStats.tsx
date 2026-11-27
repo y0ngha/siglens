@@ -1,8 +1,8 @@
+import type { FailsToDeliverPoint, ShortMetrics } from '@y0ngha/siglens-core';
 /**
  * 결제 불이행 요약 카드 묶음 — 최근 수량, 최근 창 최대 수량·날짜, 발행주식 대비 %, 기준선 대비 배수.
  */
 import { useTranslations } from 'next-intl';
-import type { FailsToDeliverPoint, ShortMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { ftdPctDigits } from '../../utils/failsToDeliver';
 import {

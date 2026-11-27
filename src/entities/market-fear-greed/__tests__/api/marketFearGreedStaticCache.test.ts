@@ -23,11 +23,10 @@ vi.mock('@/entities/market-fear-greed/api/marketFearGreedCache', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getCachedMarketFearGreed } from '@/entities/market-fear-greed/api/marketFearGreedCache';
+import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import type { MarketFearGreedHubView } from '@/entities/market-fear-greed/model';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
-import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
-import { getCachedMarketFearGreed } from '@/entities/market-fear-greed/api/marketFearGreedCache';
 
 const mockGetCachedMarketFearGreed = vi.mocked(getCachedMarketFearGreed);
 

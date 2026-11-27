@@ -3,13 +3,13 @@
  */
 import { isCardPending } from '@/entities/news-article/lib/cardPollDecision';
 import type { Locale } from '@/shared/i18n/locales';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import {
     resolveNewsBody,
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
+import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 
 /** `NewsCard`가 렌더에 쓰는 파생 값 묶음. */
 export interface NewsCardView {

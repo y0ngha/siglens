@@ -1,10 +1,10 @@
 'use client';
 
+import type { KrxTickTable, PriceTargets } from '@y0ngha/siglens-core';
 /**
  * 가격 시나리오 섹션 — 상승·하락 시나리오 2열. 양쪽 모두 목표가가 없으면 그리지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { KrxTickTable, PriceTargets } from '@y0ngha/siglens-core';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { PriceScenarioColumn } from '../ui/PriceScenarioColumn';
 

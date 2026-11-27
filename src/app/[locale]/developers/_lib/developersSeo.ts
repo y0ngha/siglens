@@ -1,10 +1,10 @@
 import { DEVELOPERS_UPDATED_AT } from '@/shared/config/publicApi';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import type { Locale } from '@/shared/i18n/locales';
 import { DEVELOPERS_PAGE_URL } from './developersUrls';
 
 /**

@@ -1,8 +1,8 @@
-import { buildStrikeVolumeChartModel } from '@/widgets/options/utils/strikeVolumeChartModel';
 import type {
     ClientOptionsChain,
     ClientOptionsContract,
 } from '@/entities/options-chain/lib/clientOptionsSnapshot';
+import { buildStrikeVolumeChartModel } from '@/widgets/options/utils/strikeVolumeChartModel';
 
 const contract = (strike: number, volume: number): ClientOptionsContract => ({
     strike,

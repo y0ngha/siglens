@@ -2,10 +2,9 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+import type { MetadataRoute } from 'next';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { MetadataRoute } from 'next';
-
 import { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/_lib/robotsRules';
 import robots from '@/app/robots';
 

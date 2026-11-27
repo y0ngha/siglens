@@ -1,5 +1,5 @@
-import { isAdmissibleSymbolShape } from './ticker';
 import { LOCALES } from '@/shared/i18n/locales';
+import { isAdmissibleSymbolShape } from './ticker';
 
 /**
  * 첫 segment가 여기 있으면 ticker 케이스 정규화를 건너뛴다.

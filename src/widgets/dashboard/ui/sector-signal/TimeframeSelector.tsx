@@ -1,17 +1,17 @@
 'use client';
 
+import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 /**
  * 섹터 신호 타임프레임 선택 — 방향키로 오가는 라디오 그룹.
  */
 import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
-import { cn } from '@/shared/lib/cn';
-import { LABEL_KO } from '@/shared/lib/typographyStyles';
-import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
-import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import { DASHBOARD_TIMEFRAMES } from '@/shared/config/dashboard-tickers';
+import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { cn } from '@/shared/lib/cn';
 import { timeframeLabel } from '@/shared/lib/timeframeLabel';
+import { LABEL_KO } from '@/shared/lib/typographyStyles';
 
 interface TimeframeSelectorProps {
     timeframe: DashboardTimeframe;

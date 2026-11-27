@@ -1,8 +1,8 @@
 import 'server-only';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { getRedisClient, getUpstashWriterCredentials } from './redisClient';
 import { runUpstashCommandOutsideFetch } from './upstashRenderSafeCommand';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 표시 보존 기간. 크론 창 사이 공백(최대 ~7.5시간)과 페이지

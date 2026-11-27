@@ -1,5 +1,10 @@
 import { type PointerEvent } from 'react';
 import {
+    barCenterX,
+    barPixelHeight,
+    slotWidth,
+} from '../../utils/strikeChartGeometry';
+import {
     BAR_WIDTH_FILL_RATIO,
     CHART_HEIGHT,
     CHART_WIDTH,
@@ -10,11 +15,6 @@ import {
     PAD_LEFT,
     PAD_TOP,
 } from '../../utils/strikeChartLayout';
-import {
-    barCenterX,
-    barPixelHeight,
-    slotWidth,
-} from '../../utils/strikeChartGeometry';
 
 /** One strike's bar pair plus how strongly it is drawn. */
 export interface StrikeBarDatum {

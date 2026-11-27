@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useParabolicSarOverlay } from '../../hooks/useParabolicSarOverlay';
 import { STORAGE_KEYS } from '../../constants';
+import { useParabolicSarOverlay } from '../../hooks/useParabolicSarOverlay';
 import { buildTrendSplitData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();

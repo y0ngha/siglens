@@ -1,7 +1,7 @@
 import { escapeHtml } from '@/shared/lib/escapeHtml';
 import type { SymbolReportOptions } from '../reportModel';
-import { COLORS } from './emailTheme';
 import { formatPercent } from './emailFormat';
+import { COLORS } from './emailTheme';
 import { prose, sectionTitle } from './htmlBlocks';
 import type { ReportEmailTranslator } from './reportEmailTypes';
 

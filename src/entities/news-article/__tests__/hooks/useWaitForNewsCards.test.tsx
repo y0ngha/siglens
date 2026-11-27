@@ -1,14 +1,14 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
-import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
+import type { ReactNode } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
-import type { NewsDisplayItem } from '@/shared/lib/types';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import {
     MAX_POLL_DURATION_MS,
     EMPTY_SNAPSHOT_MAX_POLLS,
 } from '@/shared/config/cardPollingConfig';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 
 vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),

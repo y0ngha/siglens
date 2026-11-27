@@ -5,8 +5,8 @@
  */
 import { useTranslations } from 'next-intl';
 import type { BenchmarkJudgement } from '@/entities/benchmark/types';
-import { cn } from '@/shared/lib/cn';
 import { formatBenchmarkScore } from '@/shared/lib/benchmarkFormat';
+import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 
 interface Props {

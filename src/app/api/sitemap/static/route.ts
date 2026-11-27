@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 import { loadStaticChildEntries } from '@/app/api/sitemap/_shared/childEntries';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
-import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 
 // lastmod가 "직전 마감 세션"과 DB의 콘텐츠 갱신 시각에서 나오므로 빌드 시점
 // prerender 불가. CDN max-age 1h + SWR 1h로 traffic 보호.

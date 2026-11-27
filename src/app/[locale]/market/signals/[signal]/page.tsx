@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { findSignalHub } from '@/entities/signal-history/lib/signalHubs';
-import { enterLocale } from '@/shared/lib/enterLocale';
 // 별칭 경로로 import한다 — 로케일 커버리지 가드가 `@/app/[locale]/…/_lib/*Metadata`만 따라가 읽는다.
 import { signalHubMetadata } from '@/app/[locale]/market/signals/_lib/signalHubMetadata';
+import { findSignalHub } from '@/entities/signal-history/lib/signalHubs';
+import { enterLocale } from '@/shared/lib/enterLocale';
 import { SignalHubBody } from '../_components/SignalHubBody';
 
 // 1h — 기록은 장 마감 뒤 하루 한두 번 늘고, 기록기가 태그(`signal-history`)를 무효화해 그보다 빨리

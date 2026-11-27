@@ -5,19 +5,19 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
-import type { MarketSummaryActionResult } from '@/shared/lib/types';
 import { getMarketSummaryClientAction } from '@/entities/market-summary/actions/getMarketSummaryClientAction';
 import {
     hasAnyQuote,
     hasMissingQuotes as detectMissingQuotes,
 } from '@/entities/market-summary/lib/marketSummaryCompleteness';
+import { isE2EClient } from '@/shared/api/e2eClientEnv';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { isE2EClient } from '@/shared/api/e2eClientEnv';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
+import type { MarketSummaryActionResult } from '@/shared/lib/types';
 
 /**
  * Build-time-static E2E flag — evaluated once at module import.

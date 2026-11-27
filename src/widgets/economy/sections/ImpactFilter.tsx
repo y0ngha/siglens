@@ -1,11 +1,10 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 경제 캘린더 중요도(High·Medium·Low) 다중 선택 토글 칩.
  */
 import { useTranslations } from 'next-intl';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
-
 import { cn } from '@/shared/lib/cn';
 import { IMPACT_LABEL_KEY, IMPACT_ORDER } from '../utils/impactMeta';
 

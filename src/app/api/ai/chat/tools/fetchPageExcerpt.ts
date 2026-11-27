@@ -1,18 +1,18 @@
 import 'server-only';
-import { SafeFetchError, safeFetch } from '@/shared/api/web/safeFetch';
+import {
+    extractPageExcerpt,
+    findPublishedAt,
+} from '@/app/api/ai/chat/tools/pageExcerptText';
 import {
     isAllowedByRobots,
     isRobotsRuleList,
     parseRobots,
     type RobotsRule,
 } from '@/shared/api/web/robotsTxt';
+import { SafeFetchError, safeFetch } from '@/shared/api/web/safeFetch';
 import type { WebSearchExcerptStatus } from '@/shared/api/web/webSearchResult';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
-import {
-    extractPageExcerpt,
-    findPublishedAt,
-} from '@/app/api/ai/chat/tools/pageExcerptText';
 
 /**
  * 검색 결과 페이지에서 질의와 관련 있는 문단을 발췌한다(`web_search`가 상위 결과에 붙인다).

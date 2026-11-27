@@ -5,11 +5,11 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { encryptToken } from '@/shared/db/tokenEncryption';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
 } from '@/entities/api-key/api';
+import { encryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const VALID_KEY_HEX = 'b'.repeat(64);

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import { koMessage } from '@/shared/test-utils/koMessage';
 import { QuoteHeader } from '@/widgets/dashboard/ui/quote/QuoteHeader';
 import type { QuoteHeaderData } from '@/widgets/dashboard/ui/quote/QuoteHeader';
-import { koMessage } from '@/shared/test-utils/koMessage';
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),

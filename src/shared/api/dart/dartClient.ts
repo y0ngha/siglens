@@ -1,8 +1,8 @@
 import 'server-only';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import { readBoundedBody } from '@/shared/lib/readBoundedBody';
 import { sleep } from '@/shared/lib/sleep';
 import { withRetry } from '@/shared/lib/withRetry';
-import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import {
     openQuotaBreaker,
     reserveCall,

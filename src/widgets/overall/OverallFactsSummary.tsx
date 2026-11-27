@@ -1,8 +1,8 @@
-import { useTranslations } from 'next-intl';
 import type {
     OverallAnalysisResponse,
     OverallScenario,
 } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 
 interface OverallFactsSummaryProps {
     symbol: string;

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR } from '../../lib/investorFlowsPolicy';
+import type { Ingest13fResult } from '../../server/ingest13fTypes';
+import type { IngestSecFilingsResult } from '../../server/ingestSecFilingsTypes';
 import {
     hasSecFilingsBacklog,
     rememberRecentIndexes,
@@ -8,8 +10,6 @@ import {
     SEC_FILINGS_MIN_BUDGET_MS,
     type SecIndexIngestSteps,
 } from '../../server/runSecIndexIngest';
-import type { Ingest13fResult } from '../../server/ingest13fTypes';
-import type { IngestSecFilingsResult } from '../../server/ingestSecFilingsTypes';
 
 const thirteenF = (stoppedBy: Ingest13fResult['stoppedBy']) =>
     ({ stoppedBy }) as Ingest13fResult;

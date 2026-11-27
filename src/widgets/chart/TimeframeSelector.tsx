@@ -4,13 +4,13 @@
  * 차트 타임프레임 선택 컨트롤(무료 티어 제한 반영).
  */
 
+import type { Timeframe } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import { TIMEFRAMES } from '@/shared/config/market';
-import type { Timeframe } from '@y0ngha/siglens-core';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { timeframeLabel } from '@/shared/lib/timeframeLabel';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 interface TimeframeSelectorProps {
     value: Timeframe;

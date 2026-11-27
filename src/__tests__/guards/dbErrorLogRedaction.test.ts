@@ -1,10 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
-import { scanErrorLogs, type ErrorLogSite } from './support/errorLogScan';
 import { SCAN_TIMEOUT_MS, sourceFiles } from './support/controlUsage';
+import { scanErrorLogs, type ErrorLogSite } from './support/errorLogScan';
 import { buildImportGraph, fileImports } from './support/importGraph';
 
 /**

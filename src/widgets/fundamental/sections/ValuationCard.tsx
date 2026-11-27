@@ -1,16 +1,16 @@
+import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 /**
  * 밸류에이션 카드 — PER·PSR·PBR·PEG·EV/EBITDA·EPS 한 줄씩.
  */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 import type { KrValuationBasis } from '@/entities/kr-valuation/model';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { cn } from '@/shared/lib/cn';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { formatDecimal } from '@/widgets/fundamental/utils/decimalFormat';
 
 const HEADING_ID = 'valuation-heading';

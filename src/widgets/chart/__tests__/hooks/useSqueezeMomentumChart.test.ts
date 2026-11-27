@@ -3,11 +3,11 @@ import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { useSqueezeMomentumChart } from '../../hooks/useSqueezeMomentumChart';
+import { squeezeStateColor } from '../../utils/histogramColorUtils';
 import {
     buildSeriesData,
     buildZeroLineDots,
 } from '../../utils/seriesDataUtils';
-import { squeezeStateColor } from '../../utils/histogramColorUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();

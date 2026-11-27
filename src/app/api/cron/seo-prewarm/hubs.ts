@@ -1,5 +1,4 @@
 import 'server-only';
-import { revalidateTag } from 'next/cache';
 import {
     peekBriefingCache,
     peekMacroBriefingCacheEntry,
@@ -8,33 +7,31 @@ import {
     runMacroBriefing,
     runMarketNewsDigest,
 } from '@y0ngha/siglens-core';
-import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
-import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
-import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
-import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
-import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
-import {
-    marketBriefingCacheTag,
-    marketBriefingSeedSurface,
-} from '@/entities/market-summary/api/briefingStaticCache';
-import {
-    releaseMarketBriefingSlot,
-    tryAcquireMarketBriefingSlot,
-} from '@/entities/market-summary/api/marketBriefingCooldown';
-import { writeLatestMarketBriefing } from '@/entities/market-summary/api/latestMarketBriefing';
+import { revalidateTag } from 'next/cache';
+import { analyzeEconomicEvents } from '@/entities/economy/api/analyzeEconomicEvents';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
+import { ECONOMY_SNAPSHOT_CACHE_TAG } from '@/entities/economy/api/economySnapshotStaticCache';
+import { ingestEconomicCalendar } from '@/entities/economy/api/ingestEconomicCalendar';
 import {
     MACRO_BRIEFING_CACHE_TAG,
     MACRO_BRIEFING_SEED_SURFACE,
 } from '@/entities/economy/api/macroBriefingStaticCache';
-import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { translateUnresolvedCalendarIndicators } from '@/entities/economy/api/translateIndicators';
+import {
+    CALENDAR_COUNTRY,
+    CALENDAR_COUNTRY_KR,
+    economyCalendarCacheTag,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import { shouldCacheEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
+import type { CalendarCountry } from '@/entities/economy/model';
+import { ingestMarketNewsCategory } from '@/entities/market-news/api/ingestMarketNewsCategory';
 import { writeLatestMarketNewsDigest } from '@/entities/market-news/api/marketNewsDigestCooldown';
+import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import {
     isCronIngestedRecently,
     markCronIngested,
 } from '@/entities/market-news/api/marketNewsRefreshFlags';
 import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
-import { ingestMarketNewsCategory } from '@/entities/market-news/api/ingestMarketNewsCategory';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
@@ -47,12 +44,18 @@ import {
     DEFAULT_DIGEST_MODEL_ID,
     DIGEST_REASONING,
 } from '@/entities/market-news/lib/marketNewsConstants';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import type { NavRegionId } from '@/shared/config/assetClassNav';
-import { SITE_URL } from '@/shared/lib/seo';
-import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
-import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
-import { recordHubContentStamp } from '@/shared/cache/hubContentStamp';
+import {
+    marketBriefingCacheTag,
+    marketBriefingSeedSurface,
+} from '@/entities/market-summary/api/briefingStaticCache';
+import { writeLatestMarketBriefing } from '@/entities/market-summary/api/latestMarketBriefing';
+import {
+    releaseMarketBriefingSlot,
+    tryAcquireMarketBriefingSlot,
+} from '@/entities/market-summary/api/marketBriefingCooldown';
+import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
+import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
+import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
 import {
     economyHubPath,
     marketHubPath,
@@ -61,19 +64,16 @@ import {
     rssMarketSurface,
     rssNewsSurface,
 } from '@/entities/rss-feed/model';
+import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import { recordHubContentStamp } from '@/shared/cache/hubContentStamp';
+import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 import { consumeSsrMiss } from '@/shared/cache/ssrMissMarker';
-import { ECONOMY_SNAPSHOT_CACHE_TAG } from '@/entities/economy/api/economySnapshotStaticCache';
-import { shouldCacheEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
-import { ingestEconomicCalendar } from '@/entities/economy/api/ingestEconomicCalendar';
-import { analyzeEconomicEvents } from '@/entities/economy/api/analyzeEconomicEvents';
-import { translateUnresolvedCalendarIndicators } from '@/entities/economy/api/translateIndicators';
-import {
-    CALENDAR_COUNTRY,
-    CALENDAR_COUNTRY_KR,
-    economyCalendarCacheTag,
-} from '@/entities/economy/lib/economyCalendarConstants';
-import type { CalendarCountry } from '@/entities/economy/model';
+import type { NavRegionId } from '@/shared/config/assetClassNav';
+import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { SITE_URL } from '@/shared/lib/seo';
 
 /**
  * 허브 페이지의 AI 콘텐츠를 **서버에서 미리 굽는다**.

@@ -6,7 +6,6 @@ import {
     type GuideCategory,
     type GuideEntry,
 } from '@/entities/guide/types';
-import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
 import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
@@ -16,6 +15,7 @@ import {
     localePageRobots,
     localePageSocial,
 } from '@/shared/lib/seoAlternates';
+import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
 
 /** 가이드 라우트 공통 `params`(로케일 세그먼트). `localeAlternatesFrom`에 그대로 넘긴다. */
 export type GuideRouteParams = Promise<{ locale: string }>;

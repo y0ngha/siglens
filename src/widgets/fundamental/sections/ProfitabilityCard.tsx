@@ -1,14 +1,14 @@
+import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 /**
  * 수익성 카드 — ROE·ROA·영업이익률·순이익률 막대.
  */
 import { useTranslations } from 'next-intl';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     formatRatioPercent,
     ratioFillPercent,

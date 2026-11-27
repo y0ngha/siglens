@@ -3,6 +3,12 @@ import {
     extractShareTotals,
     extractStatementFigures,
 } from '../../lib/dartAmounts';
+import alteogenH1Shares from '../fixtures/alteogen-2026-h1-stock-totals.json';
+import hanwhaH1Shares from '../fixtures/hanwhasolutions-2026-h1-stock-totals.json';
+import hpspAnnualOfs from '../fixtures/hpsp-2025-annual-ofs.json';
+import hpspH1Ofs from '../fixtures/hpsp-2026-h1-ofs.json';
+import hpspShares from '../fixtures/hpsp-2026-h1-stock-totals.json';
+import ingeniaUsd from '../fixtures/ingenia-2026-q3-cfs-usd.json';
 import samsungCardAnnual from '../fixtures/samsungcard-2025-annual-cfs.json';
 import samsungCardH1 from '../fixtures/samsungcard-2026-h1-cfs.json';
 import samsungCardH1Shares from '../fixtures/samsungcard-2026-h1-stock-totals.json';
@@ -12,12 +18,6 @@ import samsungCardQ3Shares from '../fixtures/samsungcard-2026-q3-stock-totals.js
 import samsungElectronicsAnnual from '../fixtures/samsungelectronics-2025-annual-cfs.json';
 import samsungElectronicsShares from '../fixtures/samsungelectronics-2026-h1-stock-totals.json';
 import samsungElectronicsQ3 from '../fixtures/samsungelectronics-2026-q3-cfs.json';
-import hpspAnnualOfs from '../fixtures/hpsp-2025-annual-ofs.json';
-import hpspH1Ofs from '../fixtures/hpsp-2026-h1-ofs.json';
-import hpspShares from '../fixtures/hpsp-2026-h1-stock-totals.json';
-import ingeniaUsd from '../fixtures/ingenia-2026-q3-cfs-usd.json';
-import alteogenH1Shares from '../fixtures/alteogen-2026-h1-stock-totals.json';
-import hanwhaH1Shares from '../fixtures/hanwhasolutions-2026-h1-stock-totals.json';
 import skH1Shares from '../fixtures/sk-2026-h1-stock-totals.json';
 import skHynixQ3Shares from '../fixtures/skhynix-2026-q3-stock-totals.json';
 

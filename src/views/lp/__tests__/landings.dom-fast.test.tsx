@@ -5,8 +5,8 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { StockAnalysisLanding } from '@/views/lp/StockAnalysisLanding';
 import { StockChatLanding } from '@/views/lp/StockChatLanding';
-import type { LpRealAnalysis } from '../lib/types';
 import { lpCopyViolations } from '../lib/lpCopyRules';
+import type { LpRealAnalysis } from '../lib/types';
 
 function pageText(container: HTMLElement): string {
     const clone = container.cloneNode(true) as HTMLElement;

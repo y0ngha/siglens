@@ -41,7 +41,6 @@ vi.mock('../../server/getInvestorFlowsDataProvider', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { addDays } from '../../lib/investorFlowsDates';

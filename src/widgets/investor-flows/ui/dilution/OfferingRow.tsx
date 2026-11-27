@@ -1,8 +1,8 @@
+import type { OfferingFiling, OfferingKind } from '@y0ngha/siglens-core';
 /**
  * 증자·희석 공시 한 줄 — 종류 배지·양식·신고일·SEC 원문 링크.
  */
 import { useTranslations } from 'next-intl';
-import type { OfferingFiling, OfferingKind } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { OFFERING_TONE, type OfferingTone } from '../../utils/secFilings';

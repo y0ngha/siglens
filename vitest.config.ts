@@ -1,5 +1,5 @@
-import { configDefaults, defineConfig } from 'vitest/config';
 import path from 'node:path';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 const sharedConfig = {
     resolve: {

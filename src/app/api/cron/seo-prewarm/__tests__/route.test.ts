@@ -8,8 +8,8 @@ vi.mock('../lock', () => ({ acquirePrewarmLock: vi.fn() }));
 vi.mock('../runSeoPrewarmJob', () => ({ runSeoPrewarmJob: vi.fn() }));
 
 import { constants } from 'node:http2';
-import { PATCH } from '@/app/api/cron/seo-prewarm/route';
 import { acquirePrewarmLock } from '@/app/api/cron/seo-prewarm/lock';
+import { PATCH } from '@/app/api/cron/seo-prewarm/route';
 import { runSeoPrewarmJob } from '@/app/api/cron/seo-prewarm/runSeoPrewarmJob';
 import { isBatchWork } from '@/shared/lib/renderBudget';
 

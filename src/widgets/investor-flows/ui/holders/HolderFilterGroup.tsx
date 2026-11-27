@@ -1,8 +1,8 @@
+import { useTranslations } from 'next-intl';
 /**
  * 보유 기관 목록의 "전체 / 신규 진입 / 완전 청산" 필터 버튼 묶음.
  */
 import { useId } from 'react';
-import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { HOLDER_FILTERS } from '../../utils/holderStatus';
 import type { HolderFilter } from '../../utils/institutional';

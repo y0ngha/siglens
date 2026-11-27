@@ -1,17 +1,16 @@
 vi.mock('@/shared/api/fmp/httpClient');
 
-import type { Mock } from 'vitest';
-import { vi } from 'vitest';
 import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-
+import type { Mock } from 'vitest';
+import { vi } from 'vitest';
+import { orderColumnName } from '@/__tests__/utils/orderColumnName';
+import { renderSql } from '@/__tests__/utils/renderSql';
 import {
     DrizzleCryptoAssetRepository,
     fetchCryptoAssetList,
 } from '@/entities/ticker/cryptoAssetApi';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { orderColumnName } from '@/__tests__/utils/orderColumnName';
-import { renderSql } from '@/__tests__/utils/renderSql';
 import type { CryptoAssetRecord, SiglensDatabase } from '@/shared/db/types';
 
 /** where 조건에 쓰인 컬럼 이름(`"table"."col"`의 col)을 렌더링된 SQL에서 읽는다. */

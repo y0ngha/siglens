@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
+import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { IndexCard } from '@/widgets/dashboard/ui/market-summary/IndexCard';
-import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 
 vi.mock('next/link', () => ({
     default: ({

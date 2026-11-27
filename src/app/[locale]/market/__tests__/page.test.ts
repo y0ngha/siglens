@@ -104,10 +104,10 @@ vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 
 import { existsSync, readFileSync } from 'node:fs';
 import { blankComments } from '@/__tests__/guards/support/sourceScan';
-import * as pageModule from '@/app/[locale]/market/page';
-import { generateMetadata } from '@/app/[locale]/market/page';
 // `MarketContent`는 미국·한국 라우트가 공유하는 본문으로 옮겨졌다 — scope를 인자로 받는다.
 import { MarketContent } from '@/app/[locale]/market/MarketRouteBody';
+import * as pageModule from '@/app/[locale]/market/page';
+import { generateMetadata } from '@/app/[locale]/market/page';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,

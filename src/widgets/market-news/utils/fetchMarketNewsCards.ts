@@ -1,5 +1,5 @@
-import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
 /**

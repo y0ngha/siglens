@@ -18,7 +18,6 @@ vi.mock('../../globals.css', () => ({}));
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-
 import LandingRootLayout from '@/app/lp/layout';
 
 describe('LandingRootLayout', () => {

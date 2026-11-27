@@ -4,6 +4,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { DrizzleSecFilingsRepository } from '../api/investorFlowsFilingsRepository';
@@ -17,7 +18,6 @@ import {
 } from '../lib/recentDilutionEvent';
 import type { OfferingRecord } from '../model';
 import { getInvestorFlowsDataProvider } from './getInvestorFlowsDataProvider';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 헤더 증자·희석 배지 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

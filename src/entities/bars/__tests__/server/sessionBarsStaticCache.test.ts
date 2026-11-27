@@ -55,16 +55,15 @@ vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: vi.fn(),
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { BarsData } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { toSessionBarsData } from '@/entities/bars/lib/sessionBars';
+import { symbolFearGreedSnapshot } from '@/entities/bars/lib/symbolFearGreed';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import {
     getSessionBarsStatic,
     getSymbolFearGreedChipStatic,
 } from '@/entities/bars/server/sessionBarsStaticCache';
-import { loadBarsData } from '@/entities/bars/server/loadBarsData';
-import { symbolFearGreedSnapshot } from '@/entities/bars/lib/symbolFearGreed';
-import { toSessionBarsData } from '@/entities/bars/lib/sessionBars';
 import { SESSION_KEYED_CACHE_REVALIDATE_SECONDS } from '@/shared/config/time';
 
 const mockLoad = vi.mocked(loadBarsData);

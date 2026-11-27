@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildCryptoPopularEntries } from '../lib/buildCryptoPopularEntries';
-import { floorToHour } from '../lib/floorToHour';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { MS_PER_HOUR } from '@/shared/config/time';
+import { buildCryptoPopularEntries } from '../lib/buildCryptoPopularEntries';
+import { floorToHour } from '../lib/floorToHour';
 
 describe('buildCryptoPopularEntries', () => {
     const now = new Date('2026-06-21T10:00:00Z');

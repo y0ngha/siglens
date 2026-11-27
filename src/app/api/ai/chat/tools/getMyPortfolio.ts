@@ -1,19 +1,19 @@
 import 'server-only';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { roundMoney } from '@/app/api/ai/chat/tools/roundMoney';
+import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
-import { MS_PER_SECOND } from '@/shared/config/time';
-import { assessFreshness, type FreshnessView } from './freshness';
-import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
-import { roundMoney } from '@/app/api/ai/chat/tools/roundMoney';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { assessFreshness, type FreshnessView } from './freshness';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 

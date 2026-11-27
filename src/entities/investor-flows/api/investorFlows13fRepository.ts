@@ -21,12 +21,13 @@ import {
 import type { SiglensDatabase } from '@/shared/db/types';
 import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { withRetry } from '@/shared/lib/withRetry';
-import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
-import { chunked } from '../lib/chunked';
 import type { AmendmentFiling } from '../lib/amendmentPlan';
+import { chunked } from '../lib/chunked';
 import { cikToInt, cikToString } from '../lib/cik';
 import { previousQuarterEnd } from '../lib/investorFlowsDates';
+import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type { AmendmentType, FilingRecord } from '../model';
+import { affectedRows } from './affectedRows';
 import {
     buildAggregateDeleteSql,
     buildAggregateUpsertSql,
@@ -36,7 +37,6 @@ import {
     buildResetChangesSql,
     type AggregateMode,
 } from './aggregateSql';
-import { affectedRows } from './affectedRows';
 import { applyFiling, type ApplyFilingInput } from './apply13fFiling';
 import {
     pruneAggregatesBefore,

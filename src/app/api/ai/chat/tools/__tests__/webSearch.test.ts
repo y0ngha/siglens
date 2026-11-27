@@ -35,10 +35,9 @@ vi.mock('@/app/api/ai/chat/tools/fetchPageExcerpt', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { WEB_SEARCH_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 import { webSearchTool } from '@/app/api/ai/chat/tools/webSearch';
 import { __resetWebSearchCacheForTests } from '@/app/api/ai/chat/tools/webSearchCache';
-import { WEB_SEARCH_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const AI_CREDS = { id: 'ai-id', secret: 'ai-secret' };
 

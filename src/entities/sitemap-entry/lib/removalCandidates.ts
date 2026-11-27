@@ -1,7 +1,6 @@
 import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability/config/approved-longtail-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-
 import {
     REMOVAL_CHART_CUTOFF_ISO,
     REMOVAL_LEGACY_TAB_CUTOFF_ISO,

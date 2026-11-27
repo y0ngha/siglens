@@ -4,9 +4,8 @@ vi.mock('@/shared/config/aiHost', () => ({
 }));
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { NextRequest } from 'next/server';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET } from '@/app/api/auth/handoff/start/route';
 
 const req = (qs: string, host = 'ai.siglens.io') =>

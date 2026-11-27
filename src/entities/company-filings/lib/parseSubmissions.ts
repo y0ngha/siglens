@@ -1,8 +1,8 @@
 import { AGENT_FILINGS_WINDOW_DAYS } from '@y0ngha/siglens-core';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { isRecord } from '@/shared/lib/isRecord';
-import { MS_PER_HOUR } from '@/shared/config/time';
 import type { CompanyFilingForm, SubmissionFiling } from '../model';
 import { filingItems } from './filingItems';
 import { normalizeAccession } from './normalizeAccession';

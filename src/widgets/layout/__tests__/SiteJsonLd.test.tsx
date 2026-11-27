@@ -20,7 +20,6 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import { SiteJsonLd } from '../SiteJsonLd';
 
 /** `@graph`에서 `@type`으로 노드 하나를 꺼낸다. */

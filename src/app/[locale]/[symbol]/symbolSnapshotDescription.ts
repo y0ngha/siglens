@@ -1,14 +1,14 @@
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import type {
     SeoAnalysisSnapshot,
     SeoSnapshotTab,
 } from '@/entities/seo-snapshot/model';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { type SeoTranslator } from '@/shared/lib/seo';
-import { symbolTabDescriptionLabel } from '@/shared/lib/seoSymbol';
 import { buildSnapshotMetaDescription } from '@/shared/lib/seoSnapshotDescription';
+import { symbolTabDescriptionLabel } from '@/shared/lib/seoSymbol';
 
 interface TabSnapshotInput {
     /** 대문자 심볼. */

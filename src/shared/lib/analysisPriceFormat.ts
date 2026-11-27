@@ -1,8 +1,8 @@
 import { roundToKrxTick, type KrxTickTable } from '@y0ngha/siglens-core';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
-import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 
 // `priceFormat.ts`와 나눈 이유: 그 파일은 루트 레이아웃 번들(헤더 관심종목 시세)에
 // 들어가서 core를 import할 수 없다(`rootLayoutCoreFree`·`aiChatCoreFree` 가드).

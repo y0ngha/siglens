@@ -1,8 +1,8 @@
+import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import {
     LLMS_TXT_CACHE_CONTROL,
     LLMS_TXT_CONTENT_TYPE,
 } from '@/app/api/llms/_lib/constants';
-import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import { llmsInputs } from '@/app/api/llms/_lib/llmsInputs';
 import type { LlmsHost } from '@/app/api/llms/_lib/model';
 import { renderLlmsTxt } from '@/app/api/llms/_lib/renderLlmsTxt';

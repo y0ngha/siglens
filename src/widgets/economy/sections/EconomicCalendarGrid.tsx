@@ -1,12 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 경제 캘린더 — 한국시간 기준 월 그리드와 날짜별 상세 패널, 중요도 필터를 배치하는 오케스트레이터.
  * 그룹핑·그리드 계산은 `utils/calendarGrouping`, 선택·필터 상태는 `hooks/`, 칸·패널 렌더는
  * `sections/calendar/`가 맡는다.
  */
 import { useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import type { CalendarCountry } from '@/entities/economy/model';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { cn } from '@/shared/lib/cn';

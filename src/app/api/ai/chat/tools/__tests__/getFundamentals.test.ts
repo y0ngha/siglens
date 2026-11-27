@@ -107,13 +107,7 @@ vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
 }));
 
 import { FUNDAMENTALS_RESULT_NOTES } from '@y0ngha/siglens-core';
-import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FUNDAMENTALS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
-
-import type { ResolvedNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
-import { providerKrValuation } from '@/entities/kr-valuation/lib/computeKrValuation';
-import type { KrValuation } from '@/entities/kr-valuation/model';
 import {
     daysUntil,
     earningsDateCertainty,
@@ -121,6 +115,11 @@ import {
     getFundamentalsTool,
     withEarningsReactionTally,
 } from '@/app/api/ai/chat/tools/getFundamentals';
+import { FUNDAMENTALS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import type { ResolvedNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
+import { providerKrValuation } from '@/entities/kr-valuation/lib/computeKrValuation';
+import type { KrValuation } from '@/entities/kr-valuation/model';
+import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     SECONDS_PER_HOUR,

@@ -1,18 +1,17 @@
 'use client';
 
-import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
-import { ErrorAlert } from '@/shared/ui/ErrorAlert';
-import { TextField } from '@/shared/ui/TextField';
-import { HoneypotField } from './HoneypotField';
-import type { ContactFormState } from '@/shared/lib/types';
-import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
+import { useRef } from 'react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/shared/config/contact';
+import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
+import type { ContactFormState } from '@/shared/lib/types';
+import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { TextField } from '@/shared/ui/TextField';
 import type { useContactForm } from '../hooks/useContactForm';
 import {
     getFieldError,
@@ -21,6 +20,7 @@ import {
 } from '../lib/contactFormUtils';
 import { ContactEmailField } from './ContactEmailField';
 import { ContactTextareaField } from './ContactTextareaField';
+import { HoneypotField } from './HoneypotField';
 
 interface ContactFormFieldsProps {
     /** 직전 액션 결과 — 오류와 사용자가 보낸 값(비제어 입력의 기본값)을 싣는다. */

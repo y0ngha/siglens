@@ -1,11 +1,11 @@
 /** Everything below a replay's input: progress row, streamed body and sources. */
 
 import type { ReactNode } from 'react';
-import type { Frame } from '@/widgets/replay/utils/replayPlayer';
-import type { ReplayView } from '@/widgets/replay/utils/replayView';
 import { ReplayLines } from '@/widgets/replay/ui/body/ReplayLines';
 import { ReplayProgress } from '@/widgets/replay/ui/body/ReplayProgress';
 import { ReplaySources } from '@/widgets/replay/ui/body/ReplaySources';
+import type { Frame } from '@/widgets/replay/utils/replayPlayer';
+import type { ReplayView } from '@/widgets/replay/utils/replayView';
 
 interface ReplayAnswerProps {
     readonly view: ReplayView;

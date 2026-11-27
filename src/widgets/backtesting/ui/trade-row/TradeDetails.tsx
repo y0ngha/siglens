@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { BacktestTrade } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { LEG_REASON_KEY } from '../../utils/tradeLabels';

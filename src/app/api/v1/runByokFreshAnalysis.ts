@@ -8,6 +8,7 @@ import {
 import { resolveByokOnlyKey } from '@/entities/api-key/server/resolveByokOnlyKey';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { API_STATUS } from './apiResponse';
 import {
@@ -23,7 +24,6 @@ import { prepareRunner } from './freshAnalysisRunner';
 import type { PublicToolOutcome, PublicToolResult } from './publicToolOutcome';
 import { decideRateLimit, prefixRateLimitHeaders } from './rateLimitHeaders';
 import { resolveRequestedModel } from './resolveFreshAnalysisModel';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 인스턴스의 분석 슬롯이 가득 찼을 때 클라이언트가 기다릴 초(에이전트의 `busy`와 같은 값). */
 const BUSY_RETRY_AFTER_SECONDS = 60;

@@ -1,22 +1,22 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 마켓 뉴스 카테고리 다이제스트의 전체 수명주기를 `loading | done | error`로 접어 돌려주는 훅.
  */
 import { useTranslations } from 'next-intl';
+import { useState, startTransition, useEffect } from 'react';
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
-import { useState, startTransition, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import {
     resolveDigestState,
     toDigestError,
     type MarketNewsDigestState,
 } from '../utils/digestState';
+import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 import { useMarketNewsAnalysisTrigger } from './useMarketNewsAnalysisTrigger';
 import { useWaitForMarketNewsCards } from './useWaitForMarketNewsCards';
 

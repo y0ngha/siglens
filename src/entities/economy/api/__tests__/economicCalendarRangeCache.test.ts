@@ -13,13 +13,12 @@ vi.mock('@/shared/api/economy/getEconomyProvider', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     buildEconomicCalendarRangeCacheKey,
     ECONOMIC_CALENDAR_RANGE_TTL_SECONDS,
     getEconomicCalendarRange,
 } from '../economicCalendarRangeCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const KEY = 'economy:calendar-range:v3:2026-10-23:2027-01-01';
 

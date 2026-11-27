@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { BUTTON_GHOST, BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';

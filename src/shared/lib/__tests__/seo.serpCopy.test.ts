@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import {
-    buildSymbolFearGreedSeoContent,
-    buildSymbolNewsSeoContent,
-} from '../seoSymbol';
+import enMessages from '@/../messages/en.json';
+import jaMessages from '@/../messages/ja.json';
+import koMessages from '@/../messages/ko.json';
+import zhMessages from '@/../messages/zh.json';
 import {
     clampSeoDescription,
     SEO_TITLE_MAX_WIDTH,
     seoTitleWidth,
 } from '../seoClamp';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
+import {
+    buildSymbolFearGreedSeoContent,
+    buildSymbolNewsSeoContent,
+} from '../seoSymbol';
 
 /** 실제 카탈로그를 읽는 번역자 — 키가 빠지면 키 문자열이 나와 단언이 실패한다. */
 function translator(messages: unknown) {

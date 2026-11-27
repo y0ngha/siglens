@@ -1,16 +1,16 @@
-// @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react';
-import { createElement } from 'react';
-import type { ReactNode } from 'react';
 import {
     QueryClient,
     QueryClientProvider,
     QueryObserver,
 } from '@tanstack/react-query';
-import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
+// @vitest-environment jsdom
+import { act, renderHook } from '@testing-library/react';
+import { createElement } from 'react';
+import type { ReactNode } from 'react';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { NewsDisplayItem } from '@/shared/lib/types';
+import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
 
 const mockUseNewsCardPolling = vi.fn();
 

@@ -1,5 +1,5 @@
-import { toNaverNewsItem } from '../../lib/toNaverNewsItem';
 import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
+import { toNaverNewsItem } from '../../lib/toNaverNewsItem';
 
 const RAW = {
     title: '<b>삼성전자</b>, 3분기 영업이익 발표',

@@ -1,27 +1,27 @@
-import { describe, expect, it, vi } from 'vitest';
 import { strToU8, zipSync } from 'fflate';
+import { describe, expect, it, vi } from 'vitest';
+import {
+    PLANTED_TOKEN,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
+import type { InvestorFlowsUniverse } from '../../api/investorFlowsUniverseRepository';
+import { addDays } from '../../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_FTD_MAX_ATTEMPTS,
     INVESTOR_FLOWS_FTD_MAX_FILES_PER_RUN,
     INVESTOR_FLOWS_FTD_RETENTION_DAYS,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
+import type { FtdFileState, FtdRow } from '../../model';
 import {
     pendingFiles,
     runFtdIngest,
     type IngestFtdDeps,
 } from '../../server/ingestFtd';
-import type { InvestorFlowsUniverse } from '../../api/investorFlowsUniverseRepository';
-import type { FtdFileState, FtdRow } from '../../model';
 import {
     FTD_FILE_EXCERPT,
     FTD_LISTING_EXCERPT,
 } from '../fixtures/investorFlowsExpansionSamples';
-import {
-    PLANTED_TOKEN,
-    plantedDbError,
-} from '@/shared/test-utils/plantedDbError';
 
 const NOW = new Date('2026-10-16T13:50:00Z');
 const UNIVERSE: InvestorFlowsUniverse = {

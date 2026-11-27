@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-
 import { isPrewarmTab } from '@/entities/seo-snapshot/lib/applicability';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
 import {
     isSeoSnapshotTab,
     type SeoSnapshotTab,
 } from '@/entities/seo-snapshot/model';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import type { SnapshotProseState } from '@/entities/symbol-indexability/model';

@@ -26,12 +26,11 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
+import { deletePortfolioHoldingAction } from '@/entities/portfolio/actions/deletePortfolioHoldingAction';
 import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions/getPortfolioHoldingsAction';
 import { savePortfolioHoldingAction } from '@/entities/portfolio/actions/savePortfolioHoldingAction';
-import { deletePortfolioHoldingAction } from '@/entities/portfolio/actions/deletePortfolioHoldingAction';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import type { PortfolioHoldingRecord } from '@/shared/db/types';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<

@@ -1,5 +1,5 @@
 import 'server-only';
-
+import type { OutcomeSubject, OutcomeWindow } from '@y0ngha/siglens-core';
 import {
     and,
     asc,
@@ -14,11 +14,11 @@ import {
     or,
     sql,
 } from 'drizzle-orm';
-import type { OutcomeSubject, OutcomeWindow } from '@y0ngha/siglens-core';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { analysisHistory, analysisOutcomes } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { FAILURE_SPEC, UNCAPTURED_TIMEFRAMES } from '../lib/outcomePolicy';
 import type {
     AnalysisOutcomeRepository,
     AnchorCloseBasis,
@@ -33,7 +33,6 @@ import type {
     FailureKind,
     UnlabelableReason,
 } from '../types';
-import { FAILURE_SPEC, UNCAPTURED_TIMEFRAMES } from '../lib/outcomePolicy';
 
 /**
  * `analysis_outcomes` 저장소. `analysis_history`와 달리 **best-effort가 아니다** — 에러를 삼키지 않고 던진다.

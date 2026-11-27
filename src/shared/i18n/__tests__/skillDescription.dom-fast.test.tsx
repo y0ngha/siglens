@@ -1,10 +1,10 @@
+import { screen } from '@testing-library/react';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { useSkillDescription } from '@/shared/i18n/skillDescription';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
 const CORE_DIR = join(SKILLS_DIR, '_core');

@@ -1,21 +1,21 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 /**
  * 종목 뉴스 집계 AI 분석을 조회하는 훅 — 쿼리 상태를 `loading | done | awaiting_interaction | error`로 접어 돌려준다.
  */
 import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
-import { useQuery } from '@tanstack/react-query';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
+import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/model';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/model';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
-import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
+import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 
 /** 뉴스 분석 훅의 화면 상태 — 소비자가 status로 분기한다. */
 export type NewsAnalysisState =

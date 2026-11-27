@@ -1,3 +1,20 @@
+import {
+    COMPUTED_CARD_KINDS,
+    getCandlePatternLabel,
+    getMultiCandlePatternLabel,
+    STRATEGY_OVERLAY_KINDS,
+} from '@y0ngha/siglens-core';
+import type {
+    CandlePattern,
+    CycleCardKind,
+    MultiCandlePattern,
+    SignalType,
+    SkillStateFeature,
+    SkillStatePredicateKind,
+    SkillUsageRole,
+} from '@y0ngha/siglens-core';
+import { glob } from 'glob';
+import matter from 'gray-matter';
 /**
  * Skill frontmatter validation gate.
  *
@@ -34,23 +51,6 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { glob } from 'glob';
-import matter from 'gray-matter';
-import {
-    COMPUTED_CARD_KINDS,
-    getCandlePatternLabel,
-    getMultiCandlePatternLabel,
-    STRATEGY_OVERLAY_KINDS,
-} from '@y0ngha/siglens-core';
-import type {
-    CandlePattern,
-    CycleCardKind,
-    MultiCandlePattern,
-    SignalType,
-    SkillStateFeature,
-    SkillStatePredicateKind,
-    SkillUsageRole,
-} from '@y0ngha/siglens-core';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(SCRIPT_DIR, '..');

@@ -1,7 +1,3 @@
-import type {
-    KoreanTickerEntry,
-    KoreanTickerUpsertEntry,
-} from '@/shared/lib/types';
 import {
     and,
     eq,
@@ -13,6 +9,12 @@ import {
     or,
     sql,
 } from 'drizzle-orm';
+import {
+    getDescriptor,
+    isKrEquitySymbol,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile/registry';
+import { type TabKey } from '@/shared/config/marketProfile/types';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     assetTranslations,
@@ -29,14 +31,12 @@ import type {
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';
+import type {
+    KoreanTickerEntry,
+    KoreanTickerUpsertEntry,
+} from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { isCryptoSymbolStatic } from './server/isCryptoSymbolStatic';
-import {
-    getDescriptor,
-    isKrEquitySymbol,
-    DEFAULT_MARKET_PROFILE,
-} from '@/shared/config/marketProfile/registry';
-import { type TabKey } from '@/shared/config/marketProfile/types';
 
 /**
  * `korean_tickers`에 대한 한 INSERT/UPDATE 문에 담을 최대 행 수. 전 종목 동기화는

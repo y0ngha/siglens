@@ -1,40 +1,40 @@
 'use client';
 
-import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
-import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
-import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';
-import { useHydrated } from '@/shared/hooks/useHydrated';
-import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
-import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
-import { ChartContent } from './ChartContent';
-import { AskAiInlineLink } from '@/widgets/ask-ai-fab/ui/AskAiInlineLink';
-import { pickAssetName } from '@/entities/ticker/lib/ticker';
-import { localePath } from '@/shared/i18n/locales';
-import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { symbolFactsSubject } from './utils/factsSubject';
-import { useMobileSheet } from './hooks/useMobileSheet';
-import { SNAP_FULL } from './constants/mobileSheet';
-import { useTimeframeChange } from './hooks/useTimeframeChange';
-import { SymbolPageProvider } from './SymbolPageContext';
-import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
-import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
 import type {
     AnalysisResponse,
     KrxTickTable,
     TierInfoDepth,
 } from '@y0ngha/siglens-core';
+import dynamic from 'next/dynamic';
+import { Suspense, useMemo, type ReactNode } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { pickAssetName } from '@/entities/ticker/lib/ticker';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import {
     DEFAULT_MARKET_PROFILE,
     getDescriptor,
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import dynamic from 'next/dynamic';
-import { Suspense, useMemo, type ReactNode } from 'react';
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+import { localePath } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { Spinner } from '@/shared/ui/Spinner';
-import { ErrorBoundary } from 'react-error-boundary';
+import { AskAiInlineLink } from '@/widgets/ask-ai-fab/ui/AskAiInlineLink';
+import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
+import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
+import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';
+import { ChartContent } from './ChartContent';
+import { SNAP_FULL } from './constants/mobileSheet';
+import { useMobileSheet } from './hooks/useMobileSheet';
+import { useTimeframeChange } from './hooks/useTimeframeChange';
+import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
+import { SymbolPageProvider } from './SymbolPageContext';
 import { ChartTimeframeBar } from './ui/chart/ChartTimeframeBar';
+import { symbolFactsSubject } from './utils/factsSubject';
 
 /**
  * `dynamic()`이 기대하는 default-export 모듈 형태. `MobileAnalysisSheet`는 named

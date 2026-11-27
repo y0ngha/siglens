@@ -1,15 +1,15 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 /**
  * `[symbol]/position` "내 위치" 탭의 진입점 — 하이드레이션 뒤 로그인 여부로 비회원 CTA와 회원 전용
  * 본문(지연 로딩 청크)을 가른다.
  */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { useTranslations } from 'next-intl';
-import dynamic from 'next/dynamic';
-import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { PositionCta } from './PositionCta';
 
 // Code-split: PositionTabMemberContent pulls in useSymbolHolding (the holdings

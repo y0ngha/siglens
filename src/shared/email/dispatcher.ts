@@ -1,11 +1,11 @@
-import { getRedisClient } from '@/shared/cache/redisClient';
 import { isE2E } from '@/shared/api/e2eEnv';
-import type { KeyedEmailDispatcher, KeyedEmailOutcome } from './types';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import { E2eEmailDispatcher } from './E2eEmailDispatcher';
 import {
     ResendEmailDispatcher,
     type ResendConfig,
 } from './ResendEmailDispatcher';
+import type { KeyedEmailDispatcher, KeyedEmailOutcome } from './types';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_FROM_ENV = 'EMAIL_FROM';

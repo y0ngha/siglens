@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { getSymbolFearGreedAction } from '@/entities/bars/actions/getSymbolFearGreedAction';
 import type { SymbolFearGreedSeries } from '@/entities/bars/model';
 import {

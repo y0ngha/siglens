@@ -39,9 +39,8 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import NewsHubPage, { generateMetadata } from '../page';
 
 describe('/news hub page는', () => {

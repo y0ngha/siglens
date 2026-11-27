@@ -1,6 +1,5 @@
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { SITE_URL } from '@/shared/lib/seo';
-
 import type { SitemapEntry } from '../model';
 import { sitemapAlternates } from './sitemapAlternates';
 

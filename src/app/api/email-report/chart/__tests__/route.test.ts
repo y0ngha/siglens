@@ -12,16 +12,16 @@ vi.mock('@/app/api/email-report/chart/_lib/loadChartDrawings', () => ({
 }));
 
 import type { Bar } from '@y0ngha/siglens-core';
+import { loadChartDrawings } from '@/app/api/email-report/chart/_lib/loadChartDrawings';
 import { GET } from '@/app/api/email-report/chart/route';
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
-import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
-import { loadChartDrawings } from '@/app/api/email-report/chart/_lib/loadChartDrawings';
 import {
     buildChartImageUrl,
     chartSignatureValue,
 } from '@/entities/email-report/lib/reportLinks';
 import { signReportValue } from '@/entities/email-report/lib/reportSignature';
+import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 
 const SECRET = 'chart-secret-chart-secret-chart-secret';
 const mockLoadBars = vi.mocked(loadBarsData);

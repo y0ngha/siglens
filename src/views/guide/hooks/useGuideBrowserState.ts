@@ -1,10 +1,10 @@
 'use client';
 
+import type { GuideCategory } from '@/entities/guide/types';
 import {
     usePickUntilPopstate,
     useUrlSearchParam,
 } from '@/shared/hooks/useUrlSearchParam';
-import type { GuideCategory } from '@/entities/guide/types';
 import {
     GUIDE_CATEGORY_PARAM,
     GUIDE_FILTER_ALL,

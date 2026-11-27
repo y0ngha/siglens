@@ -1,11 +1,11 @@
 'use client';
 
+import type { IndicatorHookParams } from '../model/chartHookParams';
 /**
  * 가격 아래 보조 패인에 그리는 지표(RSI·MACD·DMI·스토캐스틱 등)를 모두 연결하는 훅 — 각 지표를
  * 자기 가시성·패인 인덱스로 켜고 끈다.
  */
 import type { IndicatorKey } from '../model/indicatorRegistry';
-import type { IndicatorHookParams } from '../model/chartHookParams';
 import { LINE_PANE_SPECS } from '../model/linePaneSpecs';
 import type { PaneIndices } from '../types';
 import { useDMIChart } from './useDMIChart';

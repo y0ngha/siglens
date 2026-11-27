@@ -7,7 +7,6 @@ const { isE2EFakeMode } = vi.hoisted(() => ({ isE2EFakeMode: vi.fn() }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadAnalystTargetsSummary } from '@/entities/analyst-views/server/loadAnalystTargetsSummary';
 
 const views = (degraded: string[] = [], mean: number | null = 276.56) => ({

@@ -1,3 +1,7 @@
+import type {
+    FundamentalPriceTargetConsensusInput,
+    FundamentalPriceTargetSummaryInput,
+} from '@y0ngha/siglens-core';
 /**
  * 미래 방향 카드의 목표 주가 섹션(컨센서스 그리드 + 기간별 평균 요약).
  */
@@ -7,14 +11,10 @@ import {
     TARGET_DISAGREE_THRESHOLD_PCT,
     type AnalystTargetsSummary,
 } from '@/entities/analyst-views/model';
-import type {
-    FundamentalPriceTargetConsensusInput,
-    FundamentalPriceTargetSummaryInput,
-} from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { formatMoney } from '@/widgets/fundamental/utils/moneyFormat';
 
 interface PriceTargetSectionProps {

@@ -1,10 +1,10 @@
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { krExchangeOf } from '../lib/krExchange';
-import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
-import { isKoreanInput } from '../lib/ticker';
 import { pickYahooDisplayName } from '@/shared/api/yahoo/displayName';
-import type { TickerSearchResult } from '@/shared/lib/types';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
+import type { TickerSearchResult } from '@/shared/lib/types';
+import { krExchangeOf } from '../lib/krExchange';
+import { isKoreanInput } from '../lib/ticker';
 
 /**
  * 종목코드 형상 — KRX 단축코드(`KR_SHORT_CODE_PATTERN`, 영문 포함 가능), 거래소 접미사는 선택.

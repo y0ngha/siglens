@@ -1,17 +1,17 @@
-import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
+import {
+    SEO_WORST_CASE_KOREAN_NAME,
+    SEO_WORST_CASE_TICKER,
+} from '@/__tests__/utils/seoTitleFixtures';
 import { type SeoTranslator } from '@/shared/lib/seo';
+import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '@/shared/lib/seoClamp';
 import {
     buildCryptoSymbolSeoContent,
     buildCryptoSymbolNewsSeoContent,
     buildCryptoSymbolOverallSeoContent,
     buildCryptoSymbolFearGreedSeoContent,
 } from '@/shared/lib/seoSymbol';
-import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '@/shared/lib/seoClamp';
-import {
-    SEO_WORST_CASE_KOREAN_NAME,
-    SEO_WORST_CASE_TICKER,
-} from '@/__tests__/utils/seoTitleFixtures';
 
 // t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 builder 호출에 재사용한다.

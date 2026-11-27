@@ -129,12 +129,12 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import NewsPage, { generateMetadata } from '@/app/[locale]/[symbol]/news/page';
-import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 

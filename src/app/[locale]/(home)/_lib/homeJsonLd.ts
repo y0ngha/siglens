@@ -1,12 +1,12 @@
-import type { Locale } from '@/shared/i18n/locales';
 import { SECTOR_ETFS, SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
-import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
+import type { Locale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 import {
     brandIntroName,
     type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
 
 /**
  * 홈에 싣는 문항. 탭별 FAQ와 중복되거나 매매 조언 톤인 문항은 뺐고, 남긴 6개는

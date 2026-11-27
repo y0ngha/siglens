@@ -1,19 +1,18 @@
 import 'server-only';
-
-import { cache } from 'react';
-import { unstable_cache } from 'next/cache';
 import { eq, inArray } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
-import { getDatabaseClient } from '@/shared/db/client';
 import { RELEASE_ID } from '@/shared/config/release';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { guideEntries, guideEntryContents } from '@/shared/db/schema';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
 import { mapGuideRows } from './lib/mapGuideRows';
 import type { GuideCatalog } from './types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 가이드 데이터 캐시 태그·키 접두사. */
 export const GUIDE_CACHE_TAG = 'guide';

@@ -65,16 +65,15 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
     ),
 }));
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-
-import { OverallContent } from '@/widgets/overall/OverallContent';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import type { ReactNode } from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { OverallContent } from '@/widgets/overall/OverallContent';
 
 /**
  * `OverallContent`는 `tf`를 `useUrlSearchParam`(window.location)으로 읽는다 —

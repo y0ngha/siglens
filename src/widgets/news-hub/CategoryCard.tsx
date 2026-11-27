@@ -1,11 +1,11 @@
+import { cn } from '@/shared/lib/cn';
 /**
  * @file `/news`·`/news/us` 허브의 카드 하나 — 제목 링크, 소개, 다이제스트 한 줄,
  * 헤드라인 미리보기, `더보기` 링크.
  */
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
-import { CardTitleLink } from './ui/card/CardTitleLink';
 import { CardMoreLink } from './ui/card/CardMoreLink';
+import { CardTitleLink } from './ui/card/CardTitleLink';
 import { PreviewHeadlineList } from './ui/card/PreviewHeadlineList';
 
 /** Props for {@link CategoryCard}. */

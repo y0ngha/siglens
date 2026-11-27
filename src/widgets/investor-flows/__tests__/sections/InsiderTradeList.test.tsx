@@ -1,6 +1,6 @@
+import { render, screen, within } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
 import { InsiderTradeList } from '../../sections/InsiderTradeList';
 import { buildInsiderTable, MAX_INSIDER_ROWS } from '../../utils/insider';
 import { makeTransaction } from '../fixtures/flowsFixtures';

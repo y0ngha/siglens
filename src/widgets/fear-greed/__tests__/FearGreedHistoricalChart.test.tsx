@@ -1,10 +1,10 @@
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
 import { FEAR_GREED_SESSIONS_PER_YEAR } from '@/entities/market-fear-greed/lib/buildMarketFearGreedComparisons';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { FEAR_GREED_CHART_HEIGHT } from '@/widgets/fear-greed/constants';
+import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
 const {

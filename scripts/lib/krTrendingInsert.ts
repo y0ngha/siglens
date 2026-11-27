@@ -1,3 +1,4 @@
+import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 /**
  * 방문 기반 KR 후보를 `popular-tickers.ts`에 넣는 텍스트 편집 — 순수 함수.
  *
@@ -10,7 +11,6 @@
  * 검사가 깨진다. 라인 번호가 아니라 앵커 문자열로 위치를 찾고, 앵커가 없으면 던진다.
  */
 import { extractExistingKrTickers } from './visitCandidates';
-import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 
 export interface KrTrendingItem {
     symbol: string;

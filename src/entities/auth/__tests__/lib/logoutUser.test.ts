@@ -1,5 +1,5 @@
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import type { SessionRepository } from '@/shared/db/types';
 
 function makeDependencies(sessionInvalidated: boolean): {

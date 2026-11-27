@@ -4,8 +4,8 @@
  * - L102: safeCompareTokenHashes mismatch after consume
  */
 
-import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import type { ConfirmPasswordResetDependencies } from '@/entities/auth/lib/authUseCaseTypes';
+import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type { EmailTokenValue } from '@/entities/email-token/types';
 import type { EmailAuthUserRecord } from '@/shared/db/types';

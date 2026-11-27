@@ -1,30 +1,30 @@
-/**
- * 미래 방향 카드 — 애널리스트 추정치·목표 주가·등급 분포를 모으고, 보여 줄 것이 하나도 없으면
- * 빈 카드를 그린다.
- */
-import { useTranslations } from 'next-intl';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type {
-    AnalystEstimatePeriod,
-    AnalystTargetsSummary,
-} from '@/entities/analyst-views/model';
-import type { GradesConsensusSource } from '@/shared/api/fmp/gradesConsensusSource';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+/**
+ * 미래 방향 카드 — 애널리스트 추정치·목표 주가·등급 분포를 모으고, 보여 줄 것이 하나도 없으면
+ * 빈 카드를 그린다.
+ */
+import { useTranslations } from 'next-intl';
+import type {
+    AnalystEstimatePeriod,
+    AnalystTargetsSummary,
+} from '@/entities/analyst-views/model';
+import type { GradesConsensusSource } from '@/shared/api/fmp/gradesConsensusSource';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { hasGrades } from '@/widgets/fundamental/utils/gradeBands';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { EstimatesSection } from '@/widgets/fundamental/ui/future-direction/EstimatesSection';
 import { EstimateTrendSection } from '@/widgets/fundamental/ui/future-direction/EstimateTrendSection';
-import { visibleEstimatePeriods } from '@/widgets/fundamental/utils/estimateTrend';
 import { PriceTargetSection } from '@/widgets/fundamental/ui/future-direction/PriceTargetSection';
 import { RatingsSection } from '@/widgets/fundamental/ui/future-direction/RatingsSection';
+import { visibleEstimatePeriods } from '@/widgets/fundamental/utils/estimateTrend';
+import { hasGrades } from '@/widgets/fundamental/utils/gradeBands';
 
 const HEADING_ID = 'future-heading';
 const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);

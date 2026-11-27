@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import {
     EMPTY_INDICATOR_RESULT,
     type BarsData,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
-import { buildTechnicalFacts } from '../../lib/technicalFacts';
+import { describe, expect, it } from 'vitest';
 import { keepLastNonNull, toSeedBarsData } from '../../lib/seedBars';
+import { buildTechnicalFacts } from '../../lib/technicalFacts';
 
 /**
  * seed 축소 계약. 이게 풀리면 RSC 페이로드에 아무도 읽지 않는 지표 약 478KB가

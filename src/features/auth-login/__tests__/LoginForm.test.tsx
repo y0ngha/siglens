@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LoginForm } from '@/features/auth-login/ui/LoginForm';
 import { useLoginForm } from '@/features/auth-login/hooks/useLoginForm';
+import { LoginForm } from '@/features/auth-login/ui/LoginForm';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 
 vi.mock('@/shared/db/client', () => ({

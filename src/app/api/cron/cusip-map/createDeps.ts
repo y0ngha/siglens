@@ -1,4 +1,9 @@
 import 'server-only';
+import { createRedisCusipMissStore } from '@/entities/investor-flows/api/cusipMissStore';
+import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
+import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
+import type { SyncCikSymbolMapDeps } from '@/entities/investor-flows/server/syncCikSymbolMap';
+import type { SyncCusipMapDeps } from '@/entities/investor-flows/server/syncCusipMapTypes';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { isFmpTransientError } from '@/shared/api/fmp/fmpRetry';
 import { fetchFmpProfileIdentifiers } from '@/shared/api/fmp/profileIdentifiersClient';
@@ -10,11 +15,6 @@ import { fetchSecFile, isSecBlockedError } from '@/shared/api/sec/secClient';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { sleep } from '@/shared/lib/sleep';
 import { warnWithDetail } from '@/shared/lib/warnWithDetail';
-import { createRedisCusipMissStore } from '@/entities/investor-flows/api/cusipMissStore';
-import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
-import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
-import type { SyncCikSymbolMapDeps } from '@/entities/investor-flows/server/syncCikSymbolMap';
-import type { SyncCusipMapDeps } from '@/entities/investor-flows/server/syncCusipMapTypes';
 
 /** SEC CIK ↔ 티커 목록(`www.sec.gov/files/company_tickers.json`, ≈0.8MB). */
 export const COMPANY_TICKERS_PATH = '/files/company_tickers.json';

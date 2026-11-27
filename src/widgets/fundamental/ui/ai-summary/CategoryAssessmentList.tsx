@@ -1,8 +1,8 @@
+import type { FundamentalCategoryAssessment } from '@y0ngha/siglens-core';
 /**
  * AI 요약의 카테고리별 평가 목록.
  */
 import { useTranslations } from 'next-intl';
-import type { FundamentalCategoryAssessment } from '@y0ngha/siglens-core';
 import { CATEGORY_LABEL_KEY } from '@/widgets/fundamental/utils/categoryLabelKey';
 import { SentimentBadge } from './SentimentBadge';
 

@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
 import { EXTREME_ZONE_REENTRY_GAP } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { defined } from '@/shared/test-utils/defined';
 import { FearGreedExtremeZoneRecord } from '../FearGreedExtremeZoneRecord';
 import type { ExtremeZoneRecord } from '../utils/fearGreedFacts';

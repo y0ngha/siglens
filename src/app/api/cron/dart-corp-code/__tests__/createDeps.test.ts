@@ -3,8 +3,8 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dartFatalReason, realDartClient } from '@/shared/api/dart/dartClient';
 import { DrizzleInvestorFlowsDartRepository } from '@/entities/investor-flows/api/investorFlowsDartRepository';
+import { dartFatalReason, realDartClient } from '@/shared/api/dart/dartClient';
 import { createDartCorpCodeDeps } from '../createDeps';
 
 describe('createDartCorpCodeDeps', () => {

@@ -8,7 +8,6 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-
 import { BulletSection } from '@/widgets/overall/sections/BulletSection';
 
 const BASE = {

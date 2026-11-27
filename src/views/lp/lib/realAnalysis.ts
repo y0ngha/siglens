@@ -4,8 +4,8 @@
  * analysis logic lives here.
  */
 import type { Trend } from '@y0ngha/siglens-core';
-import { narrowTechnicalContent } from '@/entities/seo-snapshot/lib/technicalContent';
 import { readSnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
+import { narrowTechnicalContent } from '@/entities/seo-snapshot/lib/technicalContent';
 import type { SeoAnalysisSnapshot } from '@/entities/seo-snapshot/model';
 import {
     formatSnapshotAsOf,

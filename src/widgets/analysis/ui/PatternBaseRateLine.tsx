@@ -1,5 +1,6 @@
 'use client';
 
+import type { MeasuredBaseRate } from '@y0ngha/siglens-core';
 /**
  * 패턴 카드의 실측 base rate 줄 — 이 모양 뒤 목표가가 무효화보다 먼저 닿은 비율을
  * 같은 거리의 다른 날 가격과 나란히 보여 준다.
@@ -12,7 +13,6 @@
  * 측정된 우위가 없다고, 이기면(`beats_placebo`) 이겼지만 약속은 아니라고 적는다.
  */
 import { useTranslations } from 'next-intl';
-import type { MeasuredBaseRate } from '@y0ngha/siglens-core';
 import {
     baseRateScopeYears,
     formatShareAsPercent,

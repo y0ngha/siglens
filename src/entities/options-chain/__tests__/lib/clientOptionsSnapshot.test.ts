@@ -1,6 +1,6 @@
+import type { OptionsContract, OptionsSnapshot } from '@y0ngha/siglens-core';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { OptionsContract, OptionsSnapshot } from '@y0ngha/siglens-core';
 import {
     isInTheMoney,
     toClientOptionsSnapshot,

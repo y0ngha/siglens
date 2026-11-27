@@ -1,5 +1,5 @@
-import ko from '../../../../messages/ko.json';
 import { SIGNAL_TYPES, isSignalType } from '@/shared/config/signalTypes';
+import ko from '../../../../messages/ko.json';
 
 describe('SIGNAL_TYPES', () => {
     it('ko 라벨 카탈로그(shared.enumLabel.signalType)와 같은 집합이다', () => {

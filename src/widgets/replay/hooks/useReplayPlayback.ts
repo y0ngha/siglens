@@ -9,13 +9,13 @@ import {
     useState,
     type RefObject,
 } from 'react';
+import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
 import {
     completeFrame,
     runPlayback,
     type Frame,
     type PlaybackContext,
 } from '@/widgets/replay/utils/replayPlayer';
-import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
 import { useCanAnimate } from './useCanAnimate';
 
 /** What `useReplayPlayback` hands the replay chrome. */

@@ -1,22 +1,21 @@
 'use server';
 
 import { getTranslations } from 'next-intl/server';
-
-import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { DrizzleUserRepository } from '@/entities/auth/api';
-import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
-import { getDatabaseClient } from '@/shared/db/client';
+import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 재설정 토큰을 검증·소비하고 비밀번호를 바꾼 뒤 `/login?password_reset=1`로

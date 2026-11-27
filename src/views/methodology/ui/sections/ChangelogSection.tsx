@@ -2,8 +2,8 @@
  * `/methodology` "변경 이력" — 방법·정책이 바뀐 날과 내용.
  */
 import type { Locale } from '@/shared/i18n/locales';
-import type { MethodologySectionProps } from '../../types';
 import { methodologyChangelogItems } from '../../lib/methodologyChangelog';
+import type { MethodologySectionProps } from '../../types';
 import { MethodologySection } from '../layout/MethodologySection';
 
 interface Props extends MethodologySectionProps {

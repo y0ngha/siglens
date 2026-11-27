@@ -1,9 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
-import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { GuidePageHeader } from './ui/GuidePageHeader';
 
 interface GuideUnavailablePageProps {

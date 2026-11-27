@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
-import type { OverlayLegendItem } from '../../types';
 import { useOverlayGroups } from '../../hooks/useOverlayGroups';
+import type { OverlayLegendItem } from '../../types';
 
 describe('useOverlayGroups', () => {
     it('returns empty array for empty items', () => {

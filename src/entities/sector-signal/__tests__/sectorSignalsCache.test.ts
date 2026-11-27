@@ -23,11 +23,11 @@ vi.mock('@upstash/redis', () => ({
 
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
-import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;

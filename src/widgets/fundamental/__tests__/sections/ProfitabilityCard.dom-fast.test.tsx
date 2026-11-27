@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 
 const SAMPLE_RATIOS = {
     returnOnEquityTTM: 0.45,

@@ -1,13 +1,13 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
-import { OptionsOiStaleBadge } from './ui/options/OptionsOiStaleBadge';
 import { BulletSection } from './sections/BulletSection';
 import { IntegratedConclusion } from './sections/IntegratedConclusion';
 import { OverallSummary } from './sections/OverallSummary';
 import { ScenarioAnalysis } from './sections/ScenarioAnalysis';
+import { OptionsOiStaleBadge } from './ui/options/OptionsOiStaleBadge';
 import { hasOptionsSection } from './utils/optionsSection';
 
 interface OverallViewProps {

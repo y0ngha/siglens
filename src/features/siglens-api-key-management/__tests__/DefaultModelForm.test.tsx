@@ -1,11 +1,11 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DefaultModelForm } from '@/features/siglens-api-key-management/ui/DefaultModelForm';
 import {
     useApiDefaultModelForm,
     type ApiDefaultModelFormReturn,
 } from '@/features/siglens-api-key-management/hooks/useApiDefaultModelForm';
 import type { ApiModelOptionGroup } from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
+import { DefaultModelForm } from '@/features/siglens-api-key-management/ui/DefaultModelForm';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 vi.mock('react-dom', async importOriginal => ({

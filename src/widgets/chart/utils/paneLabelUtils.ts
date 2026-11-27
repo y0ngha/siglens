@@ -2,7 +2,6 @@
  * pane 인덱스에 따라 보조 pane 이름 라벨 설정을 만드는 유틸.
  */
 
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     CCI_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,
@@ -18,8 +17,9 @@ import {
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_SMOOTHING,
 } from '@y0ngha/siglens-core';
-import type { PaneIndices, PaneLabelConfig } from '../types';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { INACTIVE_PANE_INDEX } from '../constants';
+import type { PaneIndices, PaneLabelConfig } from '../types';
 
 const MACD_SIGNAL_LABEL = 'Signal';
 const MACD_HISTOGRAM_LABEL = 'Histogram';

@@ -4,9 +4,9 @@
  * 가격 pane(pane 0)의 폭·높이를 측정해 돌려주는 훅.
  */
 
+import type { IChartApi } from 'lightweight-charts';
 import type { RefObject } from 'react';
 import { useEffect, useState } from 'react';
-import type { IChartApi } from 'lightweight-charts';
 import type { PaneIndices } from '../types';
 
 export interface PricePaneSize {

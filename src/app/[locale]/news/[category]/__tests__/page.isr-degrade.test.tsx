@@ -55,8 +55,7 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
 }));
 
-import { NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
-
+import { render, screen } from '@testing-library/react';
 import {
     describe,
     it,
@@ -65,9 +64,9 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import CategoryNewsPage from '../page';
 import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
+import { NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+import CategoryNewsPage from '../page';
 
 const mockGetMarketNewsList = getMarketNewsCards as MockedFunction<
     typeof getMarketNewsCards

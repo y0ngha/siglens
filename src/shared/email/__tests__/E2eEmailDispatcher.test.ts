@@ -1,8 +1,8 @@
 import type { Redis } from '@upstash/redis';
-import { E2eEmailDispatcher } from '../E2eEmailDispatcher';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { E2eEmailDispatcher } from '../E2eEmailDispatcher';
 
 const tMail = catalogTranslator('entities.email-token.email');
 

@@ -1,6 +1,6 @@
+import { execSync } from 'node:child_process';
 import { test, expect } from '../support/fixtures';
 import { signupThrowawayUser } from '../support/signupThrowawayUser';
-import { execSync } from 'node:child_process';
 
 /**
  * Authed-by-filename Tier 2 spec — exercises the account-deletion flow

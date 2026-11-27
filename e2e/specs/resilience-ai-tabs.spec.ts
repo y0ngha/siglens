@@ -1,8 +1,8 @@
-import { test, expect } from '../support/fixtures';
 import {
     E2E_FORCE_FINANCIALS_ERROR_COOKIE,
     E2E_FORCE_CONGRESS_ERROR_COOKIE,
 } from '@/shared/api/e2eAnalysisStub';
+import { test, expect } from '../support/fixtures';
 
 /**
  * AI 탭 위젯 회복성 (financials / congress) — 에러 바운더리 → 재시도 → 복구.

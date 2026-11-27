@@ -6,20 +6,20 @@ import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards'
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { CALENDAR_COUNTRY_KR } from '@/entities/economy/lib/economyCalendarConstants';
-import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
-import { EconomyKrMacroFacts } from '@/widgets/economy/sections/EconomyKrMacroFacts';
-import { KrEconomicIndicatorGrid } from '@/widgets/economy/sections/KrEconomicIndicatorGrid';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
+import { EconomyKrMacroFacts } from '@/widgets/economy/sections/EconomyKrMacroFacts';
+import { KrEconomicIndicatorGrid } from '@/widgets/economy/sections/KrEconomicIndicatorGrid';
 import { calendarEventsForClient } from '../../_lib/calendarEventsForClient';
 import { isKrEconomyDegraded } from '../../_lib/economyDegraded';
 import { buildEconomyPageJsonLd } from '../../_lib/economyJsonLd';
 import { requestNow } from '../../_lib/requestNow';
 import { economyKrDescription, economyKrTitle } from '../../constants';
 import { KrEconomyDegraded } from './KrEconomyDegraded';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/economy/kr` 본문의 서버 데이터 섹션(지표 카드·캘린더) — 페이지 셸이 Suspense 없이 그린다.

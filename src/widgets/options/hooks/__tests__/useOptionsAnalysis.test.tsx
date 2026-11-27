@@ -1,10 +1,10 @@
-import type { Mock } from 'vitest';
-import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
+import type { Mock } from 'vitest';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

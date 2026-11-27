@@ -1,10 +1,10 @@
 import { act, render } from '@testing-library/react';
-import { vi } from 'vitest';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+import { vi } from 'vitest';
 import { NotFoundLayout } from '@/app/_components/NotFoundLayout';
-import { NotFoundView } from '@/app/_components/NotFoundView';
 import { buildOverrides } from '@/app/_components/notFoundOverrides';
+import { NotFoundView } from '@/app/_components/NotFoundView';
 import RootNotFound from '../not-found';
 
 /**

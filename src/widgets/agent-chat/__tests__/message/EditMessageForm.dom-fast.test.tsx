@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import ko from '../../../../../messages/ko.json';
-import { EditMessageForm } from '@/widgets/agent-chat/message/EditMessageForm';
 import { MESSAGE_MAX_CHARS } from '@/features/agent-chat/lib/messageLimits';
+import { EditMessageForm } from '@/widgets/agent-chat/message/EditMessageForm';
+import ko from '../../../../../messages/ko.json';
 
 const labels = ko.widgets['agent-chat'].MessageList;
 

@@ -1,5 +1,5 @@
-import { resolveConflicts } from '@/entities/analysis/lib/resolveConflicts';
 import type { Signal, StockSignalResult } from '@y0ngha/siglens-core';
+import { resolveConflicts } from '@/entities/analysis/lib/resolveConflicts';
 
 function buildSignal(
     direction: 'bullish' | 'bearish',

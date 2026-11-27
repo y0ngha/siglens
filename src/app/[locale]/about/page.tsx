@@ -1,7 +1,14 @@
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { countSkillFiles } from '@/entities/skill/api';
+import { getTranslations } from 'next-intl/server';
+import {
+    buildAboutBreadcrumbJsonLd,
+    buildAboutJsonLd,
+    buildAboutPersonJsonLd,
+} from '@/app/[locale]/about/_lib/aboutJsonLd';
+import { buildAboutMetadata } from '@/app/[locale]/about/_lib/aboutMetadata';
 import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
+import { countSkillFiles } from '@/entities/skill/api';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     aboutTitle,
@@ -15,13 +22,6 @@ import {
     EMPTY_SKILL_COUNTS,
     getAboutFaq,
 } from '@/views/about/lib/aboutContent';
-import {
-    buildAboutBreadcrumbJsonLd,
-    buildAboutJsonLd,
-    buildAboutPersonJsonLd,
-} from '@/app/[locale]/about/_lib/aboutJsonLd';
-import { buildAboutMetadata } from '@/app/[locale]/about/_lib/aboutMetadata';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 본문이 메시지 카탈로그와 코드 상수라 배포 자체가 갱신이므로, 하루 재검증이면 충분하다
 // (`/methodology`·`/terms`·`/privacy`와 같은 근거). 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).

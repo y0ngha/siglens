@@ -1,7 +1,7 @@
 import 'server-only';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { readHubSsrSeed, writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 
 /** 마지막으로 **실제 생성된** 브리핑과 그 생성 시각. */
 export interface LatestMarketBriefing {

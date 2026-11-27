@@ -30,11 +30,10 @@ vi.mock('next/navigation', () => ({
 // local `toFixed`, not from the stats the page derives, so a page that reads the wrong field (or
 // swaps two) fails. The page tree is real (no widget mocks) and rendered the way SSR renders it.
 import { renderToStaticMarkup } from 'react-dom/server';
-
-import BacktestingPage from '@/app/[locale]/backtesting/page';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+import BacktestingPage from '@/app/[locale]/backtesting/page';
 import backtestData from '@/entities/backtest-case/data/data.json';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import summary from '../../../../../backtest-results/2026-11-daily-ai/summary.json';
 
 const bench = backtestData.benchmarks;

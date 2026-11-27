@@ -1,8 +1,8 @@
 vi.mock('server-only', () => ({}));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { IndicatorTranslationRecord } from '@/shared/db/types';
 import { DrizzleIndicatorTranslationRepository } from '@/entities/economy/api/indicatorTranslationRepository';
+import type { IndicatorTranslationRecord } from '@/shared/db/types';
 
 /** Chainable select/from/where + insert/values/onConflictDoUpdate stub. */
 function makeDb(selectRows: unknown[]) {

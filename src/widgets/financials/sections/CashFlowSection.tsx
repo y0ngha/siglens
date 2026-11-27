@@ -1,24 +1,24 @@
+import type { CashFlowRow } from '@y0ngha/siglens-core';
 /**
  * 현금흐름표 섹션 — 영업CF·FCF·CapEx 추세 차트와 전체 지표 표.
  */
 import { useTranslations } from 'next-intl';
-import type { CashFlowRow } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     CapExTooltip,
     FcfTooltip,
     FcfMarginTooltip,
 } from '../financialsTooltips';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { StatementSectionFrame } from '../ui/statement-section/StatementSectionFrame';
-import { TrendAndTable } from './TrendAndTable';
+import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
+import { statementColumnLabel } from '../utils/statementColumnLabel';
 import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from '../utils/statementCurrency';
 import { toDisplayOrder } from '../utils/toDisplayOrder';
-import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
-import { statementColumnLabel } from '../utils/statementColumnLabel';
+import { TrendAndTable } from './TrendAndTable';
 
 interface CashFlowSectionProps {
     rows: CashFlowRow[];

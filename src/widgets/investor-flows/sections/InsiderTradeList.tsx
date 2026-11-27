@@ -1,16 +1,16 @@
+import type { InvestorFlowsWindow } from '@y0ngha/siglens-core';
 /**
  * 내부자 매수·매도 거래 목록 — 점수 창 안 거래와, 창 밖(시작 전·끝난 뒤) 거래를 묶음으로 나눠 보인다.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsWindow } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { formatInteger } from '../utils/flowFormat';
-import type { InsiderTableData } from '../utils/insider';
 import { OutsideWindowGroup } from '../ui/insider/OutsideWindowGroup';
 import { TradeRecords } from '../ui/insider/TradeRecords';
 import { OmittedNote } from '../ui/notes/OmittedNote';
+import { formatInteger } from '../utils/flowFormat';
+import type { InsiderTableData } from '../utils/insider';
 
 interface InsiderTradeListProps {
     readonly table: InsiderTableData;

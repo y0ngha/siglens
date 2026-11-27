@@ -1,8 +1,8 @@
+import type { LargeHolderFiling } from '@y0ngha/siglens-core';
 /**
  * 대량보유(13D·13G) 공시 카드 한 장 — 신고인·종류 배지·신고일·양식·지분율·주식 수·원문 링크.
  */
 import { useTranslations } from 'next-intl';
-import type { LargeHolderFiling } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';

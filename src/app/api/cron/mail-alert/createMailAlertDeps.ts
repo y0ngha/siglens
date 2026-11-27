@@ -1,17 +1,18 @@
 import 'server-only';
+import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
+import { getReportSignalLabelResolver } from '@/entities/email-report/server';
 import {
     DrizzleMailAlertSubscriberRepository,
     DrizzleMailAlertDeliveryRepository,
     DrizzlePriceAlertRepository,
 } from '@/entities/mail-alert/api';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
+import type { MailAlertFearGreedMarket } from '@/entities/mail-alert/model';
 import {
     getMailAlertDisclaimer,
     getMailAlertEmailTranslator,
 } from '@/entities/mail-alert/server/mailAlertEmailI18n';
-import { getReportSignalLabelResolver } from '@/entities/email-report/server';
-import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
-import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { getCachedMarketFearGreed } from '@/entities/market-fear-greed/api/marketFearGreedCache';
 import { getCachedMarketFearGreedCrypto } from '@/entities/market-fear-greed/api/marketFearGreedCryptoCache';
 import { getCachedMarketFearGreedKr } from '@/entities/market-fear-greed/api/marketFearGreedKrCache';
@@ -20,12 +21,11 @@ import { DrizzleSignalHistoryRepository } from '@/entities/signal-history/api';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
-import { getDatabaseClient } from '@/shared/db/client';
-import { resolveTierOnly } from '@/shared/lib/byokGate';
-import type { KeyedEmailDispatcher } from '@/shared/email/types';
-import { SITE_URL } from '@/shared/lib/seo';
-import type { MailAlertFearGreedMarket } from '@/entities/mail-alert/model';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { KeyedEmailDispatcher } from '@/shared/email/types';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
+import { SITE_URL } from '@/shared/lib/seo';
 import { createSymbolBriefSources } from '../email-report/loadSymbolBrief';
 import type { StoredChangeReference } from './collectAlertSources';
 import type { MailAlertBatchDeps } from './runMailAlertBatch';

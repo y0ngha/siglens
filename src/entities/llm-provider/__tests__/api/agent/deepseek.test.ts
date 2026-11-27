@@ -7,10 +7,9 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { callDeepseekAgent } from '@/entities/llm-provider/api/agent/deepseek';
 import { AGENT_TOOL_SPECS, type AgentStreamEvent } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { callDeepseekAgent } from '@/entities/llm-provider/api/agent/deepseek';
 
 async function* chunks(items: unknown[]) {
     for (const i of items) yield i;

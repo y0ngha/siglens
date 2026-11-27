@@ -1,8 +1,8 @@
+import type { InsiderTransaction } from '@y0ngha/siglens-core';
 /**
  * 내부자 거래 종류 배지(매수 ▲ / 매도 ▼) — 색 + 기호 + 글자.
  */
 import { useTranslations } from 'next-intl';
-import type { InsiderTransaction } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 
 type TradeSide = 'buy' | 'sell';

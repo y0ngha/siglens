@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { LazyFearGreedHistoricalChart } from '@/widgets/fear-greed/LazyFearGreedHistoricalChart';
 import { FEAR_GREED_CHART_HEIGHT } from '@/widgets/fear-greed/constants';
+import { LazyFearGreedHistoricalChart } from '@/widgets/fear-greed/LazyFearGreedHistoricalChart';
 
 // 실제 차트는 lightweight-charts(캔버스)라 jsdom에서 못 그린다.
 const { chartMounts } = vi.hoisted(() => ({

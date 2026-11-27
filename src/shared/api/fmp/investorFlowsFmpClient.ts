@@ -1,14 +1,12 @@
-import { fmpGet } from './httpClient';
-import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
 import {
     fetchSubmissionsJson,
     submissionsFileName,
 } from '@/shared/api/sec/secClient';
-import {
-    accessionFromFilingUrl,
-    indexSubmissions,
-    indexSubmissionsFile,
-} from './largeHolderForms';
+import { MS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
+import { fmpGet } from './httpClient';
 import type {
     InvestorFlowsFmpProvider,
     RawBeneficialOwnership,
@@ -16,9 +14,11 @@ import type {
     RawInsiderTrade,
     RawSharesFloat,
 } from './investorFlowsProvider.types';
-import { MS_PER_DAY } from '@/shared/config/time';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import {
+    accessionFromFilingUrl,
+    indexSubmissions,
+    indexSubmissionsFile,
+} from './largeHolderForms';
 
 /** FMP `insider-trading/search`의 페이지 크기. 한 페이지가 가득 차야 다음 페이지가 있을 수 있다. */
 export const INSIDER_PAGE_SIZE = 200;

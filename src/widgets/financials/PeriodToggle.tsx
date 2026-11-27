@@ -1,10 +1,10 @@
 'use client';
 
+import type { StatementPeriod } from '@y0ngha/siglens-core';
 /**
  * 연간/분기 분할 토글.
  */
 import { useTranslations } from 'next-intl';
-import type { StatementPeriod } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 
 const PERIODS: StatementPeriod[] = ['annual', 'quarter'];

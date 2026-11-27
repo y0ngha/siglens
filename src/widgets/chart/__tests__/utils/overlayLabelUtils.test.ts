@@ -1,12 +1,12 @@
+import { EMPTY_SMC_RESULT } from '@y0ngha/siglens-core';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
 import {
     buildOverlayLabelConfigs,
     findBarIndex,
     resolveBarIndex,
     resolveOverlayValues,
 } from '@/widgets/chart/utils/overlayLabelUtils';
-import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
-import { EMPTY_SMC_RESULT } from '@y0ngha/siglens-core';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
 const mockBars: Bar[] = [
     { time: 100, open: 10, high: 15, low: 9, close: 12, volume: 1000 },

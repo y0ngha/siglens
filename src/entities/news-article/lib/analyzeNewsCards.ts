@@ -1,5 +1,6 @@
 import 'server-only';
 import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import type { DrizzleNewsRepository } from '../api';
 import {
@@ -7,7 +8,6 @@ import {
     recordNewsCardFailures,
 } from '../server/newsCardFailureBackoff';
 import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from './newsAnalysisConstants';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 기사 한 건을 카드 분석(번역 + 라벨링)해 DB에 반영한다.

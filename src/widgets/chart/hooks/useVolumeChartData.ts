@@ -1,14 +1,14 @@
 'use client';
 
+import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 /**
  * 거래량 차트 시리즈 데이터 동기화 훅.
  */
 import { type RefObject, useEffect, useRef } from 'react';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { NO_EXTENDED_BARS } from '@/shared/api/market/extendedBarsSession';
-import { tailAligned } from '../utils/seriesDataUtils';
 import { buildTotalVolumeData } from '../utils/extendedBarsDisplay';
-import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import { tailAligned } from '../utils/seriesDataUtils';
 
 interface UseVolumeChartDataOptions {
     chartRef: RefObject<IChartApi | null>;

@@ -1,18 +1,17 @@
 import 'server-only';
 import type { NextRequest, NextResponse } from 'next/server';
+import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import {
+    aiSignedOutUrl,
+    resolveHandoffNext,
+} from '@/entities/auth/lib/handoffRedirect';
 import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
 } from '@/entities/auth/lib/sessionCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { DrizzleSessionRepository } from '@/entities/auth/api';
-import { getDatabaseClient } from '@/shared/db/client';
-import {
-    aiSignedOutUrl,
-    resolveHandoffNext,
-} from '@/entities/auth/lib/handoffRedirect';
 import {
     consumeHandoffCode,
     handoffStateCookie,
@@ -20,9 +19,10 @@ import {
     type HandoffPayload,
 } from '@/entities/auth/server/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 

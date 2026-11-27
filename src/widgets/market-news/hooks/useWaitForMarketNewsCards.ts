@@ -1,21 +1,21 @@
 'use client';
 
+import { useRef, useState } from 'react';
 /**
  * 다이제스트가 기다리는 "보강된 카드가 하나라도 생김" 조건의 폴링 훅.
  */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
-import { useRef, useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import {
     type CardWaitPollPolicy,
     decideCardWaitPoll,
     hasAnyEnrichedCard,
     INITIAL_CARD_POLL_COUNTERS,
 } from '@/entities/news-article/lib/cardPollDecision';
+import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { fetchMarketNewsCards } from '../utils/fetchMarketNewsCards';
 import { marketNewsCardsWaitKey } from '../utils/marketNewsCardsWaitKey';
 import { useHiddenDuration } from './useHiddenDuration';

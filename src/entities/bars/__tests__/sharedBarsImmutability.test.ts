@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
     US_EQUITY_SESSION,
     fetchBarsWithIndicators,
@@ -7,6 +6,7 @@ import {
     type GetBarsOptions,
     type MarketDataProvider,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { quantizeBarsDataToLastClosed } from '../lib/quantizeBars';
 import {
     clientSymbolFearGreed,

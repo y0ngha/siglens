@@ -10,17 +10,17 @@ vi.mock('@/shared/cache/redisClient', () => ({
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { withNewsCardAnalysisLock } from '@/entities/news-article/server/newsCardAnalysisLock';
 import {
-    NEWS_REFRESH_FLAG_TTL_SECONDS,
-    NEWS_REFRESH_RETRY_TTL_SECONDS,
-    shortenNewsRefreshClaim,
-    tryClaimNewsRefresh,
-} from '@/entities/news-article/server/newsRefreshFlag';
-import {
     loadNewsCardFailures,
     nextFailureState,
     recordNewsCardFailures,
     retryDelayMs,
 } from '@/entities/news-article/server/newsCardFailureBackoff';
+import {
+    NEWS_REFRESH_FLAG_TTL_SECONDS,
+    NEWS_REFRESH_RETRY_TTL_SECONDS,
+    shortenNewsRefreshClaim,
+    tryClaimNewsRefresh,
+} from '@/entities/news-article/server/newsRefreshFlag';
 import { MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 
 describe('tryClaimNewsRefresh', () => {

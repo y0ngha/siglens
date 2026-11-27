@@ -1,7 +1,7 @@
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
-import { defined } from '@/shared/test-utils/defined';
 import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
+import { defined } from '@/shared/test-utils/defined';
 import {
     hubSlugsFor,
     resolveLiveTargets,

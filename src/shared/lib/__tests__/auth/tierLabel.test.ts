@@ -1,5 +1,5 @@
-import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import type { Tier } from '@y0ngha/siglens-core';
+import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 
 const ALL_TIERS: Tier[] = ['free', 'member', 'pro'];
 

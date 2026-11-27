@@ -6,27 +6,27 @@
  */
 
 import { getLocale } from 'next-intl/server';
-import { redirect } from 'next/navigation';
-import { localeHref } from '@/shared/i18n/localeRedirect';
 import { cookies, headers } from 'next/headers';
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { createExpiredSessionCookie } from '@/entities/auth/lib/sessionCookie';
-import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
-import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
-import { logoutUser } from '@/entities/auth/lib/logoutUser';
+import { redirect } from 'next/navigation';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
-import { getDatabaseClient } from '@/shared/db/client';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { aiSignedOutUrl } from '@/entities/auth/lib/handoffRedirect';
+import { logoutUser } from '@/entities/auth/lib/logoutUser';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import { createExpiredSessionCookie } from '@/entities/auth/lib/sessionCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { issueLogoutCode } from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { localeHref } from '@/shared/i18n/localeRedirect';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';
-import { SITE_URL } from '@/shared/lib/seo';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { SITE_URL } from '@/shared/lib/seo';
 
 /** `getLocale()`의 문자열을 지원 로케일로 좁힌다 — 핸드오프 URL과 `aiSignedOutUrl`이 `Locale`을 받는다. */
 async function requestLocale(): Promise<Locale> {

@@ -1,8 +1,8 @@
-import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 import {
     createAuthHintCookie,
     createExpiredAuthHintCookie,
 } from '@/entities/auth/lib/authHintCookie';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 describe('createAuthHintCookie', () => {
     it('쿠키 이름, 값, 경로, sameSite가 올바르게 설정된다', () => {

@@ -1,12 +1,12 @@
+import type { FundamentalGradesConsensusInput } from '@y0ngha/siglens-core';
 /**
  * 미래 방향 카드의 애널리스트 등급 섹션(제목·툴팁·분포 막대).
  */
 import { useTranslations } from 'next-intl';
-import type { FundamentalGradesConsensusInput } from '@y0ngha/siglens-core';
 import type { GradesConsensusSource } from '@/shared/api/fmp/gradesConsensusSource';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { totalGrades } from '@/widgets/fundamental/utils/gradeBands';
 import { GradesBar } from './GradesBar';
 

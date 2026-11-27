@@ -8,22 +8,22 @@ vi.mock('@/shared/hooks/useHumanInteracted', () => ({
     useHumanInteracted: vi.fn(),
 }));
 
-import { act, renderHook } from '@testing-library/react';
 import {
     focusManager,
     QueryClient,
     QueryClientProvider,
 } from '@tanstack/react-query';
+import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getExtendedHoursQuoteAction } from '@/entities/extended-hours/actions/getExtendedHoursQuoteAction';
 import { useExtendedHoursQuote } from '@/entities/extended-hours/hooks/useExtendedHoursQuote';
 import type { ExtendedHoursQuote } from '@/entities/extended-hours/model';
-import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import {
     EXTENDED_QUOTE_REFETCH_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
+import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { skipsVersionSkewReload } from '@/shared/lib/reloadOnVersionSkew';
 
 const mockedAction = vi.mocked(getExtendedHoursQuoteAction);

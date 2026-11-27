@@ -5,8 +5,8 @@
  */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** 제목과 안내 문구만 있는 카드. */
 export function AnalystActionsEmpty() {

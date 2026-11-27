@@ -1,28 +1,28 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * Trade-volume-by-strike chart. Orchestrates the view model, the pointer hook
  * and the shared strike-chart pieces; drawing details live in `ui/`.
  */
 import { useMemo } from 'react';
-import { STRIKE_CHART_ELEMENT_IDS } from './utils/chartElementIds';
-import { useTranslations } from 'next-intl';
 import type { ClientOptionsChain } from '@/entities/options-chain/lib/clientOptionsSnapshot';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useStrikeBarChart } from './hooks/useStrikeBarChart';
-import { formatCompactCount } from './utils/formatCompactCount';
-import { BAR_OPACITY, SVG_HEIGHT, SVG_WIDTH } from './utils/strikeChartLayout';
-import { buildStrikeVolumeChartModel } from './utils/strikeVolumeChartModel';
 import { ChartEmptyCard } from './ui/strike-chart/ChartEmptyCard';
 import { StrikeAxisLabels } from './ui/strike-chart/StrikeAxisLabels';
 import { StrikeBars } from './ui/strike-chart/StrikeBars';
-import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
-import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
 import { StrikeChartScale } from './ui/strike-chart/StrikeChartScale';
 import { StrikeGuideLines } from './ui/strike-chart/StrikeGuideLines';
+import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
+import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
 import { StrikeVolumeLegend } from './ui/volume-chart/StrikeVolumeLegend';
 import { StrikeVolumeTooltipBody } from './ui/volume-chart/StrikeVolumeTooltipBody';
+import { STRIKE_CHART_ELEMENT_IDS } from './utils/chartElementIds';
+import { formatCompactCount } from './utils/formatCompactCount';
+import { BAR_OPACITY, SVG_HEIGHT, SVG_WIDTH } from './utils/strikeChartLayout';
+import { buildStrikeVolumeChartModel } from './utils/strikeVolumeChartModel';
 
 interface StrikeVolumeChartProps {
     /** Spot price used to anchor the current-price guide line. */

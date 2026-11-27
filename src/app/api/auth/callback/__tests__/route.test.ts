@@ -47,15 +47,14 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
     sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
 
-import type { Mocked, MockedFunction, MockedClass } from 'vitest';
-
 import { NextRequest } from 'next/server';
+import type { Mocked, MockedFunction, MockedClass } from 'vitest';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
-import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
+import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import {
     getOAuthAdapter,

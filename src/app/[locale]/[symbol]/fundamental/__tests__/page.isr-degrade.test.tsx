@@ -272,6 +272,7 @@ vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { render, screen } from '@testing-library/react';
 import React, { isValidElement } from 'react';
 import {
     describe,
@@ -281,9 +282,6 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { PROFILE_DESCRIPTION_TIMEOUT_MS } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
-import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
 import {
     ProfileSection,
     ValuationSection,
@@ -293,12 +291,6 @@ import {
     FinancialHealthSection,
     FutureDirectionSection,
 } from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import {
-    flagNoindexDegradedRender,
-    shortenRevalidateForRuntimeDegrade,
-} from '@/shared/cache/buildDegradedRevalidate';
 import {
     getProfile,
     getProfileDescription,
@@ -312,6 +304,14 @@ import {
     getPriceTargetConsensus,
     getPriceTargetSummary,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
+import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
+import { PROFILE_DESCRIPTION_TIMEOUT_MS } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import {
+    flagNoindexDegradedRender,
+    shortenRevalidateForRuntimeDegrade,
+} from '@/shared/cache/buildDegradedRevalidate';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

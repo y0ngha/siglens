@@ -1,6 +1,7 @@
 /** `siglens.io/about`: the intro page view the `[locale]/about` route renders. */
 import type { SkillCounts } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
+import type { BenchmarkRelease } from '@/entities/benchmark/types';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
@@ -9,7 +10,6 @@ import { SITE_HOST, type FaqItem } from '@/shared/lib/seo';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
-import type { BenchmarkRelease } from '@/entities/benchmark/types';
 import { BenchmarkResultSummary } from '@/widgets/benchmark-summary/BenchmarkResultSummary';
 import { ReportReplay } from '@/widgets/replay/ReportReplay';
 import { buildReportScenarios } from './lib/aboutContent';

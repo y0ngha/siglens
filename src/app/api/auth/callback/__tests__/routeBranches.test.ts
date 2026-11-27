@@ -65,9 +65,8 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
     sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
 
-import type { MockedFunction, MockedClass } from 'vitest';
-
 import { NextRequest } from 'next/server';
+import type { MockedFunction, MockedClass } from 'vitest';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
 import {
     DrizzleSessionRepository,

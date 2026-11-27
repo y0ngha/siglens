@@ -1,5 +1,4 @@
 import 'server-only';
-
 import type { EmailTokenStore } from '@/entities/email-token/types';
 import type {
     MailAlertOwner,
@@ -15,8 +14,8 @@ import {
     MAIL_ALERT_MAX_TOPICS,
     MAIL_ALERT_RATE_LIMITS,
 } from '../lib/mailAlertConstants';
-import { isPriceAlertLive, priceAlertAsOf } from '../lib/priceAlertExpiry';
 import { maskEmail } from '../lib/maskEmail';
+import { isPriceAlertLive, priceAlertAsOf } from '../lib/priceAlertExpiry';
 import { parseTopicInput, rowToTopic, topicToRow } from '../lib/topics';
 import type {
     MailAlertAddResult,

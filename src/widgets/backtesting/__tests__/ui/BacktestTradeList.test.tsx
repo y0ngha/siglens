@@ -9,9 +9,7 @@ vi.mock('../../BacktestTradeRow', () => ({
 
 import { render, screen } from '@testing-library/react';
 import type { BacktestTrade } from '@y0ngha/siglens-core';
-
 import { toTradeRows } from '@/entities/backtest-case/lib/tradeRows';
-
 import { BacktestTradeList } from '../../BacktestTradeList';
 
 /** 행 모델은 app 레이어가 만든다 — 테스트는 같은 변환(`toTradeRows`)을 거쳐 넘긴다. */

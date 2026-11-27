@@ -2,16 +2,16 @@ import { dashboardScopeOf } from '@/shared/config/dashboardScope';
 import { KR_SHORT_CODE_RE, KR_SYMBOL_RE } from '@/shared/config/ticker';
 import { KR_INDEX_UNIVERSE_SNAPSHOT } from '../krIndexUniverse.generated';
 import {
-    KR_INDEX_COUNT_TOLERANCE,
-    KR_INDEX_SIZE,
-    US_SP500_COUNT_RANGE,
-} from '../signalScanUniverseConstants';
-import {
     SIGNAL_SCAN_UNIVERSE_AS_OF,
     SIGNAL_SCAN_UNIVERSE_SIZE,
     signalScanTargets,
     type SignalScanMarket,
 } from '../signalScanUniverse';
+import {
+    KR_INDEX_COUNT_TOLERANCE,
+    KR_INDEX_SIZE,
+    US_SP500_COUNT_RANGE,
+} from '../signalScanUniverseConstants';
 import { US_SP500_SNAPSHOT } from '../usSp500.generated';
 
 const MARKETS: readonly SignalScanMarket[] = ['us', 'kr'];

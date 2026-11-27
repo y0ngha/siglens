@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import {
     INDICATOR_REGISTRY,
     INDICATOR_META,
@@ -8,7 +9,6 @@ import {
     type IndicatorBinding,
     type IndicatorKey,
 } from '../../model/indicatorRegistry';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
     return { meta: INDICATOR_META[key], active };

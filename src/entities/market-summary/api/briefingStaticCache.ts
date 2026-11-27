@@ -4,11 +4,11 @@ import {
     type MarketSummaryData,
     peekBriefingCache,
 } from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
-import { marketBriefingContextOf } from '../lib/marketBriefingContext';
-import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 import { cacheNonNull } from '@/shared/cache/cacheNonNull';
+import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { marketBriefingContextOf } from '../lib/marketBriefingContext';
 
 /**
  * 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. **시장별로 갈라야 한다** — 한 키를

@@ -1,3 +1,4 @@
+import type { FilingRetry, OfferingFilingRow, OfferingKind } from '../model';
 import { addDays } from './investorFlowsDates';
 import {
     INVESTOR_FLOWS_FORM144_RETENTION_DAYS,
@@ -12,7 +13,6 @@ import {
     secFilingIndexUrl,
     type IndexTarget,
 } from './offeringIndex';
-import type { FilingRetry, OfferingFilingRow, OfferingKind } from '../model';
 
 /** 같은 날 index를 다시 읽는 겹침(일) — 늦게 반영된 제출·직전 실행이 중단된 날을 주운다. */
 export const SEC_FILINGS_CURSOR_OVERLAP_DAYS = 3;

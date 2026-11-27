@@ -1,12 +1,12 @@
-import { startTransition } from 'react';
 import type { AgentRemaining } from '@y0ngha/siglens-core';
+import { startTransition } from 'react';
 import {
     AGENT_TIME_ZONE_HEADER,
     ANALYSIS_LOCALE_HEADER,
     splitLocalePath,
 } from '@/shared/i18n/locales';
-import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 import { isPlainRecord } from '@/shared/lib/isPlainRecord';
+import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 import type { AgentStreamStatus, AgentUiMessage } from '../model/types';
 import { HttpError, TurnFrameError } from './agentStreamErrors';
 import {

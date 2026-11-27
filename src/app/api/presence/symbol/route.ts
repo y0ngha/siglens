@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 /**
  * 종목 조회수 수집점. `SymbolViewPing`이 종목당 하루 한 번, 첫 신뢰 입력 뒤에 부른다.
  *
@@ -8,7 +9,6 @@
  * FMP·DB로 다시 검증하므로 무해하다. 행 수 상한은 보존 기간이 정한다.
  */
 import { constants } from 'node:http2';
-import { headers } from 'next/headers';
 import {
     createDailyPruner,
     noContent,
@@ -20,9 +20,9 @@ import {
 } from '@/entities/symbol-view/api';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
 

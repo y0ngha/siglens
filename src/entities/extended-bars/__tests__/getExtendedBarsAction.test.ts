@@ -5,11 +5,11 @@ vi.mock('@/entities/auth/server/resolveCallerTier', () => ({
     resolveCallerTier: vi.fn(),
 }));
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Bar, Tier } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
 import { getExtendedBarsAction } from '@/entities/extended-bars/actions/getExtendedBarsAction';
 import { loadExtendedBars } from '@/entities/extended-bars/api';
-import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
 
 const mockedLoad = vi.mocked(loadExtendedBars);
 const mockedTier = vi.mocked(resolveCallerTier);

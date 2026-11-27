@@ -1,9 +1,9 @@
+import type { FinancialsScorecard as FinancialsScorecardData } from '@y0ngha/siglens-core';
 /**
  * 재무 스코어카드 위젯 — 종합 게이지와 4축 카드. SSR 안전·동기 렌더이며 미리 계산된
  * `FinancialsScorecard`를 prop으로 받는다.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialsScorecard as FinancialsScorecardData } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

@@ -9,16 +9,16 @@
  * - Empty groups array (zero group bars)
  */
 import { render, screen } from '@testing-library/react';
-import { beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { FearGreedShareView } from '../FearGreedShareView';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import {
     sentimentLabelText,
     WARNING_TEXT_KEY,
 } from '@/shared/lib/fearGreedLabels';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { FearGreedShareView } from '../FearGreedShareView';
 
 // 배지 문구는 `shared.lib.fearGreed` 카탈로그에서 온다.
 const tFearGreedKo = catalogTranslator('shared.lib.fearGreed', 'ko');

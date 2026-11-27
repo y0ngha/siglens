@@ -12,6 +12,7 @@ import {
 } from '@/shared/cache/buildDegradedRevalidate';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import type { SeoTranslator } from '@/shared/lib/seo';
@@ -20,9 +21,8 @@ import {
     buildSymbolDirectory,
     type SymbolDirectorySection,
 } from '@/shared/lib/symbolDirectory';
-import { fearGreedCopyFor, type FearGreedCopy } from './copy';
 import { composeMarketFearGreedReading } from './_lib/marketFearGreedAnswer';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { fearGreedCopyFor, type FearGreedCopy } from './copy';
 
 type FearGreedRouteView = MarketFearGreedHubView<MarketFearGreedViewSnapshot>;
 

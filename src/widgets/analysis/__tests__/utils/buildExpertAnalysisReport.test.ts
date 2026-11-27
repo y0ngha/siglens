@@ -1,11 +1,3 @@
-import { beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
-import { buildExpertAnalysisReport } from '@/widgets/analysis/utils/buildExpertAnalysisReport';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import { readingContextFor } from './readingContext';
-
-import koMessages from '@/../messages/ko.json';
-
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
@@ -13,6 +5,12 @@ import type {
     IndicatorReading,
     PlanState,
 } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
+import koMessages from '@/../messages/ko.json';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { buildExpertAnalysisReport } from '@/widgets/analysis/utils/buildExpertAnalysisReport';
+import { readingContextFor } from './readingContext';
 
 /** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
 const tReport = (key: string, values?: Record<string, string | number>) => {

@@ -1,19 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
-import type { ProposedSaleFormType, ProposedSaleWithForm } from '../../model';
-import {
-    countProposedSales,
-    SUMMARY_MAX_INSIDER_TRANSACTIONS,
-    SUMMARY_MAX_PROPOSED_SALES,
-} from '../../lib/summary/insider';
-import { summarizeInvestorFlows } from '../../lib/summarizeInvestorFlows';
-import {
-    SUMMARY_MAX_QUARTERS,
-    SUMMARY_MAX_TOP_HOLDERS,
-} from '../../lib/summary/institutional';
-import { SUMMARY_MAX_SQUEEZE_COMPONENTS } from '../../lib/summary/short';
-import { SUMMARY_MAX_SIGNALS } from '../../lib/summary/signals';
-import { SUMMARY_RATIO_DIGITS } from '../../lib/summary/format';
+import { describe, expect, it } from 'vitest';
 import {
     makeExpandedSnapshot,
     makeFailsToDeliver,
@@ -26,6 +12,20 @@ import {
     makeTransaction,
     evaluate,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+import { summarizeInvestorFlows } from '../../lib/summarizeInvestorFlows';
+import { SUMMARY_RATIO_DIGITS } from '../../lib/summary/format';
+import {
+    countProposedSales,
+    SUMMARY_MAX_INSIDER_TRANSACTIONS,
+    SUMMARY_MAX_PROPOSED_SALES,
+} from '../../lib/summary/insider';
+import {
+    SUMMARY_MAX_QUARTERS,
+    SUMMARY_MAX_TOP_HOLDERS,
+} from '../../lib/summary/institutional';
+import { SUMMARY_MAX_SQUEEZE_COMPONENTS } from '../../lib/summary/short';
+import { SUMMARY_MAX_SIGNALS } from '../../lib/summary/signals';
+import type { ProposedSaleFormType, ProposedSaleWithForm } from '../../model';
 
 describe('summarizeInvestorFlows', () => {
     it('점수표의 종합·축 라벨을 그대로 옮긴다(재계산 없음)', () => {

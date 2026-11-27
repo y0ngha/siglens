@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import { enterLocale } from '@/shared/lib/enterLocale';
-import { FearGreedRouteBody } from './FearGreedRouteBody';
 import {
     fearGreedMetadata,
     loadFearGreedSymbolLinks,
     loadFearGreedView,
     type FearGreedRouteSource,
 } from './fearGreedRoute';
+import { FearGreedRouteBody } from './FearGreedRouteBody';
 
 // 1h — `/market`과 같은 단일 페이지 주기. `getMarketFearGreedStatic`이 이미 1h로 판독값을
 // 캐싱하므로 이 값은 페이지 셸의 백그라운드 재생성 주기만 정한다(추가 staleness 없음).

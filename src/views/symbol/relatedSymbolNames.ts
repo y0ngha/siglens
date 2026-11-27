@@ -1,13 +1,13 @@
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 /**
  * "관련 종목" 칩 이름 조회(서버 I/O). 순수 판정은 `utils/relatedSymbolChips.ts`에 두고, 여기서는
  * 종목 정보를 읽어 그 판정에 넘긴다.
  */
 import type { RelatedSymbol } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import type { Locale } from '@/shared/i18n/locales';
-import { chipNameFor } from './utils/relatedSymbolChips';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { Locale } from '@/shared/i18n/locales';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { chipNameFor } from './utils/relatedSymbolChips';
 
 /**
  * 칩 이름을 확정한다(심볼 → 이름, 이름이 없는 칩은 맵에 없다).

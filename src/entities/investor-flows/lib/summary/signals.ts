@@ -4,13 +4,13 @@ import type {
     InvestorFlowsSignal,
     InvestorFlowsSignalStrength,
 } from '@y0ngha/siglens-core';
-import type { SummaryAxis, SummarySignal } from './types';
 import {
     SUMMARY_NAME_MAX_CHARS,
     SUMMARY_RATIO_DIGITS,
     round,
     clipSummaryText,
 } from './format';
+import type { SummaryAxis, SummarySignal } from './types';
 
 const STRENGTH_RANK: Readonly<Record<InvestorFlowsSignalStrength, number>> = {
     strong: 3,

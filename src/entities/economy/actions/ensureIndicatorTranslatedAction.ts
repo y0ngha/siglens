@@ -1,10 +1,9 @@
 'use server';
 
 import { isE2E } from '@/shared/api/e2eEnv';
-
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isTranslatableCalendarIndicator } from '../api/isTranslatableCalendarIndicator';
 import { translateIndicator } from '../api/translateIndicators';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Server Action: 미매핑 지표명 1건을 AI로 번역해 캐시한다. 본문은

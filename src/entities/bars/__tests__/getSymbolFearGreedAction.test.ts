@@ -7,8 +7,8 @@ vi.mock('@/entities/bars/lib/symbolFearGreed', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-import { getSymbolFearGreedAction } from '../actions/getSymbolFearGreedAction';
 import { clientSymbolFearGreed } from '@/entities/bars/lib/symbolFearGreed';
+import { getSymbolFearGreedAction } from '../actions/getSymbolFearGreedAction';
 
 describe('getSymbolFearGreedAction', () => {
     it('일봉을 서버 로더로 읽어 클라이언트용 공포·탐욕 결과로 바꿔 돌려준다', async () => {

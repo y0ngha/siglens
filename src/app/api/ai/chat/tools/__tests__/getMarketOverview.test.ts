@@ -46,7 +46,6 @@ vi.mock('next-intl/server', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getMarketOverviewTool } from '@/app/api/ai/chat/tools/getMarketOverview';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 

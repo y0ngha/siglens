@@ -7,6 +7,7 @@ import {
     type PriceStatsSubjectInput,
     type PriceStatsSubjectView,
 } from '@y0ngha/siglens-core';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     loadIndexPriceStatsCloses,
     loadPriceStatsCloses,
@@ -23,7 +24,6 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { AssetInfo } from '@/shared/lib/types';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { staleKrListingDate } from './freshness';
 import { logToolDegrade } from './logToolDegrade';
 import {

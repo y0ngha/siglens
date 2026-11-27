@@ -56,15 +56,14 @@ vi.mock('@/entities/auth/api', () => ({
     }),
 }));
 
-import type { MockedFunction, Mock } from 'vitest';
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { MockedFunction, Mock } from 'vitest';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
-import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
-import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { issueLogoutCode } from '@/entities/auth/server/handoffStore';
+import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockLogout = logoutUser as MockedFunction<typeof logoutUser>;

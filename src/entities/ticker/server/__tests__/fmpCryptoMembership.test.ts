@@ -23,14 +23,14 @@ vi.mock('../../cryptoAssetApi', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { CRYPTO_FMP_LIST_CACHE_KEY } from '../../lib/cacheKeys';
 import {
     getFmpCryptoListMap,
     fmpCryptoMembership,
     FMP_CRYPTO_LIST_MEMORY_TTL_MS,
     _resetFmpCryptoListMemoForTest,
 } from '../fmpCryptoMembership';
-import { CRYPTO_FMP_LIST_CACHE_KEY } from '../../lib/cacheKeys';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 describe('getFmpCryptoListMap', () => {
     beforeEach(() => {

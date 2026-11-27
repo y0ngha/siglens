@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
 import { FearGreedPageSkeleton } from '@/widgets/fear-greed/ui/page/FearGreedPageSkeleton';
 
 let t: Awaited<ReturnType<typeof getTranslations>>;

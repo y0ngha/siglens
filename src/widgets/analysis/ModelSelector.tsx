@@ -1,15 +1,15 @@
 'use client';
 
+import { type ModelId } from '@y0ngha/siglens-core';
 /**
  * 분석 모델 선택 드롭다운 — 트리거 버튼(현재 모델 표시)과 `ModelListbox` 팝오버를 묶는다.
  */
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
-import { type ModelId } from '@y0ngha/siglens-core';
 import { ModelListbox } from '@/shared/ui/ModelListbox';
-import { useRef } from 'react';
 
 interface ModelSelectorProps {
     selectedModel: ModelId;

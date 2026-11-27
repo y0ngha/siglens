@@ -1,13 +1,13 @@
 import { useTranslations } from 'next-intl';
-import { SnapshotSummarySection } from '../SnapshotSummarySection';
-import { cn } from '@/shared/lib/cn';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     narrowOptionsContent,
     SIGNAL_KIND_LABEL_KEY,
     TONE_LABEL_KEY,
 } from '@/entities/seo-snapshot/lib/optionsContent';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { SnapshotSummarySection } from '../SnapshotSummarySection';
 
 interface OptionsSnapshotProseProps {
     /**

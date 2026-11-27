@@ -12,16 +12,16 @@ import {
     SIGNAL_SECTORS,
 } from './dashboard-tickers';
 import {
+    CRYPTO_MARKET_INDICES,
+    CRYPTO_SECTOR_STOCKS,
+    CRYPTO_SIGNAL_SECTORS,
+} from './dashboard-tickers-crypto';
+import {
     KR_MARKET_INDICES,
     KR_SECTOR_ETFS,
     KR_SECTOR_GROUPS,
     KR_SECTOR_STOCKS,
 } from './dashboard-tickers-kr';
-import {
-    CRYPTO_MARKET_INDICES,
-    CRYPTO_SECTOR_STOCKS,
-    CRYPTO_SIGNAL_SECTORS,
-} from './dashboard-tickers-crypto';
 
 /**
  * 대시보드가 다루는 시장. `/market`(us)과 `/market/kr`(kr)이 각각 하나씩 쓰고,

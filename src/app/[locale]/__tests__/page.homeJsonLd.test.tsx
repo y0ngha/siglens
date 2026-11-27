@@ -67,14 +67,17 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+import { render } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
-
-import Home, { generateMetadata } from '@/app/[locale]/(home)/page';
-import { buildHomeFaq } from '@/app/[locale]/(home)/_lib/homeJsonLd';
-import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { HomeMethodBand } from '@/app/[locale]/(home)/_components/HomeMethodBand';
+import { buildHomeFaq } from '@/app/[locale]/(home)/_lib/homeJsonLd';
+import Home, { generateMetadata } from '@/app/[locale]/(home)/page';
+import { SITE_NAME_KO } from '@/shared/config/brand';
+import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';
 import {
     brandIntroName,
     buildOrganizationCoreJsonLd,
@@ -82,11 +85,7 @@ import {
     X_URL,
 } from '@/shared/lib/seo';
 import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
-import { SITE_NAME_KO } from '@/shared/config/brand';
 import { defined } from '@/shared/test-utils/defined';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { HomeMethodBand } from '@/app/[locale]/(home)/_components/HomeMethodBand';
-import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';
 import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
 import koMessages from '../../../../messages/ko.json';
 

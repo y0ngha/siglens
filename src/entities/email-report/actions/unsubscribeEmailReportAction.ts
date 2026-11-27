@@ -5,11 +5,11 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzleEmailReportSubscriptionRepository } from '../api';
 import { readEmailReportSecret } from '../emailReportSecret';
-import { unsubscribeWithSignature } from '../unsubscribeWithSignature';
 import type {
     UnsubscribeEmailReportInput,
     UnsubscribeEmailReportResult,
 } from '../model';
+import { unsubscribeWithSignature } from '../unsubscribeWithSignature';
 
 /**
  * 메일의 수신거부 링크로 들어온 확인 페이지에서 수신을 끈다. 로그인을 요구하지 않는다 —

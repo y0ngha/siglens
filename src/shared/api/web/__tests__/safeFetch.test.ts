@@ -19,7 +19,6 @@ vi.mock('@/shared/api/web/pinnedRequest', async importOriginal => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { isBlockedAddress } from '@/shared/api/web/ipGuard';
 import { BlockedAddressError } from '@/shared/api/web/pinnedRequest';
 import {

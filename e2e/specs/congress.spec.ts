@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { E2E_FORCE_CONGRESS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Congress (의회 거래) tab E2E spec — Phase B12 of the symbol-congress feature.

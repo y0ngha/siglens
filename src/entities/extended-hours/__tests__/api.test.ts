@@ -13,19 +13,19 @@ import {
     loadExtendedHoursQuote,
 } from '@/entities/extended-hours/api';
 import type { ExtendedHoursQuote } from '@/entities/extended-hours/model';
-import { getRedisClient } from '@/shared/cache/redisClient';
-import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
+import aftermarketTradeFixture from '@/shared/api/fmp/__tests__/fixtures/aftermarketTrade.aapl.json';
+import quoteFixture from '@/shared/api/fmp/__tests__/fixtures/quote.aapl.preMarket.json';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
+import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     EXTENDED_QUOTE_CACHE_TTL_SECONDS,
     EXTENDED_QUOTE_TIMEOUT_CACHE_TTL_SECONDS,
 } from '@/shared/config/time';
-import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import type { AssetInfo } from '@/shared/lib/types';
-import aftermarketTradeFixture from '@/shared/api/fmp/__tests__/fixtures/aftermarketTrade.aapl.json';
-import quoteFixture from '@/shared/api/fmp/__tests__/fixtures/quote.aapl.preMarket.json';
 
 const mockedRedis = vi.mocked(getRedisClient);
 const mockedFmpGet = vi.mocked(fmpGet);

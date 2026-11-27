@@ -1,5 +1,4 @@
 import 'server-only';
-import { getYahooClient } from './createYahooClient';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { sym } from '@/shared/api/fmp/symKey';
 import { toFiniteNumber } from '@/shared/api/fmp/toFiniteNumber';
@@ -7,6 +6,7 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { isRecord } from '@/shared/lib/isRecord';
 import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
+import { getYahooClient } from './createYahooClient';
 import { fractionToPct } from './yahooValues';
 
 const yahooFinance = getYahooClient();

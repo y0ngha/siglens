@@ -1,6 +1,12 @@
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import {
+    buildMethodologyBreadcrumbJsonLd,
+    buildMethodologyJsonLd,
+} from '@/app/[locale]/methodology/_lib/methodologyJsonLd';
+import { buildMethodologyMetadata } from '@/app/[locale]/methodology/_lib/methodologyMetadata';
 import { countSkillFiles } from '@/entities/skill/api';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     formatKoreanDate,
@@ -10,12 +16,6 @@ import {
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { EMPTY_SKILL_COUNTS } from '@/views/about/lib/aboutContent';
 import { MethodologyPage } from '@/views/methodology/MethodologyPage';
-import {
-    buildMethodologyBreadcrumbJsonLd,
-    buildMethodologyJsonLd,
-} from '@/app/[locale]/methodology/_lib/methodologyJsonLd';
-import { buildMethodologyMetadata } from '@/app/[locale]/methodology/_lib/methodologyMetadata';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // `/about`·`/terms`와 같은 근거 — 본문이 메시지 카탈로그와 코드 상수라 배포 자체가
 // 갱신이므로 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).

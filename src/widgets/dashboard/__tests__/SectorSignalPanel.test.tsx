@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import type {
     SectorSignalsResult,
     StockWithConflict,
 } from '@y0ngha/siglens-core';
+import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { TEST_SCOPE } from './helpers/testScope';
 
 /** KRX 티커는 읽어서 뜻이 통하지 않는다 — 실제 `KR_DASHBOARD_SCOPE`와 같은 값. */

@@ -1,7 +1,7 @@
 import 'server-only';
 import { createRedisSlot } from '@/shared/cache/createRedisSlot';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
  * 시장 브리핑의 생성 간격(1시간, 시장별) — 크론과 방문자 경로가 **같은 키**를 공유한다.

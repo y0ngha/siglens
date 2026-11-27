@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
 import {
     FEAR_GREED_LOOKBACK_DAYS,
     type FearGreedReading,
 } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { scoredReadings } from '@/entities/market-fear-greed/lib/publishableHistory';
 import { fearGreedDataPath } from '@/shared/config/fearGreedData';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';

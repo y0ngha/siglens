@@ -1,5 +1,4 @@
 import 'server-only';
-import { getTranslations } from 'next-intl/server';
 import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
@@ -52,23 +51,8 @@ import {
     type TrendDirection,
     type TrendState,
 } from '@y0ngha/siglens-core';
-import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
-import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
-import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
-import {
-    roundIndicators,
-    roundNumber,
-} from '@/entities/bars/lib/roundIndicators';
-import { listEarningsDates } from '@/entities/earnings-report/api';
-import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
-import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
-import { getDatabaseClient } from '@/shared/db/client';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { getTranslations } from 'next-intl/server';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     pointBefore,
     scoredHistory,
@@ -76,13 +60,30 @@ import {
     TRADING_DAYS,
     yearScoreExtremes,
 } from '@/entities/bars/lib/fearGreedWindow';
-import { logToolDegrade } from './logToolDegrade';
-import { calendarChangeView, type CalendarChangeView } from './calendarChange';
-import { staleKrListingDate } from './freshness';
+import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
+import {
+    roundIndicators,
+    roundNumber,
+} from '@/entities/bars/lib/roundIndicators';
+import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
+import { listEarningsDates } from '@/entities/earnings-report/api';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { Locale } from '@/shared/i18n/locales';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
-import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
+import { calendarChangeView, type CalendarChangeView } from './calendarChange';
+import { chartBlockFrom } from './chartBlock';
+import { staleKrListingDate } from './freshness';
+import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { computeRangeWindow, type RangeWindow } from './rangeWindow';
 import {
@@ -90,7 +91,6 @@ import {
     resolvedInstrumentFields,
 } from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
-import { chartBlockFrom } from './chartBlock';
 
 /**
  * Default bar count. This tool fits against its own bars cap

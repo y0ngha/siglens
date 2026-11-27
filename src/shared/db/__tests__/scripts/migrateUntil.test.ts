@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const ROOT = path.resolve(__dirname, '../../../../..');
 const SOURCE = readFileSync(path.join(ROOT, 'db/scripts/migrate.ts'), 'utf8');

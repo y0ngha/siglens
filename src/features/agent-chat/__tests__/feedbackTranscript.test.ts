@@ -1,8 +1,8 @@
-import type { AgentUiMessage } from '../model/types';
 import {
     buildFeedbackContext,
     buildFeedbackTranscript,
 } from '../lib/feedbackTranscript';
+import type { AgentUiMessage } from '../model/types';
 
 function msg(
     partial: Partial<AgentUiMessage> & Pick<AgentUiMessage, 'id' | 'role'>

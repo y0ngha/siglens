@@ -44,17 +44,15 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
+import { getLocale } from 'next-intl/server';
 import type { MockedFunction } from 'vitest';
-
 import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
-import { afterWithDrain } from '@/shared/lib/afterWithDrain';
-import { createEmailTokenStore } from '@/entities/email-token/api';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
+import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
-import { getLocale } from 'next-intl/server';
-
 import { resetDatabaseClientForTests } from '@/shared/db/client';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 import {
     expectLogWithoutPlantedSecrets,

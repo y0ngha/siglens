@@ -1,12 +1,12 @@
 import {
-    INVESTOR_FLOWS_AGGREGATE_RETENTION_MONTHS,
-    INVESTOR_FLOWS_STATE_BACKFILL_DONE,
-} from '../lib/investorFlowsPolicy';
-import {
     addDays,
     latestQuarterEndOnOrBefore,
     positionsRetentionFloor,
 } from '../lib/investorFlowsDates';
+import {
+    INVESTOR_FLOWS_AGGREGATE_RETENTION_MONTHS,
+    INVESTOR_FLOWS_STATE_BACKFILL_DONE,
+} from '../lib/investorFlowsPolicy';
 import type { Ingest13fDeps, Ingest13fResult } from './ingest13fTypes';
 
 /** 제출 원장 보존(일). 멱등 판정은 daily index 범위(200일)만 보면 되고, 실패 재시도 여유를 더한다. */

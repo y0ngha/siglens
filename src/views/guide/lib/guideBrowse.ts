@@ -1,3 +1,4 @@
+import { termsFirst } from '@/entities/guide/lib/termsFirst';
 /** 가이드 목록의 검색·분류 필터와 항목 간 관계(이전·다음·관련·역참조) — 순수 함수. */
 import {
     GUIDE_CATEGORIES,
@@ -6,7 +7,6 @@ import {
     type GuideEntry,
     type GuideEntrySummary,
 } from '@/entities/guide/types';
-import { termsFirst } from '@/entities/guide/lib/termsFirst';
 import { searchGuide } from '@/shared/lib/guideSearch';
 
 /** 분류 칩의 "전체". 카테고리 값이 아니라 필터 해제를 뜻한다. */

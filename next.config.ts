@@ -1,7 +1,7 @@
-import type { NextConfig } from 'next';
 import bundleAnalyzer from '@next/bundle-analyzer';
-import createNextIntlPlugin from 'next-intl/plugin';
 import { createRequire } from 'module';
+import type { NextConfig } from 'next';
+import createNextIntlPlugin from 'next-intl/plugin';
 import { CDN_CACHE_TAG_HEADER_RULES } from './src/shared/config/cdnCacheTags';
 import { FEAR_GREED_DATA_REWRITES } from './src/shared/config/fearGreedData';
 

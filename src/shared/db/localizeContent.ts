@@ -1,5 +1,4 @@
 import 'server-only';
-
 import type { Locale } from '@/shared/i18n/locales';
 import type { LocalizedContent } from './contentLocale';
 import { getContentTranslationRepository } from './contentTranslationClient';

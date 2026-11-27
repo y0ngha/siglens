@@ -1,11 +1,11 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import {
     runCongressTrend,
     type SubmitCongressTrendOptions,
     type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
+import { cookies } from 'next/headers';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';

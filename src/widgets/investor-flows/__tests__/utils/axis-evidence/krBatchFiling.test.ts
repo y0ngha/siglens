@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildAxisEvidence } from '../../../utils/axisEvidence';
 import {
     batchFilingNote,
     KR_BATCH_FILING_MIN_COUNT,
     KR_BATCH_FILING_MIN_SHARE,
 } from '../../../utils/axis-evidence/krBatchFiling';
+import { buildAxisEvidence } from '../../../utils/axisEvidence';
 import {
     evaluate,
     makeKrInsiderRecord,

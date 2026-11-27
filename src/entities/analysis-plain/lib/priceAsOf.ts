@@ -2,12 +2,12 @@ import {
     isRegularSessionOpen,
     type MarketSessionSpec,
 } from '@y0ngha/siglens-core';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import {
     lastClosedSessionDate,
     zonedDate,
 } from '@/shared/lib/marketSessionDate';
-import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * 가격이 **언제 기준인지**를 사람이 읽는 짧은 문구로 만든다.

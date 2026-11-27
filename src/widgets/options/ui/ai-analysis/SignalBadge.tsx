@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { OptionsSignalKind } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import {
     SIGNAL_KIND_CLASS,
     SIGNAL_KIND_LABEL_KEY,

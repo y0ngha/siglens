@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
-import { beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
 import { POC_WINDOW_DEFAULT, type FearGreedFactor } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
 import { FearGreedFactorRow } from '@/widgets/fear-greed/ui/group/FearGreedFactorRow';
 import {
     EXTREME_PERCENTILE_HIGH,

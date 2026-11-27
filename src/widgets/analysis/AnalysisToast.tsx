@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import type { CooldownNotice } from './model/types';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import type { CooldownNotice } from './model/types';
 
 /**
  * AnalysisPanel 내부에서만 표시되는 경량 토스트.

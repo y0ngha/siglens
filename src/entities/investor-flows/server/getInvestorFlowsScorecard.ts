@@ -11,10 +11,10 @@ import type {
     InvestorFlowsSnapshotWithStatus,
     KrDisclosureCompany,
 } from '../model';
-import { getKrDartCorp } from './getKrDartCorp';
 import { getInvestorFlowsEvaluationOptions } from './getInvestorFlowsEvaluationOptions';
 import { getInvestorFlowsPipelineReadiness } from './getInvestorFlowsPipelineReadiness';
 import { getInvestorFlowsResilient } from './getInvestorFlowsResilient';
+import { getKrDartCorp } from './getKrDartCorp';
 
 export interface InvestorFlowsScorecardResult {
     /** 종목의 시장. 화면·도구가 미국(13F·FINRA·SEC)과 한국(DART) 구성을 가른다. */

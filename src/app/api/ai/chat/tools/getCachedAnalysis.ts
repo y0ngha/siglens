@@ -16,6 +16,7 @@ import {
     type KeyLevels,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     DrizzleAnalysisHistoryRepository,
     type AnalysisHistoryTab,
@@ -35,25 +36,24 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { logToolDegrade } from './logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import {
+    loadAnalysisChartBlock,
+    peekChartDrawings,
+    type ChartAnalysisSource,
+} from './chartBlock';
 import {
     chartReferenceLevels,
     technicalLevelCandidates,
     type ChartReferenceLevels,
 } from './levelCandidates';
+import { logToolDegrade } from './logToolDegrade';
 import { pctVs } from './percent';
 import {
     fitTechnicalAnalysis,
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
-import {
-    loadAnalysisChartBlock,
-    peekChartDrawings,
-    type ChartAnalysisSource,
-} from './chartBlock';
 import { loadSinceEarlier } from './sinceEarlier';
 
 const STALE_AFTER_MS: Record<string, number> = {

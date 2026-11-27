@@ -4,8 +4,8 @@
  * 밴드형 오버레이의 하단 차폐 시리즈 색을 차트 테마에 맞춰 갱신하는 훅.
  */
 
-import { useEffect } from 'react';
 import type { ISeriesApi } from 'lightweight-charts';
+import { useEffect } from 'react';
 import { getChartChrome } from '@/shared/lib/chartColors';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 

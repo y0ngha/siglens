@@ -41,11 +41,10 @@ vi.mock('next/navigation', () => ({
 // and asserts real data.json case content is present in that first, effect-free
 // pass — the same pass that becomes the static SSR HTML in production.
 import { renderToStaticMarkup } from 'react-dom/server';
-
-import BacktestingPage from '@/app/[locale]/backtesting/page';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+import BacktestingPage from '@/app/[locale]/backtesting/page';
 import backtestData from '@/entities/backtest-case/data/data.json';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 
 describe('/backtesting SSR output', () => {
     it('renders every real case ticker in the effect-free first render pass', async () => {

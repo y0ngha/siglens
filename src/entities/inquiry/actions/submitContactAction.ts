@@ -6,11 +6,11 @@ import { logActionError } from '@/shared/lib/logActionError';
 import type { ContactFormState } from '@/shared/lib/types';
 import { DrizzleContactRepository } from '../api';
 import { submitInquiry } from '../lib/submitInquiry';
+import { validateContactInput } from '../lib/validation';
 import {
     isHoneypotFilled,
     isInquiryRateLimited,
 } from '../server/inquirySpamGuard';
-import { validateContactInput } from '../lib/validation';
 
 /** FormData 값이 문자열이 아니거나 없으면 빈 문자열로 정규화한다. */
 function getVal(formData: FormData, key: string): string {

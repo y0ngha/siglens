@@ -22,7 +22,6 @@ vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
  * 단언이 무의미해진다.
  */
 import { render, waitFor } from '@testing-library/react';
-
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
 import { stubNoticesFetch } from './noticesFetchStub';
 

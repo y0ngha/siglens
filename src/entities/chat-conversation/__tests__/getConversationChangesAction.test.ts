@@ -33,7 +33,6 @@ vi.mock('@/entities/chat-conversation/server/loadConversationChanges', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getConversationChangesAction } from '@/entities/chat-conversation/actions/getConversationChangesAction';
 
 const ID = '11111111-1111-1111-1111-111111111111';

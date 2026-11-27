@@ -1,8 +1,8 @@
-import * as schema from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
 import type { RemoteCallback } from 'drizzle-orm/pg-proxy';
 import { drizzle } from 'drizzle-orm/pg-proxy';
 import { describe, expect, it } from 'vitest';
+import * as schema from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { DrizzleRemovalSitemapCandidateSource } from '../api';
 
 interface CapturedQuery {

@@ -1,7 +1,7 @@
-import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
 import { displayTicker } from '@/shared/lib/displayTicker';
 import { SITE_URL, type SeoTranslator } from '@/shared/lib/seo';

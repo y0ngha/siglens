@@ -1,12 +1,12 @@
 'use client';
 
+import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 /**
  * 캔들 시리즈 데이터 동기화와 시간축 맞춤 훅 — 봉이 바뀌면 캔들을 다시 채우고, 정규장 봉이
  * 바뀔 때만 맞춘다(시간외 봉만 늦게 도착하면 사용자가 보던 자리를 지킨다).
  */
 import { type RefObject, useEffect, useRef } from 'react';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
 import { buildCandlestickDataWithExtended } from '../utils/extendedBarsDisplay';
 import {
     restoreVisibleView,

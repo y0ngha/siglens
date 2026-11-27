@@ -1,7 +1,7 @@
-import path from 'node:path';
 import type { Locator } from '@playwright/test';
-import { test, expect } from '../support/fixtures';
+import path from 'node:path';
 import { AUTH_STORAGE_STATE } from '../support/authUser';
+import { test, expect } from '../support/fixtures';
 
 const AI = 'http://ai.localhost:4300';
 const MAIN = 'http://localhost:4300';

@@ -1,20 +1,20 @@
+import type { IncomeStatementRow } from '@y0ngha/siglens-core';
 /**
  * 손익계산서 섹션 — 매출·순이익 추세 차트와 전체 지표 표.
  */
 import { useTranslations } from 'next-intl';
-import type { IncomeStatementRow } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { GrossMarginTooltip } from '../financialsTooltips';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { StatementSectionFrame } from '../ui/statement-section/StatementSectionFrame';
-import { TrendAndTable } from './TrendAndTable';
+import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
+import { statementColumnLabel } from '../utils/statementColumnLabel';
 import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from '../utils/statementCurrency';
 import { toDisplayOrder } from '../utils/toDisplayOrder';
-import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
-import { statementColumnLabel } from '../utils/statementColumnLabel';
+import { TrendAndTable } from './TrendAndTable';
 
 interface IncomeStatementSectionProps {
     rows: IncomeStatementRow[];

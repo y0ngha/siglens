@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
-
+import { describe, it, expect } from 'vitest';
 import { EconomyMacroFacts } from '@/widgets/economy/sections/EconomyMacroFacts';
 
 function snap(overrides: Partial<EconomySnapshot> = {}): EconomySnapshot {

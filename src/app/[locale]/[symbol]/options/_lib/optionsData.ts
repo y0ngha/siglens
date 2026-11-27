@@ -1,8 +1,8 @@
+import type { SlottedOptionsSnapshot } from '@/entities/options-chain/lib/optionsSlots';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
 } from '@/entities/options-chain/server/optionsDataCache';
-import type { SlottedOptionsSnapshot } from '@/entities/options-chain/lib/optionsSlots';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';

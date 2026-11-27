@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 

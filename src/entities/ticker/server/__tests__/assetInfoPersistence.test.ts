@@ -15,7 +15,6 @@ vi.mock('../../api', () => ({
 }));
 
 import type { CacheProvider } from '@y0ngha/siglens-core';
-
 import {
     persistOrCacheProvisional,
     readFromDatabase,

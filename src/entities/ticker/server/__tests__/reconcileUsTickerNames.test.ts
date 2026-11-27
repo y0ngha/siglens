@@ -30,14 +30,14 @@ const {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import {
-    reconcileUsTickerNames,
-    type ReconcileUsTickerNamesDeps,
-} from '../reconcileUsTickerNames';
-import {
     RENAME_BATCH_MAX,
     RENAME_GUARD_FLOOR,
     RENAME_TRANSLATE_CHUNK,
 } from '../../lib/tickerNameReconcile';
+import {
+    reconcileUsTickerNames,
+    type ReconcileUsTickerNamesDeps,
+} from '../reconcileUsTickerNames';
 
 function tickerRow(
     symbol: string,

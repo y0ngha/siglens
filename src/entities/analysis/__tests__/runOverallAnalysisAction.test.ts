@@ -13,9 +13,9 @@ vi.mock('../server/overallAnalysisRunner', () => ({
     executeOverallAnalysis: vi.fn(),
 }));
 
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { runOverallAnalysisAction } from '../actions/runOverallAnalysisAction';
 import { executeOverallAnalysis } from '../server/overallAnalysisRunner';
-import { resolveTierAndByok } from '@/shared/lib/byokGate';
 
 describe('runOverallAnalysisAction', () => {
     beforeEach(() => {

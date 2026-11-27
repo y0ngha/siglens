@@ -9,13 +9,13 @@ import type {
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
 import { getSectorSignalsAction } from '@/entities/sector-signal/actions/getSectorSignalsAction';
+import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 import {
     QUERY_KEYS,
     SECTOR_SIGNALS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /** 신호 조회 상태. 데이터가 없을 때 "신호 없음"과 "아직 모름"·"실패"를 가른다. */
 export type SectorSignalsStatus = 'loading' | 'error' | 'ready';

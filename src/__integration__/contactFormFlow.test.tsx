@@ -1,7 +1,7 @@
+import type { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ContactForm } from '@/features/contact-form/ui/ContactForm';
-import type { UseQueryResult } from '@tanstack/react-query';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

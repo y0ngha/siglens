@@ -1,12 +1,12 @@
+import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 /**
  * 성장률 카드 — 매출·EPS 전년 대비 성장률을 인라인 SVG 막대로 보여 준다.
  */
 import { useTranslations } from 'next-intl';
-import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import {
     growthBarView,
     growthTextClass,

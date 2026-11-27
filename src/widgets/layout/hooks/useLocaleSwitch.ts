@@ -1,9 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/shared/i18n/navigation';
+import { useTransition } from 'react';
 import { resolveLocale, type Locale } from '@/shared/i18n/locales';
+import { usePathname, useRouter } from '@/shared/i18n/navigation';
 
 interface UseLocaleSwitchResult {
     readonly locale: Locale;

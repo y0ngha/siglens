@@ -9,9 +9,9 @@ import {
     decideMeteredReveal,
     METERED_REVEAL_STARTS_AT,
 } from '@/entities/analysis/server/meteredReveal';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { AnalysisMeter } from '@/shared/lib/types';
 import type { GuestResolver } from './generationQuota';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이 요청이 비회원 하루 무료 공개 미터를 어떻게 탔는지.

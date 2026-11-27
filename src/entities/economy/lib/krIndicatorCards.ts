@@ -5,7 +5,6 @@ import {
 } from '@/shared/config/economyIndicatorsKr';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
-
 import type { AnnouncedEventPoint } from '../model';
 
 /**

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect } from 'react';
 import { reportClientError } from '@/shared/lib/reportClientError';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 

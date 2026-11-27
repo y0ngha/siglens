@@ -29,7 +29,6 @@
  * 어긋나도 아무도 모른다(폴백이 걸려 화면은 멀쩡하다).
  */
 import postgres from 'postgres';
-import { assertRemoteWriteAllowed, readDatabaseUrl } from './lib/dbTarget';
 import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,
@@ -38,6 +37,7 @@ import {
 } from '../../src/shared/db/contentTranslationFields';
 import { DEFAULT_LOCALE } from '../../src/shared/i18n/locales';
 import { DEFAULT_SINCE, parseSince } from './lib/backfillWindow';
+import { assertRemoteWriteAllowed, readDatabaseUrl } from './lib/dbTarget';
 
 /** 원본 테이블에서 `(id, field, value)`를 뽑는 SELECT 한 벌. */
 interface BackfillSource {

@@ -4,8 +4,8 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useMobileSheetDrag } from '@/views/symbol/hooks/useMobileSheetDrag';
 import type { RefObject } from 'react';
+import { useMobileSheetDrag } from '@/views/symbol/hooks/useMobileSheetDrag';
 
 vi.mock('@/views/symbol/utils/mobileSheetDom', () => ({
     captureTransformY: () => 0,

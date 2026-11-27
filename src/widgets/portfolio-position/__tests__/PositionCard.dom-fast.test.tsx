@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
-import { computePosition, type PositionModel } from '../utils/positionGeometry';
 import { PositionCard } from '../ui/PositionCard';
+import { computePosition, type PositionModel } from '../utils/positionGeometry';
 
 function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
     return computePosition({

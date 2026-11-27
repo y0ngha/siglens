@@ -5,8 +5,8 @@
  */
 import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
 import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
-import { MAX_X_AXIS_LABELS } from './strikeChartLayout';
 import { pickLabelIndices } from './pickLabelIndices';
+import { MAX_X_AXIS_LABELS } from './strikeChartLayout';
 
 // 모든 strike의 OI가 0일 때 globalMax가 0이 되어 barPixelHeight에서
 // 0으로 나누는 경로를 막기 위한 하한값.

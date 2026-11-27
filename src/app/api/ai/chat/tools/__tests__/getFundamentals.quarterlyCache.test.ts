@@ -65,7 +65,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getFundamentalsTool } from '@/app/api/ai/chat/tools/getFundamentals';
 
 const ctx = {

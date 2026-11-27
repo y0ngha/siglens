@@ -8,14 +8,14 @@ import type {
     FundamentalRatiosInput,
     FundamentalValuationMetrics,
 } from '@y0ngha/siglens-core';
+import { MS_PER_DAY } from '@/shared/config/time';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     YahooFundamentals,
     YahooStatementRow,
     YahooSummary,
 } from './yahooFundamentalSource';
-import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
-import { MS_PER_DAY } from '@/shared/config/time';
 
 /**
  * 0이나 음수 분모로 나눗셈을 막는다.

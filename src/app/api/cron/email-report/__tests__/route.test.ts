@@ -27,8 +27,8 @@ vi.mock('@/app/api/cron/mail-alert/scheduleMailAlertPass', () => ({
     scheduleMailAlertPass: vi.fn(),
 }));
 
-import { PATCH } from '@/app/api/cron/email-report/route';
 import { createEmailReportDeps } from '@/app/api/cron/email-report/createEmailReportDeps';
+import { PATCH } from '@/app/api/cron/email-report/route';
 import { runEmailReportBatch } from '@/app/api/cron/email-report/runEmailReportBatch';
 import { scheduleMailAlertPass } from '@/app/api/cron/mail-alert/scheduleMailAlertPass';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';

@@ -1,5 +1,5 @@
-import type OpenAI from 'openai';
 import type { AgentMessage } from '@y0ngha/siglens-core';
+import type OpenAI from 'openai';
 import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 
 /**

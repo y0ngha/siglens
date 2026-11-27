@@ -40,16 +40,15 @@ vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     getNewsTool,
     resolveNewsWindow,
 } from '@/app/api/ai/chat/tools/getNews';
-import { MS_PER_DAY } from '@/shared/config/time';
 import {
     NEWS_RESULT_MAX_CHARS,
     truncateToolResult,
 } from '@/app/api/ai/chat/tools/truncate';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 const ctx = {
     userId: 'u',

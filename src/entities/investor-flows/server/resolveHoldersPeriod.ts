@@ -1,8 +1,8 @@
-import type { AggregateRecord } from '../lib/snapshot/institutional';
 import {
     isPeriodComplete,
     positionsRetentionFloor,
 } from '../lib/investorFlowsDates';
+import type { AggregateRecord } from '../lib/snapshot/institutional';
 
 /**
  * 13F quarter the holder list is read for: the newest COMPLETE quarter whose positions are still kept, and only

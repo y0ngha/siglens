@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import {
     computeFearGreedHistory,
     computeFearGreedIndex,
@@ -9,6 +8,7 @@ import {
     type FearGreedInputs,
     type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
+import { cache } from 'react';
 import type { SymbolFearGreedSeries } from '../model';
 
 /**

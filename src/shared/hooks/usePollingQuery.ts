@@ -1,7 +1,7 @@
 'use client';
 
-import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { type Query, type QueryKey, useQuery } from '@tanstack/react-query';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { SKIP_VERSION_SKEW_RELOAD_META } from '@/shared/lib/reloadOnVersionSkew';
 
 /** 한 번의 폴링 결과. */

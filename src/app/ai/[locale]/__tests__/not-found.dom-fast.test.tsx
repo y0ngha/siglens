@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import AiNotFound, { generateMetadata } from '../not-found';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import AiNotFound, { generateMetadata } from '../not-found';
 
 describe('AiNotFound', () => {
     it('404 안내 문구를 보여준다', () => {

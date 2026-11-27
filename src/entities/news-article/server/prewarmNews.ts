@@ -1,19 +1,20 @@
 import 'server-only';
-import { revalidateTag } from 'next/cache';
 import {
     runNewsAnalysis,
     DEEPSEEK_V4_1_FLASH_MODEL,
     type EnrichedNewsItem,
     type RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
+import { revalidateTag } from 'next/cache';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
-import { getDatabaseClient } from '@/shared/db/client';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DrizzleNewsRepository, type NewsRow } from '../api';
 import { analyzeNewsCards } from '../lib/analyzeNewsCards';
 import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
@@ -28,7 +29,6 @@ import { newsCacheTag } from '../lib/newsCacheTag';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { selectUnanalyzed } from '../lib/selectUnanalyzed';
 import { withNewsCardAnalysisLock } from './newsCardAnalysisLock';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 적재를 돌리되 FMP 장애·402 같은 소스 실패는 삼키고 `null`을 돌려준다(fail-open) —

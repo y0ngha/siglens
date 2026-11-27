@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
+import { SECTOR_ETFS, SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
 import {
     CURATED_KOREAN_NAMES,
     POPULAR_TICKERS,
 } from '@/shared/config/popular-tickers';
-import { SECTOR_ETFS, SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
 
 const DASHBOARD_NAMES = new Map<string, string>([
     ...SECTOR_STOCKS.map(s => [s.symbol, s.koreanName] as const),

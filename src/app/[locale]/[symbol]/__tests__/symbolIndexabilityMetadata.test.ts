@@ -17,12 +17,12 @@ vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 
+import type { Metadata } from 'next';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import type { SymbolSeoTab } from '@/shared/lib/seoSymbol';
 import type { AssetInfo } from '@/shared/lib/types';
-import type { Metadata } from 'next';
 
 const ASSET_INFO = { symbol: 'AAPL', name: 'Apple Inc.' } as AssetInfo;
 // 렌더러 narrowing을 통과하는 최소 산문.

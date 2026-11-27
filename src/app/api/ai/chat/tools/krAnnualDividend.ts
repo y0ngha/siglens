@@ -1,4 +1,5 @@
 import 'server-only';
+import { getKrDartCorp } from '@/entities/investor-flows/server/getKrDartCorp';
 import {
     fetchAlotMatter,
     isDartEnabled,
@@ -8,7 +9,6 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import { getKrDartCorp } from '@/entities/investor-flows/server/getKrDartCorp';
 import { logToolDegrade } from './logToolDegrade';
 
 /**

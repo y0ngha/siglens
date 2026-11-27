@@ -1,8 +1,8 @@
-import type { SubmitEvent } from 'react';
 import { act, renderHook } from '@testing-library/react';
+import type { SubmitEvent } from 'react';
 import type { SavePortfolioResult } from '@/entities/portfolio/model';
-import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 import { useHoldingPopoverForm } from '../hooks/useHoldingPopoverForm';
+import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 import { submitHolding } from '../lib/submitHolding';
 
 /*

@@ -1,3 +1,8 @@
+import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
+import {
+    isOAuthProvider,
+    buildOAuthRedirectUri,
+} from '@/features/auth-oauth/lib/providers';
 // @vitest-environment node
 import {
     OAUTH_STATE_COOKIE_NAME,
@@ -6,11 +11,6 @@ import {
     expiredOAuthStateCookie,
     OAuthStateSecretMisconfiguredError,
 } from '@/features/auth-oauth/lib/state';
-import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
-import {
-    isOAuthProvider,
-    buildOAuthRedirectUri,
-} from '@/features/auth-oauth/lib/providers';
 import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 const FAKE_HMAC_SECRET = 'test-secret-must-be-32-bytes-!ok';

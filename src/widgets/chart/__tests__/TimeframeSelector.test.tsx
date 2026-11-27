@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Timeframe } from '@y0ngha/siglens-core';
-import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 import { TIMEFRAMES } from '@/shared/config/market';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),

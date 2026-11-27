@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
-import { VolumeChart } from '@/widgets/chart/VolumeChart';
-import { usePaneLabels } from '@/widgets/chart/hooks/usePaneLabels';
 import { useExtendedSessionBand } from '@/widgets/chart/hooks/useExtendedSessionBand';
+import { usePaneLabels } from '@/widgets/chart/hooks/usePaneLabels';
 import { useVolumeChartData } from '@/widgets/chart/hooks/useVolumeChartData';
+import { VolumeChart } from '@/widgets/chart/VolumeChart';
 
 const { mockCreateChart } = vi.hoisted(() => {
     const mockCreateChart = vi.fn(() => ({

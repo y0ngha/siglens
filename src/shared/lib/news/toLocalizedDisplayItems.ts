@@ -1,18 +1,17 @@
 import 'server-only';
-
 import type {
     NewsCategory,
     NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import type { Locale } from '@/shared/i18n/locales';
-import { localizeContent } from '@/shared/db/localizeContent';
 import type { LocalizedContent } from '@/shared/db/contentLocale';
 import {
     CONTENT_FIELD,
     type TranslatableEntity,
 } from '@/shared/db/contentTranslationFields';
+import { localizeContent } from '@/shared/db/localizeContent';
+import type { Locale } from '@/shared/i18n/locales';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     toNewsCategory,
     toNewsImpact,

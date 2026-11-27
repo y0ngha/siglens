@@ -1,17 +1,17 @@
 'use client';
 
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 집계 AI 분석 결과 카드 — 전체 감성 배지, 현재 동인, 핵심·예정 사건 목록.
  */
 import { useTranslations } from 'next-intl';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import {
     SENTIMENT_CLASS,
     SENTIMENT_LABEL_KEY,
 } from '@/shared/lib/sentimentDisplay';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { EventBulletList } from './EventBulletList';
 import { SummaryTitle } from './SummaryTitle';
 

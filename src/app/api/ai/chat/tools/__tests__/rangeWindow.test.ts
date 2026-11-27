@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Bar } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { computeRangeWindow } from '@/app/api/ai/chat/tools/rangeWindow';
 
 const bar = (time: number, high: number, low: number, close: number): Bar => ({

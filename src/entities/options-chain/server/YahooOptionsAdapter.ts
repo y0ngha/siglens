@@ -4,6 +4,7 @@ import {
     type OptionsChain,
 } from '@y0ngha/siglens-core';
 import { getYahooClient } from '@/shared/api/yahoo/createYahooClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import {
@@ -16,7 +17,6 @@ import {
     type YahooOption,
     type YahooOptionsResult,
 } from '../lib/yahooNormalize';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // `yahooSurvey` 공지는 yahoo-finance2가 첫 호출 시 한 번 출력하는 마케팅 배너로,
 // 운영 로그에 노이즈만 남기므로 명시적으로 억제한다.

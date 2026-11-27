@@ -1,11 +1,9 @@
 'use server';
 
 import { runMacroBriefing } from '@y0ngha/siglens-core';
-
-import type { MacroBriefingActionResult } from '@/shared/lib/types';
-
-import { getEconomySnapshot } from '../api/economySnapshotCache';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { MacroBriefingActionResult } from '@/shared/lib/types';
+import { getEconomySnapshot } from '../api/economySnapshotCache';
 
 /**
  * /economy 거시 브리핑 클라 트리거 — `submitMarketBriefingAction` 미러.

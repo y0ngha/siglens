@@ -1,8 +1,8 @@
 import 'server-only';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { tryGetDatabaseClient } from '@/shared/db/client';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { ISO_DATE_LENGTH } from '@/shared/config/time';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleInvestorFlowsSnapshotRepository,
     type FilerFilingRow,

@@ -1,7 +1,7 @@
 import 'server-only';
 import { computeBarsEffectiveTtl, type Timeframe } from '@y0ngha/siglens-core';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /**
  * 서버 캐시(`sectorSignalsCache`, `marketSummaryCache`)만 쓰는 대시보드 TTL 계산.

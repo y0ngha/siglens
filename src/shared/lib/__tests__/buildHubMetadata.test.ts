@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+import type { Locale } from '@/shared/i18n/locales';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     buildHubMetadata,
     localeAlternatesFrom,
@@ -6,9 +9,6 @@ import {
     localeOpenGraph,
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * 헬퍼 도입 전 허브 라우트(economy·market·fear-greed)가 손으로 만들던 모양 그대로.

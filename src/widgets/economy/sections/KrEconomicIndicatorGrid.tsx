@@ -1,27 +1,27 @@
-/**
- * 한국 거시 지표 카드 그리드(캘린더 발표 이력 기반).
- */
-import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
-import {
-    ECONOMY_CATEGORY_LABEL_KEY,
-    ECONOMY_INDICATOR_LABEL_KEY,
-} from '@/shared/config/economyLabelKey';
 import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
     type EconomyCategoryKey,
 } from '@/shared/config/economyIndicators';
+import {
+    ECONOMY_CATEGORY_LABEL_KEY,
+    ECONOMY_INDICATOR_LABEL_KEY,
+} from '@/shared/config/economyLabelKey';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+/**
+ * 한국 거시 지표 카드 그리드(캘린더 발표 이력 기반).
+ */
+import { cn } from '@/shared/lib/cn';
 import { formatFixed } from '@/shared/lib/formatNum';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { deltaUnitLabel, unitLabel } from '../utils/unitLabel';
-import { DeltaBadge } from './DeltaBadge';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { deltaUnitLabel, unitLabel } from '../utils/unitLabel';
+import { DeltaBadge } from './DeltaBadge';
 
 interface KrEconomicIndicatorGridProps {
     readonly cards: readonly KrIndicatorCard[];

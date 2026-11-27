@@ -2,11 +2,10 @@
  * 홈 히어로 아래 분석 통계(지표·패턴·스킬 수) 한 줄.
  */
 
-import { useTranslations } from 'next-intl';
-
 import type { SkillCounts } from '@y0ngha/siglens-core';
-import { DotSeparator } from '@/shared/ui/DotSeparator';
+import { useTranslations } from 'next-intl';
 import { buildSkillStats } from '@/shared/lib/skillStats';
+import { DotSeparator } from '@/shared/ui/DotSeparator';
 
 interface StatsBarProps {
     /** `countSkillFiles()` 결과 — 종목 페이지 진행 문구·가입 업셀과 같은 소스다. */

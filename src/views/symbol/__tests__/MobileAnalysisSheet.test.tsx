@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import type { MockInstance } from 'vitest';
-import { MobileAnalysisSheet } from '@/views/symbol/MobileAnalysisSheet';
 import {
     SNAP_FULL,
     SNAP_HALF,
     SNAP_PEEK,
 } from '@/views/symbol/constants/mobileSheet';
 import { useMobileAnalysisSheet } from '@/views/symbol/hooks/useMobileAnalysisSheet';
+import { MobileAnalysisSheet } from '@/views/symbol/MobileAnalysisSheet';
 
 const { drawerRootProps } = vi.hoisted(() => ({
     drawerRootProps: vi.fn(),

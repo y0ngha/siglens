@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import { type RefObject } from 'react';
-
 import { useAdSensePush } from '../../hooks/useAdSensePush';
 
 function createMockRef(width = 300): RefObject<HTMLDivElement> {

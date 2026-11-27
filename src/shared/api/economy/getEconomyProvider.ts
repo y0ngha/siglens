@@ -1,5 +1,5 @@
-import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import type { EconomyProvider } from './EconomyProvider';
 import { OfficialTreasuryEconomyProvider } from './OfficialTreasuryEconomyProvider';
 

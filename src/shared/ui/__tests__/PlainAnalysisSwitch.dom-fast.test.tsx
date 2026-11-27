@@ -7,11 +7,11 @@
  * 죽어도 CI가 초록인 상태였다.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { ANALYSIS_VIEW_STORAGE_KEY } from '@/shared/model/analysisView';
 import messages from '../../../../messages/ko.json';
 import { PlainAnalysisSwitch } from '../PlainAnalysisSwitch';
-import { ANALYSIS_VIEW_STORAGE_KEY } from '@/shared/model/analysisView';
 
 const T = messages.widgets.analysis.viewToggle;
 const RAW = '원본 카드 영역';

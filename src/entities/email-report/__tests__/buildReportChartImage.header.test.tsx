@@ -10,7 +10,6 @@ vi.mock('next/og', () => ({
 }));
 
 import type { Bar } from '@y0ngha/siglens-core';
-
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 
 function bars(): Bar[] {

@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 import { FEAR_GREED_LOOKBACK_DAYS } from '@y0ngha/siglens-core';
+import { describe, expect, it, vi } from 'vitest';
 import { scoredHistory } from '@/__tests__/utils/marketFearGreedHubView';
 import { FearGreedHistorySection } from '../FearGreedHistorySection';
 

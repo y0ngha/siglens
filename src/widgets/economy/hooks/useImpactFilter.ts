@@ -1,10 +1,10 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 경제 캘린더 중요도 필터 상태 훅 — 활성 중요도 집합과 칩 토글.
  */
 import { useState } from 'react';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
 
 /**
  * 기본으로 켜 두는 영향도. 연간 Low 이벤트가 2,919건으로 대다수라 기본 노출 시 노이즈가

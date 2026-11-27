@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import {
     lastClosedSessionCloseUtc,

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { MARKET_FEAR_GREED_SERIES_KEYS } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
 import {
     MARKET_FEAR_GREED_SERIES,
     MARKET_FEAR_GREED_SYMBOLS,

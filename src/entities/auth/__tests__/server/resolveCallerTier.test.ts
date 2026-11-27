@@ -11,12 +11,11 @@ vi.mock('@/shared/lib/byokGate', () => ({
 }));
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-import { resolveCallerTier } from '../../server/resolveCallerTier';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+import { resolveCallerTier } from '../../server/resolveCallerTier';
 
 /** ISR/prerender에서 `getCurrentUser()`가 `cookies()`를 읽을 때 Next 16.4가 던지는 실제 메시지. */
 const CACHE_SCOPE_ERROR = new Error(

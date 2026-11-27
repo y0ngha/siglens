@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { GrowthChart } from '@/widgets/fundamental/sections/GrowthChart';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { GrowthChart } from '@/widgets/fundamental/sections/GrowthChart';
 
 const SAMPLE_GROWTH = {
     growthRevenue: 0.12,

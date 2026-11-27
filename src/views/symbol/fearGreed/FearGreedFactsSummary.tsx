@@ -1,21 +1,21 @@
+import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import {
     SENTIMENT_LABEL_KEY,
     WARNING_TEXT_KEY,
 } from '@/shared/lib/fearGreedLabels';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
+import { AnalysisProvenanceNote } from '../snapshot/AnalysisProvenanceNote';
+import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
+import { FearGreedFactorTable } from './FearGreedFactorTable';
 import {
     buildFearGreedSummaryModel,
     type FearGreedMarketReading,
 } from './utils/fearGreedSummaryModel';
-import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
-import { FearGreedFactorTable } from './FearGreedFactorTable';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SampleFooterText } from '@/shared/ui/SampleFooterText';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { AnalysisProvenanceNote } from '../snapshot/AnalysisProvenanceNote';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;

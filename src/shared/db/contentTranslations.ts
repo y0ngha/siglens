@@ -1,3 +1,4 @@
+import type { Locale } from '@/shared/i18n/locales';
 import {
     pickContentLocale,
     toContentLocale,
@@ -8,7 +9,6 @@ import {
     TRANSLATION_SOURCE,
     type TranslationSource,
 } from './contentTranslationFields';
-import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * 한 (행, 필드)에 대한 로케일별 번역값.

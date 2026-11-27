@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 문항 탐색기 목록의 한 줄 — 펼침 버튼(메타·질문), 정답 요약, 대상별 판정 칩, 펼친 상세.
  */
 import { Fragment } from 'react';
-import { useTranslations } from 'next-intl';
 import type {
     BenchmarkItem,
     BenchmarkLevel,

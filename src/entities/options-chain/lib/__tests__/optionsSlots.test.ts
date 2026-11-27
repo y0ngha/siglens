@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { mapExpirationsToSlots, type SlotMapping } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     isSlotMapping,
     resolveSnapshotSlots,

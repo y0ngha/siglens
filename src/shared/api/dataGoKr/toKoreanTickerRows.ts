@@ -1,6 +1,6 @@
+import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import type { KoreanTickerUpsertEntry } from '@/shared/lib/types';
 import type { KrxListedItem } from './krxListedInfoClient';
-import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 
 /**
  * 시장 구분 → canonical 심볼 접미사.

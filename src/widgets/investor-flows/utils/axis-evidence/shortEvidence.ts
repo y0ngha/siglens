@@ -11,8 +11,8 @@ import {
     formatSignedPercent,
     formatSmallPercent,
 } from '../flowFormat';
-import { presentLines, type AxisEvidenceLine } from './evidenceLine';
 import { PERCENT_SCALE } from '../percentScale';
+import { presentLines, type AxisEvidenceLine } from './evidenceLine';
 
 /** 유통주식 대비 공매도 잔고 %의 소수 자리. */
 const SHORT_PCT_DIGITS = 2;

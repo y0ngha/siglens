@@ -2,8 +2,8 @@
 
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { markHumanInteracted } from '@/shared/lib/humanInteractionStore';
 import { useSymbolModel } from '../model/SymbolModelContext';
 

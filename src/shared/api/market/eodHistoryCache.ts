@@ -2,8 +2,8 @@ import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
-import { utcMidnightSeconds } from './barsWindow';
 import { clampBarsRange } from './barRange';
+import { utcMidnightSeconds } from './barsWindow';
 import {
     type EodHistoryEntry,
     type EodServeContext,

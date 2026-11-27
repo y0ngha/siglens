@@ -1,16 +1,16 @@
+import type { ProposedSale } from '@y0ngha/siglens-core';
 /**
  * 매도 예정 신고(Form 144) 블록 — 수집 중·조회 불가·없음·목록 중 하나를 그린다.
  */
 import { useTranslations } from 'next-intl';
-import type { ProposedSale } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { formatInteger } from '../utils/flowFormat';
-import { buildProposedSaleRows } from '../utils/secFilings';
 import { ProposedSaleRecords } from '../ui/form144/ProposedSaleRecords';
 import { OmittedNote } from '../ui/notes/OmittedNote';
+import { formatInteger } from '../utils/flowFormat';
+import { buildProposedSaleRows } from '../utils/secFilings';
 import { CollectingNotice } from './CollectingNotice';
 
 interface ProposedSalesBlockProps {

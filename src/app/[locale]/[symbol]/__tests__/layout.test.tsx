@@ -156,13 +156,12 @@ vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
 }));
 
 import { Suspense } from 'react';
-
-import SymbolLayout from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
+import SymbolLayout from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
+import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
-import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 
 const ASSET_INFO = {
     symbol: 'AAPL',

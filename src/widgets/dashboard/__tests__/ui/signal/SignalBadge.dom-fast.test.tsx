@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { SignalBadge } from '@/widgets/dashboard/ui/signal/SignalBadge';
 import type { SignalType } from '@y0ngha/siglens-core';
+import { SignalBadge } from '@/widgets/dashboard/ui/signal/SignalBadge';
 
 describe('SignalBadge', () => {
     it('renders RSI oversold label', () => {

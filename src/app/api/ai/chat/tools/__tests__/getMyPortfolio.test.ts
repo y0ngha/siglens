@@ -27,7 +27,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import {
     getMyPortfolioTool,
     loadMyPortfolio,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SHARE_KIND_OG_BUILDERS } from '../server/kindServerRegistry';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { SHARE_KIND_OG_BUILDERS } from '../server/kindServerRegistry';
 
 const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
 

@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import type {
     FilteredAnalysisResponse,
     OverallAnalysisResponse,
@@ -8,14 +7,15 @@ import type {
     NewsAnalysisResponse,
     OptionsAnalysisResponse,
 } from '@y0ngha/siglens-core';
-import {
-    SEO_SNAPSHOT_TABS,
-    type SeoSnapshotTab,
-} from '@/entities/seo-snapshot/model';
+import { describe, it, expect } from 'vitest';
 import {
     hasProseForTab,
     PROSE_SOURCE_FIELDS,
 } from '@/entities/seo-snapshot/lib/hasProseForTab';
+import {
+    SEO_SNAPSHOT_TABS,
+    type SeoSnapshotTab,
+} from '@/entities/seo-snapshot/model';
 
 // PROSE_PREDICATE_BY_TAB is a 7-tab dispatch map with no dedicated tests
 // before this file (TESTING.md#TE-5) — the renderer suites only

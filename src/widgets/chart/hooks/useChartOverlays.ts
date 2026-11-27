@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * AI 작도(`chartOverlays`) 스펙을 가격 차트 시리즈로 동기화하는 훅.
- */
-import type { RefObject } from 'react';
-import { useEffect, useRef } from 'react';
 import {
     createSeriesMarkers,
     LineSeries,
@@ -15,16 +10,21 @@ import {
     type SeriesMarker,
     type Time,
 } from 'lightweight-charts';
+/**
+ * AI 작도(`chartOverlays`) 스펙을 가격 차트 시리즈로 동기화하는 훅.
+ */
+import type { RefObject } from 'react';
+import { useEffect, useRef } from 'react';
 import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
+import { visibleLevelLabels } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
+import { DEFAULT_LINE_WIDTH } from '../constants';
 import {
     isSameOverlayStyle,
     overlayGeometryKeys,
     overlaySeriesStyle,
     type OverlaySeriesStyle,
 } from '../utils/overlaySeriesSync';
-import { DEFAULT_LINE_WIDTH } from '../constants';
 import { createRightExtendPrimitive } from '../utils/rightExtendPrimitive';
-import { visibleLevelLabels } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
 
 const OVERLAY_SERIES_OPTIONS = {
     lastValueVisible: false,

@@ -3,8 +3,8 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
 }));
 
 import { constants } from 'node:http2';
-import { dynamic, GET } from '@/app/api/sitemap/removal/[kind]/route';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
+import { dynamic, GET } from '@/app/api/sitemap/removal/[kind]/route';
 import { REMOVAL_SITEMAP_KINDS } from '@/entities/sitemap-entry/model';
 import { loadRemovalSitemapEntries } from '@/entities/sitemap-entry/server';
 

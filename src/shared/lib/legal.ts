@@ -1,7 +1,7 @@
-import { brandTitle } from '@/shared/lib/brandName';
-import { SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
+import { SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
 
 /**
  * 투자 고지 문구는 `shared.lib.legal.investmentDisclaimer` 키다.

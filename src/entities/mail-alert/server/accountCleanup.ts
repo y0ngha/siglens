@@ -1,5 +1,4 @@
 import 'server-only';
-
 import type { SiglensDatabase } from '@/shared/db/types';
 import { DrizzleMailAlertSubscriberRepository } from '../api';
 import { isMissingTableError } from '../lib/dbErrorKind';

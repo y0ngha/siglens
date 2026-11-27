@@ -1,3 +1,4 @@
+import { CRYPTO_CATEGORIES } from '../crypto-categories';
 import {
     CRYPTO_DASHBOARD_SCOPE,
     DASHBOARD_SCOPES,
@@ -8,7 +9,6 @@ import {
     US_DASHBOARD_SCOPE,
 } from '../dashboardScope';
 import { POPULAR_TICKERS, TICKER_CATEGORIES } from '../popular-tickers';
-import { CRYPTO_CATEGORIES } from '../crypto-categories';
 
 const SCOPES = [US_DASHBOARD_SCOPE, KR_DASHBOARD_SCOPE];
 

@@ -1,7 +1,7 @@
-// @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { CongressTrendResponse } from '@y0ngha/siglens-core';
+// @vitest-environment jsdom
+import { describe, it, expect } from 'vitest';
 import { CongressTrendSummaryView } from '../CongressTrendSummaryView';
 
 const BASE_RESULT: CongressTrendResponse = {

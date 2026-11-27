@@ -1,20 +1,20 @@
+import type { FailsToDeliverPoint, ShortMetrics } from '@y0ngha/siglens-core';
 /**
  * SEC 결제 불이행(FTD) 블록 — 수집 중·조회 불가·기록 없음·요약+막대 중 하나를 그린다.
  */
 import { useTranslations } from 'next-intl';
-import type { FailsToDeliverPoint, ShortMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
+import { DailyBarChart } from '../ui/charts/DailyBarChart';
+import { FtdSummaryStats } from '../ui/ftd/FtdSummaryStats';
 import { buildFailsToDeliverSeries } from '../utils/failsToDeliver';
 import {
     formatCompact,
     formatInteger,
     formatMonthDay,
 } from '../utils/flowFormat';
-import { DailyBarChart } from '../ui/charts/DailyBarChart';
-import { FtdSummaryStats } from '../ui/ftd/FtdSummaryStats';
 import { CollectingNotice } from './CollectingNotice';
 
 interface FailsToDeliverBlockProps {

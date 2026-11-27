@@ -35,23 +35,23 @@ vi.mock('@/app/api/sitemap/_shared/childEntries', () => ({
     loadStaticChildEntries: mocks.loadStaticChildEntries,
 }));
 
-import nextConfig from '../../../../../next.config';
+import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
 import { GET, RSS_PARTIAL_CACHE_CONTROL } from '@/app/api/rss/route';
-import { RSS_FEED_PATH } from '@/shared/config/rssFeed';
-import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import {
+    SITEMAP_CACHE_CONTROL,
+    SITEMAP_UNAVAILABLE_BODY,
+} from '@/app/api/sitemap/_shared/constants';
+import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import {
     RSS_ECONOMY_SURFACE,
     rssMarketSurface,
     rssNewsSurface,
 } from '@/entities/rss-feed/model';
-import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
-import {
-    SITEMAP_CACHE_CONTROL,
-    SITEMAP_UNAVAILABLE_BODY,
-} from '@/app/api/sitemap/_shared/constants';
-import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { hashHubBody } from '@/shared/cache/hubContentStamp';
+import { RSS_FEED_PATH } from '@/shared/config/rssFeed';
 import { SITE_URL } from '@/shared/lib/seo';
+import nextConfig from '../../../../../next.config';
 
 const STAMP_AT = '2026-10-04T03:00:00.000Z';
 const NEWS_CATEGORIES = Object.keys(CATEGORY_CONFIG);

@@ -1,8 +1,8 @@
 'use client';
 
-import { createPortal } from 'react-dom';
-import type { ReactNode, Ref } from 'react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode, Ref } from 'react';
+import { createPortal } from 'react-dom';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { cn } from '@/shared/lib/cn';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';

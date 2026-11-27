@@ -14,13 +14,12 @@ vi.mock('yahoo-finance2', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 import {
     createYahooClient,
     getYahooClient,
     YAHOO_FETCH_TIMEOUT_MS,
 } from '@/shared/api/yahoo/createYahooClient';
-import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 const constructorArgs: unknown[] = [];
 const quoteImpl = vi.fn(async (symbol: string) => ({ symbol }));

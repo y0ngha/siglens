@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
 import type {
     FearGreedLabel,
     FearGreedReading,
     FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import { describe, it, expect, beforeAll } from 'vitest';
+import jaMessages from '@/../messages/ja.json';
+import koMessages from '@/../messages/ko.json';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import {
     buildFearGreedFactorTable,
     buildFearGreedGroupComparisonLine,
@@ -17,12 +22,6 @@ import {
     buildExtremeZoneRecord,
     EXTREME_ZONE_RECORD_MAX_ROWS,
 } from '../utils/fearGreedFacts';
-import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-
-import koMessages from '@/../messages/ko.json';
-import jaMessages from '@/../messages/ja.json';
-import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 
 /**
  * 실제 ko 카탈로그를 읽는 번역자. `views.symbol.fearGreedFacts` 아래의 값을

@@ -6,14 +6,14 @@
  * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
-import type { Mock, MockedFunction } from 'vitest';
-import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { CongressTrendResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
+import type { Mock, MockedFunction } from 'vitest';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

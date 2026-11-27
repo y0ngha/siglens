@@ -3,9 +3,8 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
 import extended1Hour from './fixtures/extendedBars.aapl.1hour.json';
 import extended5Min from './fixtures/extendedBars.aapl.5min.json';
 

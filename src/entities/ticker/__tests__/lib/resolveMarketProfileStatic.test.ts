@@ -9,9 +9,8 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
 }));
 
 import { describe, it, expect, vi } from 'vitest';
-
-import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 
 describe('resolveMarketProfileStatic', () => {
     it('캐시된 getAssetInfoStatic의 프로필을 쓴다', async () => {

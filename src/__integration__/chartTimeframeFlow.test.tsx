@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 import type { Timeframe } from '@y0ngha/siglens-core';
+import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

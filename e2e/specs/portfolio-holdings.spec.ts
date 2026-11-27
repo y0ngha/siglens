@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import type { Locator, Page } from '@playwright/test';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Authed Tier 2 spec — exercises the portfolio holdings CRUD end to end

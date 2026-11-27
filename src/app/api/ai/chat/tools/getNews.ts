@@ -1,32 +1,32 @@
 import 'server-only';
-import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
-import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
-import {
-    CATEGORY_CONFIG,
-    categoryFromSlug,
-} from '@/entities/market-news/lib/categoryConfig';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import {
     alignNewsWithPriceMoves,
     type MarketDailyClose,
     type MarketSessionSpec,
     type NewsPriceMoves,
 } from '@y0ngha/siglens-core';
-import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
+import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
+import {
+    CATEGORY_CONFIG,
+    categoryFromSlug,
+} from '@/entities/market-news/lib/categoryConfig';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
+import { getDatabaseClient } from '@/shared/db/client';
 import { zonedDate, zonedWallClockToUtc } from '@/shared/lib/marketSessionDate';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     resolveNewsBody,
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
-import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
-import { getDatabaseClient } from '@/shared/db/client';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { barDate } from './calendarChange';
 import { logToolDegrade } from './logToolDegrade';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';

@@ -1,17 +1,17 @@
+import type { KrInsiderReport } from '@y0ngha/siglens-core';
 /**
  * 한국 임원·주요주주 소유 보고 섹션(DART `elestock`).
  */
 import { useTranslations } from 'next-intl';
-import type { KrInsiderReport } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { formatInteger } from '../utils/flowFormat';
-import { newestKrRows } from '../utils/krDisclosures';
 import { InsiderReportRecords } from '../ui/kr/InsiderReportRecords';
 import { OmittedNote } from '../ui/notes/OmittedNote';
+import { formatInteger } from '../utils/flowFormat';
+import { newestKrRows } from '../utils/krDisclosures';
 import { CollectingNotice } from './CollectingNotice';
 
 const HEADING_ID = 'flows-kr-insiders-heading';

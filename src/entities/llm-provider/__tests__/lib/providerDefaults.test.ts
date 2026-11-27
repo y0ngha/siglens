@@ -1,10 +1,10 @@
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import {
     CHATGPT_MODEL_PRIORITY,
     CLAUDE_MODEL_PRIORITY,
     DEEPSEEK_MODEL_PRIORITY,
     GEMINI_MODEL_PRIORITY,
 } from '@/entities/llm-provider/lib/providerDefaults';
-import { MODEL_SPECS } from '@y0ngha/siglens-core';
 
 describe('priority list coverage', () => {
     // core에 모델을 추가하고 이 목록에 반영하지 않는 드리프트를 막는다.

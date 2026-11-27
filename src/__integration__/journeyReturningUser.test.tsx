@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SectorTabs } from '@/widgets/dashboard/ui/sector-signal/SectorTabs';
-import { SymbolTabs } from '@/views/symbol/SymbolTabs';
-import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
-import { ModelSelector } from '@/widgets/analysis/ModelSelector';
 import type { Timeframe, ModelId } from '@y0ngha/siglens-core';
+import { SymbolTabs } from '@/views/symbol/SymbolTabs';
+import { ModelSelector } from '@/widgets/analysis/ModelSelector';
+import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
+import { SectorTabs } from '@/widgets/dashboard/ui/sector-signal/SectorTabs';
 
 let mockPathname = '/market';
 

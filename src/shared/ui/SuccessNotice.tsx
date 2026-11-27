@@ -1,8 +1,8 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { useEffect, useRef } from 'react';
 
 interface SuccessNoticeProps {
     /** `true`가 되면 패널을 채우고 포커스를 옮긴다. 호출부는 같은 값으로 폼을 내린다. */

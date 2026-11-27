@@ -5,14 +5,14 @@ import {
     type SubmitNewsAnalysisOptions,
     type RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import type { Locale } from '@/shared/i18n/locales';
-import { getDatabaseClient } from '@/shared/db/client';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
-import { resolveReasoning } from '@/shared/lib/byokGate';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { Locale } from '@/shared/i18n/locales';
+import { resolveReasoning } from '@/shared/lib/byokGate';
 import {
     resolveCallerKeyOptions,
     type AnalysisCaller,

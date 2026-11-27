@@ -7,10 +7,9 @@ vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import type { OverallScenario } from '@y0ngha/siglens-core';
-
+import React from 'react';
 import { ScenarioAnalysis } from '../../sections/ScenarioAnalysis';
 
 const SCENARIOS: OverallScenario[] = [

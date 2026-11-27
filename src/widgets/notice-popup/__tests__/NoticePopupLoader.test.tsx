@@ -12,8 +12,8 @@ vi.mock('@/widgets/notice-popup/ui/NoticePopup', () => {
 });
 
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { NOTICE_IDLE_FALLBACK_MS } from '@/widgets/notice-popup/hooks/useDeferredReveal';
+import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 
 describe('NoticePopupLoader', () => {
     it('마운트 직후에는 팝업도 그 청크도 가져오지 않는다', () => {

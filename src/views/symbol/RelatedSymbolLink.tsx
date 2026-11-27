@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { useSelectedLayoutSegment } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**

@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { useExclusiveChartMenu } from '@/widgets/chart/hooks/useExclusiveChartMenu';
-import { IndicatorMenu } from '@/widgets/chart/ui/IndicatorMenu';
 import {
     INDICATOR_META,
     type IndicatorBinding,
 } from '@/widgets/chart/model/indicatorRegistry';
+import { IndicatorMenu } from '@/widgets/chart/ui/IndicatorMenu';
 
 vi.mock('@/shared/lib/chartColors', () => ({
     getPeriodColor: (period: number) => `hsl(${period * 10}, 70%, 50%)`,

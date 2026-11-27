@@ -13,7 +13,6 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 
 import type { Bar } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { CONVERSATION_CHANGES_MAX_SYMBOLS } from '@/entities/chat-conversation/server/conversationAnalyses';
 import {
     CONVERSATION_CHANGES_TIMEOUT_MS,

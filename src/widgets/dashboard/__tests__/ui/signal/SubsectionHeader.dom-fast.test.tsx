@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { SubsectionHeader } from '@/widgets/dashboard/ui/signal/SubsectionHeader';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { SubsectionHeader } from '@/widgets/dashboard/ui/signal/SubsectionHeader';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

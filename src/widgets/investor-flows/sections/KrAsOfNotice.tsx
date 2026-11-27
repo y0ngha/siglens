@@ -1,14 +1,14 @@
+import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 /**
  * 한국 수급 탭의 기준 시점·출처 섹션.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { formatSnapshotDate } from '../utils/snapshotDate';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { AsOfRow } from '../ui/as-of/AsOfRow';
 import { WindowRangeText } from '../ui/as-of/WindowRangeText';
+import { formatSnapshotDate } from '../utils/snapshotDate';
 
 const HEADING_ID = 'flows-kr-asof-heading';
 

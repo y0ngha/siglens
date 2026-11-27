@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { buildManifest } from '@/shared/lib/buildManifest';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { buildManifest } from '@/shared/lib/buildManifest';
 
 /**
  * 오리진 루트 매니페스트 — **기본 로케일(ko)** 판이다.

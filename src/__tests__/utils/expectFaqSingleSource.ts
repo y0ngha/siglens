@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { expect } from 'vitest';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import type { FaqItem } from '@/shared/lib/seo';
-import { findAllElementsByType } from './findElementByType';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { collectJsonLdData } from './collectJsonLdData';
+import { findAllElementsByType } from './findElementByType';
 
 interface FaqQuestionNode {
     name: string;

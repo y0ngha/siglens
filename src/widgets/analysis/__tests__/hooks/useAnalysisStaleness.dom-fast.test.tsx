@@ -1,8 +1,8 @@
-import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { act, renderHook } from '@testing-library/react';
+import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { renderToString } from 'react-dom/server';
-import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
+import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
 import { useAnalysisStaleness } from '@/widgets/analysis/hooks/useAnalysisStaleness';
 
 vi.mock('@/entities/analysis/lib/staleThreshold', () => ({

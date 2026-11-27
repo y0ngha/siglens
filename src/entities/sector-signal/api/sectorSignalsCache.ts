@@ -1,6 +1,4 @@
 import 'server-only';
-import { cache } from 'react';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     type DashboardTimeframe,
     type MarketDataProvider,
@@ -8,9 +6,11 @@ import {
     type Timeframe,
     getSectorSignals,
 } from '@y0ngha/siglens-core';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { cache } from 'react';
 import { dashboardCacheTtlSeconds } from '@/shared/api/market/dashboardCacheTtl';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /** sector signals도 bars 일봉 TTL 정책을 재사용 — timeframe과 무관한 placeholder. */

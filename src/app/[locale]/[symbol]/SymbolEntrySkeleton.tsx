@@ -1,7 +1,7 @@
 'use client';
 
-import { SymbolLayoutJail } from './SymbolLayoutJail';
 import { SymbolHeaderShellFallback } from './SymbolHeaderShellFallback';
+import { SymbolLayoutJail } from './SymbolLayoutJail';
 
 /**
  * 다른 페이지에서 종목으로 들어가는 순간 루트 page slot에 그리는 골격 — 실제

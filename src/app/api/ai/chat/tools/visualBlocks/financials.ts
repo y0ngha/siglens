@@ -8,12 +8,12 @@ import type {
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveAssetInfoOrNull } from '../resolveAssetInfo';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logToolDegrade } from '../logToolDegrade';
+import { resolveAssetInfoOrNull } from '../resolveAssetInfo';
 import { noData, type VisualBuildEnv, type VisualOutcome } from './types';
 
 export const FINANCIAL_QUARTERS_MAX = 8;

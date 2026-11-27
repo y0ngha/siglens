@@ -11,9 +11,8 @@ vi.mock('@/entities/portfolio/api', () => ({
     },
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { bucketizePosition } from '@y0ngha/siglens-core';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 
 function holding(fmpSymbol: string | null, averagePrice = '100') {

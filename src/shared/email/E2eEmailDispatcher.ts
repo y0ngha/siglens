@@ -1,17 +1,17 @@
 import 'server-only';
 import type { Redis } from '@upstash/redis';
-import type {
-    EmailMessage,
-    KeyedEmailDispatcher,
-    KeyedEmailOutcome,
-} from './types';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     buildEmailDebugCountKey,
     buildEmailDebugIdemKey,
     buildEmailDebugKey,
     extractEmailDebugRecord,
 } from './emailDebugRecord';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
+import type {
+    EmailMessage,
+    KeyedEmailDispatcher,
+    KeyedEmailOutcome,
+} from './types';
 
 /** 스펙이 읽을 만큼 길고 스스로 정리될 만큼 짧은 debug 키 TTL. */
 const EMAIL_DEBUG_TTL_SECONDS = 600;

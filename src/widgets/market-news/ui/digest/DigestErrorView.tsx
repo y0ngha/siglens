@@ -3,8 +3,8 @@
  */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface DigestErrorViewProps {
     error: Error;

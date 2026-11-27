@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { PositionTabContent } from '../ui/PositionTabContent';
 
 const { mockUseHydrated } = vi.hoisted(() => ({

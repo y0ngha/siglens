@@ -15,6 +15,7 @@ vi.mock('@/shared/ui/ToastProvider', () => ({
 
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { mockViewport } from '@/__tests__/utils/mockViewport';
 import type {
     AnalysisFeedbackContext,
     FeedbackActionResult,
@@ -22,7 +23,6 @@ import type {
 } from '@/entities/feedback/types';
 import { type AiFeedbackTarget, feedbackIdentityKey } from '../model/targets';
 import { AiFeedbackButtons } from '../ui/AiFeedbackButtons';
-import { mockViewport } from '@/__tests__/utils/mockViewport';
 
 const CONTEXT: AnalysisFeedbackContext = {
     analysisType: 'technical',

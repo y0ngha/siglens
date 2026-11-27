@@ -4,16 +4,6 @@
  * 캔들 패턴 탐지 결과를 캔들 시리즈 마커로 표시하는 훅.
  */
 
-import type { RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type {
-    ISeriesApi,
-    ISeriesMarkersPluginApi,
-    SeriesMarkerBar,
-    UTCTimestamp,
-} from 'lightweight-charts';
-import { createSeriesMarkers } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     type Bar,
     type CandlePatternEntry,
@@ -26,6 +16,16 @@ import {
     getMultiPatternTrend,
     getSinglePatternTrend,
 } from '@y0ngha/siglens-core';
+import type {
+    ISeriesApi,
+    ISeriesMarkersPluginApi,
+    SeriesMarkerBar,
+    UTCTimestamp,
+} from 'lightweight-charts';
+import { createSeriesMarkers } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 
 // --- Types -------------------------------------------------------------------
 

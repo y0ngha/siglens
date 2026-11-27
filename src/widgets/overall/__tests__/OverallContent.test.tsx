@@ -110,24 +110,23 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn() }),
 }));
 
-import type { MockedFunction } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-
-import { OverallContent } from '@/widgets/overall/OverallContent';
+import type { ReactNode } from 'react';
+import type { MockedFunction } from 'vitest';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import {
     useOverallAnalysis,
     type UseOverallAnalysisReturn,
 } from '@/widgets/overall/hooks/useOverallAnalysis';
+import { OverallContent } from '@/widgets/overall/OverallContent';
 import type { OverallAnalysisNotice } from '@/widgets/overall/types';
-import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
-import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
-import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
-import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 
 /**
  * `OverallContent`는 `tf`를 `useUrlSearchParam`(window.location)으로 읽는다 —

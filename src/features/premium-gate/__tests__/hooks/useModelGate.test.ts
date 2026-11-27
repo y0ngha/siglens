@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
+import type { ModelId, LlmProvider } from '@y0ngha/siglens-core';
 import { useModelGate } from '@/features/premium-gate/hooks/useModelGate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import type { ModelId, LlmProvider } from '@y0ngha/siglens-core';
 
 let mockCurrentUser: { tier: string } | null | undefined = null;
 let mockRegisteredProviders: { provider: string }[] = [];

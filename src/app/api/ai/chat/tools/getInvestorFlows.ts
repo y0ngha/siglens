@@ -1,14 +1,10 @@
 import 'server-only';
+import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
-    getYahooOwnershipShares,
-    type YahooOwnershipShares,
-} from '@/shared/api/yahoo/yahooOwnershipSource';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import {
-    getInvestorFlowsScorecard,
-    type InvestorFlowsScorecardResult,
-} from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+    loadKrInvestorTrend,
+    type KrInvestorTrendView,
+} from '@/app/api/ai/chat/tools/krInvestorTrend';
 import {
     EMPTY_COLLECTING_SNAPSHOT,
     isKrDisclosureCollecting,
@@ -18,11 +14,6 @@ import {
 import { summarizeInvestorFlows } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import { summarizeKrInvestorFlows } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
 import {
-    loadKrInvestorTrend,
-    type KrInvestorTrendView,
-} from '@/app/api/ai/chat/tools/krInvestorTrend';
-import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
-import {
     HOLDER_QUERY_MAX_CHARS,
     type CollectingArms,
     type HolderLookupView,
@@ -30,7 +21,16 @@ import {
     type InvestorFlowsPipelineReadiness,
 } from '@/entities/investor-flows/model';
 import { getHolderLookup } from '@/entities/investor-flows/server/getHolderLookup';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import {
+    getInvestorFlowsScorecard,
+    type InvestorFlowsScorecardResult,
+} from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import {
+    getYahooOwnershipShares,
+    type YahooOwnershipShares,
+} from '@/shared/api/yahoo/yahooOwnershipSource';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { logToolDegrade } from './logToolDegrade';
 
 const BASE_SOURCE =

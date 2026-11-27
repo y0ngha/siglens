@@ -1,4 +1,3 @@
-import type { EarningsSession } from '@/entities/analyst-views/model';
 import type {
     DilutionMetrics,
     FundamentalGradesConsensusInput,
@@ -9,6 +8,7 @@ import type {
     KrInsiderMetrics,
     ShortMetrics,
 } from '@y0ngha/siglens-core';
+import type { EarningsSession } from '@/entities/analyst-views/model';
 
 /**
  * 펀더멘털 탭 "재무·수급 한눈에" 블록의 입력과 출력.

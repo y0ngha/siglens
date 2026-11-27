@@ -26,12 +26,12 @@ vi.mock('next-intl/server', () => ({
 }));
 
 import type { Metadata } from 'next';
-import TermsPage, {
-    generateMetadata as termsMetadata,
-} from '@/app/[locale]/terms/page';
 import PrivacyPage, {
     generateMetadata as privacyMetadata,
 } from '@/app/[locale]/privacy/page';
+import TermsPage, {
+    generateMetadata as termsMetadata,
+} from '@/app/[locale]/terms/page';
 
 type PageComponent = (props: {
     params: Promise<{ locale: string }>;

@@ -3,11 +3,11 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
-import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
 import {
     getMarketDataProvider,
     marketDataProviderFor,
 } from '@/shared/api/market/getMarketDataProvider';
+import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
 
 // NOTE: The E2E branch (`require('./FakeMarketProvider')`) is not tested here
 // because vitest's ESM runner cannot resolve CJS `require()` relative paths

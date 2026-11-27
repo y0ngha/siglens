@@ -2,8 +2,8 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
+import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import type { SiglensDatabase, WatchlistItemRecord } from '@/shared/db/types';
 
 const createdAt = new Date('2026-10-09T00:00:00.000Z');

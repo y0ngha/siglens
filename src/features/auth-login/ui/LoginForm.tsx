@@ -4,16 +4,16 @@
  * @file 이메일·비밀번호 로그인 폼. 제출은 `useLoginForm`의 서버 액션으로 간다.
  */
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
-import { useLoginForm } from '../hooks/useLoginForm';
-import { useLoginErrorFocus } from '../hooks/useLoginErrorFocus';
-import { LOGIN_FIELD } from '../lib/loginFields';
-import { ErrorAlert } from '@/shared/ui/ErrorAlert';
-import { TextField } from '@/shared/ui/TextField';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { TextField } from '@/shared/ui/TextField';
+import { useLoginErrorFocus } from '../hooks/useLoginErrorFocus';
+import { useLoginForm } from '../hooks/useLoginForm';
+import { LOGIN_FIELD } from '../lib/loginFields';
 
 interface LoginFormProps {
     /** 로그인 후 돌아갈 경로. 서버 액션이 다시 검사하므로 여기서는 그대로 싣는다. */

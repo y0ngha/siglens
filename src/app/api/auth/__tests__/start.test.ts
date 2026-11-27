@@ -19,13 +19,13 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
 }));
 
 import { NextRequest } from 'next/server';
+import type { MockedFunction } from 'vitest';
 import { GET } from '@/app/api/auth/[provider]/start/route';
 import { isOAuthProvider } from '@/features/auth-oauth/lib/providers';
 import {
     issueOAuthState,
     OAuthStateSecretMisconfiguredError,
 } from '@/features/auth-oauth/lib/state';
-import type { MockedFunction } from 'vitest';
 
 const mockIsOAuthProvider = isOAuthProvider as MockedFunction<
     typeof isOAuthProvider

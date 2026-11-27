@@ -1,14 +1,6 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import {
-    privacyDescription,
-    privacyFullTitle,
-    PRIVACY_PATH,
-    privacyTitle,
-} from '@/shared/lib/legal';
-import { JsonLd } from '@/shared/ui/JsonLd';
+import { notFound } from 'next/navigation';
 import {
     legalPolicyBreadcrumbJsonLd,
     legalPolicyMetadata,
@@ -21,6 +13,14 @@ import {
     PRIVACY_EYEBROW,
     PrivacyContent,
 } from '@/app/[locale]/privacy/_components/PrivacyContent';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import {
+    privacyDescription,
+    privacyFullTitle,
+    PRIVACY_PATH,
+    privacyTitle,
+} from '@/shared/lib/legal';
+import { JsonLd } from '@/shared/ui/JsonLd';
 
 /**
  * 본문은 코드가 아니라 `terms` 테이블에 있고, 발효일이 되면 `findActive`의

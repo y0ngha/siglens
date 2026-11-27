@@ -12,10 +12,10 @@ vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PopularTickers } from '@/widgets/home/PopularTickers';
-import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import type { GateMode } from '@/shared/lib/types';
+import { SymbolTabs } from '@/views/symbol/SymbolTabs';
+import { PopularTickers } from '@/widgets/home/PopularTickers';
 
 const mockPush = vi.fn();
 

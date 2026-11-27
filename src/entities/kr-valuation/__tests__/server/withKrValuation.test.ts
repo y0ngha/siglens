@@ -11,11 +11,11 @@ import type {
 } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FundamentalProviderWithRawPeers } from '@/shared/api/fmp/fundamentalProvider.types';
-import type { KrPrice } from '../../model';
 import {
     extractShareTotals,
     extractStatementFigures,
 } from '../../lib/dartAmounts';
+import type { KrPrice } from '../../model';
 import {
     resolveKrPageValuation,
     withKrValuation,

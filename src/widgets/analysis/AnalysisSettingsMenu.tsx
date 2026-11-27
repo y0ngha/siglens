@@ -1,10 +1,10 @@
 'use client';
 
+import type { ModelId } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
-import type { ModelId } from '@y0ngha/siglens-core';
-import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
+import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';

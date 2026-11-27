@@ -66,10 +66,6 @@ vi.mock('../../lib/analyzeNewsCards', () => ({
     analyzeNewsCards: vi.fn().mockResolvedValue(undefined),
 }));
 
-import type { Mock } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 import type {
     NewsItem,
     RunNewsAnalysisResult,
@@ -79,17 +75,20 @@ import {
     runNewsAnalysis,
     DEEPSEEK_V4_1_FLASH_MODEL,
 } from '@y0ngha/siglens-core';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { getDatabaseClient } from '@/shared/db/client';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import type { Mock } from 'vitest';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from '../../lib/newsLookback';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { SiglensDatabase } from '@/shared/db/types';
+import { analyzeNewsCards } from '../../lib/analyzeNewsCards';
 import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from '../../lib/ingestNewsForSymbol';
-import { analyzeNewsCards } from '../../lib/analyzeNewsCards';
 import { PREWARM_NEWS_CARD_LIMIT } from '../../lib/newsAnalysisConstants';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '../../lib/newsLookback';
 import { prewarmNews } from '../../server/prewarmNews';
 
 const SEAM_SOURCE = readFileSync(

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
 import { useTickerSearch } from '@/features/ticker-search/hooks/useTickerSearch';
-import type { TickerSearchResult } from '@/shared/lib/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { TickerSearchResult } from '@/shared/lib/types';
 
 const mockResults: TickerSearchResult[] = [
     {

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import type { ValidatedActionPrices } from '@y0ngha/siglens-core';
-import { useActionRecommendationOverlay } from '../../hooks/useActionRecommendationOverlay';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { useActionRecommendationOverlay } from '../../hooks/useActionRecommendationOverlay';
 
 /**
  * 라인 타이틀(`진입점 #1` 등)은 이제 `widgets.chart.actionOverlay` 카탈로그에서

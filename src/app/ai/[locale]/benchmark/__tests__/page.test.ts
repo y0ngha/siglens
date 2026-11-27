@@ -18,10 +18,10 @@ vi.mock('next/navigation', () => ({
 
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import AiBenchmarkRoute, {
     generateMetadata,
 } from '@/app/ai/[locale]/benchmark/page';
+import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { RouteMessages } from '@/shared/i18n/RouteMessages';
 

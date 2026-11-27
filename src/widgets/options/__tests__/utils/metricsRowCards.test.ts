@@ -1,5 +1,5 @@
-import { buildMetricCardValues } from '@/widgets/options/utils/metricsRowCards';
 import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
+import { buildMetricCardValues } from '@/widgets/options/utils/metricsRowCards';
 
 const METRICS: OptionsExpirationMetrics = {
     expirationDate: '2025-06-20',

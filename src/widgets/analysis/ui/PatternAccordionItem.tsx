@@ -1,14 +1,14 @@
 'use client';
 
-/**
- * 감지된 차트 패턴 카드 — 펼치면 요약, 핵심 가격, 가이드 링크를 보여준다.
- */
-import { useTranslations } from 'next-intl';
 import type {
     KrxTickTable,
     PatternResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
+/**
+ * 감지된 차트 패턴 카드 — 펼치면 요약, 핵심 가격, 가이드 링크를 보여준다.
+ */
+import { useTranslations } from 'next-intl';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';

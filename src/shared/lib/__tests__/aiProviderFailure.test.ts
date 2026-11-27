@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import * as Anthropic from '@anthropic-ai/sdk';
 import { ApiError as GeminiApiError } from '@google/genai';
 import * as OpenAI from 'openai';
+import { describe, expect, it } from 'vitest';
+import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import {
     caughtAnalysisErrorCode,
     isAiProviderFailure,
     providerFailureStatus,
 } from '@/shared/lib/aiProviderFailure';
-import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 
 /**
  * 픽스처는 손으로 만든 `{ status }` 객체가 아니라 **실제 SDK 에러 클래스**다.

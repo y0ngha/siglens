@@ -1,9 +1,9 @@
-import type { ContactFormError, ContactFormField } from '@/shared/lib/types';
-import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/shared/config/contact';
+import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
+import type { ContactFormError, ContactFormField } from '@/shared/lib/types';
 
 /**
  * 번역자를 인자로 받는다 — 이 모듈은 훅을 부를 수 없는 순수 함수다.

@@ -6,8 +6,15 @@
  * `crypto-browserify`가 33개 라우트의 first-load JS에 실린 사고가 반복된다.
  */
 import 'server-only';
-
-import { createHash } from 'node:crypto';
+import {
+    analysisHistoryQuery,
+    type AnalysisHistoryAxis,
+    type AssembledPromptRecord,
+    type MarketSessionSpec,
+    type PriorAnalysis,
+    type Tier,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 import {
     and,
     desc,
@@ -21,23 +28,15 @@ import {
     or,
     sql,
 } from 'drizzle-orm';
-import {
-    analysisHistoryQuery,
-    type AnalysisHistoryAxis,
-    type AssembledPromptRecord,
-    type MarketSessionSpec,
-    type PriorAnalysis,
-    type Tier,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
+import { createHash } from 'node:crypto';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
 import { toPriorAnalysis } from './lib/toPriorAnalysis';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `analysis_history` 탭 축 — 현재는 technical/overall 둘뿐이다. */
 export type AnalysisHistoryTab = 'technical' | 'overall';

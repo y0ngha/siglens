@@ -1,21 +1,21 @@
+import type { Bar } from '@y0ngha/siglens-core';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Bar } from '@y0ngha/siglens-core';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
-import { describeTarget } from '../../../../../../db/scripts/lib/dbTarget';
 import {
     DrizzleMailAlertDeliveryRepository,
     DrizzleMailAlertSubscriberRepository,
     DrizzlePriceAlertRepository,
 } from '@/entities/mail-alert/api';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import * as schema from '@/shared/db/schema';
 import type { CreatePriceAlertInput } from '@/shared/db/types';
 import type { EmailMessage } from '@/shared/email/types';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { describeTarget } from '../../../../../../db/scripts/lib/dbTarget';
 import {
     runMailAlertBatch,
     type MailAlertBatchCounts,

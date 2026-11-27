@@ -1,15 +1,15 @@
-import type { MockedFunction } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
-import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import type { ReactNode } from 'react';
+import type { MockedFunction } from 'vitest';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import {
     POLL_INTERVAL_MS,
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
 } from '@/shared/config/cardPollingConfig';
 import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 
 vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
     getMarketNewsCardsAction: vi.fn(),

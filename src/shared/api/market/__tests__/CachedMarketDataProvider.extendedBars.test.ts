@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     CRYPTO_SESSION,
     type Bar,
     type GetBarsOptions,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
 import type {
     ExtendedBarsProvider,

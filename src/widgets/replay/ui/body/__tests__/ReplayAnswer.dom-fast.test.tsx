@@ -4,9 +4,9 @@ import {
     parseReplayLine,
     type ReplayScenario,
 } from '@/shared/lib/replay/replayScript';
+import { ReplayAnswer } from '@/widgets/replay/ui/body/ReplayAnswer';
 import { completeFrame, type Frame } from '@/widgets/replay/utils/replayPlayer';
 import { deriveReplayView } from '@/widgets/replay/utils/replayView';
-import { ReplayAnswer } from '@/widgets/replay/ui/body/ReplayAnswer';
 
 const SCENARIOS: readonly ReplayScenario[] = [
     {

@@ -1,10 +1,10 @@
 'use client';
 
+import type { AnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 응답이 서사 없는 폴백 placeholder(`buildFallbackAnalysis`)인지 판정하는 훅.
  */
 import { useTranslations } from 'next-intl';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 
 /**

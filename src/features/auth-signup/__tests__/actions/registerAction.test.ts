@@ -75,18 +75,17 @@ vi.mock('@/shared/i18n/requestLocale', () => ({
     resolveRequestLocale: vi.fn(async () => 'en'),
 }));
 
-import type { MockedFunction, MockedClass, Mock } from 'vitest';
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
-import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
-import { registerUser } from '@/entities/auth/lib/registerUser';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
-import { createEmailTokenStore } from '@/entities/email-token/api';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
-import { DrizzleTermsRepository } from '@/entities/terms/api';
+import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { registerUser } from '@/entities/auth/lib/registerUser';
+import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
 import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import {
     getDatabaseClient,

@@ -3,8 +3,8 @@ import type {
     NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { isNewsSentiment } from '@/shared/lib/sentimentDisplay';
 import { isNewsImpact } from '@/shared/lib/news/impactDisplay';
+import { isNewsSentiment } from '@/shared/lib/sentimentDisplay';
 
 /**
  * 뉴스 분석 컬럼의 읽기 경계 검증. DB는 이 필드를 raw text로 저장하고(CHECK 제약

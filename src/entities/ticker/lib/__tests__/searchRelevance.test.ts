@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { TickerSearchResult } from '@/shared/lib/types';
 import {
     scoreSearchRelevance,
     matchSearchRelevance,
@@ -10,7 +11,6 @@ import {
     FALLBACK_SCORE,
     POPULAR_BONUS,
 } from '../searchRelevance';
-import type { TickerSearchResult } from '@/shared/lib/types';
 
 function makeResult(
     symbol: string,

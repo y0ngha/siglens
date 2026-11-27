@@ -1,19 +1,10 @@
 import 'server-only';
-import { revalidateTag } from 'next/cache';
 import { runEconomicEventAnalysis } from '@y0ngha/siglens-core';
 import type { EconomicEventAnalysis } from '@y0ngha/siglens-core';
-
+import { revalidateTag } from 'next/cache';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-
-import {
-    DrizzleEconomicCalendarRepository,
-    type UnanalyzedAnnouncedEvent,
-} from './economicCalendarRepository';
-import {
-    isAnalysisRecentlyRun,
-    markAnalysisRun,
-} from './calendarAnalysisRefreshFlag';
 import {
     CALENDAR_MAJORITY_FAILURE_DIVISOR,
     CALENDAR_ANALYSIS_PARALLEL_LIMIT,
@@ -22,7 +13,14 @@ import {
     economyCalendarCacheTag,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import {
+    isAnalysisRecentlyRun,
+    markAnalysisRun,
+} from './calendarAnalysisRefreshFlag';
+import {
+    DrizzleEconomicCalendarRepository,
+    type UnanalyzedAnnouncedEvent,
+} from './economicCalendarRepository';
 
 /** `analyzeEconomicEvents` 호출 옵션 — 방문자 경로는 `limit` 없이, 크론은 상한을 걸어 부른다. */
 export interface AnalyzeEconomicEventsOptions {

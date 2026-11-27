@@ -1,10 +1,8 @@
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 
-import type { MockedFunction } from 'vitest';
-
 import { cookies } from 'next/headers';
-import { mintGuestIdOnResponse, readGuestId } from '../guestId';
+import type { MockedFunction } from 'vitest';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
 import {
     GUEST_ID_MAX_AGE_SECONDS,
@@ -12,6 +10,7 @@ import {
     verifyGuestCookie,
 } from '@/shared/config/guestCookie';
 import { MS_PER_MINUTE } from '@/shared/config/time';
+import { mintGuestIdOnResponse, readGuestId } from '../guestId';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 

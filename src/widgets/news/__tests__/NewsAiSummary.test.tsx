@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import {
     ShareableAnalysisProvider,
     useShareable,
 } from '@/features/share/model/ShareableAnalysisContext';
+import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 
 const ensureNewsCardsAnalyzedActionSpy = vi.hoisted(() =>
     vi.fn().mockResolvedValue(undefined)

@@ -12,13 +12,13 @@ import {
 } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { cikToString } from '../lib/cik';
+import { previousQuarterEnd } from '../lib/investorFlowsDates';
 import type {
     AggregateRecord,
     HolderRecord,
 } from '../lib/snapshot/institutional';
 import type { OptionAggregateRecord } from '../model';
-import { cikToString } from '../lib/cik';
-import { previousQuarterEnd } from '../lib/investorFlowsDates';
 
 /** CUSIP 문자열 → map id 서브쿼리(포지션은 id로 저장된다). */
 const cusipIdOf = (cusip: string) =>

@@ -1,5 +1,5 @@
-import type { FunnelKeyEventCount } from '@/entities/funnel/types';
 import { RETENTION_WINDOWS } from '@/entities/funnel/retentionWindows';
+import type { FunnelKeyEventCount } from '@/entities/funnel/types';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 

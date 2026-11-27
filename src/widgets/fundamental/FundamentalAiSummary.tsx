@@ -6,17 +6,17 @@
  */
 import { useTranslations } from 'next-intl';
 import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
-import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
+import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { FundamentalAiSummaryView } from './ui/ai-summary/FundamentalAiSummaryView';
 
 interface FundamentalAiSummaryProps {

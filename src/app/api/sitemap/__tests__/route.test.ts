@@ -28,18 +28,17 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
     })),
 }));
 
+import type { MockedFunction } from 'vitest';
+import { GET as getCryptoChild } from '@/app/api/sitemap/crypto/route';
+import { GET as getPopularChild } from '@/app/api/sitemap/popular/route';
 import { GET } from '@/app/api/sitemap/route';
 import { GET as getStaticChild } from '@/app/api/sitemap/static/route';
-import { GET as getPopularChild } from '@/app/api/sitemap/popular/route';
-import { GET as getCryptoChild } from '@/app/api/sitemap/crypto/route';
 import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
 import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
 import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
 import { loadPopularSitemapInputs } from '@/entities/sitemap-entry/server';
-import type { MockedFunction } from 'vitest';
-
 import nextConfig from '../../../../../next.config';
 
 const mockToSitemapIndexXml = toSitemapIndexXml as MockedFunction<

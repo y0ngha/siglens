@@ -1,6 +1,5 @@
 import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { describe, expect, it, vi } from 'vitest';
-
 import { installConsoleDbErrorRedaction } from '@/shared/db/installConsoleDbErrorRedaction';
 
 const SECRET = 'session-token-abc123';

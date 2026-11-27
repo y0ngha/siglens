@@ -1,7 +1,7 @@
-import { useTranslations } from 'next-intl';
 import type { PlanCheck } from '@y0ngha/siglens-core';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 /**
  * 계획과 현재가의 차이를 보여 주는 블록.

@@ -22,7 +22,6 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getQuoteTool } from '@/app/api/ai/chat/tools/getQuote';
 import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';

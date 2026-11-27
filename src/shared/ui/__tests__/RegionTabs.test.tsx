@@ -14,10 +14,10 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { RegionTabs } from '../RegionTabs';
+import React from 'react';
 import { regionsOf } from '@/shared/config/assetClassNav';
+import { RegionTabs } from '../RegionTabs';
 
 describe('RegionTabs', () => {
     it('renders one entry per region of the vertical', () => {

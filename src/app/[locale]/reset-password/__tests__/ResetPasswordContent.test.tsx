@@ -14,9 +14,8 @@ vi.mock('@/features/auth-password-reset/ui/ResetPasswordForm', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
-import { ResetPasswordContent } from '../ResetPasswordContent';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { ResetPasswordContent } from '../ResetPasswordContent';
 
 describe('ResetPasswordContent', () => {
     beforeEach(() => {

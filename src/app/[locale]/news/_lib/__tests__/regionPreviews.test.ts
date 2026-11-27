@@ -7,11 +7,11 @@ vi.mock('@/entities/market-news/lib/categoryConfig', async importOriginal => {
 });
 
 import { describe, expect, it, vi } from 'vitest';
-import { categoriesInRegion } from '@/entities/market-news/lib/categoryConfig';
 import {
     allPreviewsEmpty,
     previewCategoryOf,
 } from '@/app/[locale]/news/_lib/regionPreviews';
+import { categoriesInRegion } from '@/entities/market-news/lib/categoryConfig';
 
 describe('previewCategoryOf', () => {
     it('미국은 /news/us 첫 카드(general)와 겹치지 않게 stock을 고른다', () => {

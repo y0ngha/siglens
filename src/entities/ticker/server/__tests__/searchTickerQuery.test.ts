@@ -1,7 +1,7 @@
 import type { MockedFunction } from 'vitest';
-import { searchTickerQuery } from '../searchTickerQuery';
-import { searchTicker } from '../searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { searchTicker } from '../searchTicker';
+import { searchTickerQuery } from '../searchTickerQuery';
 
 vi.mock('../searchTicker', () => ({
     searchTicker: vi.fn(),

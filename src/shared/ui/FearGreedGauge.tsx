@@ -1,11 +1,11 @@
-import { useTranslations } from 'next-intl';
 import {
     FEAR_GREED_LABEL_CUTOFFS,
     type FearGreedLabel,
 } from '@y0ngha/siglens-core';
-import type { SnapshotConfidence } from '@/shared/lib/types';
-import { SENTIMENT_LABEL_KEY } from '@/shared/lib/fearGreedLabels';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { SENTIMENT_LABEL_KEY } from '@/shared/lib/fearGreedLabels';
+import type { SnapshotConfidence } from '@/shared/lib/types';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     GAUGE_CX,

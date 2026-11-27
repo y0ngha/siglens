@@ -13,32 +13,32 @@ import {
     lastDailyBarDate,
 } from '@/entities/bars/lib/sessionBars';
 import { barsUpToDate } from '@/entities/email-report/lib/barsUpToDate';
+import { toMailAlertChanges } from '@/entities/mail-alert/lib/mailAlertChanges';
 import {
     MAIL_ALERT_CHANGE_SIGNAL_TYPES,
     MAIL_ALERT_SIGNAL_TYPES,
 } from '@/entities/mail-alert/lib/mailAlertConstants';
-import { toMailAlertChanges } from '@/entities/mail-alert/lib/mailAlertChanges';
-import {
-    hasLevels,
-    referenceScaleHolds,
-} from '@/entities/mail-alert/lib/referenceScale';
-import { priceAlertAsOf } from '@/entities/mail-alert/lib/priceAlertExpiry';
 import type {
     MailAlertComputedSymbol,
     MailAlertEpisodeRow,
     MailAlertFearGreedEntry,
 } from '@/entities/mail-alert/lib/planMailAlertItems';
+import { priceAlertAsOf } from '@/entities/mail-alert/lib/priceAlertExpiry';
+import {
+    hasLevels,
+    referenceScaleHolds,
+} from '@/entities/mail-alert/lib/referenceScale';
 import type {
     MailAlertChange,
     MailAlertFearGreedMarket,
 } from '@/entities/mail-alert/model';
-import { SIGNAL_SETTLE_MINUTES } from '@/entities/signal-history/lib/signalEventRows';
 import type { SignalHistoryRepository } from '@/entities/signal-history/api';
+import { SIGNAL_SETTLE_MINUTES } from '@/entities/signal-history/lib/signalEventRows';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { mapChunked } from '@/shared/lib/mapChunked';
+import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 
 /** 담은 모든 종목의 일봉을 동시에 받는 수(CC-1). 일봉은 대개 종목 페이지가 채운 캐시 적중이다. */
 export const COMPUTE_CONCURRENCY = 5;

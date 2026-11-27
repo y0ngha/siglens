@@ -1,13 +1,13 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, eq, inArray, ne, or } from 'drizzle-orm';
-import { assetTranslations, koreanTickers } from '../src/shared/db/schema';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import {
     describeTarget,
     formatTarget,
     guardRemoteWrite,
     requireDatabaseUrl,
 } from '../db/scripts/lib/dbTarget';
+import { assetTranslations, koreanTickers } from '../src/shared/db/schema';
 import {
     classifyFmpSymbolMapping,
     planAssetTranslationCleanup,

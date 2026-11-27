@@ -1,9 +1,9 @@
-// @vitest-environment jsdom
-import type { RefObject } from 'react';
 import { renderHook } from '@testing-library/react';
 import type { ISeriesApi } from 'lightweight-charts';
-import { useBandOccluder } from '../../hooks/useBandOccluder';
+// @vitest-environment jsdom
+import type { RefObject } from 'react';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
+import { useBandOccluder } from '../../hooks/useBandOccluder';
 
 const mockGetChartChrome = vi.fn(() => ({
     background: '#1a1a2e',

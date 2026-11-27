@@ -10,7 +10,6 @@ vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getCongressTradesTool } from '@/app/api/ai/chat/tools/getCongressTrades';
 
 const ctx = {

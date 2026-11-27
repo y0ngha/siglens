@@ -24,16 +24,16 @@ vi.mock('../ui/GuideDemoChart', () => ({
 
 import { screen, within } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
+import type { GuideEntry } from '@/entities/guide/types';
 import { aiAskUrl } from '@/shared/config/aiHost';
 import type { Locale } from '@/shared/i18n/locales';
-import type { GuideEntry } from '@/entities/guide/types';
-import type { LiveSymbolGroup } from '../lib/liveSymbols';
-import ko from '../../../../messages/ko.json';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import en from '../../../../messages/en.json';
+import ko from '../../../../messages/ko.json';
 import { GuideEntryPage } from '../GuideEntryPage';
-import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
+import type { LiveSymbolGroup } from '../lib/liveSymbols';
 
 const g = ko.views.guide;
 

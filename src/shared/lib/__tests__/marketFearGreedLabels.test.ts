@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
-import { formatMarketFactorRaw } from '../marketFearGreedLabels';
+import { describe, expect, it } from 'vitest';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
+import { formatMarketFactorRaw } from '../marketFearGreedLabels';
 
 /**
  * 팩터 라벨·설명은 카탈로그(`shared.lib.fearGreedFactor`)로 옮겼다 — 예전에는

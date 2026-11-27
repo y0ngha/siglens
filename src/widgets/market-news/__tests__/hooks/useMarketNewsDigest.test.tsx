@@ -12,16 +12,16 @@
  * in B1 fix). The hydration gate is tested via the cards-waiter `enabled` path.
  */
 
-import type { MockedFunction } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
-import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import type { MockedFunction } from 'vitest';
 import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction';
-import { fetchMarketNewsDigest } from '@/widgets/market-news/utils/fetchMarketNewsDigest';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDigest';
+import { fetchMarketNewsDigest } from '@/widgets/market-news/utils/fetchMarketNewsDigest';
 
 vi.mock(
     '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction',

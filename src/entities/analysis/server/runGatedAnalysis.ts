@@ -2,6 +2,7 @@ import 'server-only';
 import type { ModelId, Tier } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import {
@@ -10,7 +11,6 @@ import {
     resolveTierAndByok,
 } from '@/shared/lib/byokGate';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 게이트가 정한 필드로, core `run*` 호출이 공통으로 받는다. 호출부가 자신의

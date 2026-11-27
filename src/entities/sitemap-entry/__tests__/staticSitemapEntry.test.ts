@@ -1,5 +1,4 @@
 import { SITE_URL } from '@/shared/lib/seo';
-
 import { staticSitemapEntry } from '../lib/staticSitemapEntry';
 
 describe('staticSitemapEntry', () => {

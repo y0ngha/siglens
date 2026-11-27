@@ -1,11 +1,11 @@
 import {
-    buildLlmsDocument,
-    llmsTargetUrl,
-} from '@/app/api/llms/_lib/buildLlmsDocument';
-import {
     TEST_RUN_ID,
     testInputs,
 } from '@/app/api/llms/_lib/__tests__/llmsTestInputs';
+import {
+    buildLlmsDocument,
+    llmsTargetUrl,
+} from '@/app/api/llms/_lib/buildLlmsDocument';
 import type { LlmsDocument } from '@/app/api/llms/_lib/model';
 import { renderLlmsTxt } from '@/app/api/llms/_lib/renderLlmsTxt';
 import { backtestResultsFileUrl } from '@/entities/backtest-case/lib/resultsFileUrl';

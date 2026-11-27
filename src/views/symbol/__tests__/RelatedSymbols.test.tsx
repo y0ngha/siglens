@@ -17,13 +17,12 @@ vi.mock('next/navigation', async importOriginal => ({
     useSelectedLayoutSegment: () => mockSegment.current,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-
-import { RelatedSymbols } from '../RelatedSymbols';
-import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
+import { RelatedSymbols } from '../RelatedSymbols';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

@@ -1,20 +1,20 @@
 import 'server-only';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
-import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
 import {
     QUOTE_LOOKUP_TIMEOUT_MS,
     quoteWithTimeout,
 } from '@/shared/api/market/quoteTimeout';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import {
     EXTENDED_QUOTE_CACHE_TTL_SECONDS,
     EXTENDED_QUOTE_TIMEOUT_CACHE_TTL_SECONDS,
 } from '@/shared/config/time';
-import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
-import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
-import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     buildExtendedQuote,
     type ReferenceQuote,

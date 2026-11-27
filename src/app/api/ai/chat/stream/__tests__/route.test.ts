@@ -96,10 +96,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     runAgentTurn: m.runTurn,
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import sharp from 'sharp';
-import { POST } from '@/app/api/ai/chat/stream/route';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     __resetTurnSlotsForTests,
     AGENT_TURN_QUEUE_MAX,
@@ -107,6 +105,7 @@ import {
     getActiveAgentTurns,
     getQueuedAgentTurns,
 } from '@/app/api/ai/chat/stream/_lib/turnSlots';
+import { POST } from '@/app/api/ai/chat/stream/route';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import {
     expectLogWithoutPlantedSecrets,

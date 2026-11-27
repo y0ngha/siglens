@@ -1,15 +1,14 @@
+import type { AbstractIntlMessages } from 'next-intl';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import koMessages from '../../../../messages/ko.json';
 import manualKeys from '../../../../messages/_meta/manualKeys.json';
-import { pickMessages } from '../loadMessages';
-import type { AbstractIntlMessages } from 'next-intl';
-
+import koMessages from '../../../../messages/ko.json';
 import {
     ancestorClientPaths,
     CHROME_CLIENT_PATHS,
     routeClientPaths,
 } from '../clientNamespaces';
+import { pickMessages } from '../loadMessages';
 
 /**
  * next-intl의 `AbstractIntlMessages`는 **배열 값을 모델링하지 않는다**.

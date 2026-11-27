@@ -1,15 +1,15 @@
 import 'server-only';
-import type { Locale } from '@/shared/i18n/locales';
+import { isE2E } from '@/shared/api/e2eEnv';
 import {
     __resetMemoryLruForTests,
     createMemoryLru,
 } from '@/shared/cache/memoryLru';
+import { MS_PER_MINUTE } from '@/shared/config/time';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     __resetSingleFlightForTests,
     createSingleFlight,
 } from '@/shared/lib/singleFlight';
-import { MS_PER_MINUTE } from '@/shared/config/time';
-import { isE2E } from '@/shared/api/e2eEnv';
 import type { NoticeWireRecord } from '../model/types';
 
 /**

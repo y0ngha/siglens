@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { isMailAlertLaunched } from '../lib/mailAlertConstants';
 import type { MailAlertLinkAuth } from '../model';
 import { createMailAlertDeps } from './createMailAlertDeps';

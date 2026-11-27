@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { mergeWatchlistAction } from '@/entities/watchlist/actions/mergeWatchlistAction';
 import type { MergeWatchlistResult } from '@/entities/watchlist/model';

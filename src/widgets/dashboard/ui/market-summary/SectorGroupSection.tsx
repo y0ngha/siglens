@@ -1,8 +1,8 @@
+import type { MarketSectorData } from '@y0ngha/siglens-core';
 /**
  * 시장 요약 패널의 섹터 그룹 하나 — 그룹 라벨과 섹터 ETF 카드 그리드.
  */
 import { useTranslations } from 'next-intl';
-import type { MarketSectorData } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';

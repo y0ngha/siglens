@@ -4,7 +4,6 @@ vi.mock('@/entities/ticker/server/searchTicker', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { searchTickerTool } from '@/app/api/ai/chat/tools/searchTicker';
 
 const ctx = {

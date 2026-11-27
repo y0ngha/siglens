@@ -1,13 +1,13 @@
-import { MS_PER_SECOND } from '@/shared/config/time';
-import type { TickerSearchResult } from '@/shared/lib/types';
 import { tryReadFmpConfig } from '@y0ngha/siglens-core';
-import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
 import {
     assertOnline,
     isOfflineBuild,
     warnOfflineBuildOnce,
     OFFLINE_BUILD_SERVICE,
 } from '@/shared/api/offlineBuild';
+import { MS_PER_SECOND } from '@/shared/config/time';
+import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
+import type { TickerSearchResult } from '@/shared/lib/types';
 import type { FmpSearchResult } from '../model';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';

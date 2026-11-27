@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { CompositeGradeGauge } from '@/widgets/financials/CompositeGradeGauge';
 import type { FinancialsCompositeScore } from '@y0ngha/siglens-core';
+import { CompositeGradeGauge } from '@/widgets/financials/CompositeGradeGauge';
 
 const SAMPLE_COMPOSITE: FinancialsCompositeScore = {
     score: 78,

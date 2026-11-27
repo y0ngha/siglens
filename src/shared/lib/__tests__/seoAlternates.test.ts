@@ -1,3 +1,5 @@
+import { LOCALES } from '@/shared/i18n/locales';
+import { SITE_URL } from '../seo';
 import {
     buildLanguageAlternates,
     localeAlternates,
@@ -7,8 +9,6 @@ import {
     localePageRobots,
     selfCanonicalAlternates,
 } from '../seoAlternates';
-import { SITE_URL } from '../seo';
-import { LOCALES } from '@/shared/i18n/locales';
 
 describe('buildLanguageAlternates', () => {
     /**

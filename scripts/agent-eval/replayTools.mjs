@@ -1,3 +1,4 @@
+import { withLevelLadder } from '../../src/app/api/ai/chat/tools/getCachedAnalysis.ts';
 // 저장 대화 재생(E1)의 도구 쪽: 기록된 도구 결과를 NEW 변형의 "해석 사실" 모양으로 바꿔 주는 순수 함수들.
 //
 // 네트워크·DB·LLM을 부르지 않는다. 변환은 앱의 **실제 수출 함수**(`withEarningsReactionTally`, `withPutCallReading`,
@@ -5,12 +6,11 @@
 // 이 파일은 `node --conditions=react-server --import tsx`로 실행하는 스크래치 하네스(LLM 루프)가 import하거나,
 // `replay.mjs` CLI가 쓴다. 입력 파일 모양은 README의 "저장 대화 재생" 절에 있다.
 import { withEarningsReactionTally } from '../../src/app/api/ai/chat/tools/getFundamentals.ts';
-import { withPutCallReading } from '../../src/app/api/ai/chat/tools/getOptionsSummary.ts';
-import { withLevelLadder } from '../../src/app/api/ai/chat/tools/getCachedAnalysis.ts';
 import { readHolderQuery } from '../../src/app/api/ai/chat/tools/getInvestorFlows.ts';
+import { withPutCallReading } from '../../src/app/api/ai/chat/tools/getOptionsSummary.ts';
+import { previousQuarterEnd } from '../../src/entities/investor-flows/lib/investorFlowsDates.ts';
 import { withPutCallValueReading } from '../../src/entities/investor-flows/lib/summary/institutional.ts';
 import { lookupHolder } from '../../src/entities/investor-flows/server/getHolderLookup.ts';
-import { previousQuarterEnd } from '../../src/entities/investor-flows/lib/investorFlowsDates.ts';
 
 /** 기록된 결과는 객체이거나 JSON 문자열이다. 파싱이 안 되면(절단) null. */
 export function parseRecorded(value) {

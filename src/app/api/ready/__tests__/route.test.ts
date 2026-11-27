@@ -7,9 +7,9 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GET } from '../route';
-import { tryGetDatabaseClient } from '@/shared/db/client';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { tryGetDatabaseClient } from '@/shared/db/client';
+import { GET } from '../route';
 
 /** `SELECT 1`에 성공하는 sql tagged-template를 흉내내는 fake DB 클라이언트. */
 function makeDbClient(sqlImpl: () => Promise<unknown>) {

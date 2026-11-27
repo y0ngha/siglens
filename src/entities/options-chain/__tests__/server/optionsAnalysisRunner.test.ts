@@ -17,8 +17,8 @@ vi.mock('@/entities/auth/server/getCurrentUser', () => ({
 
 import { runOptionsAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 
 const mockRun = vi.mocked(runOptionsAnalysis);

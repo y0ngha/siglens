@@ -1,38 +1,37 @@
-/**
- * 미국 거시 지표·국채 수익률·2s10s 스프레드 카드 그리드.
- */
-import { useTranslations } from 'next-intl';
-import {
-    ECONOMY_CATEGORY_LABEL_KEY,
-    ECONOMY_INDICATOR_LABEL_KEY,
-} from '@/shared/config/economyLabelKey';
-import type { ReactElement } from 'react';
 import {
     computeYieldSpread,
     type EconomicIndicatorSeries,
     type EconomySnapshot,
     type TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
-
+/**
+ * 미국 거시 지표·국채 수익률·2s10s 스프레드 카드 그리드.
+ */
+import { useTranslations } from 'next-intl';
+import type { ReactElement } from 'react';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
     ECONOMY_INDICATORS,
     type EconomyCategoryKey,
     type EconomyIndicatorMeta,
 } from '@/shared/config/economyIndicators';
+import {
+    ECONOMY_CATEGORY_LABEL_KEY,
+    ECONOMY_INDICATOR_LABEL_KEY,
+} from '@/shared/config/economyLabelKey';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { signColorClass } from '@/shared/lib/priceFormat';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { formatSignedFixed, roundToPrecision } from '../utils/signedFixed';
 import { deltaUnitLabel, unitLabel } from '../utils/unitLabel';
 import { DeltaBadge } from './DeltaBadge';
-import { formatSignedFixed, roundToPrecision } from '../utils/signedFixed';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.

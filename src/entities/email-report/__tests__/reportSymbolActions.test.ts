@@ -19,12 +19,11 @@ vi.mock('@/entities/email-report/api', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { logActionError } from '@/shared/lib/logActionError';
 import { excludeReportSymbolAction } from '@/entities/email-report/actions/excludeReportSymbolAction';
 import { includeReportSymbolAction } from '@/entities/email-report/actions/includeReportSymbolAction';
 import { EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
+import { logActionError } from '@/shared/lib/logActionError';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

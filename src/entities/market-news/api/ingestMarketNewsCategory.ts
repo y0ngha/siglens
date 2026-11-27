@@ -1,8 +1,9 @@
 import 'server-only';
-import { revalidateTag } from 'next/cache';
 import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
+import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { logActionError } from '@/shared/lib/logActionError';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import {
@@ -19,7 +20,6 @@ import { selectAnalysisCandidates } from '../lib/selectAnalysisCandidates';
 import { getMarketNewsClient } from './getMarketNewsClient';
 import { isRecentlyFetched, markFetched } from './marketNewsRefreshFlags';
 import { DrizzleMarketNewsRepository } from './marketNewsRepository';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 절반 초과 실패 판정의 나눗수 — 적재는 upsert가 절반을 넘게 실패하면 중단하고, 보강은 같은 기준으로 로그만 남긴다. */
 const MAJORITY_DIVISOR = 2;

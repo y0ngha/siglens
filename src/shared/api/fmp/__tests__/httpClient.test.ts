@@ -20,18 +20,18 @@ vi.mock('@y0ngha/siglens-core', () => ({
     readFmpConfig: vi.fn(() => ({ apiKey: 'test-fmp-key' })),
 }));
 
-import type { MockedFunction } from 'vitest';
 import { readFmpConfig } from '@y0ngha/siglens-core';
-import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
+import type { MockedFunction } from 'vitest';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
-import { sleep } from '@/shared/lib/sleep';
-import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import { FMP_RENDER_FETCH_TIMEOUT_MS } from '@/shared/api/fmp/fmpRetry';
+import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     __resetFmpBuildBreakerForTests,
     __resetOfflineBuildWarningsForTests,
     isFmpUnavailableAtBuild,
 } from '@/shared/api/offlineBuild';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
+import { sleep } from '@/shared/lib/sleep';
 
 const mockFetch = vi.fn();
 const sleepMock = sleep as MockedFunction<typeof sleep>;

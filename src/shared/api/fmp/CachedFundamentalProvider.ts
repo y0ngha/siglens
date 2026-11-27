@@ -1,23 +1,4 @@
 import 'server-only';
-import { cache } from 'react';
-import { getOrSetCache, setCacheValue } from '@/shared/cache/getOrSetCache';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { sym } from './symKey';
-import { isYahooFailedGrades } from './gradesConsensusSource';
-import {
-    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
-    SECONDS_PER_MINUTE,
-} from '@/shared/config/time';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
-import {
-    isNextEarningsCacheFresh,
-    nextEarningsTtlSeconds,
-} from './nextEarningsCachePolicy';
-import type { FmpEarningsReportItem } from './fundamentalClient';
-import type {
-    FundamentalProvider,
-    FundamentalProviderWithRawPeers,
-} from './fundamentalProvider.types';
 import type {
     CashFlowRow,
     EarningsReport,
@@ -37,7 +18,26 @@ import type {
     GradesEvent,
     IncomeGrowthRow,
 } from '@y0ngha/siglens-core';
+import { cache } from 'react';
+import { getOrSetCache, setCacheValue } from '@/shared/cache/getOrSetCache';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import {
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { FmpEarningsReportItem } from './fundamentalClient';
+import type {
+    FundamentalProvider,
+    FundamentalProviderWithRawPeers,
+} from './fundamentalProvider.types';
+import { isYahooFailedGrades } from './gradesConsensusSource';
+import {
+    isNextEarningsCacheFresh,
+    nextEarningsTtlSeconds,
+} from './nextEarningsCachePolicy';
+import { sym } from './symKey';
 
 const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;

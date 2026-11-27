@@ -19,18 +19,18 @@ vi.mock('../../server/optionsLastGoodStore', () => ({
 }));
 
 import {
+    OPTIONS_WARM_SYMBOLS_PER_TICK,
+    buildOptionsWarmUniverse,
+} from '../../lib/selectOptionsWarmSymbols';
+import { refreshLastGoodSnapshot } from '../../server/optionsDataCache';
+import { readLastGoodCapturedAtBatch } from '../../server/optionsLastGoodStore';
+import {
     OPTIONS_WARM_CONCURRENCY,
     OPTIONS_WARM_CURSOR_KEY,
     OPTIONS_WARM_DEADLINE_MS,
     OPTIONS_WARM_REFRESH_TIMEOUT_MS,
     warmOptionsLastGood,
 } from '../../server/warmOptionsLastGood';
-import { refreshLastGoodSnapshot } from '../../server/optionsDataCache';
-import { readLastGoodCapturedAtBatch } from '../../server/optionsLastGoodStore';
-import {
-    OPTIONS_WARM_SYMBOLS_PER_TICK,
-    buildOptionsWarmUniverse,
-} from '../../lib/selectOptionsWarmSymbols';
 
 const universe = buildOptionsWarmUniverse();
 // 2026-10-05(월) 16:30 EDT — 워밍 구간. 오늘 마감은 20:00Z.

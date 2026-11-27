@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { FooterTextLink } from '../../../ui/footer/FooterTextLink';
 import { FOOTER_LINK_CLASSES } from '../../../ui/footer/footerLinkStyles';
+import { FooterTextLink } from '../../../ui/footer/FooterTextLink';
 
 describe('FooterTextLink', () => {
     it('href와 공용 링크 클래스를 적용한다', () => {

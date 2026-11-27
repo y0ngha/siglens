@@ -1,7 +1,6 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
-
 import type { SitemapEntry } from '../model';
 import { floorToHour } from './floorToHour';
 import { latestOf } from './latestOf';

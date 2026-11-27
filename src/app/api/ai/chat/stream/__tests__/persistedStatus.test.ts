@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { AgentErrorCode } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { persistedStatusFor } from '@/app/api/ai/chat/stream/_lib/persistedStatus';
 
 describe('persistedStatusFor', () => {

@@ -2,8 +2,8 @@
 
 import type { ReactNode } from 'react';
 import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
-import type { Frame } from '@/widgets/replay/utils/replayPlayer';
 import { ReplaySteps } from '@/widgets/replay/ui/body/ReplaySteps';
+import type { Frame } from '@/widgets/replay/utils/replayPlayer';
 
 interface ReplayProgressProps {
     readonly scenario: ReplayScenario;

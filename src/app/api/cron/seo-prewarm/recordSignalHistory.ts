@@ -1,21 +1,21 @@
-import { revalidateTag } from 'next/cache';
 import { confirmedSignalTimeline } from '@y0ngha/siglens-core';
+import { revalidateTag } from 'next/cache';
 import {
     DrizzleSignalHistoryRepository,
     SIGNAL_HISTORY_CACHE_TAG,
 } from '@/entities/signal-history/api';
+import { isSymbolSettled } from '@/entities/signal-history/lib/scanMode';
 import {
     applyScanAttempts,
     summarizeSession,
     type ScanAttempt,
     type SessionSummary,
 } from '@/entities/signal-history/lib/scanProgress';
-import { isSymbolSettled } from '@/entities/signal-history/lib/scanMode';
-import { SIGNAL_SCAN_MAX_ATTEMPTS } from '@/entities/signal-history/lib/signalScanConstants';
 import {
     recordableSessionDate,
     SIGNAL_SETTLE_MINUTES,
 } from '@/entities/signal-history/lib/signalEventRows';
+import { SIGNAL_SCAN_MAX_ATTEMPTS } from '@/entities/signal-history/lib/signalScanConstants';
 import type {
     ScanCursor,
     ScanProgressPruneResult,
@@ -34,10 +34,10 @@ import {
     type SignalScanTarget,
 } from '@/shared/config/signalScanUniverse/signalScanUniverse';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { withTimeout } from '@/shared/lib/withTimeout';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { scanSymbol, type ConfirmedSignalTimeline } from './scanSymbol';
 
 /**

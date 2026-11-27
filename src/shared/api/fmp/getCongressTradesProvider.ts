@@ -1,5 +1,5 @@
-import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 import type { CongressTradesProvider } from '@y0ngha/siglens-core';
+import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 import { CachedCongressTradesProvider } from './CachedCongressTradesProvider';
 import { FmpCongressTradesClient } from './congressTradesClient';
 

@@ -5,10 +5,9 @@ import {
     type MacroBriefingCacheEntry,
     type MacroBriefingResponse,
 } from '@y0ngha/siglens-core';
-
-import { SECONDS_PER_DAY } from '@/shared/config/time';
-import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 import { cacheNonNull } from '@/shared/cache/cacheNonNull';
+import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /** 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. 거시 브리핑은 시장 구분이 없어 하나다. */
 export const MACRO_BRIEFING_SEED_SURFACE = 'macro-briefing';

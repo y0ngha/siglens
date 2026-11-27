@@ -1,11 +1,11 @@
+import { GUIDE_CATEGORIES } from '@/entities/guide/types';
+import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
 import {
     ABOUT_PATH,
     METHODOLOGY_PATH,
     PRIVACY_PATH,
     TERMS_PATH,
 } from '@/shared/lib/legal';
-import { GUIDE_CATEGORIES } from '@/entities/guide/types';
-import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
 import { BACKTESTING_PATH } from '@/shared/lib/seo';
 
 /**

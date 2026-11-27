@@ -2,9 +2,9 @@
 import { renderHook, act } from '@testing-library/react';
 import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
 import { useAutocomplete } from '@/features/ticker-search/hooks/useAutocomplete';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import type { Locale } from '@/shared/i18n/locales';
 import { assignLocation } from '@/shared/lib/crossHostNavigate';
-import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 
 const mockPush = vi.fn();
 const mockPrefetch = vi.fn();

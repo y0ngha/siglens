@@ -1,6 +1,6 @@
+import type { Chamber } from '@y0ngha/siglens-core';
 /** Chamber (senate/house) badge for a trades-table row. */
 import { useTranslations } from 'next-intl';
-import type { Chamber } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { CHAMBER_BADGE_CLASS, CHAMBER_LABEL } from '../../utils/tradeLabels';
 

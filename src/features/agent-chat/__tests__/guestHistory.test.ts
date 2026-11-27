@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentUiMessage } from '../model/types';
 import { guestHistory } from '../lib/guestHistory';
+import type { AgentUiMessage } from '../model/types';
 
 const msg = (v: Partial<AgentUiMessage>): AgentUiMessage => ({
     id: 'x',

@@ -14,18 +14,18 @@
  */
 import path from 'node:path';
 import postgres from 'postgres';
+import { evaluateMigrations } from '../../src/shared/db/migrations/evaluateMigrations';
+import { readMigrationJournal } from '../../src/shared/db/migrations/migrationJournal';
+import { MIGRATION_POLICY } from '../../src/shared/db/migrations/migrationPolicy';
+import { buildMigrationReport } from '../../src/shared/db/migrations/migrationReport';
+import { readAppliedHashes } from '../../src/shared/db/migrations/readAppliedHashes';
+import { readOnlyClientOptions } from '../../src/shared/db/migrations/readOnlyClientOptions';
+import { redactDbErrorForLog } from '../../src/shared/db/redactDbErrorForLog';
 import {
     describeTarget,
     formatTarget,
     requireDatabaseUrl,
 } from './lib/dbTarget';
-import { evaluateMigrations } from '../../src/shared/db/migrations/evaluateMigrations';
-import { readMigrationJournal } from '../../src/shared/db/migrations/migrationJournal';
-import { MIGRATION_POLICY } from '../../src/shared/db/migrations/migrationPolicy';
-import { buildMigrationReport } from '../../src/shared/db/migrations/migrationReport';
-import { readOnlyClientOptions } from '../../src/shared/db/migrations/readOnlyClientOptions';
-import { readAppliedHashes } from '../../src/shared/db/migrations/readAppliedHashes';
-import { redactDbErrorForLog } from '../../src/shared/db/redactDbErrorForLog';
 
 async function main(): Promise<number> {
     // migrate.ts와 같은 대상 규칙(DIRECT_DATABASE_URL || DATABASE_URL).

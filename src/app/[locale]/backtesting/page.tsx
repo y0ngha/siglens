@@ -1,5 +1,13 @@
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import {
+    BACKTEST_RUN,
+    BACKTEST_STATS,
+    BACKTEST_TICKERS,
+    BACKTEST_TRADE_ROWS,
+} from '@/app/[locale]/backtesting/_lib/backtestingData';
+import { buildBacktestingJsonLd } from '@/app/[locale]/backtesting/_lib/backtestingJsonLd';
+import { buildBacktestingMetadata } from '@/app/[locale]/backtesting/_lib/backtestingMetadata';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -11,14 +19,6 @@ import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
 import { BacktestTimingCheck } from '@/widgets/backtesting/BacktestTimingCheck';
 import { BacktestTradeList } from '@/widgets/backtesting/BacktestTradeList';
 import { BacktestTrendRecognition } from '@/widgets/backtesting/BacktestTrendRecognition';
-import {
-    BACKTEST_RUN,
-    BACKTEST_STATS,
-    BACKTEST_TICKERS,
-    BACKTEST_TRADE_ROWS,
-} from '@/app/[locale]/backtesting/_lib/backtestingData';
-import { buildBacktestingJsonLd } from '@/app/[locale]/backtesting/_lib/backtestingJsonLd';
-import { buildBacktestingMetadata } from '@/app/[locale]/backtesting/_lib/backtestingMetadata';
 
 export async function generateMetadata({
     params,

@@ -1,3 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 /**
  * 분석 탭 전반의 `plain` 배선 회귀.
  *
@@ -8,16 +11,13 @@
  */
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
+import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
+import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
-import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
-import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

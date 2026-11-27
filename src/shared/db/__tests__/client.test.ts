@@ -13,9 +13,9 @@ vi.mock('@/shared/db/config', () => ({
 
 vi.mock('@/shared/db/schema', () => ({}));
 
-import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { readDatabaseConfig, tryReadDatabaseConfig } from '@/shared/db/config';
+import postgres from 'postgres';
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 import {
     DB_POOL_MAX,
     createDatabaseClient,
@@ -29,8 +29,8 @@ import {
     stripLibpqOnlyParams,
     tryGetDatabaseClient,
 } from '@/shared/db/client';
+import { readDatabaseConfig, tryReadDatabaseConfig } from '@/shared/db/config';
 import { noStoreQueryLogger } from '@/shared/db/noStoreQueryLogger';
-import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 const NEON_DIRECT_URL =
     'postgresql://u:p@ep-cool-123.ap-southeast-1.aws.neon.tech/neondb?sslmode=require';

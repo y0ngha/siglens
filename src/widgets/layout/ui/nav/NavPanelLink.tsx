@@ -1,5 +1,5 @@
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { cn } from '@/shared/lib/cn';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 type NavPanelLinkTone = 'overview' | 'region' | 'leaf';
 

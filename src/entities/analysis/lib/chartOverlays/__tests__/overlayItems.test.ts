@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import {
     STRATEGY_KIND_SOURCE_REF,
     type ChartOverlay,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,

@@ -1,7 +1,7 @@
-// @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
+// @vitest-environment jsdom
+import { describe, it, expect } from 'vitest';
 import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
 
 // 컴포넌트가 읽는 필드만 채운 부분 mock (OverallAnalysisResponse의 나머지 필드는 미사용).

@@ -1,5 +1,4 @@
 import { readFmpConfig } from '@y0ngha/siglens-core';
-import { withRetry } from '@/shared/lib/withRetry';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import {
     FMP_RENDER_FETCH_TIMEOUT_MS,
@@ -7,9 +6,7 @@ import {
     FMP_TRANSIENT_RETRY,
     isFmpTransientError,
 } from '@/shared/api/fmp/fmpRetry';
-import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
 import { logFmpPaymentRequiredError } from '@/shared/api/fmp/fmpUserMessage';
-import { toFmpSymbol } from '@/shared/lib/fmpSymbol';
 import {
     assertFmpAvailableAtBuild,
     assertOnline,
@@ -17,6 +14,9 @@ import {
     OFFLINE_BUILD_SERVICE,
     tripFmpBuildBreaker,
 } from '@/shared/api/offlineBuild';
+import { toFmpSymbol } from '@/shared/lib/fmpSymbol';
+import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
+import { withRetry } from '@/shared/lib/withRetry';
 
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';

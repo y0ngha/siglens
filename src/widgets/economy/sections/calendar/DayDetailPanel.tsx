@@ -1,5 +1,6 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 선택한 날의 상세 패널 — 날짜 제목과 그날 이벤트 목록. 활성 중요도 이벤트가 없으면 안내 문구.
  *
@@ -11,7 +12,6 @@
  * `role="tab"`/`tablist` 없이 쓰면 고아 ARIA라 쓰지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { cn } from '@/shared/lib/cn';
 import type { DayGroup } from '../../model/calendarTypes';

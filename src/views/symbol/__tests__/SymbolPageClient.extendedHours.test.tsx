@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import type { ComponentType } from 'react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
+import type { ComponentType } from 'react';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 
 vi.mock('@/widgets/extended-hours/ui/ExtendedHoursQuoteLine', () => ({
     ExtendedHoursQuoteLine: ({ symbol }: { symbol: string }) => (

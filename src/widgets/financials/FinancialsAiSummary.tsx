@@ -6,17 +6,17 @@
  */
 import { useTranslations } from 'next-intl';
 import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
-import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { FinancialsAiSummaryError } from './FinancialsAiSummaryError';
 import { FinancialsAiSummarySkeleton } from './FinancialsAiSummarySkeleton';
+import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { FinancialsAiSummaryView } from './ui/ai-summary/FinancialsAiSummaryView';
 
 interface FinancialsAiSummaryProps {

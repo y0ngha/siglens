@@ -20,7 +20,6 @@ vi.mock('../config.mjs', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-
 import { getEntry, lookupEntry, setEntry } from '../s3Store.mjs';
 
 beforeEach(() => send.mockReset());

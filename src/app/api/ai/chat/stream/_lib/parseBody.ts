@@ -2,8 +2,8 @@ import {
     formatAttachedImagesMarker,
     type AgentMessage,
 } from '@y0ngha/siglens-core';
-import { withAttachedImagesMarker } from '@/entities/chat-conversation/lib/attachedImagesMarker';
 import { followUpLine } from '@/app/api/ai/chat/followUps';
+import { withAttachedImagesMarker } from '@/entities/chat-conversation/lib/attachedImagesMarker';
 import {
     isSendableMessage,
     MESSAGE_MAX_CHARS,

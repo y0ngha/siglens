@@ -1,6 +1,6 @@
+import { runFtdIngest } from '@/entities/investor-flows/server/ingestFtd';
 import { handleLeasedCron, SEC_CRON_LEASE_NAME } from '../leasedCron';
 import { createSecFtdDeps } from './createDeps';
-import { runFtdIngest } from '@/entities/investor-flows/server/ingestFtd';
 
 /**
  * 시간 예산(SERVER.md#CC-7): 마감 5분 + 진행 중 파일 하나 최악 75초(`www.sec.gov/files` 요청 30초 × 2회 시도 + 백오프 ≤ 15초 —

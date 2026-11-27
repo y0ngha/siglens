@@ -4,17 +4,17 @@
  * 스토캐스틱 RSI 보조 pane 시리즈를 그리는 훅.
  */
 
-import type { RefObject } from 'react';
-import { useEffect, useEffectEvent, useRef } from 'react';
-import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
-import { LineSeries, LineStyle } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     type Bar,
     type IndicatorResult,
     STOCH_RSI_OVERBOUGHT_LEVEL,
     STOCH_RSI_OVERSOLD_LEVEL,
 } from '@y0ngha/siglens-core';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
+import { LineSeries, LineStyle } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { buildSeriesData } from '../utils/seriesDataUtils';
 

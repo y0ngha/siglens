@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
 import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
 import type { GuideEntry } from '@/entities/guide/types';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
-import { extractToc } from '@/shared/lib/legal-toc';
 import {
     formatKoreanDate,
     INVESTMENT_DISCLAIMER_KEY,
 } from '@/shared/lib/legal';
+import { extractToc } from '@/shared/lib/legal-toc';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
 import { getGuideDemo } from './demos/registry';

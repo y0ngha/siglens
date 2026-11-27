@@ -58,10 +58,9 @@ vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
     })),
 }));
 
-import type { MockedFunction, Mock } from 'vitest';
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { MockedFunction, Mock } from 'vitest';
 import { loginUser } from '@/entities/auth/lib/loginUser';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { loginAction } from '@/features/auth-login/actions/loginAction';

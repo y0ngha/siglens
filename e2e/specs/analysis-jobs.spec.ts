@@ -1,8 +1,8 @@
-import { test, expect } from '../support/fixtures';
 import {
     ANALYSIS_FIXTURE_SUMMARY_PREFIX,
     ANALYSIS_RENDER_TIMEOUT_MS,
 } from '../support/constants';
+import { test, expect } from '../support/fixtures';
 import { srhCommand } from '../support/srhClient';
 
 /**

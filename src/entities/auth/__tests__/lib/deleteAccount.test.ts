@@ -1,11 +1,11 @@
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
-import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
-import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
 import type {
     DeleteAccountApiKeys,
     DeleteAccountMailAlerts,
 } from '@/entities/auth/lib/authUseCaseTypes';
+import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
+import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,

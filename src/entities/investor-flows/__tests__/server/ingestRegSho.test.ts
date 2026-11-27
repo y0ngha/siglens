@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
+import { addDays } from '../../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_REG_SHO_BACKFILL_DAYS,
     INVESTOR_FLOWS_REG_SHO_RETENTION_DAYS,
     INVESTOR_FLOWS_STATE_REG_SHO_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
 import { parseRegShoCursor } from '../../lib/regShoCursor';
+import type { RegShoThresholdRow } from '../../model';
 import {
     runRegShoIngest,
     type IngestRegShoDeps,
 } from '../../server/ingestRegSho';
-import type { RegShoThresholdRow } from '../../model';
 import {
     CBOE_BZX_TH_20261015,
     NASDAQ_TH_20261015,

@@ -3,13 +3,13 @@ import type {
     DashboardTimeframe,
     MarketDataProvider,
 } from '@y0ngha/siglens-core';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import {
     marketDataProviderFor,
     scopeUsesFmp,
 } from '@/shared/api/market/getMarketDataProvider';
 import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /**
  * 섹터 신호 스캔이 봉·시세를 읽을 provider.

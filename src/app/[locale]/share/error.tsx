@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { RouteErrorView } from '@/app/_components/RouteErrorView';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
-import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface ShareErrorProps {
     error: Error & { digest?: string };

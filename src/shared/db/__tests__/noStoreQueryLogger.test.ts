@@ -2,9 +2,9 @@ vi.mock('next/cache', () => ({
     unstable_noStore: vi.fn(),
 }));
 
-import { unstable_noStore } from 'next/cache';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { pgTable, text } from 'drizzle-orm/pg-core';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { unstable_noStore } from 'next/cache';
 import { noStoreQueryLogger } from '@/shared/db/noStoreQueryLogger';
 
 const items = pgTable('items', { id: text('id').primaryKey() });

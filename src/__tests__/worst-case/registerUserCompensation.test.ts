@@ -1,9 +1,9 @@
-import { registerUser } from '@/entities/auth/lib/registerUser';
-import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type {
     RegisterUserDependencies,
     RegisterUserInput,
 } from '@/entities/auth/lib/authUseCaseTypes';
+import { registerUser } from '@/entities/auth/lib/registerUser';
+import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 
 const BINDING = 'binding-nonce';
 

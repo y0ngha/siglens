@@ -1,18 +1,18 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
+import { LABEL_PRIORITY } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
-import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
-import { StockChart } from '@/widgets/chart/StockChart';
 import {
     INACTIVE_PANE_INDEX,
     TRANSPARENT_COLOR,
 } from '@/widgets/chart/constants';
-import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
 import { LINE_PANE_SPECS } from '@/widgets/chart/model/linePaneSpecs';
-import { LABEL_PRIORITY } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
+import { StockChart } from '@/widgets/chart/StockChart';
 
 const INACTIVE_PANES = Object.fromEntries(
     [

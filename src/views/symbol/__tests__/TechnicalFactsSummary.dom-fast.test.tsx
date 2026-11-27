@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
     RSI_OVERBOUGHT_LEVEL,
@@ -6,9 +5,10 @@ import {
     type Bar,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
-import { TechnicalFactsSummary } from '../TechnicalFactsSummary';
+import { describe, it, expect } from 'vitest';
 import { RECENT_BARS_WINDOW } from '@/entities/bars/lib/technicalFacts';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { TechnicalFactsSummary } from '../TechnicalFactsSummary';
 
 const OVERBOUGHT_RSI = RSI_OVERBOUGHT_LEVEL + 1;
 const OVERSOLD_RSI = RSI_OVERSOLD_LEVEL - 1;

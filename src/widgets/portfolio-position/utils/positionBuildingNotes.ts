@@ -1,9 +1,9 @@
+import { formatAmount } from './buildingPriceFormat';
 /**
  * 포지션 빌딩의 문구 — aria 요약, 층 안내(N층·옥상 위/지하 메타포), 범위 밖 안내, 층 툴팁 콘텐츠.
  * 위치 서술만 한다 — 매수/매도 판단 언어는 쓰지 않는다(scope fence).
  */
 import type { PositionModel, RangeClamp } from './positionGeometry';
-import { formatAmount } from './buildingPriceFormat';
 
 /**
  * `widgets.portfolio-position.positionNote` 번역자.

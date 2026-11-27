@@ -21,9 +21,8 @@ vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
-import { LoginContent } from '../LoginContent';
 import koMessages from '@/../messages/ko.json';
+import { LoginContent } from '../LoginContent';
 
 // 문구는 이제 `entities.auth.error` 카탈로그에서 온다 — 예전엔 이 파일의 모듈
 // 상수라 `/en/login`이 영어 폼 위에 한국어 배너를 띄웠다. ko 카탈로그를 직접

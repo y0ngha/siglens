@@ -6,12 +6,12 @@
  * without needing live hooks.
  */
 
-import { useTranslations } from 'next-intl';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { FearGreedHero } from './FearGreedHero';
-import { FearGreedGroupBar } from './FearGreedGroupBar';
-import { SelfNormWarningBadge } from './SelfNormWarningBadge';
+import { useTranslations } from 'next-intl';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { FearGreedGroupBar } from './FearGreedGroupBar';
+import { FearGreedHero } from './FearGreedHero';
+import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 
 interface FearGreedShareViewProps {
     snapshot: FearGreedSnapshot;

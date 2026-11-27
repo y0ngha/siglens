@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { e2eFakeOAuthAdapter } from '@/features/auth-oauth/lib/E2eFakeOAuthAdapter';
+import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     getOAuthRedirectBaseUrl,
     isOAuthProvider,
 } from '@/features/auth-oauth/lib/providers';
-import { e2eFakeOAuthAdapter } from '@/features/auth-oauth/lib/E2eFakeOAuthAdapter';
-import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
 
 describe('isOAuthProvider', () => {
     it('활성화된 provider 문자열은 true를 반환한다', () => {

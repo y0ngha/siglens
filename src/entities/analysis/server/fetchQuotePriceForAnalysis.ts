@@ -1,6 +1,6 @@
 import 'server-only';
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';

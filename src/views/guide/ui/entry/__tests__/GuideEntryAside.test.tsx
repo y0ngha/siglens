@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import { getTranslations } from 'next-intl/server';
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { TocItem } from '@/shared/lib/legal-toc';
-import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { localePath } from '@/shared/i18n/locales';
+import { guideCategoryPath } from '@/shared/lib/guidePaths';
+import type { TocItem } from '@/shared/lib/legal-toc';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { loadGuideCategoryCopy } from '@/views/guide/lib/guideCopy';
 import { GuideEntryAside } from '@/views/guide/ui/entry/GuideEntryAside';

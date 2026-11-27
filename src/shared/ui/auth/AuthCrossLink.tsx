@@ -1,6 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-
 import { AuthCrossLinkInner } from './AuthCrossLinkInner';
 
 interface AuthCrossLinkProps {

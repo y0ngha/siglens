@@ -73,6 +73,7 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
     }),
 }));
 
+import { notFound } from 'next/navigation';
 import {
     describe,
     expect,
@@ -81,16 +82,15 @@ import {
     vi,
     type MockedFunction,
 } from 'vitest';
-import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
-import { notFound } from 'next/navigation';
 import CongressPage, {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/congress/page';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 
 const mockIsTabAllowed = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol

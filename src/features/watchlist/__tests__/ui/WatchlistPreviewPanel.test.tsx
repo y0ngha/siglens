@@ -16,8 +16,8 @@ const preview = vi.hoisted(() => ({
 }));
 
 import { render, screen, within } from '@testing-library/react';
-import { WATCHLIST_PREVIEW_COUNT } from '@/shared/config/watchlist';
 import { WatchlistPreviewPanel } from '@/features/watchlist/ui/WatchlistPreviewPanel';
+import { WATCHLIST_PREVIEW_COUNT } from '@/shared/config/watchlist';
 
 const items = (n: number) =>
     Array.from({ length: n }, (_, i) => ({ symbol: `S${i}`, name: `S${i}` }));

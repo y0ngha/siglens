@@ -1,12 +1,12 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
-import * as schema from '../src/shared/db/schema';
-import { Drizzle13fRepository } from '../src/entities/investor-flows/api/investorFlows13fRepository';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import {
     guardRemoteWrite,
     requireDatabaseUrl,
 } from '../db/scripts/lib/dbTarget';
+import { Drizzle13fRepository } from '../src/entities/investor-flows/api/investorFlows13fRepository';
+import * as schema from '../src/shared/db/schema';
 import { rebuildAggregates } from './lib/rebuildInvestorFlowsAggregates';
 
 /**

@@ -1,6 +1,6 @@
-import { searchTicker } from './searchTicker';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { searchTicker } from './searchTicker';
 
 /**
  * Deterministic AAPL-family fixture returned under E2E_TEST so the ticker

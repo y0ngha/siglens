@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { cn } from '@/shared/lib/cn';
-import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import type { ThemePreference } from '@/shared/lib/theme';
+import { CheckIcon } from '@/shared/ui/StrokeIcons';
 
 /**
  * 테마 선택 라디오그룹 — 설정 따라가기 / 라이트 / 다크. 팝오버가 아니라 **인라인**이다:

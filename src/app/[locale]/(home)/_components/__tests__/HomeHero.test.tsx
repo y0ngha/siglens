@@ -5,10 +5,10 @@ vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => <input aria-label="종목 검색" />,
 }));
 
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { Locale } from '@/shared/i18n/locales';
+import { describe, expect, it, vi } from 'vitest';
 import { HomeHero } from '@/app/[locale]/(home)/_components/HomeHero';
+import type { Locale } from '@/shared/i18n/locales';
 
 const COPY = {
     aiTeaser: 'AI에게 물어보세요',

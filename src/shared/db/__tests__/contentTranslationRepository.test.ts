@@ -1,12 +1,12 @@
 import {
-    DrizzleContentTranslationRepository,
-    NullContentTranslationRepository,
-} from '@/shared/db/contentTranslationRepository';
-import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,
     TRANSLATION_SOURCE,
 } from '@/shared/db/contentTranslationFields';
+import {
+    DrizzleContentTranslationRepository,
+    NullContentTranslationRepository,
+} from '@/shared/db/contentTranslationRepository';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 interface StubRow {

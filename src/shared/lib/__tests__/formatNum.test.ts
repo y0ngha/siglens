@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { formatFixed, formatNum } from '../formatNum';
 
 describe('formatNum', () => {

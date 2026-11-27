@@ -43,16 +43,16 @@ vi.mock('@/widgets/legal/LegalBreadcrumb', () => ({
     LegalBreadcrumb: () => <nav />,
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import type { Metadata } from 'next';
-import koMessages from '../../../../messages/ko.json';
-import TermsPage, {
-    generateMetadata as termsMetadata,
-} from '@/app/[locale]/terms/page';
+import React from 'react';
 import PrivacyPage, {
     generateMetadata as privacyMetadata,
 } from '@/app/[locale]/privacy/page';
+import TermsPage, {
+    generateMetadata as termsMetadata,
+} from '@/app/[locale]/terms/page';
+import koMessages from '../../../../messages/ko.json';
 
 type PageComponent = (props: {
     params: Promise<{ locale: string }>;

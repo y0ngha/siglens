@@ -6,8 +6,10 @@
 
 import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
-import type { OverlayLegendItem } from './types';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { useOverlayGroups } from './hooks/useOverlayGroups';
+import type { OverlayLegendItem } from './types';
+import { labelHalo } from './utils/labelHalo';
 import { formatOverlayValue } from './utils/overlayLegendFormat';
 import {
     legendMaxHeightPx,
@@ -15,8 +17,6 @@ import {
     legendMaxWidthPx,
     packOverlayLegend,
 } from './utils/overlayLegendLayout';
-import { labelHalo } from './utils/labelHalo';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 
 interface OverlayLegendProps {
     items: OverlayLegendItem[];

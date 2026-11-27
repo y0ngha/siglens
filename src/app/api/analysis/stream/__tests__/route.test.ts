@@ -282,56 +282,56 @@ vi.mock('@/entities/analysis/actions/tryAcquireReanalyzeCooldown', () => ({
 
 // --- Imports (after vi.mock declarations) ---
 
-import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
+import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import jaMessages from '../../../../../../messages/ja.json';
-import koMessages from '../../../../../../messages/ko.json';
-import { POST } from '../route';
-import { runAnalysis } from '../runAnalysisBridge';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
+import { resolvePriceAsOf } from '@/entities/analysis-plain/server/currentPrice';
+import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
+import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
+import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
+import { runInvestorFlowsAction } from '@/entities/analysis/actions/runInvestorFlowsAction';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
+import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
+import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
+import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
+import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
+import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import {
+    e2eCachedTechnical,
+    e2eGeneratedTechnical,
+} from '@/shared/api/e2eAnalysisStub';
+import { isE2E } from '@/shared/api/e2eEnv';
+import { readGuestId } from '@/shared/api/guestId';
+import { isBot } from '@/shared/api/isBot';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { isVerifiedCrawler } from '@/shared/api/verifiedCrawler';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     resolveTierAndByok,
     resolveTierOnly,
     resolvePositionBucket,
     resolveReasoning,
 } from '@/shared/lib/byokGate';
-import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
-import { resolvePriceAsOf } from '@/entities/analysis-plain/server/currentPrice';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
-import { isBot } from '@/shared/api/isBot';
-import { isVerifiedCrawler } from '@/shared/api/verifiedCrawler';
-import { readGuestId } from '@/shared/api/guestId';
-import { isE2E } from '@/shared/api/e2eEnv';
-import {
-    e2eCachedTechnical,
-    e2eGeneratedTechnical,
-} from '@/shared/api/e2eAnalysisStub';
-import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
-import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
-import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
-import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
-import { runInvestorFlowsAction } from '@/entities/analysis/actions/runInvestorFlowsAction';
-import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
-import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
-import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
-import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
-import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
-import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import {
     MAX_CONCURRENT_ANALYSIS_STREAMS,
     incrementActiveStreams,
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
+import jaMessages from '../../../../../../messages/ja.json';
+import koMessages from '../../../../../../messages/ko.json';
+import { POST } from '../route';
+import { runAnalysis } from '../runAnalysisBridge';
 
 /**
  * 디스크립터는 **실물 상수**를 쓴다. 손으로 채운 부분 객체를 `as never`로

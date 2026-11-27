@@ -1,8 +1,8 @@
+import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 /**
  * 기준 시점의 기관(13F) 줄 — 가장 최근 완결 분기와, 있다면 그보다 새로 시작된 부분 집계 분기.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 import { FlowTooltip } from '../../investorFlowsTooltips';
 import { AsOfRow } from './AsOfRow';
 

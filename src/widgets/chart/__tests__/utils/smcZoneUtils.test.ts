@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { SMCResult } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { buildSmcZoneLines } from '@/widgets/chart/utils/smcZoneUtils';
 

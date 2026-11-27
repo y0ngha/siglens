@@ -1,8 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
 import { LOCALES, isLocale, type Locale } from '@/shared/i18n/locales';
 
 /**

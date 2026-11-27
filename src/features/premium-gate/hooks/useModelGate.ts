@@ -1,16 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
     getProviderForModel,
     type ModelId,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
-import type { GateMode } from '@/shared/lib/types';
-import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
-import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
+import { useState } from 'react';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
-import { useQuery } from '@tanstack/react-query';
+import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     QUERY_KEYS,
     REGISTERED_PROVIDERS_STALE_TIME_MS,
@@ -18,6 +17,7 @@ import {
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { resolveGateAccess } from '@/shared/lib/modelAccess';
+import type { GateMode } from '@/shared/lib/types';
 import { resolveGateMode, type GatedModelAccess } from '../lib/resolveGateMode';
 
 /** 열려 있는 게이트 모달의 내용. */

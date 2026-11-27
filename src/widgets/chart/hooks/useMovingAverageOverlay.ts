@@ -4,9 +4,7 @@
  * MA·EMA가 공유하는 이동평균 오버레이 시리즈 생성·갱신, 기간 선택, 표시 상태 훅.
  */
 
-import type { RefObject } from 'react';
-import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
-import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type {
     IChartApi,
     ISeriesApi,
@@ -14,8 +12,10 @@ import type {
     LineWidth,
 } from 'lightweight-charts';
 import { LineSeries } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { getPeriodColor } from '@/shared/lib/chartColors';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { buildSeriesDataFromValues } from '../utils/seriesDataUtils';
 

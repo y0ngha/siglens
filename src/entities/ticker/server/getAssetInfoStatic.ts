@@ -1,8 +1,8 @@
 import { unstable_cache } from 'next/cache';
-import type { AssetInfo } from '@/shared/lib/types';
-import { getAssetInfoAction } from '../actions/getAssetInfoAction';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
+import type { AssetInfo } from '@/shared/lib/types';
+import { getAssetInfoAction } from '../actions/getAssetInfoAction';
 
 /**
  * 종목 정보 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

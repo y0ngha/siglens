@@ -1,18 +1,18 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useQuery } from '@tanstack/react-query';
-import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type { CongressTrendResponse, ModelId } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import type { RunCongressTrendActionResult } from '@/entities/analysis/actions/runCongressTrendAction';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
-import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
+import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 
 /**
  * Sentinel exception used to carry the `no_trades` outcome from the React

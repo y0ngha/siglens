@@ -2,8 +2,8 @@
 
 import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/shared/lib/types';
-import { SEARCH_ROW_CLASS } from '../lib/searchLabels';
 import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
+import { SEARCH_ROW_CLASS } from '../lib/searchLabels';
 import { MarketBadge } from './MarketBadge';
 
 interface SearchResultRowProps {

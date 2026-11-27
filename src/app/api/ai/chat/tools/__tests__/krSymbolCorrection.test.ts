@@ -4,7 +4,6 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     applyKrSymbolCorrections,
     correctKrSymbolArgs,

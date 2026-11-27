@@ -1,9 +1,9 @@
-import type { Mock } from 'vitest';
 import {
     computeFearGreedIndex,
     type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
+import type { Mock } from 'vitest';
 import { buildFearGreedSummaryModel } from '../utils/fearGreedSummaryModel';
 import type { FearGreedSummaryTranslators } from '../utils/fearGreedSummaryModel';
 

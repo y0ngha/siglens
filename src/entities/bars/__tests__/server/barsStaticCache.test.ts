@@ -35,11 +35,9 @@ vi.mock('@/entities/bars/lib/quantizeBars', () => ({
     ) => mockQuantize(data, now, session),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 import type { BarsData } from '@y0ngha/siglens-core';
-
 import { EMPTY_INDICATOR_RESULT } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     getBarsStatic,
     getQuantizedBarsStatic,

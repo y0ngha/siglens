@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { ReactNode } from 'react';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface OptionsEmptyStateProps {
     symbol: string;

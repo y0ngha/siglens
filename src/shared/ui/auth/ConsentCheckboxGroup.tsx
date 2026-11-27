@@ -1,11 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
-import { useId } from 'react';
 import { CheckboxBox } from './CheckboxBox';
 
 interface ConsentCheckboxGroupProps {

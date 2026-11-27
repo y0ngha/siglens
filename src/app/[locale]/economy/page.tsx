@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { buildFaqJsonLd } from '@/shared/lib/seo';
@@ -17,7 +18,6 @@ import { EconomyContent } from './_components/EconomyContent';
 import { hasEconomyData } from './_lib/economyDegraded';
 import { buildEconomyFaq } from './_lib/economyJsonLd';
 import { economyDescription, economyTitle } from './constants';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
 // 이 페이지 ISR과 스냅샷 정적 캐시(`getEconomySnapshotStatic`의 `SECONDS_PER_DAY`

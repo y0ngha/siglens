@@ -7,9 +7,9 @@ vi.mock(
     })
 );
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StrictMode } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
 
 describe('useNewsAnalysisTrigger', () => {

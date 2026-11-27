@@ -1,14 +1,14 @@
-import {
-    INVESTOR_FLOWS_BASELINE_MIN_FILERS,
-    INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
-} from '../lib/investorFlowsPolicy';
+import type { AggregateMode } from '../api/aggregateSql';
 import {
     isPeriodComplete,
     nextQuarterEnd,
     previousQuarterEnd,
     retainedPeriods,
 } from '../lib/investorFlowsDates';
-import type { AggregateMode } from '../api/aggregateSql';
+import {
+    INVESTOR_FLOWS_BASELINE_MIN_FILERS,
+    INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
+} from '../lib/investorFlowsPolicy';
 import type {
     Ingest13fDeps,
     Ingest13fRepository,

@@ -37,16 +37,15 @@ vi.mock('@/app/api/ai/chat/tools/visualBlocks/dividends', () => ({
     buildDividendsBlock: b.dividends,
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { ToolExecutionContext } from '@y0ngha/siglens-core';
-import type { ChatVisualBlock } from '@/entities/chat-conversation/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ToolRuntime } from '@/app/api/ai/chat/tools/chatTools';
 import {
     SHOW_CHART_NAME_TIMEOUT_MS,
     SHOW_CHART_TIMEOUT_MS,
     showChartTool,
 } from '@/app/api/ai/chat/tools/showChart';
+import type { ChatVisualBlock } from '@/entities/chat-conversation/types';
 
 const ctx = (userId = 'user-1'): ToolExecutionContext => ({
     userId,

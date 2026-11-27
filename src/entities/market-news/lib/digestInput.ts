@@ -1,8 +1,8 @@
 import type { EnrichedNewsItem, NewsFeedCategory } from '@y0ngha/siglens-core';
 import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
+import type { MarketNewsRow } from '../model';
 import type { NewsFeedCategoryId } from './categoryConfig';
 import { toEnrichedMarketNewsItem } from './toEnrichedMarketNewsItem';
-import type { MarketNewsRow } from '../model';
 
 /**
  * 다이제스트 입력 기사 — 보강이 끝난 행만 core 형상으로 바꾸고

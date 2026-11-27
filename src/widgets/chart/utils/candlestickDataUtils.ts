@@ -2,11 +2,11 @@
  * 캔들 시리즈 데이터 빌드와 Elder Impulse 색 매핑.
  */
 
-import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
-import { tailOffset } from './seriesDataUtils';
 import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
+import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { reportClientError } from '@/shared/lib/reportClientError';
+import { tailOffset } from './seriesDataUtils';
 
 /**
  * Elder Impulse 색 매핑: green=강세(teal), red=약세(red), blue=혼조(blue).

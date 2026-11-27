@@ -28,7 +28,6 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import PositionPage from '@/app/[locale]/[symbol]/position/page';
 import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';

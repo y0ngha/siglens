@@ -3,7 +3,6 @@ vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     rangeTone,
     resolveCurrentPricePosition,

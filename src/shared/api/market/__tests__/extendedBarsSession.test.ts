@@ -2,11 +2,10 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     EXTENDED_BAR_INTERVAL_SECONDS,
     buildExtendedSessionRanges,
@@ -20,16 +19,16 @@ import {
     type ExtendedBarTimeframe,
 } from '@/shared/api/market/extendedBarsSession';
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
-import extended5Min from '../../fmp/__tests__/fixtures/extendedBars.aapl.5min.json';
-import extended1Hour from '../../fmp/__tests__/fixtures/extendedBars.aapl.1hour.json';
-import extended4Hour from '../../fmp/__tests__/fixtures/extendedBars.aapl.4hour.json';
 import extended1HourEarly from '../../fmp/__tests__/fixtures/extendedBars.aapl.1hour.earlyClose.json';
+import extended1Hour from '../../fmp/__tests__/fixtures/extendedBars.aapl.1hour.json';
 import extended4HourEarly from '../../fmp/__tests__/fixtures/extendedBars.aapl.4hour.earlyClose.json';
-import regular5Min from '../../fmp/__tests__/fixtures/regularBars.aapl.5min.json';
-import regular1Hour from '../../fmp/__tests__/fixtures/regularBars.aapl.1hour.json';
-import regular4Hour from '../../fmp/__tests__/fixtures/regularBars.aapl.4hour.json';
+import extended4Hour from '../../fmp/__tests__/fixtures/extendedBars.aapl.4hour.json';
+import extended5Min from '../../fmp/__tests__/fixtures/extendedBars.aapl.5min.json';
 import regular1HourEarly from '../../fmp/__tests__/fixtures/regularBars.aapl.1hour.earlyClose.json';
+import regular1Hour from '../../fmp/__tests__/fixtures/regularBars.aapl.1hour.json';
 import regular4HourEarly from '../../fmp/__tests__/fixtures/regularBars.aapl.4hour.earlyClose.json';
+import regular4Hour from '../../fmp/__tests__/fixtures/regularBars.aapl.4hour.json';
+import regular5Min from '../../fmp/__tests__/fixtures/regularBars.aapl.5min.json';
 
 const mockFmpGet = vi.mocked(fmpGet);
 const provider = new FmpMarketProvider();

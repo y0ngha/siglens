@@ -1,24 +1,22 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import {
-    BAND_COUNT,
-    computePosition,
-    type PositionModel,
-} from '../utils/positionGeometry';
-import { PositionBuilding } from '../ui/PositionBuilding';
-
 import koMessages from '@/../messages/ko.json';
-
-import {
-    AVG_LABEL_PREFIX_KEY,
-    CURRENT_LABEL_PREFIX_KEY,
-    describeFloor,
-} from '../utils/positionBuildingNotes';
-import { formatCompactForSvgLabel } from '../utils/buildingPriceFormat';
+import { PositionBuilding } from '../ui/PositionBuilding';
 import {
     CENTER_X,
     estimateSvgLabelWidth,
     SVG_LABEL_AVAILABLE_WIDTH,
 } from '../utils/buildingGeometry';
+import { formatCompactForSvgLabel } from '../utils/buildingPriceFormat';
+import {
+    AVG_LABEL_PREFIX_KEY,
+    CURRENT_LABEL_PREFIX_KEY,
+    describeFloor,
+} from '../utils/positionBuildingNotes';
+import {
+    BAND_COUNT,
+    computePosition,
+    type PositionModel,
+} from '../utils/positionGeometry';
 
 /** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
 const tPos = (key: string, values?: Record<string, string | number>) => {

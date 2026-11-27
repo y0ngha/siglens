@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
+import { describe, expect, it } from 'vitest';
 import {
     MOBILE_SHEET_PEEK_BAND_SVH,
     PEEK_VISIBLE_OFFSET,
     SNAP_PEEK,
 } from '@/views/symbol/constants/mobileSheet';
+import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
 
 /**
  * 이 껍데기의 존재 이유는 "실제 vaul 시트가 뜨기 전 하단 공백을 메운다"이고,

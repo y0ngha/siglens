@@ -1,7 +1,6 @@
 import type { Tier } from '@y0ngha/siglens-core';
 import { and, eq, inArray, lt, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
-import { logActionError } from '@/shared/lib/logActionError';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import {
     encryptToken,
@@ -22,6 +21,7 @@ import type {
 } from '@/shared/db/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
+import { logActionError } from '@/shared/lib/logActionError';
 import type { OAuthProvider } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { SIGNED_UP_USER_TIER } from './lib/authUseCaseConstants';

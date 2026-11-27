@@ -1,13 +1,13 @@
-// @vitest-environment jsdom
-import koMessages from '../../../../../messages/ko.json';
-import { renderHook, waitFor } from '@testing-library/react';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
-import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
+// @vitest-environment jsdom
+import koMessages from '../../../../../messages/ko.json';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

@@ -1,8 +1,8 @@
 'use server';
 
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import { getDatabaseClient } from '@/shared/db/client';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { DrizzleNewsRepository } from '../api';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';

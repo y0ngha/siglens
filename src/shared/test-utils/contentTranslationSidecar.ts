@@ -1,9 +1,9 @@
+import { TRANSLATION_SOURCE } from '@/shared/db/contentTranslationFields';
 import type { ContentTranslationRepository } from '@/shared/db/contentTranslationRepository';
 import {
     ContentTranslations,
     type TranslationIndex,
 } from '@/shared/db/contentTranslations';
-import { TRANSLATION_SOURCE } from '@/shared/db/contentTranslationFields';
 import type { Locale } from '@/shared/i18n/locales';
 
 type ContentTranslationClient =

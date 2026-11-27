@@ -1,6 +1,6 @@
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
-import { GUIDE_PATH_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
 import type { ChartDrawingSource } from '@/entities/analysis/lib/narrowChartDrawings';
+import { GUIDE_PATH_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
 import type { ReportChartDrawings } from '../reportModel';
 import { REPORT_CHART_MA_PERIODS } from './chartGeometry';
 import { toLegendEntries } from './overlayGeometry';

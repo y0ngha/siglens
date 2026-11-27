@@ -11,7 +11,6 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 
 const APPLE = { symbol: 'AAPL', name: 'Apple Inc.' };

@@ -1,11 +1,11 @@
 import { cache } from 'react';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { cacheNonEmptyOrNull } from '@/shared/cache/cacheNonEmpty';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';

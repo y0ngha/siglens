@@ -1,5 +1,5 @@
-import { ImageResponse } from 'next/og';
 import { getTranslations } from 'next-intl/server';
+import { ImageResponse } from 'next/og';
 import {
     CATEGORY_CONFIG,
     categoryFromSlug,

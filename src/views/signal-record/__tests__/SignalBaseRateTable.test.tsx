@@ -32,21 +32,20 @@ vi.mock('next-intl/server', async () => {
     };
 });
 
-import { createTranslator } from 'next-intl';
+import { render, screen, within } from '@testing-library/react';
 import {
     MEASURED_SIGNAL_BASE_RATES,
     type MeasuredSignalBaseRate,
     type MeasuredSignalHorizon,
 } from '@y0ngha/siglens-core';
-import { render, screen, within } from '@testing-library/react';
+import { createTranslator } from 'next-intl';
 import type { ReactElement } from 'react';
 import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import { formatKoreanDate } from '@/shared/lib/legal';
 import { defined } from '@/shared/test-utils/defined';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-
 import { SignalBaseRateTable } from '../SignalBaseRateTable';
 
 const GOLDEN = MEASURED_SIGNAL_BASE_RATES.golden_cross;

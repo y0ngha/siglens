@@ -19,7 +19,6 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import { redirect } from 'next/navigation';
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';

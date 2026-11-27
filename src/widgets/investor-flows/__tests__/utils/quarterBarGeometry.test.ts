@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { QuarterBar } from '../../utils/institutional';
 import {
     barRect,
     BASELINE_Y,
     maxAbsNetChange,
 } from '../../utils/quarterBarGeometry';
-import type { QuarterBar } from '../../utils/institutional';
 
 function bar(netShareChange: number): QuarterBar {
     return {

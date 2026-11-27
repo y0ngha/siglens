@@ -1,9 +1,9 @@
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { KR_SYMBOL_RE } from '@/shared/config/ticker';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const generatedAt = new Date('2026-07-24T00:00:00.000Z');

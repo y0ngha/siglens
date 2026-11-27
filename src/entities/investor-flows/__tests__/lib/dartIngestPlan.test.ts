@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    EMPTY_DART_BACKFILL_CURSOR,
-    EMPTY_DART_LIST_CURSOR,
-    type DartListCursor,
-} from '../../lib/dartIngestState';
-import {
     backfillTargetsAfter,
     latestReceiptDate,
     nextPendingQueue,
@@ -13,11 +8,16 @@ import {
     symbolsToInvalidate,
 } from '../../lib/dartIngestPlan';
 import {
+    EMPTY_DART_BACKFILL_CURSOR,
+    EMPTY_DART_LIST_CURSOR,
+    type DartListCursor,
+} from '../../lib/dartIngestState';
+import { addDays } from '../../lib/investorFlowsDates';
+import {
     INVESTOR_FLOWS_DART_LIST_INITIAL_LOOKBACK_DAYS,
     INVESTOR_FLOWS_DART_LIST_MAX_LOOKBACK_DAYS,
     INVESTOR_FLOWS_REVALIDATE_CAP,
 } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
 
 const TODAY = '2026-10-15';
 

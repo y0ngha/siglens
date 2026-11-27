@@ -5,7 +5,6 @@ import {
     categoriesInRegion,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
-import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import { resolveLocale } from '@/shared/i18n/locales';
@@ -18,16 +17,17 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,
 } from '@/shared/lib/seoAlternates';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { fetchCategoryDigestLines } from './_lib/categoryDigests';
 import { fetchCategoryPreviews } from './_lib/categoryPreviews';
 import { buildNewsHubMetadata } from './_lib/newsHubMetadata';

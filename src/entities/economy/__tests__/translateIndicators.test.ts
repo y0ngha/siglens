@@ -36,12 +36,12 @@ import {
     translateIndicator,
     translateUnresolvedCalendarIndicators,
 } from '@/entities/economy/api/translateIndicators';
-import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
 import {
     futureWindowEnd,
     pastWindowStart,
     etDateOf,
 } from '@/entities/economy/lib/calendarWindow';
+import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
 
 const UNKNOWN = 'Totally Unknown Thing';
 

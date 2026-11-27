@@ -7,29 +7,30 @@ import {
     selectCalendarEvents,
     type TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { getEconomicCalendarRange } from '@/entities/economy/api/economicCalendarRangeCache';
-import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { SNAPSHOT_CALENDAR_WINDOW_DAYS } from '@/entities/economy/api/economySnapshotCache';
+import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
+import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
+import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
+import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import {
     type FreshTreasuryRates,
     getFreshTreasuryRates,
     TREASURY_CACHE_TTL_SECONDS,
     TREASURY_FALLBACK_TTL_SECONDS,
 } from '@/entities/economy/api/treasuryRatesCache';
-import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
-import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
-import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
-import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
-import {
-    CALENDAR_COUNTRY,
-    CALENDAR_COUNTRY_KR,
-} from '@/entities/economy/lib/economyCalendarConstants';
-import type { CalendarCountry } from '@/entities/economy/model';
 import {
     etDateOf,
     futureWindowEnd,
 } from '@/entities/economy/lib/calendarWindow';
-import { addUtcIsoDays } from '@/shared/lib/isoDate';
+import {
+    CALENDAR_COUNTRY,
+    CALENDAR_COUNTRY_KR,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
+import type { CalendarCountry } from '@/entities/economy/model';
 import {
     ECONOMY_CALENDAR_DEFAULT_DAYS,
     ECONOMY_CALENDAR_FETCH_PAD_DAYS,
@@ -41,10 +42,9 @@ import {
     SECONDS_PER_MINUTE,
 } from '@/shared/config/time';
 import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { roundNumber } from '@/entities/bars/lib/roundIndicators';
-import { ppDelta } from './percent';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import { logToolDegrade } from './logToolDegrade';
+import { ppDelta } from './percent';
 
 /**
  * Calendar cap. `selectCalendarEvents` (core) keeps every rate decision, then

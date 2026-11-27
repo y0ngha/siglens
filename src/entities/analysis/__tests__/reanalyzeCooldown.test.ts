@@ -1,13 +1,12 @@
+import {
+    getReanalyzeCooldownMs as coreGetMs,
+    tryAcquireReanalyzeCooldown as coreTryAcquire,
+} from '@y0ngha/siglens-core';
 import type { MockedFunction } from 'vitest';
 import * as getReanalyzeCooldownMsModule from '../actions/getReanalyzeCooldownMs';
 import { getReanalyzeCooldownMs } from '../actions/getReanalyzeCooldownMs';
 import * as tryAcquireModule from '../actions/tryAcquireReanalyzeCooldown';
 import { tryAcquireReanalyzeCooldown } from '../actions/tryAcquireReanalyzeCooldown';
-
-import {
-    getReanalyzeCooldownMs as coreGetMs,
-    tryAcquireReanalyzeCooldown as coreTryAcquire,
-} from '@y0ngha/siglens-core';
 
 /**
  * Task 5: `releaseReanalyzeCooldown`이 공개 server-action 표면에 없음을 보장한다.

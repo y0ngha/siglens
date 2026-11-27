@@ -2,9 +2,9 @@
 
 import { useFormatter, useTranslations } from 'next-intl';
 import type { ChatPriceAlertProposalBlock } from '@/entities/chat-conversation/types';
+import { MAIL_ALERT_SEND_HOURS_KST } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { PRICE_ALERT_TTL_DAYS } from '@/entities/mail-alert/lib/priceAlertConstants';
 import type { PriceAlertStoredTerms } from '@/entities/mail-alert/model';
-import { MAIL_ALERT_SEND_HOURS_KST } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { alertSymbolLabel, formatAlertPrice } from '../utils/priceAlertCard';
 
 /** 첫 발송 시각부터 마지막 재시도 슬롯의 한 시간 뒤까지가 "아침 N시에서 M시 사이"다(알림 메일 대화상자와 같다). */

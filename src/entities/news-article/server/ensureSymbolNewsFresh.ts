@@ -1,8 +1,9 @@
 import 'server-only';
+import type { NewsItem } from '@y0ngha/siglens-core';
 import { revalidateTag } from 'next/cache';
 import { after } from 'next/server';
-import type { NewsItem } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DrizzleNewsRepository } from '../api';
 import { analyzeNewsCards } from '../lib/analyzeNewsCards';
 import {
@@ -18,7 +19,6 @@ import { newsCacheTag } from '../lib/newsCacheTag';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { selectUnanalyzed } from '../lib/selectUnanalyzed';
 import { isRecentlyFetched } from './newsRefreshFlag';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `ensureSymbolNewsFresh`의 진단용 결과. 호출부는 값을 버리고 테스트만 읽는다. */
 export interface SymbolFreshnessResult {

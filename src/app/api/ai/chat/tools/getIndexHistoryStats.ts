@@ -4,8 +4,8 @@ import {
     computeIndexHistoryStats,
     type AgentHistoryIndex,
 } from '@y0ngha/siglens-core';
-import { loadIndexMonthEnds } from '@/entities/index-history/server/loadIndexMonthEnds';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { loadIndexMonthEnds } from '@/entities/index-history/server/loadIndexMonthEnds';
 import { logToolDegrade } from './logToolDegrade';
 
 const TOOL = 'get_index_history_stats';

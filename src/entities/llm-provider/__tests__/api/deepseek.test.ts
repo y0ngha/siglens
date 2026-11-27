@@ -10,8 +10,8 @@ vi.mock('openai', () => ({
     default: MockOpenAI,
 }));
 
-import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
 import { ProviderCallTimeoutError } from '@/entities/llm-provider/api/callDeadline';
+import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
 
 const FLASH_OPTIONS = {
     apiKey: 'server-key',

@@ -1,7 +1,7 @@
+import { renderHook } from '@testing-library/react';
 // @vitest-environment jsdom
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { renderHook } from '@testing-library/react';
 import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 
 const pathname = vi.hoisted(() => ({ value: '/AAPL' as string | null }));

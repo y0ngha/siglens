@@ -1,13 +1,5 @@
 'use client';
 
-/**
- * 종목 페이지의 가격(캔들) 차트 — 차트 수명·캔들 데이터·지표·AI 작도·패인 레이아웃 훅을 연결하고
- * 헤더 띠·캔버스·범례를 배치하는 오케스트레이터다. 각 관심사는 `hooks/`·`utils/`·`ui/`가 맡는다.
- */
-import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-import { useMemo, useRef, useState } from 'react';
-import type { IChartApi } from 'lightweight-charts';
 import type {
     Bar,
     ChartOverlay,
@@ -17,8 +9,15 @@ import type {
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
 import { EMPTY_INDICATOR_RESULT } from '@y0ngha/siglens-core';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import type { IChartApi } from 'lightweight-charts';
+/**
+ * 종목 페이지의 가격(캔들) 차트 — 차트 수명·캔들 데이터·지표·AI 작도·패인 레이아웃 훅을 연결하고
+ * 헤더 띠·캔버스·범례를 배치하는 오케스트레이터다. 각 관심사는 `hooks/`·`utils/`·`ui/`가 맡는다.
+ */
+import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import {
     NO_EXTENDED_BARS,
     NO_SESSION_RANGES,
@@ -26,18 +25,18 @@ import {
     isExtendedBarTimeframe,
 } from '@/shared/api/market/extendedBarsSession';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from './constants';
-import { OverlayLegend } from './OverlayLegend';
-import type { ToggleSetting } from './types';
 import { useActionRecommendationOverlay } from './hooks/useActionRecommendationOverlay';
 import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
 import { useCandlestickChart } from './hooks/useCandlestickChart';
 import { useCandlestickData } from './hooks/useCandlestickData';
-import { useChartOverlaySpecs } from './hooks/useChartOverlaySpecs';
 import { useChartOverlays } from './hooks/useChartOverlays';
-import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
+import { useChartOverlaySpecs } from './hooks/useChartOverlaySpecs';
 import { useExtendedGapTimes } from './hooks/useExtendedGapTimes';
+import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
 import { useIndicatorPaneCharts } from './hooks/useIndicatorPaneCharts';
 import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
@@ -49,6 +48,8 @@ import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useRightGutter } from './hooks/useRightGutter';
 import { useSmcZones } from './hooks/useSmcZones';
 import type { IndicatorHookParams } from './model/chartHookParams';
+import { OverlayLegend } from './OverlayLegend';
+import type { ToggleSetting } from './types';
 import { ChartHeaderBar } from './ui/ChartHeaderBar';
 import { ExtendedHoursLegendBadge } from './ui/ExtendedHoursLegendBadge';
 import { withChartOnlyMaPeriods } from './utils/chartMaPeriods';
@@ -59,7 +60,6 @@ import {
     LEVEL_TITLE_FONT,
     type TextMeasurer,
 } from './utils/levelLabelGutter';
-import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { buildPaneLabels } from './utils/paneLabelUtils';
 
 const EMPTY_CHART_OVERLAYS: ChartOverlay[] = [];

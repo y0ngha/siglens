@@ -1,17 +1,17 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
+import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
+import { Drizzle13fRepository } from '../../api/investorFlows13fRepository';
+import { DrizzleInvestorFlowsUniverseRepository } from '../../api/investorFlowsUniverseRepository';
 import {
     INVESTOR_FLOWS_PRUNE_BATCH_SIZE,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
-import { Drizzle13fRepository } from '../../api/investorFlows13fRepository';
-import { DrizzleInvestorFlowsUniverseRepository } from '../../api/investorFlowsUniverseRepository';
 import { run13fIngest } from '../../server/ingest13f';
 import {
     FILING_INDEX_JSON,

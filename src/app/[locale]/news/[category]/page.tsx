@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import {
@@ -8,9 +8,6 @@ import {
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
 } from '@/entities/market-news/lib/categoryConfig';
-import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
-import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
-import { NewsCategoryTabs } from '@/widgets/news-hub/NewsCategoryTabs';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { isDatabaseConfigured } from '@/shared/db/config';
@@ -26,6 +23,9 @@ import { localeAlternates, localePageRobots } from '@/shared/lib/seoAlternates';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
+import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
+import { NewsCategoryTabs } from '@/widgets/news-hub/NewsCategoryTabs';
 import { DigestSkeleton } from './_components/DigestSkeleton';
 import { MarketNewsDegraded } from './_components/MarketNewsDegraded';
 import {

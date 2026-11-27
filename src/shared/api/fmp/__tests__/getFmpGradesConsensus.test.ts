@@ -15,7 +15,6 @@ vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
 
 const ROW = { strongBuy: 40, buy: 70, hold: 32, sell: 2, strongSell: 1 };

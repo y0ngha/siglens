@@ -1,16 +1,15 @@
 import 'server-only';
-
 import { priceLevelStart, type PriceLevelTarget } from '@y0ngha/siglens-core';
 import type {
     CreatePriceAlertInput,
     MailAlertOwner,
     PriceAlertRepository,
 } from '@/shared/db/types';
+import { maskEmail } from '../lib/maskEmail';
 import {
     PRICE_ALERT_MAX_ACTIVE,
     PRICE_ALERT_RATE_LIMIT,
 } from '../lib/priceAlertConstants';
-import { maskEmail } from '../lib/maskEmail';
 import {
     priceAlertExpiresOn,
     priceAlertStartsAfterSession,
@@ -24,8 +23,6 @@ import type {
     PriceAlertStoredTerms,
 } from '../model';
 import { confirmMailAlertCode } from './mailAlertCode';
-import { isPriceAlertProposalExpired } from './priceAlertProposalToken';
-import type { PriceAlertReference } from './priceAlertReference';
 import {
     forgetStaleCookie,
     isEnabled,
@@ -35,6 +32,8 @@ import {
     upsertVerifiedOnce,
     type MailAlertFlowDeps,
 } from './mailAlertFlows';
+import { isPriceAlertProposalExpired } from './priceAlertProposalToken';
+import type { PriceAlertReference } from './priceAlertReference';
 
 /**
  * 알림 메일 흐름의 의존성에 제안 토큰과 만들기를 더한다. 공개 스위치는 알림 메일 흐름의 `priceAlertsEnabled`

@@ -25,13 +25,13 @@ vi.mock('next-intl/server', async () => {
 });
 
 import { screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import MailAlertsPage, {
     dynamic,
     generateMetadata,
 } from '@/app/[locale]/email-report/alerts/page';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import type { ReactElement } from 'react';
 
 const params = (locale: string) => Promise.resolve({ locale });
 const search = (value: { s?: string; sig?: string } = {}) =>

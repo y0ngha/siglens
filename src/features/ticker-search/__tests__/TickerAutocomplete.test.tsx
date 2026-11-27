@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import {
     useAutocomplete,
     type UseAutocompleteReturn,
 } from '@/features/ticker-search/hooks/useAutocomplete';
+import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 vi.mock('@/shared/db/client', () => ({

@@ -31,13 +31,13 @@ vi.mock('next/link', () => ({
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
-import { LocaleLink } from '../LocaleLink';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     NavigationPendingProvider,
     usePendingHref,
 } from '@/shared/model/NavigationPendingContext';
-import type { Locale } from '@/shared/i18n/locales';
+import { LocaleLink } from '../LocaleLink';
 
 const mockPathname = usePathname as ReturnType<typeof vi.fn>;
 

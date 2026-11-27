@@ -9,15 +9,15 @@ import { useContext, useMemo, type ReactNode } from 'react';
 import type { RelatedSymbolPage } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { AgentMarkdown } from '../AgentMarkdown';
+import { ChatChartSlot } from '../model/chatChartSlot';
 import { SiglensMark } from '../SiglensMark';
 import { ToolActivity } from '../ToolActivity';
+import { messageCharts } from '../utils/messageCharts';
+import { messageProposals } from '../utils/messageProposals';
 import { FollowUps } from './FollowUps';
 import { PriceAlertProposalCard } from './PriceAlertProposalCard';
 import { RelatedPages } from './RelatedPages';
 import { Thinking } from './Thinking';
-import { ChatChartSlot } from '../model/chatChartSlot';
-import { messageCharts } from '../utils/messageCharts';
-import { messageProposals } from '../utils/messageProposals';
 
 interface AssistantMessageProps {
     readonly message: AgentUiMessage;

@@ -1,15 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { useId } from 'react';
 import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
-import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { usePasswordConfirmation } from '../hooks/usePasswordConfirmation';
+import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
 import { resetPasswordErrorSlot } from '../lib/resetPasswordErrorSlot';
-import { useId } from 'react';
 
 interface ResetPasswordFormProps {
     /** 재설정 링크의 이메일. 숨은 필드로 액션에 그대로 넘긴다. */

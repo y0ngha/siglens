@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-
 import type { SymbolNewsListItems } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import type { OverallPeekResult } from '@/app/[locale]/[symbol]/overall/_lib/overallPeek';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';

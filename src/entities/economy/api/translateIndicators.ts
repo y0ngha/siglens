@@ -1,20 +1,18 @@
 import 'server-only';
-import { revalidateTag } from 'next/cache';
 import { runIndicatorTranslation } from '@y0ngha/siglens-core';
-
+import { revalidateTag } from 'next/cache';
 import { getDatabaseClient } from '@/shared/db/client';
-
-import { DrizzleIndicatorTranslationRepository } from './indicatorTranslationRepository';
-import { listCalendarIndicatorBases } from './listCalendarIndicatorBases';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { etDateOf } from '../lib/calendarWindow';
+import { INDICATOR_NAME_KO } from '../lib/indicatorNameKo';
+import { INDICATOR_TRANSLATION_CACHE_TAG } from '../lib/indicatorTranslationConstants';
+import type { CalendarCountry } from '../model';
 import {
     isIndicatorTranslationPending,
     markIndicatorTranslationPending,
 } from './indicatorTranslationFlag';
-import { etDateOf } from '../lib/calendarWindow';
-import type { CalendarCountry } from '../model';
-import { INDICATOR_NAME_KO } from '../lib/indicatorNameKo';
-import { INDICATOR_TRANSLATION_CACHE_TAG } from '../lib/indicatorTranslationConstants';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { DrizzleIndicatorTranslationRepository } from './indicatorTranslationRepository';
+import { listCalendarIndicatorBases } from './listCalendarIndicatorBases';
 
 /**
  * `translateIndicator`의 결과 — `dictionary`(사전에 있어 생략)·`pending`(최근 제출 플래그로

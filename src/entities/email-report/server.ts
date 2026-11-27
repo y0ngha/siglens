@@ -1,10 +1,10 @@
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
-import type { Locale } from '@/shared/i18n/locales';
 import type { EmailMessage } from '@/shared/email/types';
+import type { Locale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
-import { createSignalLabelResolver } from './lib/signalLabelResolver';
 import { buildSampleReportEmailInput } from './lib/sampleReportData';
+import { createSignalLabelResolver } from './lib/signalLabelResolver';
 import { buildReportEmail } from './templates/reportEmail';
 import type {
     ReportEmailTranslator,

@@ -1,12 +1,12 @@
 import { constants } from 'node:http2';
 import { DrizzleFeedbackRepository } from '@/entities/feedback/api';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { notifyOperator } from '@/shared/email/operatorNotifier';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { runFeedbackDigest } from './runFeedbackDigest';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
 

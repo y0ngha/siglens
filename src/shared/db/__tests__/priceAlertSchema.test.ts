@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { SQL } from 'drizzle-orm';
 import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { PriceAlertBasis } from '@/entities/mail-alert/model';
 import {
     PRICE_ALERT_APPROACH_VALUES,

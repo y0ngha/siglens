@@ -68,17 +68,16 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => fakeRedis,
 }));
 
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
-import { EARNINGS_REPORT_FMP_LIMIT } from '@/entities/earnings-report/api';
-import type { EarningsReportUpsertInput } from '@/entities/earnings-report/model';
-import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
-import { MS_PER_HOUR } from '@/shared/config/time';
-
+import type { GradesEvent } from '@y0ngha/siglens-core';
 import {
     getEarningsReportComparison,
     getGradeEvents,
 } from '@/app/[locale]/[symbol]/news/newsData';
-import type { GradesEvent } from '@y0ngha/siglens-core';
+import { EARNINGS_REPORT_FMP_LIMIT } from '@/entities/earnings-report/api';
+import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
+import type { EarningsReportUpsertInput } from '@/entities/earnings-report/model';
+import { MS_PER_HOUR } from '@/shared/config/time';
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
 const COMPARISON_ITEM: EarningsReportComparisonItem = {
     symbol: 'AAPL',

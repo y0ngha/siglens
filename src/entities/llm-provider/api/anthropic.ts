@@ -8,6 +8,7 @@ import {
     isClaudeAdaptiveModelSpec,
     resolveReasoningConfig,
 } from '@y0ngha/siglens-core';
+import { CHAT_JOB_ID, extractClaudeUsage } from '../lib/usage';
 import {
     findSpecByApiModelId,
     resolveMaxOutputTokens,
@@ -15,7 +16,6 @@ import {
     toSdkTransportOptions,
 } from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
-import { CHAT_JOB_ID, extractClaudeUsage } from '../lib/usage';
 import {
     createCallDeadline,
     runWithCallDeadline,

@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
-import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
+import ko from '../../../../../messages/ko.json';
 import type { MethodologyTranslator } from '../../types';
 import {
     METHODOLOGY_CHANGELOG,

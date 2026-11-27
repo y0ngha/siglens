@@ -3,8 +3,8 @@
  * `loadReportPreview`가 만든다.
  */
 
-import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { ReportSymbolToggleMode } from '../hooks/useReportSymbolToggle';
 import {
     type ReportPreviewSummary,

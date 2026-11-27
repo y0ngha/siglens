@@ -1,15 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { HomeSkillItem } from './utils/toSkillShowcaseItems';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { GUIDE_PATH } from '@/shared/lib/guidePaths';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 import { useSkillsShowcase } from './hooks/useSkillsShowcase';
 import { SkillPanel } from './ui/skills-showcase/SkillPanel';
 import { SkillTabs } from './ui/skills-showcase/SkillTabs';
 import { SKILL_TABS } from './utils/skillTabs';
+import type { HomeSkillItem } from './utils/toSkillShowcaseItems';
 
 interface SkillsShowcaseProps {
     skills: HomeSkillItem[];

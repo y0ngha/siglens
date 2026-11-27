@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, type KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRef, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
 import {
     adjacentWatchlistTab,

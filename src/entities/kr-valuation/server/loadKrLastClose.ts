@@ -1,10 +1,10 @@
 import 'server-only';
+import { lastCompletedDailyClose } from '@/entities/bars/lib/quantizeBars';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
-import { lastCompletedDailyClose } from '@/entities/bars/lib/quantizeBars';
 import type { KrPrice } from '../model';
 
 /**

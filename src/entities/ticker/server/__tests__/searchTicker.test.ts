@@ -56,21 +56,20 @@ vi.mock('../krEquitySearch', () => ({
 }));
 
 import type { CacheProvider } from '@y0ngha/siglens-core';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 import type { TickerSearchResult } from '@/shared/lib/types';
-import type { FmpSearchResult } from '../../model';
-
-import {
-    _resetInFlightTranslationsForTest,
-    MAX_SEARCH_RESULTS,
-    searchTicker,
-} from '../searchTicker';
 import {
     API_UNTRANSLATED_CACHE_TTL,
     buildApiTickerSearchCacheKey,
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
 } from '../../lib/cacheKeys';
-import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
+import type { FmpSearchResult } from '../../model';
+import {
+    _resetInFlightTranslationsForTest,
+    MAX_SEARCH_RESULTS,
+    searchTicker,
+} from '../searchTicker';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',

@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    CachedInvestorFlowsFmpProvider,
-    INVESTOR_FLOWS_INSIDER_LOOKBACK_DAYS,
-    INVESTOR_FLOWS_LARGE_HOLDER_FETCH_LIMIT,
-} from '../CachedInvestorFlowsFmpProvider';
-import type { InvestorFlowsFmpProvider } from '../investorFlowsProvider.types';
-import {
     INVESTOR_FLOWS_INSIDER_CACHE_TTL_SECONDS,
     INVESTOR_FLOWS_LARGE_HOLDER_CACHE_TTL_SECONDS,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
+import {
+    CachedInvestorFlowsFmpProvider,
+    INVESTOR_FLOWS_INSIDER_LOOKBACK_DAYS,
+    INVESTOR_FLOWS_LARGE_HOLDER_FETCH_LIMIT,
+} from '../CachedInvestorFlowsFmpProvider';
+import type { InvestorFlowsFmpProvider } from '../investorFlowsProvider.types';
 
 vi.mock('server-only', () => ({}));
 

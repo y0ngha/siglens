@@ -9,7 +9,6 @@ vi.mock('../LegalBreadcrumb', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import { LOCALE_HREFLANG } from '@/shared/i18n/locales';
 import { LegalPageShell } from '../LegalPageShell';
 

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-
+import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import {
     clientGraphFiles,
     findServerOnlyCoreImports,
@@ -12,7 +12,6 @@ import {
     repoClientGraph,
     useClientRoots,
 } from './support/coreClientExports';
-import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 
 /**
  * 클라이언트 번들에 실리는 파일이 `@y0ngha/siglens-core`에서 가져오는 값은 core의 브라우저

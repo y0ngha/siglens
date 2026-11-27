@@ -1,11 +1,6 @@
 import 'server-only';
 import { revalidateTag } from 'next/cache';
-import { runHubPrewarm } from './hubs';
-import {
-    INDEXNOW_BATCH_FAILED,
-    submitIndexNowForBatch,
-    type IndexNowCounts,
-} from './indexNowSubmission';
+import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import {
     buildPrewarmUniverse,
     type PrewarmSymbol,
@@ -19,12 +14,20 @@ import {
 } from '@/entities/seo-snapshot/lib/freshness';
 import { type SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { HarvestedUnits } from '@/entities/sitemap-entry/lib/indexNowUrls';
-import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
-import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { refreshFundamentalStamps } from './fundamentalStamps';
+import { TAB_SEAMS, resolveHarvest } from './harvest';
+import { runHubPrewarm } from './hubs';
+import {
+    INDEXNOW_BATCH_FAILED,
+    submitIndexNowForBatch,
+    type IndexNowCounts,
+} from './indexNowSubmission';
 import {
     addFmpBudget,
     advanceRotationCursor,
@@ -40,11 +43,8 @@ import {
     prewarmUnitKey,
     TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
-import { TAB_SEAMS, resolveHarvest } from './harvest';
-import { refreshFundamentalStamps } from './fundamentalStamps';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-import { loadViewDemand, type ViewDemand } from './viewDemand';
 import { runOverallWarmStep, type OverallWarmCounts } from './overallWarm';
+import { loadViewDemand, type ViewDemand } from './viewDemand';
 
 /**
  * `IndexNowCounts`(`indexNowSubmitted`·`indexNowOk`·`indexNowFailed`)를 함께 싣는다 —

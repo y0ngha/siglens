@@ -1,13 +1,13 @@
 import 'server-only';
-import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
+import type { MarketFearGreedHubView } from '../model';
 import {
     getCachedMarketFearGreed,
     MARKET_FEAR_GREED_CONFIG_FINGERPRINT,
 } from './marketFearGreedCache';
-import type { MarketFearGreedHubView } from '../model';
 
 /**
  * ISR-safe 미국 시장 공포·탐욕 판독값. Redis 계층을 Next 데이터 캐시로 감싸, 아래층

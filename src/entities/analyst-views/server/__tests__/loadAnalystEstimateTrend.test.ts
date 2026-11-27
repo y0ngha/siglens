@@ -9,7 +9,6 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode: mockE2E }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadAnalystEstimateTrend } from '@/entities/analyst-views/server/loadAnalystEstimateTrend';
 
 const PERIOD = {

@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { getDatabaseClient } from '@/shared/db/client';

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import koMessages from '../../../../../messages/ko.json';
 import { LegalToc } from '@/widgets/legal/ui/toc/LegalToc';
+import koMessages from '../../../../../messages/ko.json';
 
 const TOC_TITLE = koMessages.widgets.legal.LegalPageShell['7474d0'];
 const ITEMS = [

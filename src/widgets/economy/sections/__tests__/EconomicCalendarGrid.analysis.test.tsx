@@ -10,10 +10,10 @@ vi.mock(
     })
 );
 
-import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy/model';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
+import { vi, describe, it, expect } from 'vitest';
+import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy/model';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
 function ev(

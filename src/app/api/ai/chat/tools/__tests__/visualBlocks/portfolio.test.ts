@@ -6,7 +6,6 @@ vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { HoldingView } from '@/app/api/ai/chat/tools/getMyPortfolio';
 import {
     buildPortfolioBlock,

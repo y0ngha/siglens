@@ -1,7 +1,7 @@
-import type { ReactElement } from 'react';
-import { getTranslations } from 'next-intl/server';
 import { measuredSignalBaseRateFor } from '@y0ngha/siglens-core';
 import type { SignalType } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import type { ReactElement } from 'react';
 import type { Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { formatKoreanDate } from '@/shared/lib/legal';

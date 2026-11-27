@@ -1,7 +1,7 @@
 import { BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
+import release202610 from './data/release-2026-10.json';
 import { assertBenchmarkRelease } from './lib/assertBenchmarkRelease';
 import type { BenchmarkRelease } from './types';
-import release202610 from './data/release-2026-10.json';
 
 /**
  * 화면이 읽는 유일한 진입점. 게이트가 꺼져 있으면 데이터가 있어도 `null`이다 — 라우트·

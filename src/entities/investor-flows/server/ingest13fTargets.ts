@@ -1,9 +1,9 @@
-import { groupFilingsByCik } from '../lib/groupFilingsByCik';
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
+import { groupFilingsByCik } from '../lib/groupFilingsByCik';
 import { processFiling } from './ingest13fFiling';
 import { DeadlineSignal, SecBlockedSignal } from './ingest13fRunState';
 import type { FilingTarget, Ingest13fDeps, RunState } from './ingest13fTypes';
-import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /** 동시에 처리하는 필러 수. SEC 게이트가 속도를 정하므로 DB·네트워크 겹치기용 최소값이다. */
 export const FILING_CONCURRENCY = 2;

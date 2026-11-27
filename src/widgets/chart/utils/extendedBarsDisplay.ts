@@ -1,9 +1,9 @@
+import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
 import type {
     CandlestickData,
     HistogramData,
     UTCTimestamp,
 } from 'lightweight-charts';
-import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { TRANSPARENT_COLOR } from '../constants';
 import { buildCandlestickData } from './candlestickDataUtils';

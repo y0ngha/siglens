@@ -1,13 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
 import {
     filterSkillsByTab,
     INITIAL_VISIBLE_COUNT,
     type SkillsActiveTab,
 } from '../../utils/skillTabs';
+import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 import { SkillCard } from './SkillCard';
 
 interface SkillPanelProps {

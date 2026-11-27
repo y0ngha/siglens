@@ -7,9 +7,9 @@ vi.mock('@/shared/ui/ToastProvider', () => ({ useToast: () => toast }));
 
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { useWatchlistCoachMark } from '@/features/watchlist/hooks/useWatchlistCoachMark';
+import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
 import { WATCHLIST_MAX_LOCAL } from '@/shared/config/watchlist';
 
 const mockUseWatchlist = vi.mocked(useWatchlist);

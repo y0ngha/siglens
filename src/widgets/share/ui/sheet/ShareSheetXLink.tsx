@@ -1,8 +1,8 @@
 /** 공유 시트의 X 공유 행 — 게시 화면을 새 탭으로 연다. */
 
 import { useTranslations } from 'next-intl';
-import { XLogoIcon } from '../icons/shareIcons';
 import { SHARE_SHEET_ROW } from '../../utils/sheetStyles';
+import { XLogoIcon } from '../icons/shareIcons';
 
 interface ShareSheetXLinkProps {
     /** 본문·링크가 채워진 X 게시 화면 주소. */

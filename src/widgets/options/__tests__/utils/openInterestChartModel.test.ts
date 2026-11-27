@@ -1,5 +1,5 @@
-import { buildOpenInterestChartModel } from '@/widgets/options/utils/openInterestChartModel';
 import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
+import { buildOpenInterestChartModel } from '@/widgets/options/utils/openInterestChartModel';
 
 const oi = (
     strike: number,

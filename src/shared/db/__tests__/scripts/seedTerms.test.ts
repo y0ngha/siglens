@@ -1,6 +1,6 @@
-import path from 'path';
 import { mkdtempSync, writeFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
+import path from 'path';
 import {
     parseSeedFile,
     validateSeedFiles,

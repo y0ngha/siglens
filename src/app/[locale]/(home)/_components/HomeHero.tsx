@@ -1,4 +1,3 @@
-import { HeroIllustration } from '@/widgets/home/HeroIllustration';
 import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import { aiAskUrl } from '@/shared/config/aiHost';
 import { localePath, type Locale } from '@/shared/i18n/locales';
@@ -6,6 +5,7 @@ import { brandAiName } from '@/shared/lib/brandName';
 import { brandIntroName } from '@/shared/lib/seo';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { HeroIllustration } from '@/widgets/home/HeroIllustration';
 
 /** 히어로 아래 빠른 이동 링크 하나. 라벨은 페이지가 번역해 넘긴다. */
 export interface HomeHeroQuickLink {

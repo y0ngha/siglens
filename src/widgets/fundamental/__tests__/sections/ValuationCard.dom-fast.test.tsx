@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
-import { koMessage } from '@/shared/test-utils/koMessage';
 import type { KrValuationBasis } from '@/entities/kr-valuation/model';
+import { koMessage } from '@/shared/test-utils/koMessage';
+import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 
 const SAMPLE_METRICS: FundamentalValuationMetrics = {
     peRatioTTM: 28.5,

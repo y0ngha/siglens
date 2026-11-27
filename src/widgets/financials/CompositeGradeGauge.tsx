@@ -1,8 +1,8 @@
+import type { FinancialsGrade } from '@y0ngha/siglens-core';
 /**
  * 재무 종합 점수(0–100) 반원 게이지 — 호·눈금·바늘은 `ui/gauge`가 그린다.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialsGrade } from '@y0ngha/siglens-core';
 import { GaugeArc } from './ui/gauge/GaugeArc';
 import { GaugeNeedle } from './ui/gauge/GaugeNeedle';
 import { GaugeReadout } from './ui/gauge/GaugeReadout';

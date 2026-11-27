@@ -1,11 +1,16 @@
+import type { KrInsiderReport } from '@y0ngha/siglens-core';
 /**
  * 한국 임원·주요주주 소유 보고 목록 본문 — 좁은 화면은 카드, 넓은 화면은 표.
  */
 import { useTranslations } from 'next-intl';
-import type { KrInsiderReport } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
+import {
+    ResponsiveRecordList,
+    type RecordColumn,
+} from '@/shared/ui/ResponsiveRecordList';
 import {
     formatCompact,
     formatPercent,
@@ -14,11 +19,6 @@ import {
 } from '../../utils/flowFormat';
 import { krDisclosureKey } from '../../utils/krDisclosures';
 import { DartFilingLink } from '../filings/DartFilingLink';
-import { CardFieldList } from '@/shared/ui/CardFieldList';
-import {
-    ResponsiveRecordList,
-    type RecordColumn,
-} from '@/shared/ui/ResponsiveRecordList';
 
 /** 소유비율·증감(%p)의 소수 자리 — DART가 소수 둘째 자리까지 준다. */
 const RATIO_DIGITS = 2;

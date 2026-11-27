@@ -72,20 +72,20 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-import React from 'react';
 import { render } from '@testing-library/react';
+import React from 'react';
 import Home from '@/app/[locale]/(home)/page';
 import { GUIDE_CATEGORIES } from '@/entities/guide/types';
-import { loadShowcaseSkills } from '@/entities/skill/api';
 import {
     SIGNAL_HUBS,
     signalHubPath,
 } from '@/entities/signal-history/lib/signalHubs';
+import { loadShowcaseSkills } from '@/entities/skill/api';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
+import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { guideCategoryPath, GUIDE_PATH } from '@/shared/lib/guidePaths';
 import { defined } from '@/shared/test-utils/defined';
-import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import {
     filterSkillsByTab,
     INITIAL_VISIBLE_COUNT,

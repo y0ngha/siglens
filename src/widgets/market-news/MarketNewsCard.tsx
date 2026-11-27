@@ -2,22 +2,22 @@
  * 마켓 뉴스 카드 한 장 — 표시 값을 계산하고 `ui/card/`의 조각을 `NewsCardShell`에 꽂는다.
  */
 import { useTranslations } from 'next-intl';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
-import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import {
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
-import { isMarketNewsCardPending } from './utils/marketNewsCardPending';
-import { buildTickerChips } from './utils/tickerChips';
+import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
+import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 import { AnalysisSkeleton } from './ui/card/AnalysisSkeleton';
 import { CardBadgeRow } from './ui/card/CardBadgeRow';
 import { CardSummarySection } from './ui/card/CardSummarySection';
 import { SummarySkeletonLine } from './ui/card/SummarySkeletonLine';
 import { TickerChips } from './ui/card/TickerChips';
+import { isMarketNewsCardPending } from './utils/marketNewsCardPending';
+import { buildTickerChips } from './utils/tickerChips';
 
 export interface MarketNewsCardProps {
     category: NewsFeedCategoryId;

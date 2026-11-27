@@ -5,7 +5,6 @@ vi.mock('@/entities/bars/server/barsStaticCache', () => ({
 import { QueryClient } from '@tanstack/react-query';
 import type { BarsData } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     hasTechnicalFacts,
     seedChartBars,

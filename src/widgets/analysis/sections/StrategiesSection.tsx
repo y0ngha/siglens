@@ -1,10 +1,10 @@
 'use client';
 
+import type { StrategyResult } from '@y0ngha/siglens-core';
 /**
  * 전략 섹션 — 패턴과 중복되지 않는 전략 카드 목록. 없으면 그리지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { StrategyResult } from '@y0ngha/siglens-core';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import type { OverlayCardControls } from '../model/types';
 import { StrategyAccordionItem } from '../ui/StrategyAccordionItem';

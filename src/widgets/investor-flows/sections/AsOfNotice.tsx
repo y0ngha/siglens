@@ -1,18 +1,18 @@
+import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
 /**
  * 미국 수급 탭의 기준 시점·출처 섹션.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
-import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { CollectingArms } from '@/entities/investor-flows/model';
-import { formatSnapshotDate } from '../utils/snapshotDate';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { AsOfRow } from '../ui/as-of/AsOfRow';
 import { FinraAsOfRows } from '../ui/as-of/FinraAsOfRows';
 import { InstitutionalAsOfRow } from '../ui/as-of/InstitutionalAsOfRow';
 import { SecAsOfRows } from '../ui/as-of/SecAsOfRows';
 import { WindowRangeText } from '../ui/as-of/WindowRangeText';
+import { formatSnapshotDate } from '../utils/snapshotDate';
 
 const HEADING_ID = 'flows-asof-heading';
 

@@ -60,7 +60,6 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 }));
 
 import { screen, within } from '@testing-library/react';
-import type { ReactElement } from 'react';
 import {
     CROSS_LOOKBACK_BARS,
     GOLDEN_CROSS_FAST_PERIOD,
@@ -68,6 +67,7 @@ import {
     SHORT_MA_CROSS_FAST_PERIOD,
     SHORT_MA_CROSS_SLOW_PERIOD,
 } from '@y0ngha/siglens-core';
+import type { ReactElement } from 'react';
 import {
     findSignalHub,
     type SignalHub,
@@ -75,8 +75,8 @@ import {
 import type { SignalEpisodeRow } from '@/entities/signal-history/types';
 import { SIGNAL_SCAN_UNIVERSE_SIZE } from '@/shared/config/signalScanUniverse/signalScanUniverse';
 import type { Locale } from '@/shared/i18n/locales';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { defined } from '@/shared/test-utils/defined';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import ko from '../../../../../../../messages/ko.json';
 import { SignalHubBody } from '../SignalHubBody';

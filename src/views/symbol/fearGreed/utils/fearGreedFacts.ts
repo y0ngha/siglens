@@ -19,18 +19,18 @@ import {
     type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
 import {
-    formatFactorRaw,
-    sentimentLabelText,
-} from '@/shared/lib/fearGreedLabels';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import { koWithParticle } from '@/shared/lib/koParticle';
-import {
     pointBefore,
     TRADING_DAYS,
     type ScoredPoint,
     scoreExtremes,
 } from '@/entities/bars/lib/fearGreedWindow';
 import type { Locale } from '@/shared/i18n/locales';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import {
+    formatFactorRaw,
+    sentimentLabelText,
+} from '@/shared/lib/fearGreedLabels';
+import { koWithParticle } from '@/shared/lib/koParticle';
 import type { SeoTranslator } from '@/shared/lib/seo';
 
 // 5-factor percentile을 낮음/보통/높음 3구간으로 나누는 경계값. FearGreedGroupBar의

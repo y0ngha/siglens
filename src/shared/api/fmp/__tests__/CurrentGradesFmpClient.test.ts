@@ -8,7 +8,6 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
 vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { CurrentGradesFmpClient } from '@/shared/api/fmp/CurrentGradesFmpClient';
 
 const FMP_ROW = { strongBuy: 40, buy: 70, hold: 32, sell: 2, strongSell: 1 };

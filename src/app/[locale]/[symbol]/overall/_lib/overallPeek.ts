@@ -2,13 +2,12 @@ import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
-
 import { overallPeekTag } from '@/entities/analysis/lib/overallPeekTag';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import type { Locale } from '@/shared/i18n/locales';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * 종합 분석 peek 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { FilingsPruneCutoffs } from '../../api/investorFlowsFilingsRepository';
+import { addDays } from '../../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_FAILED_BACKLOG_ALERT,
     INVESTOR_FLOWS_FORM144_RETENTION_DAYS,
@@ -8,15 +10,13 @@ import {
     INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
 import { SEC_FILINGS_CURSOR_OVERLAP_DAYS } from '../../lib/secFilingsPlan';
+import type { FilingRetry, Form144Row, OfferingFilingRow } from '../../model';
 import { runSecFilingsIngest } from '../../server/ingestSecFilings';
 import type {
     IngestSecFilingsDeps,
     IngestSecFilingsRepository,
 } from '../../server/ingestSecFilingsTypes';
-import type { FilingRetry, Form144Row, OfferingFilingRow } from '../../model';
-import type { FilingsPruneCutoffs } from '../../api/investorFlowsFilingsRepository';
 import {
     B5_UNDERWRITTEN_RECURSION,
     B5_ATM_HEARTSCIENCES,

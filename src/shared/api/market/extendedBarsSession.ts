@@ -1,5 +1,11 @@
 import type { Bar, Timeframe } from '@y0ngha/siglens-core';
 import {
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
+import {
     MAX_TRADING_DAY_SEARCH_DAYS,
     PRE_MARKET_OPEN_MINUTE,
     etDayWallMs,
@@ -8,12 +14,6 @@ import {
     usSessionDayAt,
     type UsSessionDay,
 } from './usSessionClock';
-import {
-    MS_PER_SECOND,
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-    SECONDS_PER_MINUTE,
-} from '@/shared/config/time';
 
 /**
  * 미국 주식 인트라데이 **확장 세션 봉**(프리마켓·애프터마켓)의 순수 규칙.

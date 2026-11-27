@@ -4,13 +4,13 @@
  * 거래량 차트 인스턴스와 총·매수·매도 거래량 시리즈의 생성·정리를 맡는 훅.
  */
 
-import { type RefObject, useEffect, useRef } from 'react';
 import {
     createChart,
     HistogramSeries,
     type IChartApi,
     type ISeriesApi,
 } from 'lightweight-charts';
+import { type RefObject, useEffect, useRef } from 'react';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 
 interface UseVolumeChartLifecycleOptions {

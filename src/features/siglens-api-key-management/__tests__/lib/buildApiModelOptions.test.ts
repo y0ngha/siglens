@@ -1,9 +1,9 @@
+import { listApiSelectableModels } from '@/entities/siglens-api-key/lib/apiModels';
 import {
     buildApiModelOptionGroups,
     findSelectableModelId,
     listApiKeyProviderLabels,
 } from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
-import { listApiSelectableModels } from '@/entities/siglens-api-key/lib/apiModels';
 
 describe('buildApiModelOptionGroups', () => {
     it('키를 등록하지 않았으면 그룹이 없다', () => {

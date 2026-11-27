@@ -1,7 +1,7 @@
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { MS_PER_MINUTE } from '@/shared/config/time';
-import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
+import { MS_PER_MINUTE } from '@/shared/config/time';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 /**
  * 챗 툴 결과에 붙는 신선도 봉투.

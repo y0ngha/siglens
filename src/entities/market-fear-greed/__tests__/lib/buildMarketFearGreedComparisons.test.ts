@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import type { MarketFearGreedHistoryPoint } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
 import { MS_PER_DAY } from '@/shared/config/time';
 import {
     buildCalendarDayComparisons,

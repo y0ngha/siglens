@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
 import {
     useMutation,
     useQuery,
     useQueryClient,
     type UseMutationResult,
 } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { getEmailReportSettingsAction } from '../actions/getEmailReportSettingsAction';
 import { saveEmailReportSettingsAction } from '../actions/saveEmailReportSettingsAction';

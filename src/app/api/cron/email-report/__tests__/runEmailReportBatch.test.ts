@@ -1,3 +1,4 @@
+import type { SymbolDrawings } from '@/app/api/cron/email-report/loadSymbolDrawings';
 import {
     BATCH_DEADLINE_MS,
     BRIEF_CONCURRENCY,
@@ -6,22 +7,21 @@ import {
     selectDueRecipients,
     type EmailReportBatchDeps,
 } from '@/app/api/cron/email-report/runEmailReportBatch';
-import { defined } from '@/shared/test-utils/defined';
-import type { SymbolDrawings } from '@/app/api/cron/email-report/loadSymbolDrawings';
+import {
+    WELCOME_STALE_SENDING_MS,
+    WELCOME_SUPPRESSES_REPORT_MS,
+} from '@/entities/email-report/lib/emailReportConstants';
 import { weekdaysToMask } from '@/entities/email-report/lib/weekdayMask';
 import type {
     SymbolBrief,
     SymbolReport,
 } from '@/entities/email-report/reportModel';
-import {
-    WELCOME_STALE_SENDING_MS,
-    WELCOME_SUPPRESSES_REPORT_MS,
-} from '@/entities/email-report/lib/emailReportConstants';
 import type {
     EmailReportRecipient,
     EmailReportWelcomeRecipient,
 } from '@/shared/db/types';
 import type { EmailMessage } from '@/shared/email/types';
+import { defined } from '@/shared/test-utils/defined';
 import {
     PLANTED_EMAIL,
     PLANTED_TOKEN,

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { buildSampleReportEmail } from '@/entities/email-report/server';
-import { EmailReportSampleView } from '@/features/email-report-sample/ui/EmailReportSampleView';
 import { toSampleSrcDoc } from '@/features/email-report-sample/lib/toSampleSrcDoc';
+import { EmailReportSampleView } from '@/features/email-report-sample/ui/EmailReportSampleView';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';

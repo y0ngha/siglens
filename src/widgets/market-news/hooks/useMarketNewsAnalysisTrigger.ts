@@ -4,8 +4,8 @@
  * 마켓 뉴스 수집·AI 보강을 서버에 요청하는 훅.
  */
 import { useEffect, useRef } from 'react';
-import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 
 /**
  * 마운트 때(그리고 카테고리나 `attempt`가 바뀔 때마다) `ensureMarketNewsCardsAnalyzedAction`을

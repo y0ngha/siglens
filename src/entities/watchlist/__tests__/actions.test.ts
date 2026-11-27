@@ -26,13 +26,12 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
-import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
 import { addWatchlistItemAction } from '@/entities/watchlist/actions/addWatchlistItemAction';
-import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';
+import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
 import { mergeWatchlistAction } from '@/entities/watchlist/actions/mergeWatchlistAction';
+import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';
 import {
     WATCHLIST_MAX_LOCAL,
     WATCHLIST_LABEL_MAX_LENGTH,

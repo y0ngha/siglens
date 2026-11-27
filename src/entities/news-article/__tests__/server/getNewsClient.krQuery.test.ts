@@ -16,7 +16,6 @@ vi.mock('../../server/naverNewsClient', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getNewsClient } from '../../server/getNewsClient';
 
 /**

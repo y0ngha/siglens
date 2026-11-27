@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import type { GetBarsOptions } from '@y0ngha/siglens-core';
-import bars from '@e2e/fixtures/bars.json';
+import { describe, it, expect } from 'vitest';
 import { FakeMarketProvider } from '@/shared/api/market/FakeMarketProvider';
+import bars from '@e2e/fixtures/bars.json';
 
 describe('FakeMarketProvider', () => {
     const provider = new FakeMarketProvider();

@@ -1,19 +1,19 @@
-import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type {
     AssetTranslationRepository,
     KoreanTickerRepository,
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';
-import type { TranslatorEntry } from '../model';
+import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
 import {
     planTickerNameReconcile,
     RENAME_TRANSLATE_CHUNK,
     type RenameCandidate,
     type StockListEntry,
 } from '../lib/tickerNameReconcile';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { TranslatorEntry } from '../model';
 
 export interface TickerNameReconcileCounts {
     /** stock-list 수신 행 수. */

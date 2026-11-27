@@ -21,15 +21,15 @@ vi.mock('server-only', () => ({}));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    INVESTOR_FLOWS_MAINTENANCE_BUDGET_MS,
+    INVESTOR_FLOWS_MAINTENANCE_CHUNK_MS,
+} from '@/entities/investor-flows/lib/investorFlowsPolicy';
+import {
     SEC_HEADER_TIMEOUT_MS,
     SEC_INFO_TABLE_BODY_BUDGET_MS,
     SEC_REQUEST_TIMEOUT_MS,
     SEC_RETRY_BACKOFF_BUDGET_MS,
 } from '@/shared/config/investorFlows';
-import {
-    INVESTOR_FLOWS_MAINTENANCE_BUDGET_MS,
-    INVESTOR_FLOWS_MAINTENANCE_CHUNK_MS,
-} from '@/entities/investor-flows/lib/investorFlowsPolicy';
 import {
     SEC_13F_LEGACY_LEASE_NAME,
     SEC_CRON_LEASE_NAME,

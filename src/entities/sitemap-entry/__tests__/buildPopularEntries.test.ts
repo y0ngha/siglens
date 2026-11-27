@@ -1,8 +1,8 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
-import { floorToHour } from '../lib/floorToHour';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
+import { floorToHour } from '../lib/floorToHour';
 
 // 2026-05-23은 **토요일**이다. 직전 마감 세션은 금요일(2026-05-22) 20:00 UTC.
 const NOW = new Date('2026-05-23T21:00:00.000Z');

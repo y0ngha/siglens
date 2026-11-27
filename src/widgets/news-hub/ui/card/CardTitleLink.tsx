@@ -1,9 +1,9 @@
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 /**
  * @file 허브 카드 제목. 제목 자체가 카드 목적지로 가는 링크다.
  */
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface CardTitleLinkProps {
     readonly label: string;

@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
+import { claimVisitSignals } from '@/features/visitor-ping/lib/visitHistoryStorage';
 import {
     LEGACY_VISIT_MARKER_STORAGE_KEY,
     VISIT_MARKER_STORAGE_KEY,
 } from '@/features/visitor-ping/lib/visitMarker';
-import { claimVisitSignals } from '@/features/visitor-ping/lib/visitHistoryStorage';
 import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { hasAdClickId } from '@/shared/lib/googleAds';

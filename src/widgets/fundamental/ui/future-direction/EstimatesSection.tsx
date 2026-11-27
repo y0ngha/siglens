@@ -1,12 +1,12 @@
+import type { FundamentalAnalystEstimateInput } from '@y0ngha/siglens-core';
 /**
  * 미래 방향 카드의 애널리스트 추정치 섹션(EPS·매출).
  */
 import { useTranslations } from 'next-intl';
-import type { FundamentalAnalystEstimateInput } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     formatBigMoney,
     formatMoney,

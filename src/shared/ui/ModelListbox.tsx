@@ -1,5 +1,6 @@
 'use client';
 
+import type { ModelId } from '@y0ngha/siglens-core';
 import {
     useEffect,
     useEffectEvent,
@@ -8,7 +9,6 @@ import {
     type KeyboardEvent,
     type Ref,
 } from 'react';
-import type { ModelId } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';

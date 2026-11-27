@@ -1,17 +1,17 @@
 'use client';
 
-import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { useRef, useState } from 'react';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import type { CardListPollPolicy } from '@/entities/news-article/model';
 import {
     decideCardListPoll,
     INITIAL_CARD_POLL_COUNTERS,
 } from '@/entities/news-article/lib/cardPollDecision';
+import type { CardListPollPolicy } from '@/entities/news-article/model';
+import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { fetchMarketNewsCards } from '../utils/fetchMarketNewsCards';
 
 export interface UseMarketNewsCardPollingReturn {

@@ -1,8 +1,8 @@
+import type { InvestorFlowsLabel } from '@y0ngha/siglens-core';
 /**
  * 점수표 방향 라벨 배지 — 색 + 기호 + 글자 세 겹으로 방향을 전한다.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsLabel } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { GAP_MARK, type AxisGap } from '../../utils/scorecardGap';
 import {

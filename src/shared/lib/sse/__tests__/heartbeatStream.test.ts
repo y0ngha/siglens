@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as OpenAI from 'openai';
-import { LocalizedStreamError } from '../LocalizedStreamError';
-import { RateLimitedStreamError } from '../analysisRateLimit';
-import { heartbeatStream, HEARTBEAT_INTERVAL_MS } from '../heartbeatStream';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     __resetActiveStreamsForTests,
     __activeStreamCount,
 } from '../activeStreams';
+import { RateLimitedStreamError } from '../analysisRateLimit';
+import { heartbeatStream, HEARTBEAT_INTERVAL_MS } from '../heartbeatStream';
+import { LocalizedStreamError } from '../LocalizedStreamError';
 
 const decoder = new TextDecoder();
 

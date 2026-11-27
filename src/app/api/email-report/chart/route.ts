@@ -1,4 +1,5 @@
 import { constants } from 'node:http2';
+import { loadChartDrawings } from '@/app/api/email-report/chart/_lib/loadChartDrawings';
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
 import { barsUpToDate } from '@/entities/email-report/lib/barsUpToDate';
@@ -9,10 +10,9 @@ import {
 } from '@/entities/email-report/lib/reportLinks';
 import { verifyReportValue } from '@/entities/email-report/lib/reportSignature';
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
-import { loadChartDrawings } from '@/app/api/email-report/chart/_lib/loadChartDrawings';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
-import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { runAsBatchWork } from '@/shared/lib/renderBudget';
 
 const { HTTP_STATUS_FORBIDDEN, HTTP_STATUS_NOT_FOUND } = constants;
 

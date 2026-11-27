@@ -1,15 +1,14 @@
 vi.mock('server-only', () => ({}));
 
-import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-
+import { DELIVERY_RETENTION_MS } from '@/app/api/cron/email-report/runEmailReportBatch';
 import {
     DEFAULT_EMAIL_REPORT_DAYS,
     DEFAULT_EMAIL_REPORT_HOUR,
     DEFAULT_EMAIL_REPORT_TIMEZONE,
 } from '@/entities/email-report/lib/emailReportConstants';
-import { DELIVERY_RETENTION_MS } from '@/app/api/cron/email-report/runEmailReportBatch';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { EMAIL_REPORT_CONSENT_SOURCE_VALUES } from '@/shared/db/constants';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';

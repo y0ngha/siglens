@@ -6,9 +6,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     createCounterStore: mockCreate,
 }));
 
-import { describe, expect, it, vi } from 'vitest';
-
 import { AGENT_GLOBAL_LIMITS, agentLimit } from '@y0ngha/siglens-core';
+import { describe, expect, it, vi } from 'vitest';
 import {
     __resetWarnedMalformedLimitsForTests,
     agentGlobalLimitsFromEnv,

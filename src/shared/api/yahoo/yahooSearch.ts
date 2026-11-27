@@ -1,6 +1,6 @@
 import 'server-only';
-import { getYahooClient } from './createYahooClient';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getYahooClient } from './createYahooClient';
 
 const yahooFinance = getYahooClient();
 

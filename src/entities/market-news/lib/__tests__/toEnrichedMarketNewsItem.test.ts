@@ -1,5 +1,5 @@
-import { toEnrichedMarketNewsItem } from '../toEnrichedMarketNewsItem';
 import type { MarketNewsRow } from '../../model';
+import { toEnrichedMarketNewsItem } from '../toEnrichedMarketNewsItem';
 
 const baseRow: MarketNewsRow = {
     id: 'm1',

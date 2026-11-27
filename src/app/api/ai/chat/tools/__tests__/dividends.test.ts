@@ -8,7 +8,6 @@ vi.mock('@/shared/api/yahoo/yahooDividendSource', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     buildDividends,
     buildHistoryDividends,

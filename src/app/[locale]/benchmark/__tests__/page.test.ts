@@ -16,17 +16,17 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-import { isValidElement, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
+import { isValidElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import {
     generateMetadata,
     default as BenchmarkRoute,
     revalidate,
 } from '@/app/[locale]/benchmark/page';
 import { default as AiBenchmarkRoute } from '@/app/ai/[locale]/benchmark/page';
+import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { ORGANIZATION_JSON_LD_ID, SITE_URL } from '@/shared/lib/seo';
 import ko from '../../../../../messages/ko.json';

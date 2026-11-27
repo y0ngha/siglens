@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
-import { useDragListener } from '@/views/symbol/hooks/useDragListener';
 import type React from 'react';
+import { useDragListener } from '@/views/symbol/hooks/useDragListener';
 
 function startDrag(
     handleDragStart: (e: React.MouseEvent) => void,

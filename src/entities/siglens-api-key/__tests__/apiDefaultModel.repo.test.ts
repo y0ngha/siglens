@@ -2,8 +2,8 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 

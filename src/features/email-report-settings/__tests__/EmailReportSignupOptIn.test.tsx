@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EmailReportSignupOptIn } from '@/features/email-report-settings/ui/EmailReportSignupOptIn';
+import { useState } from 'react';
 import { detectBrowserTimeZone } from '@/features/email-report-settings/lib/settingsForm';
+import { EmailReportSignupOptIn } from '@/features/email-report-settings/ui/EmailReportSignupOptIn';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock('@/features/email-report-settings/lib/settingsForm', async () => ({

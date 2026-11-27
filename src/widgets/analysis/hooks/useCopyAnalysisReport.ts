@@ -1,19 +1,19 @@
 'use client';
 
-/**
- * 분석 결과를 전문가 리포트 텍스트로 만들어 클립보드에 복사하는 훅.
- */
-import { useTranslations } from 'next-intl';
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
     KrxTickTable,
 } from '@y0ngha/siglens-core';
-import { useSkillLabel } from '@/shared/i18n/skillLabel';
+/**
+ * 분석 결과를 전문가 리포트 텍스트로 만들어 클립보드에 복사하는 훅.
+ */
+import { useTranslations } from 'next-intl';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
-import { useAnalysisContextLines } from './useAnalysisContextLines';
-import { buildExpertAnalysisReport } from '../utils/buildExpertAnalysisReport';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import type { CopyReportState } from '../model/types';
+import { buildExpertAnalysisReport } from '../utils/buildExpertAnalysisReport';
+import { useAnalysisContextLines } from './useAnalysisContextLines';
 import { useReadingRenderContext } from './useReadingRenderContext';
 
 interface UseCopyAnalysisReportInput {

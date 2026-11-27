@@ -1,6 +1,8 @@
 import { createTranslator } from 'next-intl';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import { MAIL_ALERT_SIGNAL_TYPES } from '../../lib/mailAlertConstants';
 import { MAIL_ALERT_UTM_CAMPAIGN } from '../../lib/mailAlertLinks';
 import type {
@@ -22,8 +24,6 @@ import type {
     BuildMailAlertEmailInput,
     MailAlertEmailTranslator,
 } from '../mailAlertEmailTypes';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const tKo = catalogTranslator('entities.mail-alert.email', 'ko');
 const tEn = catalogTranslator('entities.mail-alert.email', 'en');

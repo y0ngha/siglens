@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-    KR_SUMMARY_MAX_TRADING_PLANS,
-    summarizeKrInvestorFlows,
-} from '../../lib/summarizeKrInvestorFlows';
-import {
     evaluate,
     makeKrInsiderRecord,
     makeKrMajorHoldingRecord,
     makeKrSnapshot,
     makeKrTradingPlanRecord,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
+    KR_SUMMARY_MAX_TRADING_PLANS,
+    summarizeKrInvestorFlows,
+} from '../../lib/summarizeKrInvestorFlows';
 
 describe('summarizeKrInvestorFlows', () => {
     it('copies the core scorecard (axes, krMetrics, latest receipt date) without recomputing', () => {

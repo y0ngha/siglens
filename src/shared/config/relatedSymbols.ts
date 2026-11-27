@@ -1,18 +1,18 @@
+import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
+import {
+    MARKET_INDICES,
+    SECTOR_ETFS,
+    SECTOR_STOCKS,
+} from '@/shared/config/dashboard-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     CURATED_KOREAN_NAMES,
     POPULAR_TICKERS,
     TICKER_CATEGORIES,
 } from '@/shared/config/popular-tickers';
-import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
-import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
 import { KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
 import { displayTicker } from '@/shared/lib/displayTicker';
-import {
-    MARKET_INDICES,
-    SECTOR_ETFS,
-    SECTOR_STOCKS,
-} from '@/shared/config/dashboard-tickers';
 
 /**
  * 한 심볼 페이지가 내보내는 연관 종목 링크 수. "관련 검색어" 스트립처럼 한눈에

@@ -1,14 +1,12 @@
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
-
+import type { CalendarCountry } from '../model';
 import { economicCalendarId } from './economicCalendarId';
 import {
     CALENDAR_INGESTION_WINDOW_DAYS,
     CALENDAR_PAST_WINDOW_DAYS,
     CALENDAR_RECENT_PAST_DAYS,
 } from './economyCalendarConstants';
-import type { CalendarCountry } from '../model';
 
 /** 양끝 포함 'YYYY-MM-DD' 구간 — FMP economic-calendar의 `from`/`to`. */
 export interface CalendarDateRange {

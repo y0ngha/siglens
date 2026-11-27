@@ -1,8 +1,8 @@
+import type { SqueezeRiskLevel } from '@y0ngha/siglens-core';
 /**
  * 숏스퀴즈 수준 배지 — 색 + 막대 기호(▮) + 글자 세 겹으로 전한다.
  */
 import { useTranslations } from 'next-intl';
-import type { SqueezeRiskLevel } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SQUEEZE_LEVEL_CLASS, SQUEEZE_LEVEL_MARK } from '../../utils/squeeze';
 

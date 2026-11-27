@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
 import ko from '../../../../messages/ko.json';
 import { RecordEntryLink } from '../RecordEntryLink';

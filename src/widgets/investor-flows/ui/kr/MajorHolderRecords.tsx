@@ -5,6 +5,11 @@ import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
+import {
+    ResponsiveRecordList,
+    type RecordColumn,
+} from '@/shared/ui/ResponsiveRecordList';
 import {
     formatPercent,
     formatSignedCompact,
@@ -13,11 +18,6 @@ import {
 import { krDisclosureKey } from '../../utils/krDisclosures';
 import type { MajorHolderRowData } from '../../utils/krMajorHolders';
 import { DartFilingLink } from '../filings/DartFilingLink';
-import { CardFieldList } from '@/shared/ui/CardFieldList';
-import {
-    ResponsiveRecordList,
-    type RecordColumn,
-} from '@/shared/ui/ResponsiveRecordList';
 import { FormBadge } from './FormBadge';
 
 /** 보유비율 증감(%p)의 소수 자리 — DART가 소수 둘째 자리까지 준다. */

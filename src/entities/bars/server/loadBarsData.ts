@@ -1,14 +1,14 @@
 import 'server-only';
-import { getTranslations } from 'next-intl/server';
 import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { getTranslations } from 'next-intl/server';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     logFmpPaymentRequiredError,
     translateFmpError,
 } from '@/shared/api/fmp/fmpUserMessage';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { roundIndicators } from '../lib/roundIndicators';
 import { getCachedBarsWithIndicators } from './barsDataCache';
 

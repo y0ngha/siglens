@@ -43,12 +43,11 @@ vi.mock('@/features/ticker-search/ui/HeaderSearch', () => ({
     HeaderSearch: () => <div data-testid="ticker-search" />,
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-
-import { Header } from '../Header';
-import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import React from 'react';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import { Header } from '../Header';
 
 describe('Header', () => {
     it('renders the site logo and name', () => {

@@ -1,12 +1,12 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { SnapshotSummarySection } from '../SnapshotSummarySection';
-import { SnapshotBulletList } from '../SnapshotBulletList';
-import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../utils/liveAnalysisCrossRef';
 import {
     ScenarioBullet,
     narrowOverallContent,
 } from '@/entities/seo-snapshot/lib/overallContent';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { SnapshotBulletList } from '../SnapshotBulletList';
+import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../utils/liveAnalysisCrossRef';
 
 interface OverallSnapshotProseProps {
     /**

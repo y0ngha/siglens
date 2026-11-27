@@ -1,3 +1,5 @@
+import { render, screen } from '@testing-library/react';
+import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 /**
  * EconomicCalendar 최소 smoke-test.
  *
@@ -6,9 +8,6 @@
  * 상세 동작(KST 변환, 임팩트 뱃지, time dateTime 등)은 EconomicCalendarGrid.test.tsx에서 검증한다.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
 const EVENT: EconomicCalendarEvent = {

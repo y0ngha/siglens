@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 /**
  * 대화 레일의 앱 내 이동 훅 — 전환(transition) 안에서 `router.push`하고, 이동 중인 목적지와
  * 시작·종료 알림을 관리한다.
@@ -12,7 +13,6 @@ import {
     useTransition,
     type MouseEvent,
 } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface UseRailNavigationInput {
     /** 이동이 **시작된 순간** 목적지와 함께 불린다 — 본문이 그 사이 골격을 그린다. */

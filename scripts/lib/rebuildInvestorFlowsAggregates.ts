@@ -1,5 +1,5 @@
-import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../../src/entities/investor-flows/lib/investorFlowsPolicy';
 import { positionsRetentionFloor } from '../../src/entities/investor-flows/lib/investorFlowsDates';
+import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../../src/entities/investor-flows/lib/investorFlowsPolicy';
 import { aggregateModeFor } from '../../src/entities/investor-flows/server/ingest13fAggregates';
 
 /**

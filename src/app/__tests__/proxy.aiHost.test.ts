@@ -44,6 +44,7 @@ vi.mock('next/server', () => {
     };
 });
 
+import { NextResponse, type NextRequest } from 'next/server';
 import {
     beforeEach,
     describe,
@@ -52,8 +53,6 @@ import {
     vi,
     type MockedFunction,
 } from 'vitest';
-
-import { NextResponse, type NextRequest } from 'next/server';
 import { proxy } from '@/proxy';
 import { signGuestId } from '@/shared/config/guestCookie';
 

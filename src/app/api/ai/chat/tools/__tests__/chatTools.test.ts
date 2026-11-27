@@ -105,16 +105,14 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     correctKrSymbolSuffix,
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { inspect } from 'node:util';
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     AGENT_RESULT_CAPS,
     availableToolNames,
     createToolExecutor,
     type ToolRuntime,
 } from '@/app/api/ai/chat/tools/chatTools';
-import { guestSubject } from '@/shared/lib/guestSubject';
 import {
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
@@ -124,6 +122,7 @@ import {
     MACRO_QUOTES_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
 } from '@/app/api/ai/chat/tools/truncate';
+import { guestSubject } from '@/shared/lib/guestSubject';
 
 function makeCtx(aborted = false) {
     const controller = new AbortController();

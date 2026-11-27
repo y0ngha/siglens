@@ -1,11 +1,9 @@
 import { useTranslations } from 'next-intl';
-import { SignalBadge } from '@/widgets/dashboard/ui/signal/SignalBadge';
-import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
+import type { TodaySignalRow } from '@/entities/sector-signal/lib/selectTodaySignals';
 import {
     SIGNAL_HUBS,
     signalHubPath,
 } from '@/entities/signal-history/lib/signalHubs';
-import type { TodaySignalRow } from '@/entities/sector-signal/lib/selectTodaySignals';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { displayTicker } from '@/shared/lib/displayTicker';
@@ -21,6 +19,8 @@ import {
 } from '@/shared/lib/typographyStyles';
 import { FearGreedScoreBar } from '@/shared/ui/FearGreedScoreBar';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { SignalBadge } from '@/widgets/dashboard/ui/signal/SignalBadge';
+import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
 import type {
     FearGreedMarketLabelKey,
     SignalMarketLabelKey,

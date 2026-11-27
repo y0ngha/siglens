@@ -5,8 +5,8 @@ import {
     type SubmitFundamentalAnalysisOptions,
     type RunFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';

@@ -31,14 +31,13 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { readAt } from '@/shared/test-utils/readAt';
+import { getAnalystViewsTool } from '@/app/api/ai/chat/tools/getAnalystViews';
 import {
     ANALYST_VIEWS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
 } from '@/app/api/ai/chat/tools/truncate';
 import type { AnalystViews } from '@/entities/analyst-views/model';
-
-import { getAnalystViewsTool } from '@/app/api/ai/chat/tools/getAnalystViews';
+import { readAt } from '@/shared/test-utils/readAt';
 
 const ctx = {
     userId: 'u',

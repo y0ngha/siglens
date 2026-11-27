@@ -1,8 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
-
 import { SkillsShowcase } from '../SkillsShowcase';
+import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
 
 vi.stubGlobal(
     'ResizeObserver',

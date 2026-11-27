@@ -1,9 +1,9 @@
-import { gzip, gunzip } from 'node:zlib';
 import { promisify } from 'node:util';
 import {
     serialize as v8serialize,
     deserialize as v8deserialize,
 } from 'node:v8';
+import { gzip, gunzip } from 'node:zlib';
 
 // gzip/gunzip은 비동기(promisify)로 돌려 이벤트 루프를 막지 않는다.
 // 이 코드는 read 경로(getEntry)에서 실행되며, 큰 RSC 페이로드의 압축 해제는

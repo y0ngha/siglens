@@ -4,12 +4,12 @@
  * entries exist but fields are undefined, plus findBarIndex highDiff < lowDiff.
  */
 
+import { EMPTY_SMC_RESULT } from '@y0ngha/siglens-core';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import {
     buildOverlayLabelConfigs,
     findBarIndex,
 } from '@/widgets/chart/utils/overlayLabelUtils';
-import { EMPTY_SMC_RESULT } from '@y0ngha/siglens-core';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
 const BASE_INDICATORS: IndicatorResult = {
     ma: {},

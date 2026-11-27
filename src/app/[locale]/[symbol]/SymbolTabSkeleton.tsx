@@ -1,13 +1,13 @@
 'use client';
 
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
+import { ChartTabSkeleton } from '@/views/symbol/skeletons/ChartTabSkeleton';
+import { OptionsTabSkeleton } from '@/views/symbol/skeletons/OptionsTabSkeleton';
+import { usePendingSymbolTab } from '@/views/symbol/SymbolTabPendingContext';
 import {
     SYMBOL_TAB_SECTION_COUNT,
     isSectionSkeletonTab,
 } from '@/views/symbol/tabSkeletonSections';
-import { usePendingSymbolTab } from '@/views/symbol/SymbolTabPendingContext';
-import { ChartTabSkeleton } from '@/views/symbol/skeletons/ChartTabSkeleton';
-import { OptionsTabSkeleton } from '@/views/symbol/skeletons/OptionsTabSkeleton';
 
 /**
  * 같은 종목 안에서 탭을 옮기는 순간 `[symbol]` 레이아웃의 page slot에 그리는 골격.

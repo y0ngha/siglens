@@ -1,7 +1,6 @@
 import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
-
 import {
     NEWS_PAGE_MAX_STALENESS_HOURS,
     buildNewsSitemapEntries,

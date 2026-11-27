@@ -1,14 +1,14 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { SnapshotSummarySection } from '../SnapshotSummarySection';
-import { SnapshotBulletList } from '../SnapshotBulletList';
-import { cn } from '@/shared/lib/cn';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import {
     CATEGORY_LABEL_KEY,
     SENTIMENT_LABEL_KEY,
     narrowFundamentalContent,
 } from '@/entities/seo-snapshot/lib/fundamentalContent';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { SnapshotBulletList } from '../SnapshotBulletList';
+import { SnapshotSummarySection } from '../SnapshotSummarySection';
 
 interface FundamentalSnapshotProseProps {
     /**

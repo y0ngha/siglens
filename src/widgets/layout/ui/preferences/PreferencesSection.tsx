@@ -1,7 +1,7 @@
 'use client';
 
-import { useId, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId, useState, type ReactNode } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { LOCALE_NATIVE_LABEL, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';

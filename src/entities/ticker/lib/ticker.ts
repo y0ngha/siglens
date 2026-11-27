@@ -1,6 +1,6 @@
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { AssetInfo, TickerSearchResult } from '@/shared/lib/types';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
 const KOREAN_UNICODE_REGEX = /[ㄱ-ㅣ가-힣]/;
 

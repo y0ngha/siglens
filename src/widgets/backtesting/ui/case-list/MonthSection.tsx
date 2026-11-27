@@ -4,11 +4,11 @@ import {
     UNFILTERED_TOKEN,
     visibilityAttrs,
 } from '../../utils/caseListVisibility';
-import { MONTH_SECTION_ATTR } from '../../utils/monthOpenState';
 import {
     type CaseMonthGroup,
     splitMonthKey,
 } from '../../utils/groupCasesByMonth';
+import { MONTH_SECTION_ATTR } from '../../utils/monthOpenState';
 
 interface MonthSectionProps {
     group: CaseMonthGroup;

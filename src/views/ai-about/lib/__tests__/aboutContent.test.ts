@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
+import type { Locale } from '@/shared/i18n/locales';
 import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/utils/guestTurnLimit';
 import ko from '../../../../../messages/ko.json';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     buildScenarios,
     getAboutFaq,

@@ -12,7 +12,6 @@ vi.mock('@/shared/config/googleAds', () => config);
 
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     ADS_CONVERSION_QUEUED_EVENT,
     consumeSignupConversionFlag,

@@ -1,3 +1,17 @@
+import createIntlMiddleware from 'next-intl/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
+import {
+    AI_INDEXABLE_PATHS,
+    AI_SITE_URL,
+    isAiHost,
+    MAIN_SITE_URL,
+} from '@/shared/config/aiHost';
+// 가드 경로 목록은 클라이언트(`NavigationPendingContext`)가 도착지를 예측할 때도 쓴다.
+// 외부 의존이 0인 상수 파일이라 edge runtime에서 안전하다.
+import {
+    AUTH_REQUIRED_PATHS,
+    GUEST_ONLY_PATHS,
+} from '@/shared/config/authGuardPaths';
 import {
     AI_SSO_PROBED_COOKIE_NAME,
     AI_SSO_PROBED_MAX_AGE_SECONDS,
@@ -9,20 +23,15 @@ import {
     mintGuestCookieValue,
     verifyGuestCookie,
 } from '@/shared/config/guestCookie';
+import { RESERVED_FIRST_SEGMENTS } from '@/shared/config/reservedFirstSegments';
 // edge runtime 안전성을 위해 외부 의존이 0인 simple constant file에서 직접 import한다.
 // `@/shared/config/market`은 `@y0ngha/siglens-core` 타입을 끌어와 cross-module
 // type 의존성을 거치는데, Turbopack의 `import type` strip이 dev 환경에서 간헐적으로
 // 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
 // ticker.ts JSDoc 참조).
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { fromFmpSymbol } from '@/shared/lib/fmpSymbol';
-import { RESERVED_FIRST_SEGMENTS } from '@/shared/config/reservedFirstSegments';
-// 가드 경로 목록은 클라이언트(`NavigationPendingContext`)가 도착지를 예측할 때도 쓴다.
-// 외부 의존이 0인 상수 파일이라 edge runtime에서 안전하다.
-import {
-    AUTH_REQUIRED_PATHS,
-    GUEST_ONLY_PATHS,
-} from '@/shared/config/authGuardPaths';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 // 로케일 상수도 외부 의존이 0인 파일이라 edge runtime에서 안전하다(위 주석과 같은 이유).
 import {
     DEFAULT_LOCALE,
@@ -36,16 +45,7 @@ import {
     sanitizeNextPath,
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
-import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import {
-    AI_INDEXABLE_PATHS,
-    AI_SITE_URL,
-    isAiHost,
-    MAIN_SITE_URL,
-} from '@/shared/config/aiHost';
-import createIntlMiddleware from 'next-intl/middleware';
-import { NextResponse, type NextRequest } from 'next/server';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { fromFmpSymbol } from '@/shared/lib/fmpSymbol';
 
 const intlMiddleware = createIntlMiddleware(routing);
 

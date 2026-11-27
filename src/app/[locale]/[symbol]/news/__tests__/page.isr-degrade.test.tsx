@@ -156,6 +156,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     translateFmpError: vi.fn().mockReturnValue(null),
 }));
 
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 import {
     afterEach,
@@ -166,31 +167,30 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import NewsPage from '@/app/[locale]/[symbol]/news/page';
 import {
     NewsListSection,
     EventCalendarSection,
     AnalystActionsSection,
     CompanyFilingsSection,
 } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getNewsList } from '@/entities/news-article/api';
+import {
+    getEarningsReportComparison,
+    getGradeEvents,
+} from '@/app/[locale]/[symbol]/news/newsData';
+import NewsPage from '@/app/[locale]/[symbol]/news/page';
 import { getAnalystActionHistory } from '@/entities/analyst-views/server/getAnalystActionHistory';
 import { listCompanyFilings } from '@/entities/company-filings/server/getCompanyFilings';
+import { getNewsList } from '@/entities/news-article/api';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     shortenRevalidateForPendingEnrichment,
     shortenRevalidateForRuntimeDegrade,
 } from '@/shared/cache/buildDegradedRevalidate';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import {
-    getEarningsReportComparison,
-    getGradeEvents,
-} from '@/app/[locale]/[symbol]/news/newsData';
-import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

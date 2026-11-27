@@ -49,13 +49,12 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import koMessages from '../../../../messages/ko.json';
-import enMessages from '../../../../messages/en.json';
 import userEvent from '@testing-library/user-event';
-import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
-
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import enMessages from '../../../../messages/en.json';
+import koMessages from '../../../../messages/ko.json';
 import { SkillsShowcase } from '../SkillsShowcase';
+import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
 
 // useIsClamped(useEffect + ResizeObserver)가 SkillCard에서 호출되므로
 // 파일 전역으로 ResizeObserver를 stub해 ReferenceError를 방지한다.

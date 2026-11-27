@@ -1,11 +1,11 @@
 import type { Mock } from 'vitest';
-import { registerUser } from '@/entities/auth/lib/registerUser';
 import type { RegisterUserDependencies } from '@/entities/auth/lib/authUseCaseTypes';
+import { registerUser } from '@/entities/auth/lib/registerUser';
+import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
 } from '@/entities/email-token/types';
-import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 /** 인증한 브라우저가 쿠키로 들고 있는 바인딩 값. 마커에는 이 값의 해시만 있다. */

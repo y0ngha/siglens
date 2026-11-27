@@ -6,13 +6,13 @@ vi.mock('@/entities/og-image/server/buildSymbolOgImage', () => ({
     buildSymbolOgImage: vi.fn().mockResolvedValue(new Response('image')),
 }));
 
+import type { MockedFunction } from 'vitest';
 import OgImage, {
     size,
     contentType,
     alt,
 } from '@/app/[locale]/[symbol]/overall/opengraph-image';
 import { buildSymbolOgImage } from '@/entities/og-image/server/buildSymbolOgImage';
-import type { MockedFunction } from 'vitest';
 
 const mockBuildSymbolOgImage = buildSymbolOgImage as MockedFunction<
     typeof buildSymbolOgImage

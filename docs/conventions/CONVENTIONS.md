@@ -14,7 +14,7 @@ IDs follow the root `CLAUDE.md` "Rule IDs and references". Cite them as `CONVENT
 | `CM` | Comments & documentation |
 | `CS` | Change synchronization |
 
-Retired IDs: TS-4, CM-14
+Retired IDs: TS-4, CM-14, CS-24
 
 ## Coding Paradigm
 
@@ -434,26 +434,6 @@ import { cn } from '../../../shared/lib/cn';
 Inside the same slice, cross-segment imports stay relative (`../lib/resolveGateMode`, see "No Barrels" below); the
 alias is for crossing a slice or layer boundary.
 
-<a id="CS-24"></a>
-
-#### CS-24 — Imports form one block: packages first, then `@/` aliases, then relative
-
-All `import` statements sit at the top of the file in a single block ordered package imports (`react` first), then `@/` alias imports, then relative imports. "One block" means no code between imports; a blank line between the three groups is allowed but not required — the order is the rule. Never place an import below a later group; the formatter does not reorder across groups, so review is the only guard.
-
-```typescript
-// ❌
-import { cn } from '@/shared/lib/cn';
-import { useState } from 'react';
-import { helper } from './helper';
-
-// ✅
-import { useState } from 'react';
-
-import { cn } from '@/shared/lib/cn';
-
-import { helper } from './helper';
-```
-
 ### No Barrels — Import from the Defining File
 
 Barrels are banned (root `CLAUDE.md`; `noBarrelFiles.test.ts`). `vi.mock`/`vi.importActual`/`await import()` paths
@@ -474,6 +454,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 |---|---|---|---|
 | `let` that is never reassigned (CP-4) | oxlint `prefer-const` (autofix) | all code | Make it `const`. |
 | One import statement per module | oxlint `import/no-duplicates` (autofix) | all code | Merge the specifiers into the first import. |
+| Import order: packages, then `@/`·`@e2e/` aliases, then relative | oxfmt `sortImports` (`yarn format`, `yarn format:check`) | all code; a side-effect import keeps its slot while others sort around it, so put `server-only`/CSS first | Run `yarn format`. |
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
 | No nested ternary (`FF.md` 1-E) | oxlint `no-nested-ternary` | all code | Record lookup, or a small early-return helper. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |

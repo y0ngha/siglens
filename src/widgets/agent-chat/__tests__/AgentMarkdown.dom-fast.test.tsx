@@ -14,7 +14,6 @@ vi.mock('react-markdown', async importOriginal => {
 import { render, screen } from '@testing-library/react';
 import type { Options } from 'react-markdown';
 import { describe, expect, it, vi } from 'vitest';
-
 import { AgentMarkdown } from '@/widgets/agent-chat/AgentMarkdown';
 
 describe('AgentMarkdown', () => {

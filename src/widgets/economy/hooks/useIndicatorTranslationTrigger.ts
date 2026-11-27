@@ -1,11 +1,10 @@
 'use client';
 
+import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 /**
  * 레이블이 없는 지표명의 AI 번역을 마운트 시 한 번 요청하는 트리거 훅.
  */
 import { useEffect, useEffectEvent, useRef } from 'react';
-import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
 import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
 import {
     INDICATOR_NAME_KO,

@@ -1,12 +1,12 @@
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 
 import { act, renderHook } from '@testing-library/react';
-import { usePortfolioSection } from '@/features/portfolio-management/hooks/usePortfolioSection';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type {
     PortfolioHoldingView,
     SavePortfolioResult,
 } from '@/entities/portfolio/model';
+import { usePortfolioSection } from '@/features/portfolio-management/hooks/usePortfolioSection';
 
 const mockUsePortfolioHoldings = vi.mocked(usePortfolioHoldings);
 

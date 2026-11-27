@@ -21,10 +21,10 @@ import {
     getAllowedTimeframes,
 } from '@y0ngha/siglens-core';
 import { getChartDataTool } from '@/app/api/v1/getChartData';
-import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
 import { makeDailyBars } from '@/entities/bars/__tests__/lib/chartDataFixtures';
-import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicators';
 import type { ChartData } from '@/entities/bars/lib/buildChartData';
+import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicators';
+import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
 
 const bars = makeDailyBars(300);
 const indicators = calculateIndicators(bars);

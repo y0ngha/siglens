@@ -1,11 +1,11 @@
 'use client';
 
+import type { IChartApi } from 'lightweight-charts';
 /**
  * 보조 패인이 늘거나 줄면 가격 차트의 레이아웃을 강제로 다시 잡는 훅 — 사용자가 보던 시간
  * 범위는 지킨다.
  */
 import { type RefObject, useEffect, useRef } from 'react';
-import type { IChartApi } from 'lightweight-charts';
 import type { PaneIndices } from '../types';
 import {
     restoreVisibleView,

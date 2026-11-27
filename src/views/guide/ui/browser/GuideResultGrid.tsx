@@ -1,6 +1,6 @@
 import type { GuideCategory, GuideEntrySummary } from '@/entities/guide/types';
-import { GuideCard } from '@/views/guide/ui/GuideCard';
 import { GUIDE_GRID } from '@/views/guide/ui/browser/guideGrid';
+import { GuideCard } from '@/views/guide/ui/GuideCard';
 
 interface GuideResultGridProps {
     /** 절 제목 id(`aria-labelledby`). */

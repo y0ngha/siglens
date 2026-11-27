@@ -6,12 +6,12 @@ import {
     within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SiglensApiKeySection } from '@/features/siglens-api-key-management/ui/SiglensApiKeySection';
+import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import {
     useSiglensApiKeyForms,
     type SiglensApiKeyFormsReturn,
 } from '@/features/siglens-api-key-management/hooks/useSiglensApiKeyForms';
-import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
+import { SiglensApiKeySection } from '@/features/siglens-api-key-management/ui/SiglensApiKeySection';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,

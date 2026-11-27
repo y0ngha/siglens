@@ -1,8 +1,8 @@
 'use client';
 
+import type { Timeframe } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { Timeframe } from '@y0ngha/siglens-core';
 import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 
 interface ChartTimeframeBarProps {

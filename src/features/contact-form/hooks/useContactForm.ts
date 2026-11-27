@@ -1,8 +1,8 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { ContactFormState } from '@/shared/lib/types';
 import { submitContactAction } from '@/entities/inquiry/actions/submitContactAction';
+import type { ContactFormState } from '@/shared/lib/types';
 
 const INITIAL_STATE: ContactFormState = {
     submitted: false,

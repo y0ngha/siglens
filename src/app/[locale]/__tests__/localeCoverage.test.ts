@@ -1,8 +1,7 @@
-import {} from '@/shared/i18n/indexableLocales';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-
 import { blankComments } from '@/__tests__/guards/support/sourceScan';
+import {} from '@/shared/i18n/indexableLocales';
 
 const APP_DIR = join(process.cwd(), 'src/app/[locale]');
 

@@ -2,7 +2,6 @@ const { mockTier } = vi.hoisted(() => ({ mockTier: vi.fn() }));
 vi.mock('@/shared/lib/byokGate', () => ({ resolveTierOnly: mockTier }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { resolveAgentTier } from '@/app/api/ai/chat/resolveAgentTier';
 
 describe('resolveAgentTier', () => {

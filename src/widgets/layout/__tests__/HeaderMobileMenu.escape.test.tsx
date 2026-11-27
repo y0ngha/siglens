@@ -22,9 +22,9 @@ vi.mock('@/shared/i18n/navigation', () => ({
 }));
 
 import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { HeaderMobileMenu } from '../HeaderMobileMenu';
 import { NAV_TREE } from '../utils/headerNavTree';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 /** 닫힌 드로어는 DOM에 남되 `inert`다 — 접근성 트리·탭 순서에서 모두 빠진다. */
 function expectDrawerClosed() {

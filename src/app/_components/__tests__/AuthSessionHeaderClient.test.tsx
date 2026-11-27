@@ -24,13 +24,13 @@ vi.mock('@tanstack/react-query', () => ({
     useQueryClient: () => ({ refetchQueries: refetchSpy }),
 }));
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
-import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 const mockCurrentUser = vi.mocked(useCurrentUser);
 const mockAuthHint = vi.mocked(useAuthHint);

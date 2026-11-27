@@ -19,6 +19,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(() => mockRedis),
 }));
 
+import type { IndexNowOutcome, IndexNowResult } from '@/shared/api/indexNow';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     INDEXNOW_BACKOFF_KEY,
@@ -28,7 +29,6 @@ import {
     drainIndexNow,
     enqueueIndexNow,
 } from '../indexNowQueue';
-import type { IndexNowOutcome, IndexNowResult } from '@/shared/api/indexNow';
 
 const NOW = new Date('2026-10-05T12:00:00Z');
 const DAY = 86_400_000;

@@ -1,16 +1,16 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { ReactNode } from 'react';
 /**
  * 실패한 백그라운드 재조회가 화면의 결과를 지우지 않는지(N1), 오류 뒤 재시도가 로딩으로 보이는지(N2)
  * 고정한다 — 둘 다 React Query가 `isError`를 유지한 채 재조회하는 상태에서 갈린다.
  */
 import type { Mock } from 'vitest';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import type { ReactNode } from 'react';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

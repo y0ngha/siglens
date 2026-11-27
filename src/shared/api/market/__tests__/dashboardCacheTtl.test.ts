@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { dashboardCacheTtlSeconds } from '../dashboardCacheTtl';
-import { KR_EQUITY_SESSION } from '../sessionSpecFor';
 import {
     US_EQUITY_SESSION,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
+import { dashboardCacheTtlSeconds } from '../dashboardCacheTtl';
+import { KR_EQUITY_SESSION } from '../sessionSpecFor';
 
 describe('dashboardCacheTtlSeconds', () => {
     // KRX 장중(2026-08-18 월 11:00 KST = 02:00 UTC).

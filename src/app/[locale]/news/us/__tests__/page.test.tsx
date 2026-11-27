@@ -21,17 +21,16 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { fetchCategoryPreviews } from '@/app/[locale]/news/_lib/categoryPreviews';
 import UsNewsHubPage, {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/news/us/page';
-import { fetchCategoryPreviews } from '@/app/[locale]/news/_lib/categoryPreviews';
 import {
     categoriesInRegion,
     CATEGORY_CONFIG,
 } from '@/entities/market-news/lib/categoryConfig';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 describe('/news/us hub', () => {
     beforeEach(() => {

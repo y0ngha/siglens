@@ -14,10 +14,10 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
     loadPopularSitemapInputs: vi.fn(async () => PROSE_INPUTS),
 }));
 
+import type { MockedFunction } from 'vitest';
 import { GET } from '@/app/api/sitemap/popular/route';
 import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
 import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
-import type { MockedFunction } from 'vitest';
 
 const PROSE_INPUTS = {
     snapshotGeneratedAt: new Map([['AAPL:overall', new Date(0)]]),

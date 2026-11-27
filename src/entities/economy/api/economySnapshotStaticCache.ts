@@ -1,16 +1,14 @@
 import 'server-only';
-import { cache } from 'react';
-import { unstable_cache } from 'next/cache';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
-
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { markSsrMiss } from '@/shared/cache/ssrMissMarker';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
-
+import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 import {
     ECONOMY_CONFIG_FINGERPRINT,
     getEconomySnapshot,
 } from './economySnapshotCache';
-import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 
 /**
  * `economy:snapshot` — 정적 스냅샷 캐시 태그. 무효화하는 쪽(허브 프리웜)은 이 상수를 쓴다.

@@ -19,7 +19,6 @@ vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
 
 import { act, render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { ShareOpenedPing } from '@/features/visitor-ping/ui/ShareOpenedPing';
 import { claimShareCreated } from '@/shared/lib/funnel/shareMarks';
 

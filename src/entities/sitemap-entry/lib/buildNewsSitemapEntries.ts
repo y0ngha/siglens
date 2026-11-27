@@ -5,7 +5,6 @@ import {
 } from '@/entities/market-news/lib/categoryConfig';
 import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
 import { MS_PER_HOUR } from '@/shared/config/time';
-
 import type { SitemapEntry } from '../model';
 import { latestOf } from './latestOf';
 import { staticSitemapEntry } from './staticSitemapEntry';

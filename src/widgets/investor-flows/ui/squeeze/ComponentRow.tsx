@@ -1,9 +1,9 @@
+import type { SqueezeRiskComponent } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 /**
  * 숏스퀴즈 점수의 구성요소 한 줄 — 이름·원값, 점수 기여분, 0~1 정규화 값 막대.
  */
 import type { CSSProperties } from 'react';
-import { useTranslations } from 'next-intl';
-import type { SqueezeRiskComponent } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatInteger } from '../../utils/flowFormat';
 import { PERCENT_SCALE } from '../../utils/percentScale';

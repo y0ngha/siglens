@@ -1,6 +1,6 @@
+import type { ConfirmPasswordResetDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
-import type { ConfirmPasswordResetDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 
 function createMockDependencies(
     overrides: Partial<{

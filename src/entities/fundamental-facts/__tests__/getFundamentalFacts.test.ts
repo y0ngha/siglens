@@ -57,7 +57,6 @@ vi.mock('@/shared/lib/etTimeUtils', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getFundamentalFacts } from '../server/getFundamentalFacts';
 
 const flowsScorecard = {

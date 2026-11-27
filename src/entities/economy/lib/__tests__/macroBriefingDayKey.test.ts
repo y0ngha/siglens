@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 
 describe('macroBriefingDayKey', () => {

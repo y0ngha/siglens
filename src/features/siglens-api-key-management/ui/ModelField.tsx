@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import type { ModelId } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { useRef, useState } from 'react';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';

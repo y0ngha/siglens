@@ -3,7 +3,6 @@ import {
     type NavRegionId,
 } from '@/shared/config/assetClassNav';
 import { SITE_URL } from '@/shared/lib/seo';
-
 import { buildRegionEntries } from '../lib/buildRegionEntries';
 
 const BASIS = {

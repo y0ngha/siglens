@@ -1,10 +1,10 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { OpenInterestChart } from '@/widgets/options/OpenInterestChart';
 import {
     aggregateOpenInterest,
     type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
+import { OpenInterestChart } from '@/widgets/options/OpenInterestChart';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

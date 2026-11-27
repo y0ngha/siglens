@@ -1,17 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 /**
  * 이 종목에 평단이 없는 방문자(비회원·미보유 회원)용 "내 위치" CTA — 현재가만 담은 건물, 안내 문구,
  * 최근 범위, 보유종목 등록 링크.
  */
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { useTranslations } from 'next-intl';
-import dynamic from 'next/dynamic';
-import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
-import { cn } from '@/shared/lib/cn';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { resolveCtaBuilding } from '../utils/ctaBuilding';
 import { formatAmount } from '../utils/buildingPriceFormat';
+import { resolveCtaBuilding } from '../utils/ctaBuilding';
 
 // 건물(SVG·층 툴팁·포털 코드)은 CTA 문구보다 늦게 와도 되는 장식·정보 보강이라
 // 코드 분할한다. 비회원 경로는 메인 청크에 이 코드를 싣지 않는다. 호출 경로가 이미

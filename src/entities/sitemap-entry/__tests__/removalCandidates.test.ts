@@ -1,14 +1,13 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-
-import {
-    REMOVAL_CHART_CUTOFF_ISO,
-    REMOVAL_LEGACY_TAB_CUTOFF_ISO,
-} from '../model';
 import {
     PROTECTED_SITEMAP_SYMBOLS,
     excludeProtectedSymbols,
     removalCutoffIsoFor,
 } from '../lib/removalCandidates';
+import {
+    REMOVAL_CHART_CUTOFF_ISO,
+    REMOVAL_LEGACY_TAB_CUTOFF_ISO,
+} from '../model';
 
 describe('removalCutoffIsoFor', () => {
     it('차트는 신규 컷오프를 쓴다', () => {

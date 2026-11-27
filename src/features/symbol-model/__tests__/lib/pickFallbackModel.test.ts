@@ -1,6 +1,6 @@
 import type { ModelId } from '@y0ngha/siglens-core';
-import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import { pickFallbackModel } from '@/features/symbol-model/lib/pickFallbackModel';
+import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 
 vi.mock('@y0ngha/siglens-core', () => ({
     getModelAccess: (m: string) =>

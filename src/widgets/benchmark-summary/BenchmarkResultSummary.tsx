@@ -1,19 +1,19 @@
 /** 두 소개 페이지가 공유하는 벤치마크 결과 요약 섹션. */
 import { getTranslations } from 'next-intl/server';
+import type { BenchmarkRelease } from '@/entities/benchmark/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandAiName } from '@/shared/lib/brandName';
-import type { BenchmarkRelease } from '@/entities/benchmark/types';
+import { CompetitorCard } from './ui/cards/CompetitorCard';
+import { SummaryCard } from './ui/cards/SummaryCard';
+import { SummaryCardList } from './ui/cards/SummaryCardList';
+import { SummaryCardNote } from './ui/cards/SummaryCardNote';
+import { BenchmarkDetailLink } from './ui/footer/BenchmarkDetailLink';
+import { SummaryHeader } from './ui/header/SummaryHeader';
 import { buildBenchmarkDetailHref } from './utils/benchmarkDetailHref';
 import {
     buildSummaryHeadline,
     type SummaryEntry,
 } from './utils/buildSummaryHeadline';
-import { SummaryHeader } from './ui/header/SummaryHeader';
-import { SummaryCardList } from './ui/cards/SummaryCardList';
-import { CompetitorCard } from './ui/cards/CompetitorCard';
-import { SummaryCard } from './ui/cards/SummaryCard';
-import { SummaryCardNote } from './ui/cards/SummaryCardNote';
-import { BenchmarkDetailLink } from './ui/footer/BenchmarkDetailLink';
 
 interface Props {
     readonly release: BenchmarkRelease;

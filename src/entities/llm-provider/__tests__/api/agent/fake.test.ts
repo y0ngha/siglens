@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildAgentTurnContext,
     composeAgentUserMessage,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeAgentProvider } from '@/entities/llm-provider/api/agent/fake';
 
 const base = {

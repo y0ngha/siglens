@@ -1,8 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
 import { parseFilterPatterns } from './support/alarmFilterParse';
 import {
     NEVER_REJECTS,
@@ -15,16 +13,16 @@ import {
 } from './support/alarmReachability';
 import { SCAN_TIMEOUT_MS, sourceFiles } from './support/controlUsage';
 import {
-    ALL_PINS,
-    LISTED_PINS,
-    type PinEntry,
-} from './support/neverRejectPins';
-import {
     catchInfo,
     checkFunctionPin,
     functionRanges,
     type FunctionPin,
 } from './support/functionPins';
+import {
+    ALL_PINS,
+    LISTED_PINS,
+    type PinEntry,
+} from './support/neverRejectPins';
 
 /**
  * **알람 필터 문구 도달 가능성 가드** (`docs/conventions/TOOLCHAIN.md#TC-38`).

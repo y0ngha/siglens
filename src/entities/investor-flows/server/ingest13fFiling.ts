@@ -1,4 +1,6 @@
 import { streamXmlElements } from '@/shared/lib/streamXmlElements';
+import type { ReapplyAmendment } from '../api/apply13fFiling';
+import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
 import {
     findAmendmentsToReapply,
     planPositionApplication,
@@ -16,8 +18,6 @@ import {
 } from '../lib/sec13fIngestPlan';
 import { PositionAccumulator } from '../lib/sec13fPositions';
 import type { FilingPositions, Sec13fFilingMeta } from '../model';
-import type { ReapplyAmendment } from '../api/apply13fFiling';
-import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
 import { DeadlineSignal } from './ingest13fRunState';
 import type { FilingTarget, Ingest13fDeps } from './ingest13fTypes';
 

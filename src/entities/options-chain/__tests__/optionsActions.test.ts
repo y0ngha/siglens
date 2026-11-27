@@ -42,8 +42,6 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-import type { MockedFunction } from 'vitest';
-
 import {
     runOptionsAnalysis,
     type ModelId,
@@ -52,11 +50,12 @@ import {
     type OptionsChain,
 } from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
-import { fetchOptionsSnapshot } from '../server/optionsDataCache';
+import type { MockedFunction } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitOptionsAnalysisAction } from '../actions/optionsActions';
+import { fetchOptionsSnapshot } from '../server/optionsDataCache';
 
 const mockRunOptionsAnalysis = runOptionsAnalysis as MockedFunction<
     typeof runOptionsAnalysis

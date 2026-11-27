@@ -1,8 +1,8 @@
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { SECTOR_ETFS, SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
+import { SECTOR_ETFS, SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import type { AssetInfo } from '@/shared/lib/types';
 
 /**

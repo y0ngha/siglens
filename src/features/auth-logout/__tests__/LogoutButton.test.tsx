@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LogoutButton } from '@/features/auth-logout/ui/LogoutButton';
 import { useLogout } from '@/features/auth-logout/hooks/useLogout';
+import { LogoutButton } from '@/features/auth-logout/ui/LogoutButton';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),

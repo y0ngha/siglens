@@ -4,9 +4,9 @@
  * 보조 pane 개수에 맞춰 가격 pane의 stretch factor를 조정하는 훅.
  */
 
+import type { IChartApi } from 'lightweight-charts';
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
-import type { IChartApi } from 'lightweight-charts';
 import type { PaneIndices } from '../types';
 
 /**

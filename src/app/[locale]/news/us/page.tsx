@@ -4,7 +4,6 @@ import {
     CATEGORY_CONFIG,
     categoriesInRegion,
 } from '@/entities/market-news/lib/categoryConfig';
-import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
@@ -15,14 +14,15 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,
 } from '@/shared/lib/seoAlternates';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { fetchCategoryDigestLines } from '../_lib/categoryDigests';
 import { fetchCategoryPreviews } from '../_lib/categoryPreviews';
 import {

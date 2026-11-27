@@ -4,6 +4,7 @@ import {
     AGENT_FILINGS_LIST_MAX,
 } from '@y0ngha/siglens-core';
 import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import {
     fetchFilingDocumentHead,
@@ -16,9 +17,8 @@ import {
     submissionsFileName,
 } from '@/shared/api/sec/secClient';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { SEC_FILING_HEAD_MAX_BYTES } from '@/shared/config/investorFlows';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import {
     MS_PER_DAY,
     SECONDS_PER_DAY,

@@ -1,8 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { afterEach, describe, expect, it } from 'vitest';
-
 import {
     CHART_COLORS,
     CHART_COLORS_LIGHT,

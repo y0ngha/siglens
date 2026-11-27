@@ -18,7 +18,6 @@ vi.mock('../../api/investorFlowsDartRepository', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     INVESTOR_FLOWS_READINESS_TAG,
     investorFlowsTag,

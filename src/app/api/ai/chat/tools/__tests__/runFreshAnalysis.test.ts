@@ -102,7 +102,6 @@ vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChartAnalysisSource } from '@/app/api/ai/chat/tools/chartBlock';
-
 import {
     __resetFreshSemaphoreForTests,
     runFreshAnalysisTool,

@@ -31,17 +31,16 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     peekBriefingCache: mockPeekBriefingCache,
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type {
     MarketBriefingResponse,
     MarketSummaryData,
 } from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
-
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     marketBriefingSeedSurface,
     peekBriefingStatic,

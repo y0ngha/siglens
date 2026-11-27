@@ -13,9 +13,9 @@ import type {
 } from '@/entities/chat-conversation/model';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
-import { publishAgentTurnCompleted } from '@/shared/lib/agentTurnCompletedSignal';
 import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
+import { publishAgentTurnCompleted } from '@/shared/lib/agentTurnCompletedSignal';
 import { Composer } from '../Composer';
 import { ConversationSkeleton } from '../ConversationSkeleton';
 import { EmptyState, type PendingSuggestions } from '../EmptyState';

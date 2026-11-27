@@ -33,9 +33,9 @@ import userEvent from '@testing-library/user-event';
 import { MailAlertButton } from '@/features/mail-alert/ui/MailAlertButton';
 import { LOCALES } from '@/shared/i18n/locales';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import ko from '../../../../messages/ko.json';
 import en from '../../../../messages/en.json';
 import ja from '../../../../messages/ja.json';
+import ko from '../../../../messages/ko.json';
 import zh from '../../../../messages/zh.json';
 
 const TOPIC = { kind: 'symbol', symbol: 'AAPL' } as const;

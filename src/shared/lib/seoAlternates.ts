@@ -1,7 +1,5 @@
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { brandName, brandTitle } from '@/shared/lib/brandName';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     DEFAULT_LOCALE,
     LOCALES,
@@ -11,8 +9,10 @@ import {
     type Locale,
     resolveLocale,
 } from '@/shared/i18n/locales';
-import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { SITE_URL } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /** `Metadata['alternates']['languages']`에 그대로 넣을 수 있는 형태. */
 export type LanguageAlternates = Record<string, string>;

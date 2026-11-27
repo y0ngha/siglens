@@ -1,7 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
-import { getRedisClient } from './redisClient';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getRedisClient } from './redisClient';
 
 /**
  * KEYS[1]=락 키, ARGV[1]=보유 토큰 — 저장된 값이 호출자의 토큰일 때만 지운다(compare-and-delete).

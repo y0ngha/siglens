@@ -1,12 +1,4 @@
 import 'server-only';
-import {
-    naverAiCredentials,
-    searchNaverNews,
-    searchNaverWeb,
-    stripNaverMarkup,
-    toIsoPublishedAt,
-    type NaverCredentials,
-} from '@/shared/api/naver/naverSearch';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     fetchPageExcerpt,
@@ -19,6 +11,14 @@ import {
     setCachedSearch,
     shareInFlight,
 } from '@/app/api/ai/chat/tools/webSearchCache';
+import {
+    naverAiCredentials,
+    searchNaverNews,
+    searchNaverWeb,
+    stripNaverMarkup,
+    toIsoPublishedAt,
+    type NaverCredentials,
+} from '@/shared/api/naver/naverSearch';
 import type {
     WebSearchExcerptStatus,
     WebSearchResultItem,

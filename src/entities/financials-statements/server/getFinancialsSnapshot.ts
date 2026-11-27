@@ -1,6 +1,6 @@
-import { cache } from 'react';
 import { normalizeFinancialsSnapshot } from '@y0ngha/siglens-core';
 import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
+import { cache } from 'react';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { cacheNonEmpty } from '@/shared/cache/cacheNonEmpty';
 import { SECONDS_PER_DAY } from '@/shared/config/time';

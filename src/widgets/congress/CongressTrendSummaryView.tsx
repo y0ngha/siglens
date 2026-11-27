@@ -1,14 +1,14 @@
-import { useTranslations } from 'next-intl';
 import type {
     CongressSentiment,
     CongressTrendResponse,
 } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** CongressSentiment → `shared.enumLabel.congressSentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<CongressSentiment, string> = {

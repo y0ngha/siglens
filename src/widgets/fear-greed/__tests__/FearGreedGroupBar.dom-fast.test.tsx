@@ -1,9 +1,8 @@
-import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
 import { render } from '@testing-library/react';
+import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
-import { FearGreedGroupBar } from '@/widgets/fear-greed/FearGreedGroupBar';
-
 import koMessages from '@/../messages/ko.json';
+import { FearGreedGroupBar } from '@/widgets/fear-greed/FearGreedGroupBar';
 
 /** ko 카탈로그의 팩터 라벨·설명 — 소스 상수를 대체한다. */
 const RAW_FG = koMessages.shared.lib.fearGreedFactor as unknown as {

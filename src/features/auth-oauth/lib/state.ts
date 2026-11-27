@@ -5,9 +5,9 @@
  */
 import 'server-only';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
-import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { type ResponseCookie } from '@/entities/auth/lib/types';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 
 /** 시작 라우트가 심고 콜백 라우트가 읽는 state 쿠키 이름. 바꾸면 진행 중인 로그인이 콜백에서 실패한다. */
 export const OAUTH_STATE_COOKIE_NAME = 'siglens_oauth_state';

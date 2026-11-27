@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { floorToHour } from '../lib/floorToHour';
 
 describe('floorToHour', () => {

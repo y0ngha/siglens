@@ -37,10 +37,10 @@ vi.mock('@/entities/ticker/server/loadSymbolNames', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import FearGreedRoutePage from '@/app/[locale]/fear-greed/page';
 import FearGreedCryptoRoutePage from '@/app/[locale]/fear-greed/crypto/page';
-import FearGreedKrRoutePage from '@/app/[locale]/fear-greed/kr/page';
 import { loadFearGreedView } from '@/app/[locale]/fear-greed/fearGreedRoute';
+import FearGreedKrRoutePage from '@/app/[locale]/fear-greed/kr/page';
+import FearGreedRoutePage from '@/app/[locale]/fear-greed/page';
 import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 const mockShorten = vi.mocked(shortenRevalidateIfFmpFailedAtBuild);

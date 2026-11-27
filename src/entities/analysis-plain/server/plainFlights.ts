@@ -1,8 +1,9 @@
 import 'server-only';
 import type { RedisLease } from '@/shared/cache/createRedisLease';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { PlainTextRepository } from '@/shared/db/types';
-import { sleep } from '@/shared/lib/sleep';
 import { fireAndForget } from '@/shared/lib/backgroundTask';
+import { sleep } from '@/shared/lib/sleep';
 import {
     hasPlainGenerationFailedRecently,
     markPlainGenerationFailed,
@@ -11,7 +12,6 @@ import {
     type PlainGenerationKey,
 } from '../plainGenerationCoordination';
 import { findStored } from './plainStore';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 다른 인스턴스가 생성 중일 때 저장소를 다시 보는 간격(ms). */
 const PLAIN_WAIT_POLL_INTERVAL_MS = 1_000;

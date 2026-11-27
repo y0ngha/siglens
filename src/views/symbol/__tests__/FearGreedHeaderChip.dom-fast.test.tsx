@@ -1,15 +1,15 @@
 import { render } from '@testing-library/react';
-import { beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { FearGreedHeaderChip } from '@/views/symbol/FearGreedHeaderChip';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import {
     CONFIDENCE_LIMITED_KEY,
     sentimentLabelText,
 } from '@/shared/lib/fearGreedLabels';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { FearGreedHeaderChip } from '@/views/symbol/FearGreedHeaderChip';
 
 // confidence 라벨은 `shared.lib.fearGreed` 카탈로그에서 온다.
 const tFearGreed = catalogTranslator('shared.lib.fearGreed', 'ko');

@@ -6,9 +6,9 @@ import {
     type PriceLevelCondition,
     type PriceLevelTarget,
 } from '@y0ngha/siglens-core';
-import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
 import { isChatPriceAlertProposalBlock } from '@/entities/chat-conversation/lib/chartBlock';
 import type { ChatPriceAlertProposalBlock } from '@/entities/chat-conversation/types';
+import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
 import { DrizzlePriceAlertRepository } from '@/entities/mail-alert/api';
 import {
     PRICE_ALERT_LEVEL_BAND,
@@ -25,22 +25,22 @@ import type {
     PriceAlertBasis,
     PriceAlertProposal,
 } from '@/entities/mail-alert/model';
-import { readPriceAlertReference } from '@/entities/mail-alert/server/priceAlertReference';
 import {
     priceAlertSubject,
     signPriceAlertProposal,
 } from '@/entities/mail-alert/server/priceAlertProposalToken';
+import { readPriceAlertReference } from '@/entities/mail-alert/server/priceAlertReference';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { MS_PER_SECOND } from '@/shared/config/time';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { PriceAlertRecord } from '@/shared/db/types';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
-import { peekTechnicalCacheHit } from './getCachedAnalysis';
+import type { AssetInfo } from '@/shared/lib/types';
 import type { ToolExecutor } from './chatTools';
 import { staleKrListingDate } from './freshness';
+import { peekTechnicalCacheHit } from './getCachedAnalysis';
 import { logToolDegrade } from './logToolDegrade';
-import type { AssetInfo } from '@/shared/lib/types';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const TOOL = 'propose_price_alert';

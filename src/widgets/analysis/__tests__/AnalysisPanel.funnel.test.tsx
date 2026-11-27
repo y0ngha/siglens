@@ -12,9 +12,8 @@ vi.mock('../StaleAnalysisBanner', () => ({ StaleAnalysisBanner: () => null }));
 
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysisPanel } from '../AnalysisPanel';
 
 const analysis = {

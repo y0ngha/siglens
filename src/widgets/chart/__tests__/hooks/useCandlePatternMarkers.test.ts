@@ -17,13 +17,12 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, CandlePatternEntry } from '@y0ngha/siglens-core';
-import { useCandlePatternMarkers } from '../../hooks/useCandlePatternMarkers';
-
 import {
     detectCandlePatternEntries,
     getMultiPatternTrend,
     getSinglePatternTrend,
 } from '@y0ngha/siglens-core';
+import { useCandlePatternMarkers } from '../../hooks/useCandlePatternMarkers';
 
 const mockSetMarkers = vi.fn();
 const mockDetach = vi.fn();

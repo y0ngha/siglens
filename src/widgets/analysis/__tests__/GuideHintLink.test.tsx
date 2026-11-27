@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import ko from '../../../../messages/ko.json';
 import en from '../../../../messages/en.json';
+import ko from '../../../../messages/ko.json';
 import { GuideHintLink } from '../GuideHintLink';
 
 describe('GuideHintLink', () => {

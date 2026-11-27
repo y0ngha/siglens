@@ -1,7 +1,7 @@
 import type { EnrichedNewsItem } from '@y0ngha/siglens-core';
 import type { NewsRow } from '../api';
-import { isEnrichedRow, toEnrichedNewsItem } from './newsEnrichment';
 import { selectAggregateNewsItems } from './newsAnalysisSelection';
+import { isEnrichedRow, toEnrichedNewsItem } from './newsEnrichment';
 
 /**
  * AI 분석 axis가 input으로 받을 표준 news items를 만든다.

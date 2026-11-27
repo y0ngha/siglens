@@ -1,10 +1,10 @@
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 import { INVESTOR_FLOWS_DART_MAX_CALLS_PER_RUN } from '../lib/investorFlowsPolicy';
 import type {
     IngestDartFilingsResult,
     IngestDartFilingsStatus,
     RunContext,
 } from './ingestDartFilingsTypes';
-import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /** 아무 일도 하지 않은 상태의 결과. */
 export const emptyResult = (

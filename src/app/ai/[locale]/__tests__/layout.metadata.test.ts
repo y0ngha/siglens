@@ -2,11 +2,10 @@
 vi.mock('@/app/fontVariables', () => ({ FONT_VARIABLE_CLASSES: '' }));
 
 import { describe, expect, it, vi } from 'vitest';
-
-import { generateMetadata, viewport } from '@/app/ai/[locale]/layout';
 import { aiManifestPath } from '@/app/ai/[locale]/_lib/aiManifest';
-import { brandAiName } from '@/shared/lib/brandName';
+import { generateMetadata, viewport } from '@/app/ai/[locale]/layout';
 import { LOCALES } from '@/shared/i18n/locales';
+import { brandAiName } from '@/shared/lib/brandName';
 
 /**
  * ai 레이아웃이 매니페스트를 직접 가리키지 않으면 `app/manifest.ts`가 자동으로 걸려,

@@ -1,8 +1,8 @@
 import 'server-only';
-import { loadGuideCatalog } from '@/entities/guide/api';
-import type { GuideEntry } from '@/entities/guide/types';
-import { termsFirst } from '@/entities/guide/lib/termsFirst';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { loadGuideCatalog } from '@/entities/guide/api';
+import { termsFirst } from '@/entities/guide/lib/termsFirst';
+import type { GuideEntry } from '@/entities/guide/types';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 import { searchGuide } from '@/shared/lib/guideSearch';

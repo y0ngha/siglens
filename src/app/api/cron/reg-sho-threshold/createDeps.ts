@@ -1,17 +1,17 @@
 import 'server-only';
+import { DrizzleInvestorFlowsRegShoRepository } from '@/entities/investor-flows/api/investorFlowsRegShoRepository';
+import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
+import type { IngestRegShoDeps } from '@/entities/investor-flows/server/ingestRegSho';
 import {
     fetchRegShoThresholdText,
     REG_SHO_MARKETS,
     type RegShoMarket,
 } from '@/shared/api/exchange/regShoClient';
 import { isRegShoThresholdDataEnabled } from '@/shared/api/exchange/regShoThresholdDataEnabled';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
-import { tryGetDatabaseClient } from '@/shared/db/client';
-import { DrizzleInvestorFlowsRegShoRepository } from '@/entities/investor-flows/api/investorFlowsRegShoRepository';
-import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
-import type { IngestRegShoDeps } from '@/entities/investor-flows/server/ingestRegSho';
 
 const toRegShoMarket = (market: string): RegShoMarket | undefined =>
     REG_SHO_MARKETS.find(known => known === market);

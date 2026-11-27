@@ -5,8 +5,8 @@ vi.mock('@/shared/i18n/locationSurface', async importOriginal => ({
     resolveLocationSurface: mocks.resolveLocationSurface,
 }));
 
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import {
     NotFoundView,
     type NotFoundOverrides,

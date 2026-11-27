@@ -1,15 +1,15 @@
 import 'server-only';
 import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
-import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     decodeCacheValue,
     encodeCacheValue,
 } from '@/shared/cache/cacheValueCodec';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_MINUTE, SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { SlottedOptionsSnapshot } from '../lib/optionsSlots';
 import { rebaseOptionsSnapshot } from '../lib/rebaseOptionsSnapshot';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 로그 태그 `[optionsDataCache]`는 모듈 분리 뒤에도 의도적으로 유지한다 — grep·알림 연속성.
 

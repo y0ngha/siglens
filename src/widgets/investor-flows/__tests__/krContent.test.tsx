@@ -1,12 +1,12 @@
+import { render, screen, within } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
 import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
-import { KrInvestorFlowsContent } from '../KrInvestorFlowsContent';
 import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import { InvestorFlowsSummaryView } from '../InvestorFlowsSummaryView';
-import { KrMajorHoldersSection } from '../sections/KrMajorHoldersSection';
+import { KrInvestorFlowsContent } from '../KrInvestorFlowsContent';
 import { KrInsiderSection } from '../sections/KrInsiderSection';
+import { KrMajorHoldersSection } from '../sections/KrMajorHoldersSection';
 import { KrTradingPlansSection } from '../sections/KrTradingPlansSection';
 import { MAX_KR_DISCLOSURE_ROWS } from '../utils/krDisclosures';
 import {

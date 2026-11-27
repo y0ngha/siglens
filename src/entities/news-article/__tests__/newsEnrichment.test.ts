@@ -1,9 +1,9 @@
+import type { NewsRow } from '@/entities/news-article/api';
 import {
     isEnrichedRow,
     toEnrichedNewsItem,
     type EnrichedNewsRow,
 } from '../lib/newsEnrichment';
-import type { NewsRow } from '@/entities/news-article/api';
 
 const baseRow: NewsRow = {
     id: 'id-1',

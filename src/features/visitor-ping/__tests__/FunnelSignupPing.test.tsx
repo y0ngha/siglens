@@ -19,7 +19,6 @@ vi.mock('next/navigation', () => ({ usePathname: () => m.pathname }));
 
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 
 describe('FunnelSignupPing', () => {

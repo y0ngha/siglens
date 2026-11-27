@@ -1,11 +1,11 @@
 'use client';
 
+import type { RiskLevel, Trend } from '@y0ngha/siglens-core';
 /**
  * 패널 머리 — 제목·진행 점·추세 배지(왼쪽)와 개인화 배지·분석 시각·리포트 복사·변동성
  * 등급(오른쪽), 복사 실패 안내.
  */
 import { useTranslations } from 'next-intl';
-import type { RiskLevel, Trend } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';

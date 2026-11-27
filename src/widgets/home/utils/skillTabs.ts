@@ -1,6 +1,6 @@
 import type { SkillType } from '@y0ngha/siglens-core';
-import type { HomeSkillItem } from './toSkillShowcaseItems';
 import { SKILL_TYPE_META, type SkillTypeMeta } from './skillTypeMeta';
+import type { HomeSkillItem } from './toSkillShowcaseItems';
 
 /** 스킬 쇼케이스 탭 값 — 전체 또는 core `SkillType` 하나. */
 export type SkillsActiveTab = 'all' | SkillType;

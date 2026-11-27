@@ -1,12 +1,12 @@
+import { render, screen } from '@testing-library/react';
 /**
  * `AskAiInlineLink` 렌더 계약 — 링크 대상(href)·새 탭 속성·식별 속성·접근성 이름.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { AskAiInlineLink } from '../ui/AskAiInlineLink';
 import { aiAskUrl } from '@/shared/config/aiHost';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { AskAiInlineLink } from '../ui/AskAiInlineLink';
 
 describe('AskAiInlineLink', () => {
     it('href가 aiAskUrl(localePrefix, question)과 같다 — 질문에 종목명이 들어간다', () => {

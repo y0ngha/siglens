@@ -14,15 +14,14 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-
-import messages from '../../../../messages/ko.json';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { Breadcrumb, type BreadcrumbCrumb } from '@/shared/ui/Breadcrumb';
 import enMessages from '../../../../messages/en.json';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+import messages from '../../../../messages/ko.json';
 
 const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
 

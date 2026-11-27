@@ -5,13 +5,13 @@ import {
     US_EQUITY_SESSION,
     CRYPTO_SESSION,
 } from '@y0ngha/siglens-core';
-import { getMarketDataProvider } from './getMarketDataProvider';
+import { isE2E } from '@/shared/api/e2eEnv';
+import { FMP_EXCHANGE_TIME_ZONE } from '@/shared/api/fmp/FmpMarketProvider';
+import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
 import { CachedMarketDataProvider } from './CachedMarketDataProvider';
+import { getMarketDataProvider } from './getMarketDataProvider';
 import type { ExtendedBarsProvider } from './marketProvider.types';
 import { KR_EQUITY_SESSION } from './sessionSpecFor';
-import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
-import { FMP_EXCHANGE_TIME_ZONE } from '@/shared/api/fmp/FmpMarketProvider';
-import { isE2E } from '@/shared/api/e2eEnv';
 
 /**
  * FMP를 감싸는 캐시 provider의 옵션. FMP `historical-chart`는 `from`/`to`를 미 동부 날짜로

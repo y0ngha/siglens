@@ -2,8 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import type { GuideEntrySummary } from '@/entities/guide/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { loadGuideCategoryCopy } from './lib/guideCopy';
 import { toGuideSummary } from './lib/guideBrowse';
+import { loadGuideCategoryCopy } from './lib/guideCopy';
 import { GuideBrowser } from './ui/GuideBrowser';
 import { GuidePageHeader } from './ui/GuidePageHeader';
 

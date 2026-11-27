@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { normalizeLabel } from '@/features/ticker-search/lib/normalizeLabel';
 
 /**

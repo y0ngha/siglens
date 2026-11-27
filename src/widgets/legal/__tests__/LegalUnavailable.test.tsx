@@ -19,10 +19,10 @@ vi.mock('@/widgets/legal/LegalBreadcrumb', () => ({
     ),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import koMessages from '../../../../messages/ko.json';
+import React from 'react';
 import { LegalUnavailable } from '@/widgets/legal/LegalUnavailable';
+import koMessages from '../../../../messages/ko.json';
 
 const LEGAL_MESSAGES = koMessages.widgets.legal;
 

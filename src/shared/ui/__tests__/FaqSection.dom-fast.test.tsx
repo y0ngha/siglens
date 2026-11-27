@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { buildFaqJsonLd } from '@/shared/lib/seo';
+import { FaqSection } from '@/shared/ui/FaqSection';
 
 const ITEMS = [
     { question: '무엇을 볼 수 있나요?', answer: '차트와 지표를 봅니다.' },

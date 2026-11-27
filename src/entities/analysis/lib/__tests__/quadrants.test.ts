@@ -1,14 +1,14 @@
-import {
-    EMPTY_QUADRANTS,
-    filterStrictAnticipation,
-    groupStockIntoQuadrants,
-} from '@/entities/analysis/lib/quadrants';
 import type {
     QuadrantKey,
     Signal,
     StockSignalResult,
     StockWithConflict,
 } from '@y0ngha/siglens-core';
+import {
+    EMPTY_QUADRANTS,
+    filterStrictAnticipation,
+    groupStockIntoQuadrants,
+} from '@/entities/analysis/lib/quadrants';
 
 function buildSignal(
     direction: 'bullish' | 'bearish',

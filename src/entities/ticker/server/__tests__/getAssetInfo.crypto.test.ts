@@ -65,8 +65,8 @@ vi.mock('../koreanTranslator', () => ({
     translateCompanyNames: vi.fn().mockResolvedValue({}),
 }));
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { CacheProvider } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { CryptoAssetRecord } from '@/shared/db/types';
 import {
     _resetInFlightTranslationsForTest,

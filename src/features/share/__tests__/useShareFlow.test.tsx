@@ -1,12 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // @vitest-environment jsdom
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
+import en from '@/../messages/en.json';
+import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
 import { useShareFlow } from '@/features/share/hooks/useShareFlow';
 import type { ShareableRegistration } from '@/features/share/model/ShareableAnalysisContext';
-import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
-import en from '@/../messages/en.json';
 
 const { mockUseShareable, mockUseUserTier } = vi.hoisted(() => ({
     mockUseShareable: vi.fn(),

@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRef, type ReactNode } from 'react';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

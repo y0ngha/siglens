@@ -4,22 +4,22 @@
  * 거래량 차트 컴포넌트 — 총 거래량·매수/매도 거래량 시리즈를 그린다.
  */
 
-import { useMemo, useRef } from 'react';
-import type { IChartApi } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, BuySellVolumeResult, Timeframe } from '@y0ngha/siglens-core';
+import type { IChartApi } from 'lightweight-charts';
+import { useTranslations } from 'next-intl';
+import { useMemo, useRef } from 'react';
 import {
     NO_EXTENDED_BARS,
     NO_SESSION_RANGES,
     buildExtendedSessionRanges,
     isExtendedBarTimeframe,
 } from '@/shared/api/market/extendedBarsSession';
-import { usePaneLabels } from './hooks/usePaneLabels';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
+import { usePaneLabels } from './hooks/usePaneLabels';
 import { useVolumeChartData } from './hooks/useVolumeChartData';
 import { useVolumeChartLifecycle } from './hooks/useVolumeChartLifecycle';
 import type { PaneLabelConfig } from './types';
-import { useTranslations } from 'next-intl';
 
 interface VolumeChartProps {
     /** 정규장 봉 — 매수/매도 분해는 이 배열과 짝지어진다. */

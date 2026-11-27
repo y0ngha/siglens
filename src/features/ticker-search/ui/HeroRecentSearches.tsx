@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 // `next/link`가 아니라 로케일 접두사를 붙이는 래퍼다 — 그냥 `next/link`를 쓰면
 // `/ja`에서 누른 링크가 ko 라우트로 나간다.

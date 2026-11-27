@@ -4,8 +4,8 @@ vi.mock('@/entities/bars/actions/getBarsAction', () => ({
 }));
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { useHoldingRangeFacts } from '@/widgets/portfolio-position/hooks/useHoldingRangeFacts';
 
 const mockGetBarsAction = vi.mocked(getBarsAction);

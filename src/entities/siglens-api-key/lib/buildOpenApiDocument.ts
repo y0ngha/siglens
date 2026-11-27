@@ -5,13 +5,13 @@ import {
     type ApiErrorScope,
 } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import { buildApiToolReference } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
-import type { ApiToolReference } from '@/entities/siglens-api-key/model';
 import {
     FRESH_ANALYSIS_TOOL,
     renderChartDataNotes,
     renderFreshAnalysisNotes,
     renderLimits,
 } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import type { ApiToolReference } from '@/entities/siglens-api-key/model';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_PREFIX,
@@ -22,8 +22,8 @@ import {
     PUBLIC_API_MAX_BODY_CHARS,
     PUBLIC_API_RATE_LIMITS,
 } from '@/shared/config/publicApi';
-import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
 import { USER_TIER_VALUES } from '@/shared/db/constants';
+import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
 import type { YamlValue } from '@/shared/lib/toYaml';
 
 /** 생성 문서가 따르는 OpenAPI 명세 버전. */

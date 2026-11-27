@@ -75,11 +75,11 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
 }));
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { render, screen } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { ReactNode } from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import CategoryNewsPage from '../page';
 
 const DIGEST_FIXTURE: NewsAnalysisResponse = {

@@ -1,13 +1,13 @@
-import type { EmailMessage } from '../types';
+import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
+import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import {
     buildEmailDebugCountKey,
     buildEmailDebugIdemKey,
     buildEmailDebugKey,
     extractEmailDebugRecord,
 } from '../emailDebugRecord';
-import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
-import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import type { EmailMessage } from '../types';
 
 const tMail = catalogTranslator('entities.email-token.email');
 

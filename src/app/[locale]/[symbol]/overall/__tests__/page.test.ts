@@ -86,22 +86,22 @@ vi.mock('@/entities/news-article/api', () => ({
 }));
 
 import {
+    DEEPSEEK_V4_1_FLASH_MODEL,
+    peekOverallAnalysisCache,
+} from '@y0ngha/siglens-core';
+import { Suspense, isValidElement, type ReactNode } from 'react';
+import type { MockedFunction } from 'vitest';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import {
     generateMetadata,
     default as OverallPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import {
-    DEEPSEEK_V4_1_FLASH_MODEL,
-    peekOverallAnalysisCache,
-} from '@y0ngha/siglens-core';
+import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
 import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
-import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { Suspense, isValidElement, type ReactNode } from 'react';
-import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

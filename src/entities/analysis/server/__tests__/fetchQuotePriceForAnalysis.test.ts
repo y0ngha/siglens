@@ -12,7 +12,6 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { fetchQuotePriceForAnalysis } from '@/entities/analysis/server/fetchQuotePriceForAnalysis';
 
 const mockGetQuote = vi.fn();

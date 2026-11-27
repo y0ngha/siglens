@@ -1,13 +1,13 @@
-import type { Mock } from 'vitest';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
+import type { Mock } from 'vitest';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

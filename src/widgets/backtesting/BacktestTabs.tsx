@@ -2,9 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useRef } from 'react';
-import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
-import { TabsUnderline } from '@/shared/ui/tabs/TabsUnderline';
 import { useBacktestFilter } from '@/features/backtest-filter/hooks/useBacktestFilter';
+import { TabsUnderline } from '@/shared/ui/tabs/TabsUnderline';
+import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
 import { useCaseListVisibility } from './hooks/useCaseListVisibility';
 
 interface BacktestTabsProps {

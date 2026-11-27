@@ -5,17 +5,17 @@
  */
 
 import { useCallback, useState } from 'react';
-import { type PwaEnvironment } from '@/shared/lib/types';
-import { useRegisterServiceWorker } from './useRegisterServiceWorker';
-import { useFirstInputReveal } from './useFirstInputReveal';
-import { useDeferredInstallPrompt } from './useDeferredInstallPrompt';
 import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { readPwaEnvironment } from '../lib/detectPwaEnvironment';
+import { type PwaEnvironment } from '@/shared/lib/types';
 import {
     readBannerDismissed,
     writeBannerDismissed,
 } from '../lib/bannerDismissal';
+import { readPwaEnvironment } from '../lib/detectPwaEnvironment';
+import { useDeferredInstallPrompt } from './useDeferredInstallPrompt';
+import { useFirstInputReveal } from './useFirstInputReveal';
+import { useRegisterServiceWorker } from './useRegisterServiceWorker';
 
 /** [[usePwaInstall]]이 `PwaBanner`에 넘기는 상태와 안정적인 핸들러. */
 export interface UsePwaInstallReturn {

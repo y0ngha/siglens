@@ -1,18 +1,18 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { cn } from '@/shared/lib/cn';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import {
     DEFAULT_MARKET_PROFILE,
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
-import { tabsFor } from './utils/symbolTabsConfig';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
-import { usePendingSymbolTab } from './SymbolTabPendingContext';
-import { useSymbolTabLabels } from './hooks/useSymbolTabLabels';
+import { cn } from '@/shared/lib/cn';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useKeepActiveTabInRail } from './hooks/useKeepActiveTabInRail';
+import { useSymbolTabLabels } from './hooks/useSymbolTabLabels';
+import { usePendingSymbolTab } from './SymbolTabPendingContext';
+import { tabsFor } from './utils/symbolTabsConfig';
 
 interface SymbolTabsProps {
     /** Ticker symbol. Will be uppercased internally. */

@@ -1,5 +1,5 @@
-import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
+import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 describe('LLM_PROVIDER_LABELS', () => {
     it('has a label for every provider in LLM_PROVIDER_VALUES', () => {

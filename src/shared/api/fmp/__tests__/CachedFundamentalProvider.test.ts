@@ -1,11 +1,11 @@
+import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     CachedFundamentalProvider,
     PEER_LIMIT,
 } from '@/shared/api/fmp/CachedFundamentalProvider';
-import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
-import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
+import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     SECONDS_PER_HOUR,

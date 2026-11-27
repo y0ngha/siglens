@@ -4,8 +4,8 @@ import {
     hashUsageIp,
     type CounterStore,
 } from '@y0ngha/siglens-core';
-import { withTimeout } from '@/shared/lib/withTimeout';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import { getUpstashWriterCredentials } from '@/shared/cache/redisClient';
 import {
     MS_PER_HOUR,
@@ -16,7 +16,7 @@ import type {
     AnalysisRateLimitAudience,
     AnalysisRateLimitReason,
 } from '@/shared/lib/sse/analysisRateLimit';
-import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { normalizeQuotaIp } from '../lib/normalizeQuotaIp';
 
 /**

@@ -21,9 +21,8 @@ vi.mock('@/app/api/ai/chat/tools/krInvestorTrend', async importOriginal => ({
     loadKrInvestorTrendRows: m.krRows,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildFlowsBlock,
     krDaysFrom,

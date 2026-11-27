@@ -17,16 +17,15 @@ vi.mock('@/entities/mail-alert/server/priceAlertFlows', () => ({
     confirmPriceAlertFlow: vi.fn(),
 }));
 
-import {
-    expectLogWithoutPlantedSecrets,
-    plantedDbError,
-} from '@/shared/test-utils/plantedDbError';
-
 import { confirmPriceAlertAction } from '@/entities/mail-alert/actions/confirmPriceAlertAction';
 import { createPriceAlertAction } from '@/entities/mail-alert/actions/createPriceAlertAction';
 import { getPriceAlertProposalStateAction } from '@/entities/mail-alert/actions/getPriceAlertProposalStateAction';
 import { createPriceAlertDeps } from '@/entities/mail-alert/server/createPriceAlertDeps';
 import * as flows from '@/entities/mail-alert/server/priceAlertFlows';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const DEPS = { marker: 'deps' } as unknown as Awaited<
     ReturnType<typeof createPriceAlertDeps>

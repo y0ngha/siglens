@@ -13,6 +13,7 @@ vi.mock('@upstash/redis', () => ({
     }),
 }));
 
+import type { Redis } from '@upstash/redis';
 import type { Mock } from 'vitest';
 import {
     createPendingOAuthSignupStore,
@@ -20,7 +21,6 @@ import {
 } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
-import type { Redis } from '@upstash/redis';
 
 describe('PendingOAuthSignupStore', () => {
     function makeRedis() {

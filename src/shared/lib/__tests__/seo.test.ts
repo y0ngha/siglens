@@ -1,7 +1,8 @@
-import { LOCALE_HREFLANG } from '@/shared/i18n/locales';
+import { getTranslations } from 'next-intl/server';
 import { readFileSync } from 'node:fs';
 import { beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+import { LOCALE_HREFLANG } from '@/shared/i18n/locales';
 import {
     buildBreadcrumbJsonLd,
     buildFaqJsonLd,
@@ -9,6 +10,12 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import {
+    clampSeoDescription,
+    SEO_DESCRIPTION_MAX_LENGTH,
+    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
+} from '@/shared/lib/seoClamp';
+import { buildSnapshotMetaDescription } from '@/shared/lib/seoSnapshotDescription';
 import {
     buildSymbolSeoContent,
     buildSymbolFundamentalSeoContent,
@@ -23,13 +30,6 @@ import {
     resolveSymbolOverallSeoContent,
     resolveSymbolFearGreedSeoContent,
 } from '@/shared/lib/seoSymbol';
-import { buildSnapshotMetaDescription } from '@/shared/lib/seoSnapshotDescription';
-import {
-    clampSeoDescription,
-    SEO_DESCRIPTION_MAX_LENGTH,
-    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
-} from '@/shared/lib/seoClamp';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 // t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 builder 호출에 재사용한다.

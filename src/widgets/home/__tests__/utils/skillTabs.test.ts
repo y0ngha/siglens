@@ -1,8 +1,7 @@
 import type { SkillType } from '@y0ngha/siglens-core';
-import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
-
 import { SKILL_TABS, filterSkillsByTab } from '../../utils/skillTabs';
 import { SKILL_TYPE_META } from '../../utils/skillTypeMeta';
+import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 
 /**
  * core `SkillType` 전체. `Record<SkillType, true>`라 core에 타입이 늘면 이 객체가

@@ -1,8 +1,8 @@
+import type { FinancialGrowthRow } from '@y0ngha/siglens-core';
 /**
  * 성장 분석 섹션 — 전년 대비 성장률 표와 최신 기준 다년 주당 매출 성장률 표.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialGrowthRow } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { StatementSectionFrame } from '../ui/statement-section/StatementSectionFrame';
 import { toPercent } from '../utils/growthFormat';

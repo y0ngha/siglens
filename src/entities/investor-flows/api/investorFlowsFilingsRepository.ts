@@ -1,5 +1,4 @@
 import 'server-only';
-import { affectedRows } from './affectedRows';
 import { and, desc, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
@@ -9,12 +8,13 @@ import {
     secOfferingFilings,
 } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { withRetry } from '@/shared/lib/withRetry';
-import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import { chunked } from '../lib/chunked';
 import { cikToInt, cikToString } from '../lib/cik';
 import type { CikSymbolPair } from '../lib/companyTickers';
 import { compositeKey } from '../lib/dedupeByKey';
+import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import { isOfferingKind, secFilingIndexUrl } from '../lib/offeringIndex';
 import type {
     FilingRetry,
@@ -23,11 +23,11 @@ import type {
     OfferingRecord,
     ProposedSaleRecord,
 } from '../model';
+import { affectedRows } from './affectedRows';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
-import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 const LOOKUP_CHUNK = 1_000;

@@ -123,19 +123,19 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     translateFmpError: vi.fn().mockReturnValue(null),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Suspense, isValidElement, type ReactNode } from 'react';
-import NewsPage from '@/app/[locale]/[symbol]/news/page';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getNewsList } from '@/entities/news-article/api';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
-import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import NewsPage from '@/app/[locale]/[symbol]/news/page';
+import { getNewsList } from '@/entities/news-article/api';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { ORGANIZATION_JSON_LD_ID } from '@/shared/lib/seo';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetNewsList = vi.mocked(getNewsList);

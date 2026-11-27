@@ -3,8 +3,8 @@ vi.mock('@/views/guide/GuideUnavailablePage', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-import { entriesInCategory } from '@/app/[locale]/guide/_lib/guideRoute';
 import { CATALOG } from '@/__tests__/fixtures/guideFixtures';
+import { entriesInCategory } from '@/app/[locale]/guide/_lib/guideRoute';
 
 describe('entriesInCategory', () => {
     it('그 분류의 항목만 카탈로그 순서대로 고른다', () => {

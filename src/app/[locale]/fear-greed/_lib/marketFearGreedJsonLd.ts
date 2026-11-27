@@ -13,8 +13,8 @@ import {
     fearGreedDataPath,
 } from '@/shared/config/fearGreedData';
 import type { Locale } from '@/shared/i18n/locales';
-import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { METHODOLOGY_PATH, TERMS_PATH } from '@/shared/lib/legal';
+import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import {
     localizedAbsoluteUrl,
     ORGANIZATION_JSON_LD_ID,

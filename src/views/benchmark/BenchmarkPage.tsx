@@ -11,20 +11,20 @@ import {
 } from '@/entities/benchmark/types';
 import { BENCHMARK_DATA_LICENSE_URL } from '@/shared/config/benchmark';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
+import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
 import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 import { GITHUB_URL } from '@/shared/lib/seo';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
 import { BenchmarkItemExplorer } from './BenchmarkItemExplorer';
 import {
     buildBenchmarkPageModel,
     formatBenchmarkPoolSummary,
 } from './lib/benchmarkPageModel';
 import { toBenchmarkScoreRows } from './lib/benchmarkScoreTable';
-import { BenchmarkSection } from './ui/page/BenchmarkSection';
-import { BenchmarkScoreTable } from './ui/page/BenchmarkScoreTables';
 import { BENCHMARK_TEXT_LINK } from './ui/page/benchmarkPageStyles';
+import { BenchmarkScoreTable } from './ui/page/BenchmarkScoreTables';
+import { BenchmarkSection } from './ui/page/BenchmarkSection';
 import { HeadlineContrastTable } from './ui/page/HeadlineContrastTable';
 import { LabelCountsTable } from './ui/page/LabelCountsTable';
 import { MethodCards } from './ui/page/MethodCards';

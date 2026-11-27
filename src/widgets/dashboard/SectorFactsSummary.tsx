@@ -1,8 +1,8 @@
+import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 /**
  * 전 섹터 신호 개수와 대표 종목을 크롤 가능한 SSR 텍스트로 보여 주는 요약.
  */
 import { useTranslations } from 'next-intl';
-import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

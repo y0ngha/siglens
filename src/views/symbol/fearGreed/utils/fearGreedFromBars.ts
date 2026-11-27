@@ -5,6 +5,10 @@
  */
 import type { BarsData } from '@y0ngha/siglens-core';
 import {
+    scoredHistory,
+    type ScoredPoint,
+} from '@/entities/bars/lib/fearGreedWindow';
+import {
     computeSymbolFearGreedSeries,
     symbolFearGreedInputs,
 } from '@/entities/bars/lib/symbolFearGreed';
@@ -12,10 +16,6 @@ import {
     buildFearGreedMetaFacts,
     type FearGreedMetaFacts,
 } from './fearGreedFacts';
-import {
-    scoredHistory,
-    type ScoredPoint,
-} from '@/entities/bars/lib/fearGreedWindow';
 
 /**
  * 봉에서 점수가 계산된 시계열 — `generateMetadata`(설명)와 페이지 본문(`dateModified`)이

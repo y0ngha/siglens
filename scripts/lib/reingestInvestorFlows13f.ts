@@ -1,12 +1,12 @@
 import {
-    INVESTOR_FLOWS_13F_BACKFILL_DAYS,
-    INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
-} from '../../src/entities/investor-flows/lib/investorFlowsPolicy';
-import {
     addDays,
     eachDate,
     isWeekend,
 } from '../../src/entities/investor-flows/lib/investorFlowsDates';
+import {
+    INVESTOR_FLOWS_13F_BACKFILL_DAYS,
+    INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
+} from '../../src/entities/investor-flows/lib/investorFlowsPolicy';
 
 /**
  * 늦게 매핑된 CUSIP을 위한 13F **재수집 준비**의 순수 흐름. DB·CLI는 `scripts/reingest-investor-flows-13f.ts`가 주입한다.

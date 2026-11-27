@@ -1,5 +1,5 @@
-import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { DrizzleSignalHistoryRepository } from '@/entities/signal-history/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 

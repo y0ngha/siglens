@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { brandIntroName, ROOT_KEYWORDS } from '../seo';
-import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '../seoClamp';
 import { SITE_NAME_KO } from '@/shared/config/brand';
-import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import jaMessages from '../../../../messages/ja.json';
+import koMessages from '../../../../messages/ko.json';
 import zhMessages from '../../../../messages/zh.json';
+import { brandIntroName, ROOT_KEYWORDS } from '../seo';
+import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '../seoClamp';
 
 // 홈 카피는 `shared.seo.root` 카탈로그가 소유한다 — 예전엔 `seo.ts`의 한국어
 // 상수라 `/en` 홈이 영어 제목 아래 한국어 JSON-LD 설명을 내보냈다. 자산군

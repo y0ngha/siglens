@@ -135,8 +135,8 @@ vi.mock('@/app/api/ai/chat/tools/getCompanyFilings', () => ({
     getCompanyFilingsTool: vi.fn(),
 }));
 
-import { POST } from '@/app/api/v1/tools/[name]/route';
 import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { POST } from '@/app/api/v1/tools/[name]/route';
 
 const principal = {
     keyId: 'key-1',

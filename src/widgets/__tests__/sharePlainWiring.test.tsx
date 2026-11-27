@@ -238,28 +238,28 @@ vi.mock('@/widgets/options/OptionsAiAnalysisError', () => ({
     OptionsAiAnalysisError: () => <div data-testid="options-error" />,
 }));
 
+import { render, screen } from '@testing-library/react';
+import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import {
     ShareableAnalysisProvider,
     useShareable,
 } from '@/features/share/model/ShareableAnalysisContext';
+import { ChartContent } from '@/views/symbol/ChartContent';
+import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
-import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { OptionsAiAnalysis } from '@/widgets/options/OptionsAiAnalysis';
+import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import { OverallContent } from '@/widgets/overall/OverallContent';
+import { OptionsAiAnalysis } from '@/widgets/options/OptionsAiAnalysis';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
-import { ChartContent } from '@/views/symbol/ChartContent';
-import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import { OverallContent } from '@/widgets/overall/OverallContent';
 
 /**
  * 일곱 개 `useRegisterShareable` 호출부가 각자 위젯 상태에서 뽑은 `plain`을

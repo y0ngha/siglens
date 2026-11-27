@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 질문 한 턴 — 오른쪽 말풍선과 그 아래 동작 줄, 또는 편집 중이면 그 자리의 편집 폼.
  */
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
 import type { ReactNode, Ref } from 'react';
 import type { ChatImageAttachment } from '@/features/agent-chat/model/types';
 

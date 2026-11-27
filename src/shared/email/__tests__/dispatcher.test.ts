@@ -11,9 +11,8 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: getRedisClientMock,
 }));
 
-import type { MockedClass } from 'vitest';
-
 import { Resend } from 'resend';
+import type { MockedClass } from 'vitest';
 import { createEmailDispatcher } from '../dispatcher';
 import { E2eEmailDispatcher } from '../E2eEmailDispatcher';
 

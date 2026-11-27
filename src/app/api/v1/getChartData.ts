@@ -5,16 +5,16 @@ import {
     type ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { resolveAssetInfoOrNull } from '@/app/api/ai/chat/tools/resolveAssetInfo';
-import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { buildChartData } from '@/entities/bars/lib/buildChartData';
 import { resolveChartDataIndicators } from '@/entities/bars/lib/chartDataIndicators';
-import { shrinkToLimit } from '@/entities/bars/lib/shrinkToLimit';
 import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
+import { shrinkToLimit } from '@/entities/bars/lib/shrinkToLimit';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { isValidTimeframe } from '@/shared/config/market';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { PUBLIC_API_CHART_DATA } from '@/shared/config/publicApi';
 import { MS_PER_SECOND } from '@/shared/config/time';
 

@@ -1,9 +1,9 @@
+import type { ShortMetrics } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 /**
  * 가격 입력이 없을 때의 숏스퀴즈 경고 — 잔고 비율·상환일수가 높다는 사실만 알린다.
  */
 import { useId } from 'react';
-import { useTranslations } from 'next-intl';
-import type { ShortMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { FlowTooltip } from '../../investorFlowsTooltips';
 import { formatDecimal, formatPercent } from '../../utils/flowFormat';

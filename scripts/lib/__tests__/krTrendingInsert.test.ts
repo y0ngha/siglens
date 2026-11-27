@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 import { insertKrTrendingItems } from '../krTrendingInsert';
 import { extractExistingKrTickers } from '../visitCandidates';
-import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 
 const REAL = readFileSync(
     resolve(process.cwd(), 'src/shared/config/popular-tickers.ts'),

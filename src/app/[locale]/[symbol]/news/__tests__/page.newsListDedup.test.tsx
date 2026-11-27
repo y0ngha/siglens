@@ -156,8 +156,8 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewsListSection } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getNewsList } from '@/entities/news-article/api';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 describe('loadSymbolNewsList 요청 내 dedup', () => {
     beforeEach(() => {

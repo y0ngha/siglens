@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { StrikeLegendItem } from '@/widgets/options/ui/strike-chart/StrikeLegendItem';
 import { StrikeChartLegend } from '@/widgets/options/ui/strike-chart/StrikeChartLegend';
+import { StrikeLegendItem } from '@/widgets/options/ui/strike-chart/StrikeLegendItem';
 
 describe('StrikeLegendItem', () => {
     it.each([

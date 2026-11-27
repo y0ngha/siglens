@@ -1,8 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
 import {
     GUIDE_COVERED_SKILL_DIRS,
     GUIDE_EXCLUDED_SKILL_DIRS,

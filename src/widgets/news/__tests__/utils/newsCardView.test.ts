@@ -1,5 +1,5 @@
-import { buildNewsCardView } from '@/widgets/news/utils/newsCardView';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import { buildNewsCardView } from '@/widgets/news/utils/newsCardView';
 
 const ITEM = {
     id: '1',

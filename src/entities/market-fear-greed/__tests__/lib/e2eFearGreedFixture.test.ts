@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import {
     e2eCryptoDailyBars,
     e2eDailyCloses,

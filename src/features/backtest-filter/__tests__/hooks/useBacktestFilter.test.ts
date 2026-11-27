@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { koMessage } from '@/shared/test-utils/koMessage';
 import { useBacktestFilter } from '@/features/backtest-filter/hooks/useBacktestFilter';
 import { BACKTEST_ALL_TAB as ALL_TAB } from '@/features/backtest-filter/lib/tickerQuery';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const ALL_LABEL = koMessage('shared.ui.misc.filterAll');
 const withIntl = { wrapper: IntlTestProvider } as const;

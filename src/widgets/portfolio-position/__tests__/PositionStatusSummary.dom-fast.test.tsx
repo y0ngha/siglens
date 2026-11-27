@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
+import { PositionStatusSummary } from '../ui/PositionStatusSummary';
 import { computePositionStatus } from '../utils/positionStatus';
 import type { PositionStatus } from '../utils/positionStatus';
-import { PositionStatusSummary } from '../ui/PositionStatusSummary';
 
 function status(
     overrides: Partial<Parameters<typeof computePositionStatus>[0]> = {}

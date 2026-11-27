@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-import { useDeleteAccountForm } from '@/features/account-delete/hooks/useDeleteAccountForm';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
+import { useDeleteAccountForm } from '@/features/account-delete/hooks/useDeleteAccountForm';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 

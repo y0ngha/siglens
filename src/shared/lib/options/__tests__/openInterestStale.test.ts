@@ -7,15 +7,15 @@
  * a realistic PRE-PRE distribution, and the calls+puts aggregation.
  */
 
-import {
-    isOpenInterestSnapshotStale,
-    OI_STALE_FRACTION_THRESHOLD,
-} from '@/shared/lib/options/openInterestStale';
 import type {
     OptionsChain,
     OptionsContract,
     OptionsSnapshot,
 } from '@y0ngha/siglens-core';
+import {
+    isOpenInterestSnapshotStale,
+    OI_STALE_FRACTION_THRESHOLD,
+} from '@/shared/lib/options/openInterestStale';
 
 const makeContract = (
     overrides: Partial<OptionsContract> = {}

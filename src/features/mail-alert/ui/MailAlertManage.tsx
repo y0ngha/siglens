@@ -1,7 +1,7 @@
 'use client';
 
-import { useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
 import { topicToRow } from '@/entities/mail-alert/lib/topics';
 import type {
     MailAlertChangeResult,

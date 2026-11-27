@@ -7,12 +7,12 @@ import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import { buildSymbolChanges } from '../lib/buildSymbolChanges';
 import type { ChatSymbolChangesResult } from '../types';
+import { loadClosedDailyBars } from './closedDailyBars';
 import {
     CONVERSATION_CHANGES_MAX_SYMBOLS,
     extractConversationAnalyses,
     type ConversationAnalysis,
 } from './conversationAnalyses';
-import { loadClosedDailyBars } from './closedDailyBars';
 
 /** 한 종목을 계산하는 데 쓰는 시간 상한(ms). 넘기면 그 종목은 카드에서 빠진다 — 다시 연 대화를 늦추지 않는다. */
 export const CONVERSATION_CHANGES_TIMEOUT_MS = 3_000;

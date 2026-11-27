@@ -10,14 +10,6 @@ vi.mock('@/entities/llm-provider/api/agent/gemini', () => ({
     callGeminiAgent: mockGemini,
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import {
-    AGENT_FALLBACK_MODEL,
-    AGENT_MODEL,
-    createAgentProvider,
-} from '@/entities/llm-provider/api/agent/router';
-import { AGENT_PROVIDER_STALLED } from '@/entities/llm-provider/api/agent/openAiCompatibleStream';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     MODEL_SPECS,
@@ -26,6 +18,13 @@ import {
     type AgentStreamEvent,
     type CallAgentProviderOptions,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AGENT_PROVIDER_STALLED } from '@/entities/llm-provider/api/agent/openAiCompatibleStream';
+import {
+    AGENT_FALLBACK_MODEL,
+    AGENT_MODEL,
+    createAgentProvider,
+} from '@/entities/llm-provider/api/agent/router';
 
 const OK: AgentProviderResult = {
     text: 'ok',

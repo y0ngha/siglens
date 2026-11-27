@@ -5,10 +5,10 @@
  * runs the logout Server Action (which redirects).
  */
 
-import { useTransition } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { logoutAction } from '../actions/logoutAction';
+import { useTransition } from 'react';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { logoutAction } from '../actions/logoutAction';
 
 /** What `LogoutButton` needs: a trigger and a flag to disable itself while logging out. */
 export interface UseLogoutResult {

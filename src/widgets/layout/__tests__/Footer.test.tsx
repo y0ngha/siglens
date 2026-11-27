@@ -38,25 +38,24 @@ vi.mock('@/shared/lib/legal', () => ({
     termsTitle: () => '이용약관',
 }));
 
-import React from 'react';
 import { render, screen, within } from '@testing-library/react';
-
-import { Footer } from '../Footer';
+import React from 'react';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
 } from '@/shared/config/assetClassNav';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { RADAR_SITE_URL } from '@/shared/config/radar';
 import { localePath } from '@/shared/i18n/locales';
 import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
 import ja from '../../../../messages/ja.json';
 import ko from '../../../../messages/ko.json';
 import zh from '../../../../messages/zh.json';
+import { Footer } from '../Footer';
 
 describe('Footer', () => {
     it('renders the investment disclaimer', () => {

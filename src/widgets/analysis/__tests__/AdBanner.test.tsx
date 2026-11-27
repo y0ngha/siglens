@@ -11,7 +11,6 @@ vi.mock('../hooks/useAdSensePush', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import { AdBanner } from '../AdBanner';
 
 describe('AdBanner', () => {

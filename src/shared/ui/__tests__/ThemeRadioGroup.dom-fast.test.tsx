@@ -1,10 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-
-import { ThemeRadioGroup } from '../ThemeRadioGroup';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { stubPrefersColorScheme } from '@/shared/test-utils/matchMedia';
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from '@/shared/lib/theme';
+import { stubPrefersColorScheme } from '@/shared/test-utils/matchMedia';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { ThemeRadioGroup } from '../ThemeRadioGroup';
 
 /**
  * 테마 선택은 **두 축**을 갖는다 — 사용자가 무엇을 골랐는가(`preference`)와

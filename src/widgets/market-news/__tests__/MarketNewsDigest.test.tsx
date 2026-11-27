@@ -7,11 +7,11 @@
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { MockedFunction } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { MockedFunction } from 'vitest';
+import { SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDigest';
 import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
-import { SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 
 vi.mock('@/widgets/market-news/hooks/useMarketNewsDigest', () => ({
     useMarketNewsDigest: vi.fn(),

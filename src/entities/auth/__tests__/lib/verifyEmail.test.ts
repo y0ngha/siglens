@@ -1,8 +1,8 @@
-import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
-import type { VerifyEmailDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from '@/entities/auth/lib/authUseCaseConstants';
+import type { VerifyEmailDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
+import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,

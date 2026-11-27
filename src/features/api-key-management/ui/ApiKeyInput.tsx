@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, type Ref } from 'react';
 import { useTranslations } from 'next-intl';
-
+import { useState, type Ref } from 'react';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
 
 interface ApiKeyInputProps {

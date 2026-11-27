@@ -1,8 +1,8 @@
-import koMessages from '../../../messages/ko.json';
+import type { Locale } from '@/shared/i18n/locales';
 import enMessages from '../../../messages/en.json';
 import jaMessages from '../../../messages/ja.json';
+import koMessages from '../../../messages/ko.json';
 import zhMessages from '../../../messages/zh.json';
-import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * 로케일별 실제 메시지 카탈로그. 테스트 헬퍼(번역자·프로바이더·요청 설정)가

@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { useNavMenuDisclosure } from './hooks/useNavMenuDisclosure';
 import { NavMenuPanel } from './ui/nav/NavMenuPanel';
 import { NavMenuTrigger } from './ui/nav/NavMenuTrigger';

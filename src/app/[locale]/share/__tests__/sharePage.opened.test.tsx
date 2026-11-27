@@ -27,7 +27,6 @@ vi.mock('@/features/visitor-ping/ui/ShareOpenedPing', () => ({
  * (`sharePage.notFound.test.tsx`) 이 비콘이 아예 렌더되지 않는다.
  */
 import type { ReactElement, ReactNode } from 'react';
-
 import SharePage from '@/app/[locale]/share/[id]/page';
 import { ShareOpenedPing } from '@/features/visitor-ping/ui/ShareOpenedPing';
 

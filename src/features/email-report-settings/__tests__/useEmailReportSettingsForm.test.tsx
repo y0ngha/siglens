@@ -1,10 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ChangeEvent } from 'react';
+import type { EmailReportSettingsView } from '@/entities/email-report/model';
 import {
     type SaveMutation,
     useEmailReportSettingsForm,
 } from '@/features/email-report-settings/hooks/useEmailReportSettingsForm';
-import type { EmailReportSettingsView } from '@/entities/email-report/model';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 
 vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({

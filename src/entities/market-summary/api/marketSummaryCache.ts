@@ -1,15 +1,15 @@
 import 'server-only';
-import { cache } from 'react';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     type MarketDataProvider,
     type MarketSummaryData,
     type Timeframe,
     getMarketSummary,
 } from '@y0ngha/siglens-core';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { cache } from 'react';
 import { dashboardCacheTtlSeconds } from '@/shared/api/market/dashboardCacheTtl';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { shouldCacheMarketSummary } from '../lib/shouldCacheMarketSummary';
 
 /**

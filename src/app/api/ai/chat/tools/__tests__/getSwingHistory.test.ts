@@ -30,10 +30,9 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { isRecord } from '@/shared/lib/isRecord';
 import { getSwingHistoryTool } from '@/app/api/ai/chat/tools/getSwingHistory';
 import { SWING_HISTORY_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import { isRecord } from '@/shared/lib/isRecord';
 
 const ctx = {
     userId: 'u',

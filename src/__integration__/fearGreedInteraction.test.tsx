@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { FearGreedHero } from '@/widgets/fear-greed/FearGreedHero';
-import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
+import { FearGreedHero } from '@/widgets/fear-greed/FearGreedHero';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

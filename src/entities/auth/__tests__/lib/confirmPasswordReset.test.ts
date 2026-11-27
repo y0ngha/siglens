@@ -1,5 +1,6 @@
-import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
+import { PASSWORD_RESET_RATE_LIMITS } from '@/entities/auth/lib/authUseCaseConstants';
 import type { ConfirmPasswordResetDependencies } from '@/entities/auth/lib/authUseCaseTypes';
+import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type {
     EmailTokenPurpose,
@@ -7,7 +8,6 @@ import type {
 } from '@/entities/email-token/types';
 import type { EmailAuthUserRecord } from '@/shared/db/types';
 import { createFakeFixedWindowLimiter } from '@/shared/test-utils/fakeFixedWindowLimiter';
-import { PASSWORD_RESET_RATE_LIMITS } from '@/entities/auth/lib/authUseCaseConstants';
 
 const IP_HASH = 'iphash';
 const EMAIL_HASH = hashEmailToken('user@example.com');

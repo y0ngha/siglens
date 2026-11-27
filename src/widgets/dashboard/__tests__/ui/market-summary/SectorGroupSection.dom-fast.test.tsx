@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import type { MarketSectorData } from '@y0ngha/siglens-core';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { SectorGroupSection } from '@/widgets/dashboard/ui/market-summary/SectorGroupSection';
 import { sectorGridClass } from '@/widgets/dashboard/utils/marketGridClasses';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { TEST_SCOPE } from '../../helpers/testScope';
 
 function sector(symbol: string): MarketSectorData {

@@ -1,11 +1,11 @@
 import {
-    buildTranslationIndex,
-    ContentTranslations,
-} from '@/shared/db/contentTranslations';
-import {
     CONTENT_FIELD,
     TRANSLATION_SOURCE,
 } from '@/shared/db/contentTranslationFields';
+import {
+    buildTranslationIndex,
+    ContentTranslations,
+} from '@/shared/db/contentTranslations';
 
 describe('ContentTranslations.resolve', () => {
     /** 원본 `*_ko` 컬럼은 백필 전 임시 소스다 — 파이프라인 결과가 최신이다. */

@@ -1,6 +1,6 @@
+import { runDartCorpCodeIngest } from '@/entities/investor-flows/server/ingestDartCorpCode';
 import { DART_CRON_LEASE_NAME, handleLeasedCron } from '../leasedCron';
 import { createDartCorpCodeDeps } from './createDeps';
-import { runDartCorpCodeIngest } from '@/entities/investor-flows/server/ingestDartCorpCode';
 
 /**
  * 시간 예산(SERVER.md#CC-7): 실행은 요청 하나라 수집기가 마감을 보지 않는다(`handleLeasedCron`이 요구하는 값일 뿐이다). 요청 최악

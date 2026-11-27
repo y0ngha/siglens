@@ -90,12 +90,12 @@ vi.mock('@/entities/auth/server/getCurrentUser', () => ({
 import { runOverallAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { executeOverallAnalysis } from '@/entities/analysis/server/overallAnalysisRunner';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
-import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import {
     getNextEarningsReport,
     listEarningsDates,
 } from '@/entities/earnings-report/api';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 
 const mockRun = vi.mocked(runOverallAnalysis);
 const BYOK_MODEL = 'claude-opus-5' as ModelId;

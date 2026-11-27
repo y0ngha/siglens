@@ -5,13 +5,13 @@ import {
     isUsTradingDay,
     usMarketCloseMinute,
 } from '@y0ngha/siglens-core';
-import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     MINUTES_PER_HOUR,
     MS_PER_DAY,
     MS_PER_HOUR,
     MS_PER_MINUTE,
 } from '@/shared/config/time';
+import { getEasternOffsetHours } from '@/shared/lib/eastern';
 
 /**
  * 미국 주식 **확장 세션**(프리·애프터마켓)의 시계 — 세션 경계와 ET 날짜 산술의 **단일 출처**.

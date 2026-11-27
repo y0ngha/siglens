@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
-import { MarketFearGreedFootnote } from '@/widgets/market-fear-greed/ui/footer/MarketFearGreedFootnote';
 import koMessages from '@/../messages/ko.json';
+import { MarketFearGreedFootnote } from '@/widgets/market-fear-greed/ui/footer/MarketFearGreedFootnote';
 
 const PAGE = koMessages.widgets['market-fear-greed'].page;
 

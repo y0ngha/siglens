@@ -1,5 +1,6 @@
 'use client';
 
+import type { ModelId } from '@y0ngha/siglens-core';
 import {
     startTransition,
     useCallback,
@@ -8,7 +9,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import type { ModelId } from '@y0ngha/siglens-core';
 import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import {
     migrateLegacyAnalysisModel,

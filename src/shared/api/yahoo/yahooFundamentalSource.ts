@@ -1,13 +1,13 @@
 import 'server-only';
-import { getYahooClient } from './createYahooClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getYahooClient } from './createYahooClient';
 import {
     getYahooBalanceSheet,
     getYahooIncomeStatement,
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 

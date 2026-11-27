@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 
 const SAMPLE_PEERS: FundamentalPeerInput[] = [
     {

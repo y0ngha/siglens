@@ -63,16 +63,15 @@ vi.mock('../upstashRest.mjs', () => ({
     expireKey,
 }));
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-
 import { createRequire } from 'node:module';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import CacheHandler, {
     collectTags,
     isImmediateExpiry,
     __resetForTests as resetHandler,
 } from '../index.mjs';
-import { _resetForTest, markRevalidated } from '../tagStore.mjs';
 import { __resetForTests as resetPageMem } from '../pageMemStore.mjs';
+import { _resetForTest, markRevalidated } from '../tagStore.mjs';
 import {
     drainUploads,
     pendingEntry,

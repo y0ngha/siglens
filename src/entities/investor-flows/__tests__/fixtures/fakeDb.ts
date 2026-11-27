@@ -1,5 +1,5 @@
-import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 /** 체인 한 번(예: `insert(t).values(v).onConflictDoUpdate(c).returning(r)`)에서 불린 메서드 기록. */

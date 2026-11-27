@@ -1,8 +1,8 @@
 'use client';
 
 import { useActionState } from 'react';
-import { finalizeOAuthSignupAction } from '../actions/finalizeOAuthSignupAction';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
+import { finalizeOAuthSignupAction } from '../actions/finalizeOAuthSignupAction';
 
 const INITIAL_STATE: FinalizeOAuthSignupState = {};
 

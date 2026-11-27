@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { CalendarImpact } from '@y0ngha/siglens-core';
-import type { CalendarGridEvent } from '@/widgets/economy/model/calendarTypes';
 import { useCalendarSelection } from '@/widgets/economy/hooks/useCalendarSelection';
+import type { CalendarGridEvent } from '@/widgets/economy/model/calendarTypes';
 import { groupEventsByKstDay } from '@/widgets/economy/utils/calendarGrouping';
 
 const ev = (date: string): CalendarGridEvent => ({

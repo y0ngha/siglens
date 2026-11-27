@@ -23,13 +23,13 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 }));
 
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
-import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
-import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 // 페이지는 파일 상단에서 정적으로 import한다. 테스트 안에서 `await import`로 불러오면
 // 페이지 모듈 그래프 전체의 평가(로컬 약 0.6초)가 테스트 타임아웃(5초) 안에 잡혀,
 // CI 샤드가 붐빌 때 시간 초과로 깨질 수 있다. 상단 import는 수집 단계에서 평가된다.
 import EconomyPage from '@/app/[locale]/economy/page';
+import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
+import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
+import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 
 describe('EconomyContent 로더 출발 순서', () => {
     afterEach(() => {

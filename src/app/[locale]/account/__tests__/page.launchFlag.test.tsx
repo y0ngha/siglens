@@ -43,9 +43,9 @@ vi.mock('@/shared/ui/LocaleLink', () => ({ LocaleLink: () => null }));
 
 import { NextIntlClientProvider } from 'next-intl';
 import { renderToReadableStream } from 'react-dom/server';
-import ko from '../../../../../messages/ko.json';
 import AccountPage from '@/app/[locale]/account/page';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import ko from '../../../../../messages/ko.json';
 
 /**
  * 본문(`AccountContent`)을 끝나지 않는 세션 조회로 붙잡아 Suspense fallback(`AccountContentSkeleton`)만

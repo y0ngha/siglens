@@ -1,8 +1,8 @@
+import type { InsiderTransaction } from '@y0ngha/siglens-core';
 /**
  * 점수 창 밖 내부자 거래 묶음 — 제목(어느 쪽 밖인지)·"요약에 세지 않음" 안내·거래 목록.
  */
 import { useTranslations } from 'next-intl';
-import type { InsiderTransaction } from '@y0ngha/siglens-core';
 import { TradeRecords } from './TradeRecords';
 
 interface OutsideWindowGroupProps {

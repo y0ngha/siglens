@@ -26,10 +26,9 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
+import React from 'react';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import {
     KR_CATEGORY_IDS,

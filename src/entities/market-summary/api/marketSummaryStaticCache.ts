@@ -1,19 +1,19 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
-import {
-    getCachedMarketSummary,
-    marketSummaryConfigFingerprint,
-} from './marketSummaryCache';
+import { unstable_cache } from 'next/cache';
 import {
     marketDataProviderFor,
     scopeUsesFmp,
 } from '@/shared/api/market/getMarketDataProvider';
+import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
-import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
 import { hasAnyQuote } from '../lib/marketSummaryCompleteness';
 import { hasMissingIndexQuote } from '../lib/shouldCacheMarketSummary';
+import {
+    getCachedMarketSummary,
+    marketSummaryConfigFingerprint,
+} from './marketSummaryCache';
 
 /**
  * `getMarketSummaryStatic`의 시장별 캐시 태그. 한국 시세를 무효화하려고 미국까지

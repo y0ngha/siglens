@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { StatementTable } from '@/widgets/financials/sections/StatementTable';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
+import { StatementTable } from '@/widgets/financials/sections/StatementTable';
 
 const BASE_PROPS = {
     columns: ['2022', '2023', '2024'],

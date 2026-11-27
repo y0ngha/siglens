@@ -1,8 +1,8 @@
+import type { FinancialSignal } from '@y0ngha/siglens-core';
 /**
  * 축 카드의 신호 칩 — 방향별 색과 종류별 번역 라벨.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialSignal } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SIGNAL_CHIP_CLASS, SIGNAL_LABEL_KEY } from '../../utils/signalDisplay';
 

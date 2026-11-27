@@ -1,12 +1,12 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSyncExternalStore } from 'react';
+import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/shared/lib/options/marketHoursDisplay';
-import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
 
 /**
  * 구독할 변화가 없다 — EDT/EST는 계절 단위로만 바뀐다. 화면이 열린 채 경계를 넘으면

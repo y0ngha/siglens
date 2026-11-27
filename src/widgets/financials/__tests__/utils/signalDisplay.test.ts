@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import type { FinancialSignalType } from '@y0ngha/siglens-core';
-import koMessages from '../../../../../messages/ko.json';
-import enMessages from '../../../../../messages/en.json';
-import jaMessages from '../../../../../messages/ja.json';
-import zhMessages from '../../../../../messages/zh.json';
+import { describe, expect, it } from 'vitest';
 import {
     SIGNAL_CHIP_CLASS,
     SIGNAL_LABEL_KEY,
 } from '@/widgets/financials/utils/signalDisplay';
+import enMessages from '../../../../../messages/en.json';
+import jaMessages from '../../../../../messages/ja.json';
+import koMessages from '../../../../../messages/ko.json';
+import zhMessages from '../../../../../messages/zh.json';
 
 /** core가 신호 종류별로 내려 주는 `labelKo` — ko 번역은 이 값과 같아야 화면이 달라지지 않는다. */
 const CORE_LABEL_KO: Record<FinancialSignalType, string> = {

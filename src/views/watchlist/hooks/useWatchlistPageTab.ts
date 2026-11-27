@@ -1,14 +1,14 @@
 'use client';
 
 import {
-    usePickUntilPopstate,
-    useUrlSearchParam,
-} from '@/shared/hooks/useUrlSearchParam';
-import {
     tabFromParam,
     WATCHLIST_TAB_PARAM,
     type WatchlistPreviewTab,
 } from '@/features/watchlist/lib/watchlistTabs';
+import {
+    usePickUntilPopstate,
+    useUrlSearchParam,
+} from '@/shared/hooks/useUrlSearchParam';
 import { hrefWithWatchlistTab } from '../lib/watchlistTabUrl';
 
 /**

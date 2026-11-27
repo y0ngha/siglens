@@ -1,20 +1,20 @@
+import type { BalanceSheetRow } from '@y0ngha/siglens-core';
 /**
  * 재무상태표 섹션 — 자산·부채·자본 추세 차트와 전체 지표 표.
  */
 import { useTranslations } from 'next-intl';
-import type { BalanceSheetRow } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { NetDebtTooltip } from '../financialsTooltips';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { StatementSectionFrame } from '../ui/statement-section/StatementSectionFrame';
-import { TrendAndTable } from './TrendAndTable';
+import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
+import { statementColumnLabel } from '../utils/statementColumnLabel';
 import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from '../utils/statementCurrency';
 import { toDisplayOrder } from '../utils/toDisplayOrder';
-import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
-import { statementColumnLabel } from '../utils/statementColumnLabel';
+import { TrendAndTable } from './TrendAndTable';
 
 interface BalanceSheetSectionProps {
     rows: BalanceSheetRow[];

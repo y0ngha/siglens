@@ -1,16 +1,16 @@
-import { useTranslations } from 'next-intl';
 import type { SkillCounts } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { GUIDE_CATEGORIES, type GuideCategory } from '@/entities/guide/types';
-import { StatsBar } from '@/widgets/home/StatsBar';
+import { cn } from '@/shared/lib/cn';
 import { guideCategoryPath, GUIDE_PATH } from '@/shared/lib/guidePaths';
 import { LINK_ACCENT } from '@/shared/lib/linkStyles';
-import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { StatsBar } from '@/widgets/home/StatsBar';
 
 const HEADING_ID = 'home-method-band-heading';
 

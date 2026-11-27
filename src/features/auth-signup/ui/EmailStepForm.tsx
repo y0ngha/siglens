@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { TextField } from '@/shared/ui/TextField';
-import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import type { EmailStepModel } from '../hooks/useSignupFlow';
 import { SIGNUP_FIELD_ID } from '../lib/signupPhase';
 

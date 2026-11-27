@@ -5,8 +5,9 @@ import { getTranslations } from 'next-intl/server';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
-import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import { CALENDAR_COUNTRY_KR } from '@/entities/economy/lib/economyCalendarConstants';
+import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { buildFaqJsonLd } from '@/shared/lib/seo';
@@ -20,7 +21,6 @@ import { buildEconomyKrFaq } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
 import { economyKrDescription, economyKrTitle } from '../constants';
 import { KrEconomyContent } from './_components/KrEconomyContent';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고, 신선도는 캘린더 인제스션의
 // `revalidateTag('economy:calendar')`가 책임진다. 시간 기반은 상한만 정한다.

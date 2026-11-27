@@ -1,12 +1,13 @@
 'use server';
 
-import { getTranslations } from 'next-intl/server';
 import {
     peekMarketNewsDigestCache,
     runMarketNewsDigest,
     type RunMarketNewsDigestResult,
     type SubmitMarketNewsDigestOptions,
 } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     readLatestMarketNewsDigest,
@@ -25,7 +26,6 @@ import {
     DIGEST_REASONING,
 } from '../lib/marketNewsConstants';
 import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * runMarketNewsDigest를 부르고, 실제로 생성됐으면(`done`) 마지막 생성본으로 남긴다.

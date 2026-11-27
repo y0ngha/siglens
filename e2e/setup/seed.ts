@@ -1,10 +1,10 @@
 import { like } from 'drizzle-orm';
 import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
-import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
-import { addUtcIsoDays } from '@/shared/lib/isoDate';
+import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
+import { makeFakeItems } from '@/entities/market-news/api/FakeMarketNewsClient';
+import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news/lib/categoryConfig';
 import { getDatabaseClient } from '@/shared/db/client';
-import { seedGuide } from '../../db/scripts/seedGuide';
 import {
     assetTranslations,
     cryptoAssets,
@@ -15,8 +15,8 @@ import {
     terms,
     users,
 } from '@/shared/db/schema';
-import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news/lib/categoryConfig';
-import { makeFakeItems } from '@/entities/market-news/api/FakeMarketNewsClient';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
+import { seedGuide } from '../../db/scripts/seedGuide';
 import {
     AUTH_USER_EMAIL,
     AUTH_USER_NAME,

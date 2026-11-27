@@ -4,7 +4,6 @@ vi.mock('next/navigation', () => ({
 
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { useSearchOverlay } from '@/features/ticker-search/hooks/useSearchOverlay';
 
 const pathnameRef = { current: '/NVDA' };

@@ -2,13 +2,14 @@ import type { AssembledPromptRecord } from '@y0ngha/siglens-core';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
-import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     resolveReasoning,
     resolveTierAndByok,
@@ -47,7 +48,6 @@ import { loadTechnicalPromptInputs } from './technicalPromptInputs';
 import { toClientWork } from './toClientWork';
 import type { TechnicalParams } from './types';
 import { withDeadline } from './withDeadline';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 하루 무료 공개 미터의 신규 기록 해제 함수를 바깥 catch까지 들고 가는 칸. */
 interface MeterReleaseHolder {

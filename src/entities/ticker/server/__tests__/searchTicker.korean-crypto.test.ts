@@ -24,12 +24,12 @@ vi.mock('../koreanTranslator', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { TickerSearchResult } from '@/shared/lib/types';
 import {
     searchTicker,
     _resetInFlightTranslationsForTest,
     MAX_SEARCH_RESULTS,
 } from '../searchTicker';
-import type { TickerSearchResult } from '@/shared/lib/types';
 
 function stockResult(symbol: string, koreanName: string): TickerSearchResult {
     return {

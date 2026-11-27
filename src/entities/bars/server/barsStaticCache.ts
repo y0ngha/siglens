@@ -1,13 +1,13 @@
+import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
-import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
-import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { quantizeBarsDataToLastClosed } from '../lib/quantizeBars';
 import { toSeedBarsData } from '../lib/seedBars';
 import { loadBarsData } from './loadBarsData';

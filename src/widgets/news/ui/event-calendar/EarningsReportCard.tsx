@@ -4,9 +4,9 @@
  * 실적 발표 한 건의 카드 — 발표일(확정된 다음 실적은 발표 시간대 포함), 상태 라벨, 서프라이즈 배지, EPS·매출 막대.
  */
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import {
     formatCurrency,
     formatRevenue,

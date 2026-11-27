@@ -1,17 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-
+import { useState } from 'react';
 import type { LlmProvider } from '@/shared/config/llmProviders';
-import { cn } from '@/shared/lib/cn';
 import {
     BUTTON_GHOST,
     BUTTON_OUTLINE,
     BUTTON_OUTLINE_DANGER,
 } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-
 import { useApiKeyForms } from '../hooks/useApiKeyForms';
 import { useProviderCardFocus } from '../hooks/useProviderCardFocus';
 import { ApiKeyInput } from './ApiKeyInput';

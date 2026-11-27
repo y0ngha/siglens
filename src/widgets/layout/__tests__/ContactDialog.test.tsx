@@ -19,9 +19,8 @@ vi.mock('@/shared/lib/cn', () => ({
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
-
-import { ContactDialog } from '../ContactDialog';
 import { useDialog } from '@/shared/hooks/useDialog';
+import { ContactDialog } from '../ContactDialog';
 
 /**
  * useDialog를 mock한 테스트용 dialogRef.

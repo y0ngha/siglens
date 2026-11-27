@@ -1,19 +1,19 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { useSkillLabel } from '@/shared/i18n/skillLabel';
-import { useReadingRenderContext } from '@/widgets/analysis/hooks/useReadingRenderContext';
-import { renderCycleReading } from '@/widgets/analysis/utils/renderIndicatorReading';
-import { SnapshotSummarySection } from '../SnapshotSummarySection';
-import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../utils/liveAnalysisCrossRef';
 import { readSnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
-import { cn } from '@/shared/lib/cn';
-import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
-import { LocaleLink } from '@/shared/ui/LocaleLink';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import {
     TREND_LABEL_KEY,
     narrowTechnicalContent,
 } from '@/entities/seo-snapshot/lib/technicalContent';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
+import { cn } from '@/shared/lib/cn';
+import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
+import { useReadingRenderContext } from '@/widgets/analysis/hooks/useReadingRenderContext';
+import { renderCycleReading } from '@/widgets/analysis/utils/renderIndicatorReading';
+import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../utils/liveAnalysisCrossRef';
 
 interface TechnicalSnapshotProseProps {
     /**

@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { OptionsSignal } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { SignalBadge } from './SignalBadge';

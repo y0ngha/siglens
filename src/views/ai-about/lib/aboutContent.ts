@@ -6,14 +6,14 @@ import 'server-only';
 import { getTranslations } from 'next-intl/server';
 import type { AiSeoCopy } from '@/shared/config/aiHost';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import type { FaqItem } from '@/shared/lib/seo';
-import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/utils/guestTurnLimit';
 import {
     parseReplayLine,
     type ReplayLine,
     type ReplayScenario,
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
+import type { FaqItem } from '@/shared/lib/seo';
+import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/utils/guestTurnLimit';
 
 /** The `views.ai-about` translator the builders below read from. */
 export type AboutT = Awaited<ReturnType<typeof getTranslations>>;

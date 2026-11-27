@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 /**
  * 실제 훅·섹션을 렌더해 분기 토글의 중복 요청 방지와 실패 안내를 사용자 흐름으로 확인한다.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 import { FinancialsStatements } from '../FinancialsStatements';
 
 const { mockGetFinancialsQuarterAction } = vi.hoisted(() => ({

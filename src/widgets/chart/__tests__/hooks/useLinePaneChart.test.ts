@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useLinePaneChart } from '../../hooks/useLinePaneChart';
-import { INACTIVE_PANE_INDEX } from '../../constants';
-import type { LinePaneSpec } from '../../model/linePaneSpecs';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { INACTIVE_PANE_INDEX } from '../../constants';
+import { useLinePaneChart } from '../../hooks/useLinePaneChart';
+import type { LinePaneSpec } from '../../model/linePaneSpecs';
 import { buildSeriesDataFromValues } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();

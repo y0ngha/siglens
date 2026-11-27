@@ -1,8 +1,8 @@
+import type { SignalType } from '@y0ngha/siglens-core';
 /**
  * 신호 종류를 로케일 라벨로 보여 주는 배지.
  */
 import { useTranslations } from 'next-intl';
-import type { SignalType } from '@y0ngha/siglens-core';
 
 /**
  * 신호 라벨 **키**. 번역은 렌더 시점에 로케일 카탈로그에서 찾는다 — 한국어 문자열을

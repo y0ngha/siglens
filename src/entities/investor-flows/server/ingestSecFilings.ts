@@ -1,6 +1,6 @@
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { FilingsPruneResult } from '../api/investorFlowsFilingsRepository';
 import { addDays, eachDate, isWeekend } from '../lib/investorFlowsDates';
-import { deriveFilingsStatus } from '../lib/investorFlowsReadiness';
 import {
     INVESTOR_FLOWS_FAILED_BACKLOG_ALERT,
     INVESTOR_FLOWS_REVALIDATE_CAP,
@@ -9,8 +9,8 @@ import {
     INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../lib/investorFlowsPolicy';
+import { deriveFilingsStatus } from '../lib/investorFlowsReadiness';
 import { selectIndexTargets } from '../lib/offeringIndex';
-import { parseSecFormIndex } from '../lib/secFormIndex';
 import {
     INDEX_FORMS,
     filingsPruneCutoffs,
@@ -18,18 +18,18 @@ import {
     planRetries,
     secFilingsStartDate,
 } from '../lib/secFilingsPlan';
-import type { FilingsPruneResult } from '../api/investorFlowsFilingsRepository';
+import { parseSecFormIndex } from '../lib/secFormIndex';
+import type {
+    IngestSecFilingsDeps,
+    IngestSecFilingsResult,
+    RunState,
+} from './ingestSecFilingsTypes';
 import {
     DeadlineSignal,
     SecBlockedSignal,
     persist,
     runDocumentJobs,
 } from './secDocumentJobs';
-import type {
-    IngestSecFilingsDeps,
-    IngestSecFilingsResult,
-    RunState,
-} from './ingestSecFilingsTypes';
 
 /** 한 실행에서 날짜 순회와 별개로 다시 시도하는 실패 문서 수. */
 const SEC_FILINGS_RETRY_BATCH_SIZE = 50;

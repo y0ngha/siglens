@@ -1,14 +1,14 @@
 'use client';
 
-/**
- * 추세선 한 줄 — 방향 라벨·색 점과 시작→끝 가격.
- */
-import { useTranslations } from 'next-intl';
 import type {
     KrxTickTable,
     Trendline,
     TrendlineDirection,
 } from '@y0ngha/siglens-core';
+/**
+ * 추세선 한 줄 — 방향 라벨·색 점과 시작→끝 가격.
+ */
+import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';
 import { cn } from '@/shared/lib/cn';

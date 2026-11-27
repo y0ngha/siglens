@@ -21,10 +21,9 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import React from 'react';
 import { vi, describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
-
 import { HeaderNavMenu } from '../HeaderNavMenu';
 import { NAV_TREE } from '../utils/headerNavTree';
 

@@ -72,12 +72,12 @@ import type {
     KeyedEmailDispatcher,
     KeyedEmailOutcome,
 } from '@/shared/email/types';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import {
     PLANTED_EMAIL,
     PLANTED_TOKEN,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import type { AlertSourceDeps } from '../collectAlertSources';
 import {
     MAIL_ALERT_DEADLINE_MS,

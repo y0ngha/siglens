@@ -10,14 +10,13 @@ vi.mock('next/og', () => ({
 }));
 
 import type { Bar } from '@y0ngha/siglens-core';
-import type { ChartDrawingSource } from '@/entities/analysis/lib/narrowChartDrawings';
 import type { ReactElement, ReactNode } from 'react';
-
-import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
+import type { ChartDrawingSource } from '@/entities/analysis/lib/narrowChartDrawings';
 import {
     REPORT_CHART_GUTTER_WIDTH,
     REPORT_CHART_WIDTH,
 } from '@/entities/email-report/lib/reportChartLayout';
+import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 
 const DAY = 86_400;
 const T0 = 1_790_000_000;

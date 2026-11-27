@@ -1,29 +1,29 @@
 'use client';
 
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { Suspense } from 'react';
+import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { useSelectedLayoutSegment } from 'next/navigation';
+import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { SymbolTabs } from './SymbolTabs';
-import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { canReceiveSymbolAlerts } from '@/features/mail-alert/lib/canReceiveSymbolAlerts';
+import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import type { AssetInfo } from '@/shared/lib/types';
 import { FearGreedHeaderChip } from './FearGreedHeaderChip';
-import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
-import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import {
-    subTabOfSegment,
-    type SymbolSubTabKey,
-} from './utils/symbolTabsConfig';
-import { resolveHeaderDisplayName } from './utils/headerDisplayName';
+import { SymbolTabs } from './SymbolTabs';
+import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { SymbolBreadcrumb } from './ui/header/SymbolBreadcrumb';
 import {
     SymbolHeaderControls,
     type MailAlertSlot,
 } from './ui/header/SymbolHeaderControls';
-import { canReceiveSymbolAlerts } from '@/features/mail-alert/lib/canReceiveSymbolAlerts';
+import { resolveHeaderDisplayName } from './utils/headerDisplayName';
+import {
+    subTabOfSegment,
+    type SymbolSubTabKey,
+} from './utils/symbolTabsConfig';
 
 /** 자산 정보가 아직 없으면(`undefined`) 자리만 잡고, 알면 버튼을 두거나 두지 않는다. */
 function mailAlertSlotFor(

@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { loadGuideCatalog } from '@/entities/guide/api';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { guideCategoryPath } from '@/shared/lib/guidePaths';
+import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { GuideCategoryPage } from '@/views/guide/GuideCategoryPage';
 import {
     countGuideHubEntries,
@@ -11,11 +16,6 @@ import {
     buildGuideBreadcrumbJsonLd,
     buildGuideCollectionJsonLd,
 } from '@/views/guide/lib/guideJsonLd';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { guideCategoryPath } from '@/shared/lib/guidePaths';
-import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     entriesInCategory,
     renderGuideUnavailable,

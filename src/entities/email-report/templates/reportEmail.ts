@@ -1,6 +1,6 @@
 import type { EmailMessage } from '@/shared/email/types';
-import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { brandName } from '@/shared/lib/brandName';
+import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { briefTableHtml, briefTableLines } from './briefTable';
 import {
     formatConsentAt,

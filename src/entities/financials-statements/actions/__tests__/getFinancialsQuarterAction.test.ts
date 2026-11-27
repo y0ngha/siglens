@@ -10,8 +10,8 @@ vi.mock(
     })
 );
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getFinancialsQuarterAction } from '@/entities/financials-statements/actions/getFinancialsQuarterAction';
 
 const SNAPSHOT = {

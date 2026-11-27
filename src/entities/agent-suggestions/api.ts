@@ -5,10 +5,10 @@ import {
     parseSuggestions,
     type SuggestionHeadline,
 } from '@y0ngha/siglens-core';
-import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import { getAgentProvider } from '@/entities/llm-provider/api/agent/getAgentProvider';
-import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
+import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
+import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';

@@ -1,5 +1,5 @@
-import path from 'path';
 import { glob } from 'glob';
+import path from 'path';
 import { describe, expect, it } from 'vitest';
 import { parseSeedFile, validateSeedFiles } from '@/../db/scripts/seedTerms';
 

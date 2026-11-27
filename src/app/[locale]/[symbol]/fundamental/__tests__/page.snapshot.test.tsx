@@ -139,17 +139,17 @@ vi.mock('react-error-boundary', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { FundamentalDegraded } from '@/app/[locale]/[symbol]/fundamental/FundamentalDegraded';
+import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { FundamentalFactsCard } from '@/widgets/fundamental/sections/FundamentalFactsCard';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
-import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetProfileResilient = vi.mocked(getProfileResilient);

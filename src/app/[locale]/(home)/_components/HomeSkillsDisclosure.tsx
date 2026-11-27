@@ -1,8 +1,8 @@
-import type { HomeSkillItem } from '@/widgets/home/utils/toSkillShowcaseItems';
-import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';
+import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
+import type { HomeSkillItem } from '@/widgets/home/utils/toSkillShowcaseItems';
 
 interface HomeSkillsDisclosureProps {
     /** 닫힌 상태에서 보이는 한 줄("분석 기법 N개 보기"). 페이지가 번역해 넘긴다. */

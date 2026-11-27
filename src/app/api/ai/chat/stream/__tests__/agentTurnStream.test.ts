@@ -39,18 +39,17 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
-import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { AgentTurnError } from '@/app/api/ai/chat/agentEventStream';
 import {
     agentTurnStream,
     appendOrNotFound,
     type AgentTurnStreamParams,
 } from '@/app/api/ai/chat/stream/_lib/agentTurnStream';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import type { ReadyTurn } from '@/app/api/ai/chat/stream/_lib/prepareTurn';
 import type { TurnSlot } from '@/app/api/ai/chat/stream/_lib/turnSlots';
+import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
+import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 
 const OK_TURN = {
     ok: true,

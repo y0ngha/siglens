@@ -1,11 +1,11 @@
-import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import {
     isNewsSentiment,
     sentimentLabel,
     SENTIMENT_CLASS,
 } from '@/shared/lib/sentimentDisplay';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 // t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 호출에 재사용한다.

@@ -3,11 +3,11 @@ import {
     getSubmissionError,
     resolveEmailDefault,
 } from '@/features/contact-form/lib/contactFormUtils';
-import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/shared/config/contact';
+import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 
 /** 실제 번역 카탈로그 대신 키와 값을 그대로 드러내는 스텁 — 어떤 키·값이 넘어갔는지 검증한다. */
 const fakeT = (key: string, values?: Record<string, number>): string =>

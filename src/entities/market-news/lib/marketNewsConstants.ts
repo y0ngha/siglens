@@ -1,5 +1,5 @@
-import { MS_PER_DAY } from '@/shared/config/time';
 import type { ModelId } from '@y0ngha/siglens-core';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 /** 카테고리 피드의 표시 lookback 창(일). 시장 뉴스는 빨리 바뀌므로 ms 계산과 UI 문구가 이 값 하나를 쓴다. */
 export const MARKET_NEWS_LOOKBACK_DAYS = 7;

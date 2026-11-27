@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { buildManifest } from '@/shared/lib/buildManifest';
 import { LOCALES, resolveLocale } from '@/shared/i18n/locales';
+import { buildManifest } from '@/shared/lib/buildManifest';
 
 /** 로케일별 매니페스트는 정적으로 굽는다 — 요청마다 만들 이유가 없다. */
 export function generateStaticParams() {

@@ -24,11 +24,10 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 
-import { koMessage } from '@/shared/test-utils/koMessage';
-import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
-
+import React from 'react';
+import { koMessage } from '@/shared/test-utils/koMessage';
 import { HeaderNav } from '../HeaderNav';
 import { NAV_TREE } from '../utils/headerNavTree';
 

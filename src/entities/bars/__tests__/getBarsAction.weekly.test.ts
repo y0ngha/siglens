@@ -24,8 +24,8 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Bar, MarketDataProvider } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
 import { __resetBarsMemoryForTests } from '../server/barsDataCache';
 

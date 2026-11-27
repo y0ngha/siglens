@@ -4,17 +4,17 @@
  * 시장 브리핑을 SSE로 불러오고, 서버 seed·실패 분기를 하나의 입력 상태로 합친다.
  */
 import { useQuery } from '@tanstack/react-query';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type {
     MarketBriefingResponse,
     RunBriefingResult,
 } from '@y0ngha/siglens-core';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
-import { useHydrated } from '@/shared/hooks/useHydrated';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 export interface UseMarketBriefingReturn {
     /**

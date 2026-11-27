@@ -1,5 +1,5 @@
-import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
+import { countSkillsByType } from '@/shared/lib/skillUtils';
 
 function makeSkill(type: SkillType | null): SkillShowcaseItem {
     return {

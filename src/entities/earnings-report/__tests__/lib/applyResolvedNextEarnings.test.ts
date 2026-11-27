@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import type { ResolvedNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import { applyResolvedNextEarnings } from '@/entities/earnings-report/lib/applyResolvedNextEarnings';
 

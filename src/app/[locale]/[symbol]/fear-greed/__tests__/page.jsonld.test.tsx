@@ -52,13 +52,13 @@ vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
-import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { sessionCloseUtcOnDate } from '@/shared/lib/marketSessionDate';
+import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
+import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { sessionCloseUtcOnDate } from '@/shared/lib/marketSessionDate';
 
 const ASSET = {
     assetInfo: { symbol: 'AAPL', name: 'Apple Inc.', fmpSymbol: 'AAPL' },

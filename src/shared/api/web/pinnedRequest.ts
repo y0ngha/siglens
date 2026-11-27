@@ -1,8 +1,8 @@
 import 'server-only';
+import type { LookupAddress } from 'node:dns';
 import { lookup as resolveAll } from 'node:dns/promises';
 import http from 'node:http';
 import https from 'node:https';
-import type { LookupAddress } from 'node:dns';
 import { pipeline, Readable } from 'node:stream';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 import { isBlockedAddress } from '@/shared/api/web/ipGuard';

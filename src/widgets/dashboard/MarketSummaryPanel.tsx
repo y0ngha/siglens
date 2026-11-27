@@ -1,14 +1,14 @@
 'use client';
 
-/**
- * 시장 요약 패널 — 지수·섹터 그룹 카드와 AI 브리핑, 데이터 조회 실패 안내를 조립한다.
- */
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import type {
     MarketBriefingResponse,
     MarketSectorData,
 } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+/**
+ * 시장 요약 패널 — 지수·섹터 그룹 카드와 AI 브리핑, 데이터 조회 실패 안내를 조립한다.
+ */
+import { useState } from 'react';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

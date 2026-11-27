@@ -1,8 +1,8 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { SymbolModelProvider } from '@/features/symbol-model/model/SymbolModelContext';
 import { ShareableAnalysisProvider } from '@/features/share/model/ShareableAnalysisContext';
+import { SymbolModelProvider } from '@/features/symbol-model/model/SymbolModelContext';
 import { ModelFallbackNoticeHost } from '@/features/symbol-model/ui/ModelFallbackNoticeHost';
 
 interface SymbolLayoutProvidersProps {

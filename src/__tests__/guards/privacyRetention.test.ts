@@ -1,11 +1,23 @@
 vi.mock('server-only', () => ({}));
 
-import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+import {
+    UNIT_SECONDS,
+    bulletsOf,
+    extractTokens,
+    findIssues,
+    type Entry,
+    type Place,
+    type Policies,
+    type Unbacked,
+} from '@/__tests__/guards/support/privacyRetention';
 import { DELIVERY_RETENTION_MS } from '@/app/api/cron/email-report/runEmailReportBatch';
-import { OAUTH_STATE_TTL_SECONDS } from '@/features/auth-oauth/lib/state';
-import { HANDOFF_STATE_TTL_SECONDS } from '@/entities/auth/server/handoffStore';
+import {
+    PROMPT_DYNAMIC_RETENTION_DAYS,
+    RESULT_RETENTION_DAYS,
+} from '@/entities/analysis/analysisHistoryRepository';
 import {
     EMAIL_VERIFICATION_PENDING_TTL_SECONDS,
     EMAIL_VERIFICATION_RATE_LIMITS,
@@ -14,6 +26,7 @@ import {
     PASSWORD_RESET_RATE_LIMITS,
 } from '@/entities/auth/lib/authUseCaseConstants';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { HANDOFF_STATE_TTL_SECONDS } from '@/entities/auth/server/handoffStore';
 import { FEEDBACK_RETENTION_DAYS } from '@/entities/feedback/lib/constants';
 import { FEEDBACK_RATE_WINDOW_SECONDS } from '@/entities/feedback/server/rateLimit';
 import {
@@ -25,31 +38,18 @@ import {
     PRICE_ALERT_FIRED_RETENTION_DAYS,
     PRICE_ALERT_RATE_LIMIT,
 } from '@/entities/mail-alert/lib/priceAlertConstants';
-import {
-    PROMPT_DYNAMIC_RETENTION_DAYS,
-    RESULT_RETENTION_DAYS,
-} from '@/entities/analysis/analysisHistoryRepository';
 import { windowId } from '@/entities/siglens-api-key/lib/rateLimitWindow';
+import { OAUTH_STATE_TTL_SECONDS } from '@/features/auth-oauth/lib/state';
+import { WEB_SEARCH_RETENTION_DAYS } from '@/shared/api/web/webSearchResult';
 import { AI_SSO_PROBED_MAX_AGE_SECONDS } from '@/shared/config/cookieNames';
-import { GUEST_ID_MAX_AGE_SECONDS } from '@/shared/config/guestCookie';
 import { SIGNUP_CONVERSION_COOKIE_MAX_AGE_SECONDS } from '@/shared/config/googleAds';
+import { GUEST_ID_MAX_AGE_SECONDS } from '@/shared/config/guestCookie';
 import {
     API_KEY_AUTH_CACHE_TTL_SECONDS,
     API_KEY_REVOKED_TOMBSTONE_TTL_SECONDS,
 } from '@/shared/config/publicApi';
-import { WEB_SEARCH_RETENTION_DAYS } from '@/shared/api/web/webSearchResult';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
-import {
-    UNIT_SECONDS,
-    bulletsOf,
-    extractTokens,
-    findIssues,
-    type Entry,
-    type Place,
-    type Policies,
-    type Unbacked,
-} from '@/__tests__/guards/support/privacyRetention';
 
 /**
  * 개인정보처리방침이 적은 보관 기간·TTL·창(CONVENTIONS.md#CS-14)을 한 곳에서 코드 상수와 묶는다.

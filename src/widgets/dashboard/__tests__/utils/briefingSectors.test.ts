@@ -1,5 +1,5 @@
-import { filterKnownSectors } from '@/widgets/dashboard/utils/briefingSectors';
 import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import { filterKnownSectors } from '@/widgets/dashboard/utils/briefingSectors';
 import { TEST_SCOPE } from '../helpers/testScope';
 
 describe('filterKnownSectors', () => {

@@ -1,8 +1,8 @@
+import type { ThresholdListStatus } from '@y0ngha/siglens-core';
 /**
  * Reg SHO 과열 목록 상태 블록.
  */
 import { useTranslations } from 'next-intl';
-import type { ThresholdListStatus } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatInteger } from '../utils/flowFormat';

@@ -1,6 +1,6 @@
 import { TIER_CONFIG, type TierConfig } from '@y0ngha/siglens-core';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import { signupBenefits } from '@/features/auth-signup/lib/signupBenefits';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /** 가입 회원 등급이 무료와 모든 면에서 같은 설정. 항목이 하나도 없어야 한다. */
 const IDENTICAL: TierConfig = {

@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import type { BacktestStats } from '@/entities/backtest-case/model';
-
 import { BacktestTrendRecognition } from '../../BacktestTrendRecognition';
 
 const STATS = {

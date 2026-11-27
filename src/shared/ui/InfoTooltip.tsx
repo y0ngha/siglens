@@ -7,11 +7,11 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
+import { cn } from '@/shared/lib/cn';
 import {
     getTooltipPosition,
     type TooltipPosition,
 } from '@/shared/lib/tooltipPosition';
-import { cn } from '@/shared/lib/cn';
 
 // 키보드·마우스·터치 접근 가능한 ⓘ disclosure 툴팁 — WCAG 2.1 SC 1.4.13 준수.
 interface InfoTooltipProps {

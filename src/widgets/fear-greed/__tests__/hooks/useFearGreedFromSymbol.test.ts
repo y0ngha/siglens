@@ -6,9 +6,9 @@ vi.mock('@/entities/bars/actions/getSymbolFearGreedAction', () => ({
     getSymbolFearGreedAction: mockAction,
 }));
 
-import { createElement, type ReactNode } from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useFearGreedFromSymbol } from '../../hooks/useFearGreedFromSymbol';
 

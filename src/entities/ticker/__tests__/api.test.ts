@@ -14,9 +14,11 @@ vi.mock('@/entities/ticker/server/isCryptoSymbolStatic', () => ({
     isCryptoSymbolStatic: vi.fn(),
 }));
 
+import { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
-
+import { renderSql } from '@/__tests__/utils/renderSql';
 import {
     isTabAllowedForSymbol,
     DrizzleAssetTranslationRepository,
@@ -27,18 +29,14 @@ import {
     KOREAN_TICKER_UPSERT_BATCH_SIZE,
     KR_SYMBOL_LIKE_PATTERNS,
 } from '@/entities/ticker/api';
-import { SQL } from 'drizzle-orm';
-import { PgDialect } from 'drizzle-orm/pg-core';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isCryptoSymbolStatic } from '@/entities/ticker/server/isCryptoSymbolStatic';
-
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type {
     AssetTranslationRecord,
     ProfileDescriptionTranslationRecord,
     SiglensDatabase,
 } from '@/shared/db/types';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
-import { renderSql } from '@/__tests__/utils/renderSql';
 
 /** where 조건에 쓰인 컬럼 이름(`"table"."col"`의 col)을 렌더링된 SQL에서 읽는다. */
 function collectColumnNames(node: unknown): string[] {

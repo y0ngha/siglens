@@ -10,23 +10,24 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
+import { loadProfileDescription } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
 import {
     targetGapPct,
     targetsDisagree,
 } from '@/entities/analyst-views/lib/targetGap';
-import { loadPageKrValuation } from '@/entities/kr-valuation/server/loadPageKrValuation';
 import { loadAnalystEstimateTrend } from '@/entities/analyst-views/server/loadAnalystEstimateTrend';
 import { loadAnalystTargetsSummary } from '@/entities/analyst-views/server/loadAnalystTargetsSummary';
+import { loadPageKrValuation } from '@/entities/kr-valuation/server/loadPageKrValuation';
 import { readGradesSource } from '@/shared/api/fmp/gradesConsensusSource';
 import {
     loadPageGradesConsensus,
     type PageGradesConsensus,
 } from '@/shared/api/fmp/loadPageGradesConsensus';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { loadProfileDescription } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { FinancialHealthCard } from '@/widgets/fundamental/sections/FinancialHealthCard';
 import { FutureDirectionCard } from '@/widgets/fundamental/sections/FutureDirectionCard';
@@ -35,7 +36,6 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 펀더멘털 섹션 정적 캐시(`fundamental:profile`·`fundamental:metrics-v3` 등)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

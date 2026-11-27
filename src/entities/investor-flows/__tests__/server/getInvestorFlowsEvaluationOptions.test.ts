@@ -21,7 +21,6 @@ vi.mock('@/shared/api/exchange/regShoThresholdDataEnabled', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getInvestorFlowsEvaluationOptions } from '../../server/getInvestorFlowsEvaluationOptions';
 
 const BAR = {

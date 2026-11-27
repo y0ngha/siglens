@@ -6,8 +6,8 @@
 // `NextIntlClientProvider`에서 로케일을 받으므로 요청 스코프가 필요 없다.
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { Spinner } from '@/shared/ui/Spinner';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { Spinner } from '@/shared/ui/Spinner';
 
 // `mapExpirationsToSlots`가 산출하는 슬롯 최대 6종(1W/2W/1M/2M/3M/6M — 만기가 없으면
 // chip 생략)에 종합 chip을 더한 수.

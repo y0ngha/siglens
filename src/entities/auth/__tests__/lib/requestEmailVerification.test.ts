@@ -1,9 +1,9 @@
-import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
-import type { RequestEmailVerificationDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 import {
     EMAIL_VERIFICATION_PENDING_TTL_SECONDS,
     EMAIL_VERIFICATION_RATE_LIMITS,
 } from '@/entities/auth/lib/authUseCaseConstants';
+import type { RequestEmailVerificationDependencies } from '@/entities/auth/lib/authUseCaseTypes';
+import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type { EmailMessage } from '@/shared/email/types';
 import { createFakeFixedWindowLimiter } from '@/shared/test-utils/fakeFixedWindowLimiter';

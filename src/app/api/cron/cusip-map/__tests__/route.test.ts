@@ -25,15 +25,15 @@ vi.mock('../createDeps', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    SEC_REQUEST_TIMEOUT_MS,
-    SEC_RETRY_BACKOFF_BUDGET_MS,
-} from '@/shared/config/investorFlows';
+import { PROFILE_CHUNK_SPACING_MS } from '@/entities/investor-flows/lib/cusipMapPlan';
 import {
     LIMITS,
     OPENFIGI_TIMEOUT_MS,
 } from '@/shared/api/openfigi/openFigiClient';
-import { PROFILE_CHUNK_SPACING_MS } from '@/entities/investor-flows/lib/cusipMapPlan';
+import {
+    SEC_REQUEST_TIMEOUT_MS,
+    SEC_RETRY_BACKOFF_BUDGET_MS,
+} from '@/shared/config/investorFlows';
 import { PATCH } from '../route';
 
 /** FMP's non-render fetch timeout (`httpClient.ts`, not exported): one attempt. */

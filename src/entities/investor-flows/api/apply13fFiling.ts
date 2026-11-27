@@ -13,11 +13,11 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { chunked } from '../lib/chunked';
 import { cikToInt } from '../lib/cik';
 import { compositeKey } from '../lib/dedupeByKey';
+import { nextQuarterEnd, previousQuarterEnd } from '../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
     INVESTOR_FLOWS_VALUE_K_MAX,
 } from '../lib/investorFlowsPolicy';
-import { nextQuarterEnd, previousQuarterEnd } from '../lib/investorFlowsDates';
 import type {
     AmendmentType,
     OptionPositionRow,

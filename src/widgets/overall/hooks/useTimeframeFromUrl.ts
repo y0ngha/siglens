@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useLocalePath } from '@/shared/i18n/useLocalePath';
-import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
 import type { Timeframe } from '@y0ngha/siglens-core';
+import { useEffect } from 'react';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { requestedTimeframeOf } from '@/shared/config/marketProfile/requestedTimeframe';
+import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { canonicalTimeframeUrl } from '../utils/canonicalTimeframeUrl';
 
 /**

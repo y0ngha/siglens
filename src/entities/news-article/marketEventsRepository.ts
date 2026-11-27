@@ -1,17 +1,16 @@
 import 'server-only';
-
-import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import type {
     MarketEvent,
     NewsCategory,
     NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
+import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 프롬프트에 실을 수 있는 영향도.

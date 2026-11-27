@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { SITE_URL } from '@/shared/lib/seo';
 import { buildCryptoPopularEntries } from '../lib/buildCryptoPopularEntries';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
-import type { SitemapEntry } from '../model';
 import { selectIndexNowUrls } from '../lib/indexNowUrls';
+import type { SitemapEntry } from '../model';
 
 const NOW = new Date('2026-10-04T12:00:00Z');
 

@@ -128,6 +128,7 @@ vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { notFound } from 'next/navigation';
 import {
     describe,
     expect,
@@ -136,16 +137,15 @@ import {
     vi,
     type MockedFunction,
 } from 'vitest';
-import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
-import { notFound } from 'next/navigation';
 import FundamentalPage, {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/fundamental/page';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 
 const mockIsTabAllowed = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol

@@ -1,10 +1,10 @@
-import type { Mock } from 'vitest';
-import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
+import type { Mock } from 'vitest';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

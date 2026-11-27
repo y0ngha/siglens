@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { sql } from 'drizzle-orm';
 import {
     bigint,
@@ -23,11 +22,11 @@ import {
     uuid,
     varchar,
 } from 'drizzle-orm/pg-core';
-import type { FunnelEventContext } from '@/shared/lib/funnel/funnelEvents';
-import { LOCALES } from '@/shared/i18n/locales';
 import { EMAIL_MAX_LENGTH } from '@/shared/config/email';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
+import { LOCALES } from '@/shared/i18n/locales';
+import type { FunnelEventContext } from '@/shared/lib/funnel/funnelEvents';
 import {
     EMAIL_REPORT_CONSENT_SOURCE_VALUES,
     MAIL_ALERT_CONSENT_SOURCE_VALUES,

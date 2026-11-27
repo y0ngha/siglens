@@ -4,11 +4,11 @@
  * 수급 AI 해석 섹션 — 분석 상태에 따라 로딩·완료·데이터 없음·대기·오류 화면을 고른다.
  */
 import { useTranslations } from 'next-intl';
-import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
-import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
-import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { useInvestorFlowsAnalysis } from './hooks/useInvestorFlowsAnalysis';

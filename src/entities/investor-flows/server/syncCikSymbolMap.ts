@@ -1,4 +1,7 @@
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { CikMapReplaceResult } from '../api/investorFlowsFilingsRepository';
+import { parseCompanyTickers, type CikSymbolPair } from '../lib/companyTickers';
 import { addDays } from '../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_CIK_MAP_MIN_PAIRS,
@@ -6,9 +9,6 @@ import {
     INVESTOR_FLOWS_STATE_CIK_MAP_SYNCED,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../lib/investorFlowsPolicy';
-import { parseCompanyTickers, type CikSymbolPair } from '../lib/companyTickers';
-import type { CikMapReplaceResult } from '../api/investorFlowsFilingsRepository';
-import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 export interface SyncCikSymbolMapDeps {
     /** `www.sec.gov/files/company_tickers.json` 본문(JSON). 없으면 null. */

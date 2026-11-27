@@ -51,19 +51,19 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { MockedFunction } from 'vitest';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import {
     generateMetadata,
     default as PositionPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/position/page';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
-import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
-import type { MockedFunction } from 'vitest';
+import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

@@ -14,9 +14,9 @@ vi.mock(
     })
 );
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { StrictMode } from 'react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useEconomicCalendarTrigger } from '../useEconomicCalendarTrigger';
 
 function Probe({ country = 'US' as const }: { country?: 'US' | 'KR' }) {

@@ -1,10 +1,10 @@
+import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 /**
  * 기준 시점의 SEC 줄 — 결제 불이행, Form 144·증자 공시 창, (Reg SHO 플래그가 켜져 있을 때만) 과열 목록.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { CollectingArms } from '@/entities/investor-flows/model';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatInteger } from '../../utils/flowFormat';
 import { AsOfRow } from './AsOfRow';
 

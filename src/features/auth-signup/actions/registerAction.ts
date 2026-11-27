@@ -1,48 +1,47 @@
 'use server';
 
-import { localeHref } from '@/shared/i18n/localeRedirect';
-
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { SignupFormState } from '@/shared/lib/auth/formTypes';
+import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import {
-    resolvePostSignupDestination,
-    toSameOriginPath,
-} from '@/shared/lib/auth/redirect';
-import { createSignupConversionCookie } from '@/shared/lib/googleAds';
-import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
-import { createExpiredSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
-import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
 import {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
 } from '@/entities/auth/lib/errorMessages';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import { registerUser } from '@/entities/auth/lib/registerUser';
 import {
     DEFAULT_SESSION_TTL_SECONDS,
     createAuthSession,
 } from '@/entities/auth/lib/sessionCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { registerUser } from '@/entities/auth/lib/registerUser';
-import {
-    DrizzleSessionRepository,
-    DrizzleUserRepository,
-} from '@/entities/auth/api';
-import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
-import { getDatabaseClient } from '@/shared/db/client';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
-import { DrizzleAgreementRepository } from '@/entities/agreement/api';
-import { DrizzleTermsRepository } from '@/entities/terms/api';
-import { createEmailTokenStore } from '@/entities/email-token/api';
-import { cookies } from 'next/headers';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { createExpiredSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
 import { readSignupEmailReportOptIn } from '@/entities/email-report/lib/signupOptIn';
 import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
-import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
-import { readSignupForm } from '../lib/readSignupForm';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
+import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { getDatabaseClient } from '@/shared/db/client';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { localeHref } from '@/shared/i18n/localeRedirect';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
+import type { SignupFormState } from '@/shared/lib/auth/formTypes';
+import {
+    resolvePostSignupDestination,
+    toSameOriginPath,
+} from '@/shared/lib/auth/redirect';
+import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
+import { createSignupConversionCookie } from '@/shared/lib/googleAds';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { readSignupForm } from '../lib/readSignupForm';
 
 /**
  * 회원가입 3단계의 Server Action. 필수 동의 → 활성 약관 → `registerUser`

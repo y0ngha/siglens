@@ -6,15 +6,46 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { ConversationAnalysis } from '@/entities/chat-conversation/server/conversationAnalyses';
 import type { ChatBlock } from '@/entities/chat-conversation/types';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
-import { isE2EFakeMode } from '@/shared/api/e2eEnv';
+import { isPriceAlertLaunched } from '@/entities/mail-alert/lib/priceAlertConstants';
+import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
 import {
     GET_MY_WATCHLIST_TOOL,
     PROPOSE_PRICE_ALERT_TOOL,
 } from '@/features/agent-tools/spec/watchlistAlertTools';
-import { isPriceAlertLaunched } from '@/entities/mail-alert/lib/priceAlertConstants';
+import { isE2EFakeMode } from '@/shared/api/e2eEnv';
+import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { xBearerToken } from '@/shared/api/x/xClient';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { getAnalystViewsTool } from './getAnalystViews';
+import { getBarsIndicatorsTool } from './getBarsIndicators';
+import { getCachedAnalysisTool } from './getCachedAnalysis';
+import { getCompanyFilingsTool } from './getCompanyFilings';
+import { getCongressTradesTool } from './getCongressTrades';
+import { getEconomyTool } from './getEconomy';
+import { getFundamentalsTool } from './getFundamentals';
+import { getGuideTool } from './getGuide';
+import { getIndexHistoryStatsTool } from './getIndexHistoryStats';
+import { getInvestorFlowsTool } from './getInvestorFlows';
+import { getMacroQuotesTool } from './getMacroQuotes';
+import { getMarketOverviewTool } from './getMarketOverview';
+import { getMyPortfolioTool } from './getMyPortfolio';
+import { getMyWatchlistTool } from './getMyWatchlist';
+import { getNewsTool } from './getNews';
+import { getOptionsSummaryTool } from './getOptionsSummary';
+import { getPriceStatsTool } from './getPriceStats';
+import { getQuoteTool } from './getQuote';
+import { getSwingHistoryTool } from './getSwingHistory';
+import { getThemeSnapshotTool } from './getThemeSnapshot';
+import { getXPostsTool } from './getXPosts';
+import { correctKrSymbolArgs } from './krSymbolCorrection';
+import { safeErrorFields } from './logToolDegrade';
+import { MEMBER_ONLY_TOOLS } from './memberOnlyTools';
+import { proposePriceAlertTool } from './proposePriceAlert';
+import { runFreshAnalysisTool } from './runFreshAnalysis';
+import { searchTickerTool } from './searchTicker';
+import { showChartTool } from './showChart';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
     ECONOMY_RESULT_MAX_CHARS,
@@ -38,38 +69,7 @@ import {
     TOOL_RESULT_MAX_CHARS,
     truncateToolResult,
 } from './truncate';
-import { searchTickerTool } from './searchTicker';
-import { getQuoteTool } from './getQuote';
-import { getBarsIndicatorsTool } from './getBarsIndicators';
-import { getCachedAnalysisTool } from './getCachedAnalysis';
-import { getNewsTool } from './getNews';
-import { getOptionsSummaryTool } from './getOptionsSummary';
-import { getMyPortfolioTool } from './getMyPortfolio';
-import { getMyWatchlistTool } from './getMyWatchlist';
-import { proposePriceAlertTool } from './proposePriceAlert';
-import { runFreshAnalysisTool } from './runFreshAnalysis';
 import { webSearchTool } from './webSearch';
-import { getFundamentalsTool } from './getFundamentals';
-import { getMarketOverviewTool } from './getMarketOverview';
-import { getEconomyTool } from './getEconomy';
-import { getCongressTradesTool } from './getCongressTrades';
-import { getInvestorFlowsTool } from './getInvestorFlows';
-import { getGuideTool } from './getGuide';
-import { getAnalystViewsTool } from './getAnalystViews';
-import { getMacroQuotesTool } from './getMacroQuotes';
-import { getCompanyFilingsTool } from './getCompanyFilings';
-import { getXPostsTool } from './getXPosts';
-import { getThemeSnapshotTool } from './getThemeSnapshot';
-import { getIndexHistoryStatsTool } from './getIndexHistoryStats';
-import { getPriceStatsTool } from './getPriceStats';
-import { getSwingHistoryTool } from './getSwingHistory';
-import { showChartTool } from './showChart';
-import { safeErrorFields } from './logToolDegrade';
-import { correctKrSymbolArgs } from './krSymbolCorrection';
-import { isGuestSubject } from '@/shared/lib/guestSubject';
-import { MEMBER_ONLY_TOOLS } from './memberOnlyTools';
-import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */

@@ -1,5 +1,4 @@
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
-
 import {
     isProseGatedSitemapTab,
     snapshotKey,

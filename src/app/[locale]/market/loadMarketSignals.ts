@@ -1,8 +1,8 @@
-import { cache } from 'react';
 import type {
     MarketSummaryData,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
+import { cache } from 'react';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';

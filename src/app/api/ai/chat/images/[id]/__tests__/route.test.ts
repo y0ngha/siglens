@@ -22,7 +22,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { GET } from '@/app/api/ai/chat/images/[id]/route';
 
 const ID = '55555555-5555-5555-5555-555555555551';

@@ -1,5 +1,5 @@
-import { escapeHtml } from '@/shared/lib/escapeHtml';
 import type { EmailMessage } from '@/shared/email/types';
+import { escapeHtml } from '@/shared/lib/escapeHtml';
 import type { VocTrigger } from '../../types';
 
 export interface VocNotificationInput {

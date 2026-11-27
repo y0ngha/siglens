@@ -1,5 +1,4 @@
 import 'server-only';
-
 import {
     and,
     desc,
@@ -18,6 +17,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isDatabaseMissingAtBuild } from '@/shared/db/config';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     signalEvents,
     signalScanCursors,
@@ -41,7 +41,6 @@ import type {
     SignalHubSymbolCounts,
     SymbolScanWrite,
 } from './types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 신호 이력을 읽는 캐시(신호 페이지·사이트맵 집계)의 태그. 기록기가 새 에피소드를 넣으면 이 태그를

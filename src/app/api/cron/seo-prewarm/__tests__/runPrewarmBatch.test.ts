@@ -175,7 +175,6 @@ vi.mock('@/entities/options-chain/api', () => ({
     prewarmPollOptions: mockPrewarmPollOptions,
 }));
 
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { PrewarmSymbol } from '@/entities/seo-snapshot/lib/applicability';
 import {
     lastCompletedEtCloseWithBuffer,
@@ -183,13 +182,14 @@ import {
     snapshotCloseBoundaryFor as snapshotCloseBoundaryForReal,
     shouldDeferPrewarmWhileOpen as shouldDeferPrewarmWhileOpenReal,
 } from '@/entities/seo-snapshot/lib/freshness';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
+import { runHubPrewarm } from '../hubs';
 import {
     runPrewarmBatch,
     SYMBOL_CONCURRENCY,
     SYMBOLS_PER_TICK,
     type PrewarmClock,
 } from '../runPrewarmBatch';
-import { runHubPrewarm } from '../hubs';
 
 const mockRunHubPrewarm = vi.mocked(runHubPrewarm);
 

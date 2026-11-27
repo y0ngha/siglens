@@ -1,5 +1,13 @@
 'use client';
 
+import type {
+    AnalysisResponse,
+    ClusteredKeyLevels,
+    KrxTickTable,
+    TierInfoDepth,
+    Trend,
+} from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 /**
  * "한눈에 보기" 카드 — 분석 패널 맨 위에서 추세와 저항선·지지선·무효화 기준만 보여 준다.
  *
@@ -28,14 +36,6 @@
  * (`DESIGN.md#DS-17`).
  */
 import { useId } from 'react';
-import { useTranslations } from 'next-intl';
-import type {
-    AnalysisResponse,
-    ClusteredKeyLevels,
-    KrxTickTable,
-    TierInfoDepth,
-    Trend,
-} from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';
 import { cn } from '@/shared/lib/cn';
@@ -43,12 +43,12 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { PLACEHOLDER_ON_CARD } from '@/shared/lib/surfaceStyles';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { useAnalysisContextLines } from '../hooks/useAnalysisContextLines';
 import {
     buildConclusionModel,
     type ConclusionModel,
     type ConclusionValue,
 } from '../utils/conclusionModel';
-import { useAnalysisContextLines } from '../hooks/useAnalysisContextLines';
 import { resolveLockedSections } from '../utils/lockedSections';
 import { resolveTrendDisplay } from '../utils/trendUtils';
 

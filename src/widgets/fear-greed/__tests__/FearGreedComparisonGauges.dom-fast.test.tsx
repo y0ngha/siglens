@@ -1,10 +1,10 @@
 import { render } from '@testing-library/react';
-import { beforeAll } from 'vitest';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
-import { FearGreedComparisonGauges } from '@/widgets/fear-greed/FearGreedComparisonGauges';
-import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import { beforeAll } from 'vitest';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import { FearGreedComparisonGauges } from '@/widgets/fear-greed/FearGreedComparisonGauges';
 
 let t: EnumLabelTranslator;
 beforeAll(async () => {

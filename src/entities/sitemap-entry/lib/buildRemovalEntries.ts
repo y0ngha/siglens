@@ -1,5 +1,4 @@
 import { SITE_URL } from '@/shared/lib/seo';
-
 import {
     REMOVAL_LAST_MODIFIED_ISO,
     type RemovalSitemapEntry,

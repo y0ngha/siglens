@@ -1,10 +1,10 @@
 import { useTranslations } from 'next-intl';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
 import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { RADAR_SITE_URL } from '@/shared/config/radar';
-import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandName } from '@/shared/lib/brandName';

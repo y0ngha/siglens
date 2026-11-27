@@ -14,16 +14,15 @@ vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: assetOf,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { Bar } from '@y0ngha/siglens-core';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildCompareBlock,
     COMPARE_POINTS_MAX,
     compareSeriesFrom,
 } from '@/app/api/ai/chat/tools/visualBlocks/compare';
 import type { VisualBuildEnv } from '@/app/api/ai/chat/tools/visualBlocks/types';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 const NOW = new Date('2026-11-19T12:00:00Z');
 const env: VisualBuildEnv = {

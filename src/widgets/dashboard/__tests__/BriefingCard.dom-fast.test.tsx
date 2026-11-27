@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
+import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { BriefingCard } from '@/widgets/dashboard/BriefingCard';
 import { TEST_SCOPE } from './helpers/testScope';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 const BRIEFING: MarketBriefingResponse = {
     summary: 'Markets rallied today',

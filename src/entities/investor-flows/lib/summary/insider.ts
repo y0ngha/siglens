@@ -4,20 +4,20 @@ import type {
     ProposedSale,
 } from '@y0ngha/siglens-core';
 import { ISO_DATE_LENGTH } from '@/shared/config/time';
+import type { ProposedSaleFormType, ProposedSaleWithForm } from '../../model';
 import { compareIsoDate } from '../investorFlowsDates';
 import { proposedSaleCountWindows } from '../snapshot/filings';
-import type { ProposedSaleFormType, ProposedSaleWithForm } from '../../model';
+import {
+    SUMMARY_NAME_MAX_CHARS,
+    SUMMARY_ROLE_MAX_CHARS,
+    clipSummaryText,
+} from './format';
 import type {
     SummaryTransaction,
     SummaryLargeHolder,
     SummaryProposedSale,
     SummaryProposedSaleCounts,
 } from './types';
-import {
-    SUMMARY_NAME_MAX_CHARS,
-    SUMMARY_ROLE_MAX_CHARS,
-    clipSummaryText,
-} from './format';
 
 /** 요약에 싣는 최근 내부자 거래 건수 상한. */
 export const SUMMARY_MAX_INSIDER_TRANSACTIONS = 6;

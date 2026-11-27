@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import {
     AGENT_BARS_TIMEFRAMES,
     AGENT_CHART_KINDS,
     AGENT_CHART_PERIODS,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     CHAT_ACTION_BLOCK_KINDS,
     CHAT_CHART_MARKET_PROFILES,

@@ -1,10 +1,3 @@
-/**
- * `/backtesting#record` 구역이 그릴 행을 core 측정 상수에서 고른다. 값은 한 글자도 다시
- * 계산하지 않고 core가 내보낸 행을 그대로 쓴다. 행 순서는 상수의 키 순서이며 비율로
- * 정렬하지 않는다 — 비율순 정렬은 잘 나온 행을 위로 올리는 선택이 된다.
- */
-import { PATTERN_ID_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
-import { isPooledBaseRate } from '@/shared/lib/patternBaseRate';
 import {
     PATTERN_BASE_RATES,
     PATTERN_POOLED_BASE_RATE,
@@ -13,6 +6,13 @@ import {
     priceLevelFamilyBaseRateFor,
     type MeasuredBaseRate,
 } from '@y0ngha/siglens-core';
+/**
+ * `/backtesting#record` 구역이 그릴 행을 core 측정 상수에서 고른다. 값은 한 글자도 다시
+ * 계산하지 않고 core가 내보낸 행을 그대로 쓴다. 행 순서는 상수의 키 순서이며 비율로
+ * 정렬하지 않는다 — 비율순 정렬은 잘 나온 행을 위로 올리는 선택이 된다.
+ */
+import { PATTERN_ID_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
+import { isPooledBaseRate } from '@/shared/lib/patternBaseRate';
 
 const SKILL_NAME_BY_PATTERN_ID: Readonly<Record<string, string>> =
     Object.fromEntries(

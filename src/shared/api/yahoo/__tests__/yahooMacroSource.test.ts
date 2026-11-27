@@ -13,7 +13,6 @@ vi.mock('@/shared/api/e2eEnv', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     getYahooMacroDailyCloses,
     getYahooMacroQuotes,

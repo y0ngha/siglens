@@ -1,6 +1,6 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { useTranslations } from 'next-intl';
 
 interface SnapshotBulletListProps {
     title: string;

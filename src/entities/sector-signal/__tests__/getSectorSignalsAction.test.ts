@@ -1,11 +1,11 @@
-import type { MockedFunction } from 'vitest';
-import { getSectorSignalsAction } from '../actions/getSectorSignalsAction';
-import { getCachedSectorSignals } from '../api/sectorSignalsCache';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+import type { MockedFunction } from 'vitest';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
+import { getSectorSignalsAction } from '../actions/getSectorSignalsAction';
+import { getCachedSectorSignals } from '../api/sectorSignalsCache';
 import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 
 vi.mock('server-only', () => ({}));

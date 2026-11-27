@@ -1,14 +1,14 @@
 'use server';
 
-import type { Locale } from '@/shared/i18n/locales';
 import type { SubmitNewsAnalysisOptions } from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/model';
 import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
-import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { Locale } from '@/shared/i18n/locales';
+import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
+import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 
 /**
  * Server Action: tier·BYOK 게이트를 통과시킨 뒤 `executeNewsAnalysis`로 뉴스 분석을

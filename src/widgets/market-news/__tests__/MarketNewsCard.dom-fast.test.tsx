@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeAll, type MockInstance } from 'vitest';
 import { getTranslations } from 'next-intl/server';
-import { MarketNewsCard } from '@/widgets/market-news/MarketNewsCard';
-import { sentimentLabel, SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { describe, it, expect, beforeAll, type MockInstance } from 'vitest';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { sentimentLabel, SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
+import { MarketNewsCard } from '@/widgets/market-news/MarketNewsCard';
 
 let t: EnumLabelTranslator;
 beforeAll(async () => {

@@ -1,8 +1,8 @@
-import { buildIndicatorBindings } from '../../utils/indicatorBindings';
 import {
     INDICATOR_REGISTRY,
     type IndicatorKey,
 } from '../../model/indicatorRegistry';
+import { buildIndicatorBindings } from '../../utils/indicatorBindings';
 
 const allOff = Object.fromEntries(
     INDICATOR_REGISTRY.map(meta => [meta.key, false])

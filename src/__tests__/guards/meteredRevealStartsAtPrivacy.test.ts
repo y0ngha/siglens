@@ -1,5 +1,5 @@
-import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseSeedFile } from '@/../db/scripts/seedTerms';
 import { METERED_REVEAL_STARTS_AT } from '@/entities/analysis/server/meteredReveal';

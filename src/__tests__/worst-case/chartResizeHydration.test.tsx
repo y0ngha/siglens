@@ -182,8 +182,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 }));
 
 import { render } from '@testing-library/react';
-import { StockChart } from '@/widgets/chart/StockChart';
 import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import { StockChart } from '@/widgets/chart/StockChart';
 
 describe('StockChart resize hydration behavior', () => {
     const bars = [

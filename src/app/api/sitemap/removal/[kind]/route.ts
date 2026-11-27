@@ -1,10 +1,8 @@
-import { constants } from 'node:http2';
 import { NextResponse } from 'next/server';
-
-import { isRemovalSitemapKind } from '@/entities/sitemap-entry/model';
-
-import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
+import { constants } from 'node:http2';
 import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
+import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
+import { isRemovalSitemapKind } from '@/entities/sitemap-entry/model';
 
 interface RouteContext {
     params: Promise<{ kind: string }>;

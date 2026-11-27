@@ -1,10 +1,10 @@
+import { render, screen } from '@testing-library/react';
 /**
  * `AskAiFab` 렌더 계약 — 링크 대상(href)·새 탭 속성·접근성 이름·고정 위치 클래스.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { AskAiFab } from '../AskAiFab';
 import { aiAskUrl } from '@/shared/config/aiHost';
+import { AskAiFab } from '../AskAiFab';
 
 /** async 서버 컴포넌트라 element 트리를 await한 뒤 렌더한다. */
 async function renderFab(name: string, localePrefix: string) {

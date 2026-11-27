@@ -1,11 +1,11 @@
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
-import { defined } from '@/shared/test-utils/defined';
-import { OG_BG } from '@/shared/lib/og';
 import {
     layoutReportChart,
     REPORT_CHART_HEADER_HEIGHT,
 } from '@/entities/email-report/lib/reportChartLayout';
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
+import { OG_BG } from '@/shared/lib/og';
+import { defined } from '@/shared/test-utils/defined';
 import { decodePng } from './support/decodePng';
 
 const DAY = 86_400;

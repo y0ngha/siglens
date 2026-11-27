@@ -1,14 +1,14 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createElement } from 'react';
-import type { ReactNode } from 'react';
-import { useSectorSignals } from '@/widgets/dashboard/hooks/useSectorSignals';
-import { getSectorSignalsAction } from '@/entities/sector-signal/actions/getSectorSignalsAction';
 import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
+import { createElement } from 'react';
+import type { ReactNode } from 'react';
+import { getSectorSignalsAction } from '@/entities/sector-signal/actions/getSectorSignalsAction';
+import { useSectorSignals } from '@/widgets/dashboard/hooks/useSectorSignals';
 
 vi.mock('@/entities/sector-signal/actions/getSectorSignalsAction', () => ({
     getSectorSignalsAction: vi.fn(),

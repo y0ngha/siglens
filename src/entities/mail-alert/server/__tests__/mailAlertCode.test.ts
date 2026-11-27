@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
+import type {
+    EmailTokenPurpose,
+    EmailTokenStore,
+    EmailTokenValue,
+} from '@/entities/email-token/types';
 import { MAIL_ALERT_RATE_LIMITS } from '@/entities/mail-alert/lib/mailAlertConstants';
 import {
     confirmMailAlertCode,
@@ -7,11 +12,6 @@ import {
     type MailAlertCodeDeps,
     type MailAlertRateLimiter,
 } from '@/entities/mail-alert/server/mailAlertCode';
-import type {
-    EmailTokenPurpose,
-    EmailTokenStore,
-    EmailTokenValue,
-} from '@/entities/email-token/types';
 import type { EmailMessage } from '@/shared/email/types';
 
 const IP_HASH = 'iphash-1';

@@ -1,3 +1,5 @@
+import type { SymbolViewRepository } from '@/entities/symbol-view/api';
+import type { SymbolViewTally } from '@/entities/symbol-view/types';
 import {
     ACTIVE_MAX_SYMBOLS,
     ACTIVE_MIN_VIEWS,
@@ -7,8 +9,6 @@ import {
     loadViewDemand,
     selectViewDemand,
 } from '../viewDemand';
-import type { SymbolViewRepository } from '@/entities/symbol-view/api';
-import type { SymbolViewTally } from '@/entities/symbol-view/types';
 
 function tally(symbol: string, views: number): SymbolViewTally {
     return { symbol, views };

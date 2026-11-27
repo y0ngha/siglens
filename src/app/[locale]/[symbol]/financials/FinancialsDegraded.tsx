@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { SymbolDegradedShell } from '@/app/[locale]/[symbol]/SymbolDegradedShell';
-import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 
 interface FinancialsDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */

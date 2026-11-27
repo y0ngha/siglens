@@ -1,5 +1,5 @@
-import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { type SeoTranslator } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 
 /**
  * `/economy` 제목(브랜드 없음) — hero h1, metadata title, OG/Twitter title, JSON-LD `name`의 단일 소스.

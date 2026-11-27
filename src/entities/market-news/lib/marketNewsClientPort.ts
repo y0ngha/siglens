@@ -1,5 +1,5 @@
-import type { NewsFeedCategoryId } from './categoryConfig';
 import type { NewsItem } from '@y0ngha/siglens-core';
+import type { NewsFeedCategoryId } from './categoryConfig';
 
 /** 시장 뉴스 기사 — core `NewsItem`에 기사 자체의 표시용 티커를 더한 것. */
 export interface MarketNewsItem extends NewsItem {

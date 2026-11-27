@@ -1,10 +1,10 @@
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { RegisterUserError } from '@/shared/lib/auth/types';
 import {
     normalizeEmail,
     validateEmail,
     validatePassword,
 } from '@/shared/lib/auth/validation';
-import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
 import {
     EMAIL_ALREADY_EXISTS_CODE,
     EMAIL_NOT_VERIFIED_CODE,
@@ -14,7 +14,7 @@ import type {
     RegisterUserInput,
     RegisterUserResult,
 } from './authUseCaseTypes';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';

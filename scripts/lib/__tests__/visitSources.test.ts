@@ -16,9 +16,8 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { loadVisitSources } from '../visitSources';
 import { MIN_WEEKLY_VIEWS } from '../visitCandidates';
+import { loadVisitSources } from '../visitSources';
 
 const topViewed = vi.fn();
 const findAll = vi.fn();

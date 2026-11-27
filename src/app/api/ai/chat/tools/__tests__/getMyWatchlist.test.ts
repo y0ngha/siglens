@@ -41,7 +41,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     getMyWatchlistTool,
     loadMyWatchlist,

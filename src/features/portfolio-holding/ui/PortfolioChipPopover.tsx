@@ -2,13 +2,13 @@
 
 import { useTranslations } from 'next-intl';
 import { type RefObject, useId, useRef } from 'react';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
-import { cn } from '@/shared/lib/cn';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import { PopoverSurface } from '@/shared/ui/PopoverSurface';
-import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { useHoldingPopoverForm } from '../hooks/useHoldingPopoverForm';
 import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 import { HoldingAmountField } from './HoldingAmountField';

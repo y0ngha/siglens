@@ -18,11 +18,11 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     return { ...actual, runNewsCardAnalysis: mockRunNewsCardAnalysis };
 });
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { analyzeNewsCards } from '@/entities/news-article/lib/analyzeNewsCards';
 import { MS_PER_MINUTE } from '@/shared/config/time';
-import type { DrizzleNewsRepository } from '@/entities/news-article/api';
 
 const ANALYSIS: NewsCardAnalysis = {
     titleKo: '애플 사상 최고가',

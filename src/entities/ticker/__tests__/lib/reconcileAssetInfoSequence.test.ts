@@ -81,7 +81,6 @@ vi.mock('../../server/fmpCryptoMembership', () => ({
 import type { AssetTranslationRecord } from '@/shared/db/types';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { FmpSearchResult } from '../../model';
-
 import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,

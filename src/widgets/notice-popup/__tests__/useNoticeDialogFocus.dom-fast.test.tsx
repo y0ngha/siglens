@@ -1,5 +1,5 @@
-import { useRef } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useRef } from 'react';
 import { useNoticeDialogFocus } from '../hooks/useNoticeDialogFocus';
 
 interface HarnessProps {

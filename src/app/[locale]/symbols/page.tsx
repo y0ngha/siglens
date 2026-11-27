@@ -1,5 +1,8 @@
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import { SymbolDirectoryList } from '@/app/[locale]/symbols/_components/SymbolDirectoryList';
+import { buildSymbolsMetadata } from '@/app/[locale]/symbols/_lib/symbolsMetadata';
+import { buildSymbolsJsonLd } from '@/app/[locale]/symbols/_lib/symbolsSeo';
 import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
@@ -9,9 +12,6 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolDirectoryList } from '@/app/[locale]/symbols/_components/SymbolDirectoryList';
-import { buildSymbolsMetadata } from '@/app/[locale]/symbols/_lib/symbolsMetadata';
-import { buildSymbolsJsonLd } from '@/app/[locale]/symbols/_lib/symbolsSeo';
 
 /**
  * 종목 디렉터리 — **내부 링크 고아를 없애는 페이지**다.

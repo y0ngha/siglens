@@ -16,7 +16,6 @@ vi.mock('next/link', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import EmailReportSamplePage, {
     generateMetadata,
     revalidate,

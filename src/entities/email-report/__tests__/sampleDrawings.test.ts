@@ -1,4 +1,3 @@
-import { GUIDE_PATH_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
 import { narrowChartDrawings } from '@/entities/analysis/lib/narrowChartDrawings';
 import { layoutReportChart } from '@/entities/email-report/lib/reportChartLayout';
 import {
@@ -10,6 +9,7 @@ import {
     buildSampleDrawings,
     buildSampleReportDrawings,
 } from '@/entities/email-report/lib/sampleDrawings';
+import { GUIDE_PATH_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
 
 describe.each(SAMPLE_CHART_SYMBOLS)('샘플 작도 %s', symbol => {
     it('샘플 봉 시각에 맞고 이미지에 실제로 그려진다', () => {

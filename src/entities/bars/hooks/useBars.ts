@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { Bar, IndicatorResult, Timeframe } from '@y0ngha/siglens-core';
+import { useMemo } from 'react';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useRefetchStaleOnEnable } from '@/shared/hooks/useRefetchStaleOnEnable';
 import { getBarsAction } from '../actions/getBarsAction';

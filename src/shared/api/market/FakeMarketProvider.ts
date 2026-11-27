@@ -1,9 +1,9 @@
 import type { Bar, GetBarsOptions, MarketQuote } from '@y0ngha/siglens-core';
+import bars from '@e2e/fixtures/bars.json';
 import type {
     QuoteSnapshot,
     SiglensMarketProvider,
 } from './marketProvider.types';
-import bars from '@e2e/fixtures/bars.json';
 
 // bars.json is authored to match the core Bar shape (time/open/high/low/close/volume).
 const FIXTURE_BARS = bars as Bar[];

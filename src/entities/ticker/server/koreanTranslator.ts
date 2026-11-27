@@ -1,10 +1,10 @@
 import 'server-only';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 import { parseJsonResponse } from '@/entities/llm-provider/lib/parseJsonResponse';
-import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
-import { tryReadTranslatorConfig } from './config';
-import type { TranslatorConfig, TranslatorEntry } from '../model';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
+import type { TranslatorConfig, TranslatorEntry } from '../model';
+import { tryReadTranslatorConfig } from './config';
 
 function buildTranslatePrompt(entries: readonly TranslatorEntry[]): string {
     const entryList = entries.map(e => `- ${e.symbol}: ${e.name}`).join('\n');

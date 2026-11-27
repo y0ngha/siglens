@@ -8,13 +8,13 @@ import type {
     FearGreedReading,
     FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
-import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
 import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import type { SeoTranslator } from '@/shared/lib/seo';
-import type { Locale } from '@/shared/i18n/locales';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import type { Locale } from '@/shared/i18n/locales';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { SeoTranslator } from '@/shared/lib/seo';
 import {
     buildExtremeZoneRecord,
     buildFearGreedFactorRankingLine,

@@ -1,23 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import type { Tier } from '@y0ngha/siglens-core';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
+import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { claimShareCreated } from '@/shared/lib/funnel/shareMarks';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
+import { buildShareSnapshotInput } from '../lib/buildShareSnapshotInput';
+import { deliverShare } from '../lib/deliverShare';
+import { SHARE_CLICK_ACTION } from '../lib/shareClickAction';
+import { buildShareUrl } from '../lib/shareUrl';
 import { useShareable } from '../model/ShareableAnalysisContext';
 import type {
     ShareableRegistration,
     ShareableStatus,
 } from '../model/ShareableAnalysisContext';
-import { buildShareSnapshotInput } from '../lib/buildShareSnapshotInput';
-import { buildShareUrl } from '../lib/shareUrl';
-import { deliverShare } from '../lib/deliverShare';
-import { SHARE_CLICK_ACTION } from '../lib/shareClickAction';
 
 /**
  * Return type of useShareFlow — contains all state and handlers that

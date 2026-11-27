@@ -47,24 +47,23 @@ vi.mock('@/shared/api/market/sessionSpecFor', async () => {
     };
 });
 
-import type { MockedFunction } from 'vitest';
-import { getBarsAction } from '../actions/getBarsAction';
-import { __resetBarsMemoryForTests } from '../server/barsDataCache';
 import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { resolveTierOnly } from '@/shared/lib/byokGate';
 import type { BarsData } from '@y0ngha/siglens-core';
-import { sleep } from '@/shared/lib/sleep';
-import koMessages from '../../../../messages/ko.json';
-
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import type { MockedFunction } from 'vitest';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
+import { sleep } from '@/shared/lib/sleep';
+import koMessages from '../../../../messages/ko.json';
+import { getBarsAction } from '../actions/getBarsAction';
+import { __resetBarsMemoryForTests } from '../server/barsDataCache';
 
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;

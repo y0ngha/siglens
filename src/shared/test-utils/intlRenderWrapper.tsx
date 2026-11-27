@@ -1,8 +1,8 @@
 import { NextIntlClientProvider } from 'next-intl';
+import type { ComponentType, ReactNode } from 'react';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { MESSAGE_CATALOGS } from './messageCatalogs';
-import type { ComponentType, ReactNode } from 'react';
 
 /**
  * 테스트에서 컴포넌트 트리를 감쌀 기본 i18n 프로바이더.

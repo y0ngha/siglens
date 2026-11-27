@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 
 /**
  * `enabled`가 **`false → true`로 바뀌는 순간** 그 쿼리가 stale이면 한 번 재조회한다.

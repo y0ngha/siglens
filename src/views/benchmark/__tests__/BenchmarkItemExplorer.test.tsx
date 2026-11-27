@@ -2,13 +2,13 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import {
     BENCHMARK_DETAIL_FIXTURE,
     BENCHMARK_FIXTURE,
 } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
-import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { defined } from '@/shared/test-utils/defined';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import ko from '../../../../messages/ko.json';
 import { BenchmarkItemExplorer } from '../BenchmarkItemExplorer';

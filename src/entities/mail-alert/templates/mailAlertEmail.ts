@@ -1,10 +1,10 @@
 import { TREND_EMA_PERIOD } from '@y0ngha/siglens-core';
 import { reportSymbolLabel } from '@/entities/email-report/lib/reportSymbolLabel';
-import { COLORS, FONT } from '@/entities/email-report/templates/emailTheme';
 import {
     formatDate,
     formatSignedPercent,
 } from '@/entities/email-report/templates/emailFormat';
+import { COLORS, FONT } from '@/entities/email-report/templates/emailTheme';
 import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';

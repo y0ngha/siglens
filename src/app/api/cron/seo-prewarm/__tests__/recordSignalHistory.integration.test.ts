@@ -38,7 +38,6 @@ import type {
     OpenEpisode,
     SymbolScanWrite,
 } from '@/entities/signal-history/types';
-
 import type { SiglensDatabase } from '@/shared/db/types';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import { recordSignalHistory } from '../recordSignalHistory';

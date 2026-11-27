@@ -1,7 +1,13 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import type {
+    AnalysisResponse,
+    ModelId,
+    Tier,
+    TierInfoDepth,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 import {
     useCallback,
     useEffect,
@@ -10,18 +16,12 @@ import {
     useRef,
     useState,
 } from 'react';
-import type {
-    AnalysisResponse,
-    ModelId,
-    Tier,
-    TierInfoDepth,
-    Timeframe,
-} from '@y0ngha/siglens-core';
-import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
-import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 // symbol-page → analysis는 허용된 하향 의존(views → widgets).
 import type { CooldownNotice } from '@/widgets/analysis/model/types';
 import {

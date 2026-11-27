@@ -2,14 +2,14 @@
 
 /** 공유 시트의 링크 복사 행 — 복사 결과 안내와, 클립보드가 막혔을 때의 직접 복사 입력. */
 
-import type { RefObject } from 'react';
 import { useTranslations } from 'next-intl';
+import type { RefObject } from 'react';
 import { CheckIcon, LinkIcon } from '@/shared/ui/StrokeIcons';
-import { SHARE_SHEET_ROW } from '../../utils/sheetStyles';
 import {
     focusAndSelectInput,
     selectInputOnClick,
 } from '../../utils/selectInputText';
+import { SHARE_SHEET_ROW } from '../../utils/sheetStyles';
 
 interface ShareSheetCopyActionProps {
     /** 시트가 열릴 때 포커스를 받는 버튼 ref. */

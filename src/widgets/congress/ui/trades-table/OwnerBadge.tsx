@@ -1,6 +1,6 @@
+import type { CongressOwner } from '@y0ngha/siglens-core';
 /** Asset-owner badge for a trades-table row. */
 import { useTranslations } from 'next-intl';
-import type { CongressOwner } from '@y0ngha/siglens-core';
 import { OWNER_LABEL } from '../../utils/tradeLabels';
 
 interface OwnerBadgeProps {

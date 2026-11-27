@@ -1,7 +1,4 @@
 import 'server-only';
-import type { Locale } from '@/shared/i18n/locales';
-import { getTranslations } from 'next-intl/server';
-
 import {
     TIER_CONFIG,
     bucketizePosition,
@@ -11,13 +8,15 @@ import {
     type PositionBucket,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { getDatabaseClient } from '@/shared/db/client';
+import { getTranslations } from 'next-intl/server';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
 } from '@/entities/api-key/api';
-import { getUserTier } from '@/entities/user-tier/lib/getUserTier';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { getUserTier } from '@/entities/user-tier/lib/getUserTier';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateError, AnalysisGateErrorCode } from './types';
 
 /**

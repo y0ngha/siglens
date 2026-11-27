@@ -4,21 +4,21 @@
  * 일목균형표 오버레이 시리즈(선행 구름 포함) 생성·갱신과 표시 토글 훅.
  */
 
-import type { RefObject } from 'react';
-import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
-import { usePersistentState } from '@/shared/hooks/usePersistentState';
-import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
-import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     type Bar,
     type IndicatorResult,
     calculateIchimokuFutureCloud,
 } from '@y0ngha/siglens-core';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
+import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from '../constants';
-import { buildSeriesData } from '../utils/seriesDataUtils';
 import type { FutureCloudBase } from '../utils/ichimokuUtils';
 import { buildCloudData, extendWithFutureCloud } from '../utils/ichimokuUtils';
+import { buildSeriesData } from '../utils/seriesDataUtils';
 
 interface UseIchimokuOverlayParams {
     chartRef: RefObject<IChartApi | null>;

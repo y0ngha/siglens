@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-    PLANTED_EMAIL,
-    PLANTED_TOKEN,
-} from '@/shared/test-utils/plantedDbError';
-import {
     isDatabaseError,
     redactDbErrorForLog,
     redactedErrorMessage,
 } from '@/shared/db/redactDbErrorForLog';
+import {
+    PLANTED_EMAIL,
+    PLANTED_TOKEN,
+} from '@/shared/test-utils/plantedDbError';
 
 /**
  * 로컬 클래스를 두는 이유: 이 파일은 **생성자 이름**(`DrizzleQueryError`)으로 잡는 분기와 `query`·`params` 필드를

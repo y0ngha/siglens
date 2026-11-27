@@ -1,9 +1,8 @@
 vi.mock('server-only', () => ({}));
 
 import { describe, expect, it, vi } from 'vitest';
-
-import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 import { createTurnCharts } from '@/app/api/ai/chat/stream/_lib/turnCharts';
+import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 
 const block = (symbol: string): ChatChartBlock => ({
     version: 1,

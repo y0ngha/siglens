@@ -1,8 +1,8 @@
 import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import type { Locale } from '@/shared/i18n/locales';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import type { Locale } from '@/shared/i18n/locales';
 import ko from '../../../../../messages/ko.json';
 import { GuideLiveSymbols } from '../GuideLiveSymbols';
 

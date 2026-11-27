@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { benchmarkItemDetailPath, isBenchmarkItemDetail } from '../itemDetail';
 import { BENCHMARK_DETAIL_FIXTURE } from '../../__tests__/fixtures/benchmarkFixture';
+import { benchmarkItemDetailPath, isBenchmarkItemDetail } from '../itemDetail';
 
 describe('benchmarkItemDetailPath', () => {
     it('builds the static file path under the round directory', () => {

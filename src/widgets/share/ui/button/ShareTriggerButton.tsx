@@ -2,8 +2,8 @@
 
 /** 공유 흐름을 여는 헤더 아이콘 버튼 — 진행 중에는 스피너를 보인다. */
 
-import type { RefObject } from 'react';
 import { useTranslations } from 'next-intl';
+import type { RefObject } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { Spinner } from '@/shared/ui/Spinner';
 import { ShareIcon } from '../icons/shareIcons';

@@ -1,12 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 대화 레일 — 새 대화, 검색, 날짜별 대화 목록(이름 바꾸기·삭제 인라인), 레일 푸터를 배치하는
  * 오케스트레이터. 서버 액션은 `useConversationMutations`, 이동은 `useRailNavigation`, 편집 상태는
  * `useRenameMode`, 행 렌더는 `sidebar/`가 맡는다.
  */
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import type { ConversationListItem } from '@/entities/chat-conversation/model';
 import {
     groupConversationsByDay,

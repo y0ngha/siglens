@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
+import { FakeInvestorFlowsDataProvider } from '../../server/FakeInvestorFlowsDataProvider';
 import {
     buildFakeKrSnapshot,
     resolveFakeDartCorp,
 } from '../../server/fakeKrDart';
-import { FakeInvestorFlowsDataProvider } from '../../server/FakeInvestorFlowsDataProvider';
 
 const NOW = new Date('2026-10-16T01:00:00Z');
 

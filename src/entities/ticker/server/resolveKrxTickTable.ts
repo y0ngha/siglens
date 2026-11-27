@@ -1,4 +1,5 @@
 import 'server-only';
+import type { KrxTickTable } from '@y0ngha/siglens-core';
 /**
  * `lib/`의 순수 함수 규칙(`src/entities/CLAUDE.md#EN-1`)의 예외다 — yahoo 조회와 캐시를 직접
  * 한다. 같은 디렉터리의 `resolveMarketProfile.ts`·`krEquityQuoteName.ts`와 같은 이유다: 이 판정은
@@ -6,18 +7,17 @@ import 'server-only';
  * app 레이어에서만 import할 수 있어 거기 둘 수 없다.
  */
 import { unstable_cache } from 'next/cache';
-import type { KrxTickTable } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { loadYahooProvider } from '@/shared/api/yahoo/lazyYahooProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { withRetry } from '@/shared/lib/withRetry';
 import {
     buildKrxTickTableCacheKey,
     KRX_TICK_TABLE_CACHE_TTL,
 } from '../lib/cacheKeys';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** yahoo가 ETF/ETN을 어떤 `quoteType`으로 부르든 상장지수상품 호가표('etp')를 쓴다. */
 const ETP_QUOTE_TYPES: ReadonlySet<string> = new Set(['ETF', 'ETN']);

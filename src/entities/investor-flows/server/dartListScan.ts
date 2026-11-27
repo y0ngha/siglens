@@ -2,7 +2,6 @@ import type {
     DartDisclosureDetailType,
     DartListPage,
 } from '@/shared/api/dart/dartClient';
-import type { DartListCursor } from '../lib/dartIngestState';
 import {
     REFETCH_TRIGGER_TYPES,
     TRADING_PLAN_TYPE,
@@ -10,6 +9,7 @@ import {
     overflowResume,
     scanStart,
 } from '../lib/dartIngestPlan';
+import type { DartListCursor } from '../lib/dartIngestState';
 import {
     disclosureMatchesDetailType,
     parseDisclosureListRows,

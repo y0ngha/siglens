@@ -16,12 +16,12 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
     }),
 }));
 
+import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { authenticateApiKey } from '@/entities/siglens-api-key/server/apiKeyAuth';
 import {
     resetApiKeyAuthWarnForTests,
     revokeApiKeyAuth,
 } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
-import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import { API_KEY_AUTH_CACHE_TTL_SECONDS } from '@/shared/config/publicApi';
 import {

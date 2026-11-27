@@ -26,15 +26,15 @@ vi.mock('../../lib/buildMarketFearGreedComparisons', () => ({
 }));
 
 import { MARKET_FEAR_GREED_SERIES_KEYS } from '@y0ngha/siglens-core';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
+import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../../api/marketFearGreedCache';
 import {
     getCachedMarketFearGreedKr,
     MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT,
 } from '../../api/marketFearGreedKrCache';
-import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../../api/marketFearGreedCache';
 import { KOSPI_INDEX_SYMBOL } from '../../lib/marketFearGreedKrSymbols';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const computeMarketFearGreedIndex = vi.fn(
     (..._args: unknown[]): unknown => ({})

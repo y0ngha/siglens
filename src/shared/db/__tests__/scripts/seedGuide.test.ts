@@ -1,10 +1,10 @@
-import path from 'path';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import path from 'path';
 import { seedGuide } from '@/../db/scripts/seedGuide';
+import { renderSql } from '@/__tests__/utils/renderSql';
 import { guideEntries, guideEntryContents } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { renderSql } from '@/__tests__/utils/renderSql';
 
 function writeSeed(
     root: string,

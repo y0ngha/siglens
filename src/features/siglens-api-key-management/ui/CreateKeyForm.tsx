@@ -1,7 +1,7 @@
 'use client';
 
-import type { Ref } from 'react';
 import { useTranslations } from 'next-intl';
+import type { Ref } from 'react';
 import type { CreateSiglensApiKeyState } from '@/entities/siglens-api-key/model';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';

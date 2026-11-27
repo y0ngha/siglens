@@ -1,9 +1,10 @@
-import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,
 } from '@/entities/bars/lib/technicalFacts';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     describeFloor,
     type PositionTranslator,
@@ -13,7 +14,6 @@ import {
     computePosition,
 } from '@/widgets/portfolio-position/utils/positionGeometry';
 import { computeVolumeByBand } from '@/widgets/portfolio-position/utils/volumeByBand';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** "내 위치" 탭이 SSR로 내리는 최근 가격 범위(공개 데이터만 — 평단·수익률은 클라 전용). */
 export interface PriceRange {

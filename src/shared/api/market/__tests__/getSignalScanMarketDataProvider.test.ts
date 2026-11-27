@@ -53,7 +53,6 @@ vi.mock('@/shared/lib/startSpacer', async orig => {
 });
 
 import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
-
 import {
     getSignalScanMarketDataProvider,
     SIGNAL_SCAN_HISTORY_MEMORY_ENTRIES,

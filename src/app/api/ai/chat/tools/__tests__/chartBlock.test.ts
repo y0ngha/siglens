@@ -19,9 +19,8 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { TIER_CONFIG, type Bar, type ChartOverlay } from '@y0ngha/siglens-core';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     chartBlockFrom,
     loadAnalysisChartBlock,

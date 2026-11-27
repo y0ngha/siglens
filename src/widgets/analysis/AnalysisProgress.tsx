@@ -1,10 +1,10 @@
 'use client';
 
-import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { ANALYSIS_PHASE_COUNT } from './hooks/useAnalysisProgress';
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { AdBanner } from './AdBanner';
+import { ANALYSIS_PHASE_COUNT } from './hooks/useAnalysisProgress';
 
 /**
  * AI 분석이 진행되는 동안 패널 내부에 표시되는 인터랙티브 인디케이터.

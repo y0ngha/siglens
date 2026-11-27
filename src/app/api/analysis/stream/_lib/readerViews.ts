@@ -5,9 +5,9 @@ import {
     resolvePriceAsOf,
 } from '@/entities/analysis-plain/server/currentPrice';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisType } from './types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 평이화("쉽게보기")를 적용할 분석 종류.

@@ -1,27 +1,27 @@
-/**
- * 기관 매수·매도(13F) 섹션.
- */
-import { useTranslations } from 'next-intl';
 import type {
     InstitutionalMetrics,
     InstitutionalSnapshot,
 } from '@y0ngha/siglens-core';
+/**
+ * 기관 매수·매도(13F) 섹션.
+ */
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
+import { QuarterFlowChart } from '../ui/charts/QuarterFlowChart';
+import { HoldersTrendChart } from '../ui/institutional/HoldersTrendChart';
+import { PartialQuarterNote } from '../ui/institutional/PartialQuarterNote';
 import {
     buildHoldersTrend,
     buildQuarterBars,
     buildSplitComparison,
     findPartialQuarter,
 } from '../utils/institutional';
-import { QuarterFlowChart } from '../ui/charts/QuarterFlowChart';
-import { HoldersTrendChart } from '../ui/institutional/HoldersTrendChart';
-import { PartialQuarterNote } from '../ui/institutional/PartialQuarterNote';
 import { ChangeSplitCard } from './ChangeSplitCard';
 import { CollectingNotice } from './CollectingNotice';
 import { OptionsPositionsBlock } from './OptionsPositionsBlock';

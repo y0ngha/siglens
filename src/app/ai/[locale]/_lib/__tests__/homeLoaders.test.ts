@@ -15,7 +15,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadAiHomeSuggestions } from '../homeLoaders';
 
 describe('loadAiHomeSuggestions', () => {

@@ -1,9 +1,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-
-import { blankComments } from './support/sourceScan';
 import { SCAN_TIMEOUT_MS } from './support/controlUsage';
+import { blankComments } from './support/sourceScan';
 
 /**
  * 반경 스케일 단일화 가드.

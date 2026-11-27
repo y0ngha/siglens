@@ -3,7 +3,6 @@ import {
     type MarketSessionSpec,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import {
     HOURS_PER_DAY,
     KST_OFFSET_HOURS,
@@ -11,6 +10,7 @@ import {
     MS_PER_HOUR,
     MS_PER_MINUTE,
 } from '@/shared/config/time';
+import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 
 /**
  * 타임프레임별 뉴스 조회 창(일). 벽시계 기준이다.

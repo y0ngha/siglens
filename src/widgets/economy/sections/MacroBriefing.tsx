@@ -1,23 +1,20 @@
 'use client';
 
-/**
- * /economy 상단 거시 AI 브리핑 카드 — 로딩·오류·본문 상태를 그린다.
- */
-import { useTranslations } from 'next-intl';
 import type {
     MacroBriefingCacheEntry,
     MacroBriefingResponse,
 } from '@y0ngha/siglens-core';
-
+/**
+ * /economy 상단 거시 AI 브리핑 카드 — 로딩·오류·본문 상태를 그린다.
+ */
+import { useTranslations } from 'next-intl';
 import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-
-import { useMacroBriefing } from '../hooks/useMacroBriefing';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { useMacroBriefing } from '../hooks/useMacroBriefing';
 
 /** MacroBriefingResponse['regime'] → `shared.enumLabel.macroRegime` 카탈로그 키. */
 const REGIME_LABEL_KEY: Record<MacroBriefingResponse['regime'], string> = {

@@ -35,10 +35,9 @@ vi.mock('../lib/submitInquiry', () => ({
 }));
 
 import type { MockInstance } from 'vitest';
-
-import { submitContactAction } from '../actions/submitContactAction';
 import type { ContactFormState } from '@/shared/lib/types';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import { submitContactAction } from '../actions/submitContactAction';
 
 const INITIAL_STATE: ContactFormState = {
     submitted: false,

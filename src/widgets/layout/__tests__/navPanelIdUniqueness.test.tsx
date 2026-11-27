@@ -2,10 +2,9 @@ vi.mock('next/navigation', () => ({
     usePathname: vi.fn(() => '/market'),
 }));
 
+import { render } from '@testing-library/react';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
-import { render } from '@testing-library/react';
 import { HeaderNav } from '../HeaderNav';
 import { NAV_TREE } from '../utils/headerNavTree';
 

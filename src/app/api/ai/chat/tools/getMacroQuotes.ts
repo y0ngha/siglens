@@ -3,6 +3,7 @@ import {
     AGENT_MACRO_QUOTES_MAX,
     type AgentMacroInstrument,
 } from '@y0ngha/siglens-core';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import {
     getYahooMacroDailyCloses,
@@ -10,9 +11,8 @@ import {
     type YahooMacroQuote,
 } from '@/shared/api/yahoo/yahooMacroSource';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { macroChanges, macroRange52w } from './macroQuoteMath';
 import { logToolDegrade } from './logToolDegrade';
+import { macroChanges, macroRange52w } from './macroQuoteMath';
 
 interface InstrumentSpec {
     yahooSymbol: string;

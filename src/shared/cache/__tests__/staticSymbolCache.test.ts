@@ -10,11 +10,11 @@ vi.mock('next/cache', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SECONDS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     STATIC_SYMBOL_CACHE_VERSION,
     staticSymbolCache,
 } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
 import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
 
 describe('staticSymbolCache', () => {

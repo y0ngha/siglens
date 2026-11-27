@@ -4,15 +4,15 @@ vi.mock('@/shared/cache/redisClient', () => ({
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
+    COMPRESSED_VALUE_PREFIX,
+    decodeCacheValue,
+} from '@/shared/cache/cacheValueCodec';
+import {
     getOrSetCache,
     setCacheValue,
     __resetInFlightForTests,
 } from '@/shared/cache/getOrSetCache';
 import { getRedisClient } from '@/shared/cache/redisClient';
-import {
-    COMPRESSED_VALUE_PREFIX,
-    decodeCacheValue,
-} from '@/shared/cache/cacheValueCodec';
 
 const mockedGetRedisClient = vi.mocked(getRedisClient);
 

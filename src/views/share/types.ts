@@ -5,10 +5,10 @@
  * 디스패처의 캐스트가 안전하므로 한 곳에 둔다.
  */
 
-import type { ShareableKind } from '@/shared/db/constants';
+import type { Bar, KrxTickTable } from '@y0ngha/siglens-core';
 import type { SnapshotResultOf } from '@/entities/shared-analysis/types';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
-import type { Bar, KrxTickTable } from '@y0ngha/siglens-core';
+import type { ShareableKind } from '@/shared/db/constants';
 
 /** kind `K`의 공유 패널 하나가 받는 props. 서버 페이지가 스냅샷에서 직렬화해 넘긴다. */
 export interface SharePanelProps<K extends ShareableKind> {

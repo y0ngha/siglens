@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useStochRSIChart } from '../../hooks/useStochRSIChart';
 import { INACTIVE_PANE_INDEX } from '../../constants';
+import { useStochRSIChart } from '../../hooks/useStochRSIChart';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();

@@ -1,12 +1,12 @@
 import { act, render } from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
 import type { ChartOverlay } from '@y0ngha/siglens-core';
-import ko from '../../../../messages/ko.json';
+import { NextIntlClientProvider } from 'next-intl';
 import type {
     ChatChartBlock,
     ChatChartTimeframe,
 } from '@/entities/chat-conversation/types';
 import { ChatChart } from '@/widgets/chart/ChatChart';
+import ko from '../../../../messages/ko.json';
 
 const { renderStockChart } = vi.hoisted(() => ({
     renderStockChart: vi.fn(),

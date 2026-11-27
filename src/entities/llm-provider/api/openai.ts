@@ -1,7 +1,8 @@
 import 'server-only';
-import OpenAI from 'openai';
 import type { AiContents } from '@y0ngha/siglens-core';
 import { resolveReasoningConfig } from '@y0ngha/siglens-core';
+import OpenAI from 'openai';
+import { CHAT_JOB_ID, extractOpenAIUsage } from '../lib/usage';
 import {
     findSpecByApiModelId,
     resolveMaxOutputTokens,
@@ -9,7 +10,6 @@ import {
     toSdkTransportOptions,
 } from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
-import { CHAT_JOB_ID, extractOpenAIUsage } from '../lib/usage';
 import {
     createCallDeadline,
     runWithCallDeadline,

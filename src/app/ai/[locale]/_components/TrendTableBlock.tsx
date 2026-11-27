@@ -1,9 +1,9 @@
 'use client';
 
+import type { ChatTrendTableModel } from '@/widgets/chart/visual/reusedBlockTypes';
+import { VisualBlockCard } from '@/widgets/chart/visual/VisualBlockCard';
 import { FinancialTrendChart } from '@/widgets/financials/sections/FinancialTrendChart';
 import { StatementTable } from '@/widgets/financials/sections/StatementTable';
-import { VisualBlockCard } from '@/widgets/chart/visual/VisualBlockCard';
-import type { ChatTrendTableModel } from '@/widgets/chart/visual/reusedBlockTypes';
 
 /**
  * 기간별 추이 블록(실적·배당) — 펀더멘털 탭과 같은 막대 추세 차트 아래에 같은 재무제표 표를 둔다. 차트의 SVG는

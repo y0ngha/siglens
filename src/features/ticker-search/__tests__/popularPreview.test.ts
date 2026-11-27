@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
-import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
 import {
     POPULAR_PREVIEW_GROUPS,
     popularNameKey,
 } from '@/features/ticker-search/lib/popularPreview';
+import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
+import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /**

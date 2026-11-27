@@ -30,8 +30,8 @@ vi.mock(
     }
 );
 
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import {
     afterAll,
@@ -44,10 +44,9 @@ import {
     vi,
 } from 'vitest';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
-import ko from '../../../../messages/ko.json';
-import en from '../../../../messages/en.json';
-
 import { MessageList } from '@/widgets/agent-chat/MessageList';
+import en from '../../../../messages/en.json';
+import ko from '../../../../messages/ko.json';
 
 const wrap = (ui: React.ReactElement, locale: 'ko' | 'en' = 'ko') =>
     render(

@@ -31,7 +31,6 @@ vi.mock('@/widgets/investor-flows/InvestorFlowsSummary', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-
 import { FlowsTabBody } from '@/app/[locale]/[symbol]/flows/_components/FlowsTabBody';
 import { isKrDisclosureCollecting } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import type { InvestorFlowsScorecardResult } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';

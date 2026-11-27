@@ -1,8 +1,8 @@
+import type { ShortInterestTrend, ShortMetrics } from '@y0ngha/siglens-core';
 /**
  * 공매도 잔고 변화 카드 — 직전 결제일 대비 증감, core 추세 라벨, 최근 3회 결제 변화율.
  */
 import { useTranslations } from 'next-intl';
-import type { ShortInterestTrend, ShortMetrics } from '@y0ngha/siglens-core';
 import type { PreviousSettlementChange } from '@/entities/investor-flows/model';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';

@@ -1,18 +1,18 @@
 import { constants } from 'node:http2';
 import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
-import { FEAR_GREED_DATA_LOADERS } from '@/app/api/fear-greed/data/_lib/loaders';
 import {
     FEAR_GREED_DATA_CACHE_CONTROL,
     toFearGreedCsv,
     toFearGreedJson,
 } from '@/app/api/fear-greed/data/_lib/fearGreedDataFiles';
+import { FEAR_GREED_DATA_LOADERS } from '@/app/api/fear-greed/data/_lib/loaders';
 import { publishableHistory } from '@/entities/market-fear-greed/lib/publishableHistory';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     fearGreedDataFileName,
     parseFearGreedDataParams,
 } from '@/shared/config/fearGreedData';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 

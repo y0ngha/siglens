@@ -1,5 +1,5 @@
-import { useTranslations } from 'next-intl';
 import type { MeasuredBaseRate } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { formatShareAsPercent } from '@/shared/lib/patternBaseRate';
 

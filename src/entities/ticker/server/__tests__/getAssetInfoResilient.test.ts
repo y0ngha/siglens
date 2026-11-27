@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AssetInfo } from '@/shared/lib/types';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import type { AssetInfo } from '@/shared/lib/types';
 
 // 헬퍼가 감싸는 정적화 함수를 mock해 정상/throw/null 세 경로를 직접 제어한다.
 vi.mock('@/entities/ticker/server/getAssetInfoStatic', () => ({

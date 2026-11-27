@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from 'vitest';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { beforeAll, describe, expect, it } from 'vitest';
 import type { DemoBar, DemoPane, GuideDemo } from '@/views/guide/demos/types';
 import {
     describeDemo,

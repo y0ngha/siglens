@@ -1,7 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
+import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { validateKeyName } from '@/entities/siglens-api-key/lib/validateKeyName';
@@ -10,11 +10,11 @@ import type {
     ReachableSiglensApiKeyErrorCode,
 } from '@/entities/siglens-api-key/model';
 import { generateApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
     API_KEY_NAME_MAX_LENGTH,
 } from '@/shared/config/publicApi';
-import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 

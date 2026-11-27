@@ -15,7 +15,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     isAnalysisRecentlyRun,
     markAnalysisRun,
@@ -24,6 +23,7 @@ import {
     CALENDAR_ANALYSIS_REFRESH_FLAG_KEY,
     CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_SECONDS,
 } from '@/entities/economy/lib/economyCalendarConstants';
+import { getRedisClient } from '@/shared/cache/redisClient';
 
 /** 국가별 키 — 전역 키 하나면 먼저 방문한 국가가 다른 국가의 분석 창을 태운다. */
 const US_ANALYSIS_KEY = `${CALENDAR_ANALYSIS_REFRESH_FLAG_KEY}:us`;

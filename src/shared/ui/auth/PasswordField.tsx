@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { useState, type ReactNode } from 'react';
+import { EyeIcon } from '@/shared/ui/EyeIcon';
 
 interface PasswordFieldProps {
     id: string;

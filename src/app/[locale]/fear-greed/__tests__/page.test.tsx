@@ -15,7 +15,6 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-
 import FearGreedRoutePage, {
     generateMetadata,
     revalidate,

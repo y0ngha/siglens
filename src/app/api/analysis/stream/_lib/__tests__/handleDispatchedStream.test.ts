@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
+import {
     DONE_STATUS_PROBE,
     releaseGenerationGate,
     reserveGenerationGate,
@@ -10,10 +14,6 @@ import {
 import { resolveRequestModel } from '../../modelFallback';
 import { dispatchHandlerFor } from '../dispatch';
 import { handleDispatchedStream } from '../handleDispatchedStream';
-import {
-    expectLogWithoutPlantedSecrets,
-    plantedDbError,
-} from '@/shared/test-utils/plantedDbError';
 
 const { promptProbe, onPromptAssembled } = vi.hoisted(() => ({
     promptProbe: { onResolved: vi.fn(), onRejected: vi.fn() },

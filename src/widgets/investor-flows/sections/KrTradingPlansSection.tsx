@@ -1,16 +1,16 @@
+import type { KrTradingPlan } from '@y0ngha/siglens-core';
 /**
  * 한국 거래계획 보고서 섹션(DART D005).
  */
 import { useTranslations } from 'next-intl';
-import type { KrTradingPlan } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { TradingPlanList } from '../ui/kr/TradingPlanList';
+import { OmittedNote } from '../ui/notes/OmittedNote';
 import { formatInteger } from '../utils/flowFormat';
 import { newestKrRows } from '../utils/krDisclosures';
-import { OmittedNote } from '../ui/notes/OmittedNote';
-import { TradingPlanList } from '../ui/kr/TradingPlanList';
 import { CollectingNotice } from './CollectingNotice';
 
 const HEADING_ID = 'flows-kr-trading-plans-heading';

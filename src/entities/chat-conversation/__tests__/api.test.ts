@@ -3,10 +3,9 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { CONVERSATION_LIST_LIMIT } from '@/entities/chat-conversation/model';
-import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { defined } from '@/shared/test-utils/defined';
 

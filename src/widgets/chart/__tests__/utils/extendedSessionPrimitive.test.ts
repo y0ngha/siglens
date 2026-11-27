@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { SeriesAttachedParameter, Time } from 'lightweight-charts';
+import { describe, expect, it, vi } from 'vitest';
+import type { ExtendedSessionRange } from '@/shared/api/market/extendedBarsSession';
 import {
     bandSpan,
     createExtendedSessionPrimitive,
 } from '../../utils/extendedSessionPrimitive';
-import type { ExtendedSessionRange } from '@/shared/api/market/extendedBarsSession';
 
 describe('bandSpan', () => {
     it('첫 봉 왼쪽 반 칸부터 마지막 봉 오른쪽 반 칸까지', () => {

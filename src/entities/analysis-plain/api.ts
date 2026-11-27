@@ -1,11 +1,13 @@
 import 'server-only';
 import { extractProse } from '@/entities/analysis-translation/lib/proseFields';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { PLAIN_PROMPT_VERSION, buildPlainPrompt } from './lib/buildPlainPrompt';
 import { collectFacts, type CurrencyCode } from './lib/collectFacts';
 import { buildAllowedNumbers } from './lib/guardPlainText';
 import { dropSupersededPaths } from './lib/supersededPaths';
+import type { PlainGenerationKey } from './plainGenerationCoordination';
 import {
     coordinatePlainGeneration,
     joinPlainFlight,
@@ -21,8 +23,6 @@ import {
     findStored,
     tryCreateRepository,
 } from './server/plainStore';
-import type { PlainGenerationKey } from './plainGenerationCoordination';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 자체 마감. `withDeadline`의 `Promise.race`가 **이미 끝난 뒤** 붙는 레이어라

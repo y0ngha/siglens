@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCallback, useRef } from 'react';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { assignLocation } from '@/shared/lib/crossHostNavigate';

@@ -1,11 +1,11 @@
-import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { subscribeAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
+import { subscribeAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
 import {
     AnalysisRateLimitedError,
     runAnalysisStream,
 } from '@/shared/lib/sse/runAnalysisStream';
-import { subscribeAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
-import { subscribeAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
+import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 
 /**
  * SSE 프레임을 임의의 청크 경계로 쪼개 흘려보내는 가짜 Response.

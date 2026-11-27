@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { WATCHLIST_PREVIEW_COUNT } from '@/shared/config/watchlist';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_CARD } from '@/shared/lib/surfaceStyles';

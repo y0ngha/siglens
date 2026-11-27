@@ -1,20 +1,20 @@
 import 'server-only';
 import type { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import {
     handoffStartUrl,
     resolveHandoffNext,
 } from '@/entities/auth/lib/handoffRedirect';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import {
     isHandoffToken,
     issueHandoffCode,
 } from '@/entities/auth/server/handoffStore';
-import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
-import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { localePath } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 

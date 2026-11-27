@@ -1,14 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
-import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
 } from '@/entities/portfolio/model';
+import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
+import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { focusHoldingErrorField } from '../lib/focusHoldingErrorField';
 import {
     fieldForErrorCode,

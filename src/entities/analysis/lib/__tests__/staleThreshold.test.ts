@@ -1,9 +1,9 @@
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import {
     isAnalysisStale,
     STALE_THRESHOLD_MS,
 } from '@/entities/analysis/lib/staleThreshold';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
 describe('isAnalysisStale', () => {

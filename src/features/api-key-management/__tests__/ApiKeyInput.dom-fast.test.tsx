@@ -1,7 +1,6 @@
-import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
+import { createRef } from 'react';
 import { ApiKeyInput } from '@/features/api-key-management/ui/ApiKeyInput';
 
 describe('ApiKeyInput', () => {

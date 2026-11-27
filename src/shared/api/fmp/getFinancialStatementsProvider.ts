@@ -1,9 +1,9 @@
+import type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
+import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
+import { YahooFinancialStatementsProvider } from '@/shared/api/yahoo/YahooFinancialStatementsProvider';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
 import { FmpFinancialStatementsClient } from './financialStatementsClient';
-import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { YahooFinancialStatementsProvider } from '@/shared/api/yahoo/YahooFinancialStatementsProvider';
-import type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
 
 function loadFake(): FinancialStatementsProvider {
     // Sync factory — no dynamic import possible here, so the fake loads via a

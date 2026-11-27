@@ -1,10 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { useHumanInteracted } from '../useHumanInteracted';
 import {
     __resetHumanInteractionForTests,
     markHumanInteracted,
 } from '@/shared/lib/humanInteractionStore';
+import { useHumanInteracted } from '../useHumanInteracted';
 
 describe('useHumanInteracted', () => {
     beforeEach(() => {

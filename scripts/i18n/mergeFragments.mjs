@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 /**
  * JSX 문장 조각을 **하나의 ICU 메시지로 병합**한다.
  *
@@ -27,10 +30,7 @@
  * 메시지 안으로 넣으려면 `t.rich`가 필요하고, 그건 사람이 문장을 보고 정할 일이다.
  */
 import { createRequire } from 'node:module';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { createHash } from 'node:crypto';
 import { namespaceFor } from './lib/scan.mjs';
 
 const require = createRequire(import.meta.url);

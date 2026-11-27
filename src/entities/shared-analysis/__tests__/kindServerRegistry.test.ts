@@ -1,6 +1,6 @@
+import { SHARE_KIND_OG_BUILDERS } from '@/entities/shared-analysis/server/kindServerRegistry';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { SHARE_KIND_OG_BUILDERS } from '@/entities/shared-analysis/server/kindServerRegistry';
 
 const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
 

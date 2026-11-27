@@ -7,9 +7,9 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     translateFmpError: mockGetFmpMsg,
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { FallbackProps } from 'react-error-boundary';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CongressTrendSummaryError } from '../CongressTrendSummaryError';
 
 // FallbackProps.error is typed `any`; helper keeps the test call sites readable.

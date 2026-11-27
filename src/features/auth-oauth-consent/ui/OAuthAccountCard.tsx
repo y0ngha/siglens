@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/shared/lib/types';
 
 interface OAuthAccountCardProps {

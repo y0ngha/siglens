@@ -7,13 +7,13 @@ import 'server-only';
 import type { SkillCounts } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
-import type { FaqItem } from '@/shared/lib/seo';
 import {
     parseReplayLine,
     type ReplayLine,
     type ReplayScenario,
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
+import type { FaqItem } from '@/shared/lib/seo';
 import type { AboutT } from './types';
 
 /**

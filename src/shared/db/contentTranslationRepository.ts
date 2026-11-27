@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { and, eq, inArray } from 'drizzle-orm';
 import type { Locale } from '@/shared/i18n/locales';
 import { CONTENT_LOCALE_FALLBACK } from './contentLocale';

@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MAX_CONCURRENT_FRESH } from '@/app/api/ai/chat/tools/runFreshAnalysis';
 import {
     __resetTurnSlotsForTests,
     acquireTurnSlot,
@@ -11,6 +10,7 @@ import {
     MAX_ADMITTED_AGENT_TURNS,
     type TurnSlot,
 } from '@/app/api/ai/chat/stream/_lib/turnSlots';
+import { MAX_CONCURRENT_FRESH } from '@/app/api/ai/chat/tools/runFreshAnalysis';
 
 const open = () => true;
 

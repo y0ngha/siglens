@@ -1,5 +1,5 @@
-import { authenticateApiKey } from '@/entities/siglens-api-key/server/apiKeyAuth';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
+import { authenticateApiKey } from '@/entities/siglens-api-key/server/apiKeyAuth';
 import { apiError, API_STATUS } from './apiResponse';
 
 /** 키 저장소 장애 시 클라이언트가 기다릴 초. */

@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 /**
  * `LIVE_ANALYSIS_CROSS_REF`(`../utils/liveAnalysisCrossRef.ts`)는 "실시간 AI 분석

@@ -1,29 +1,28 @@
 'use client';
 
+import type { ModelId, OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * Options AI analysis card: wires the analysis hook, share registration and
  * status branches. Section markup lives in `ui/ai-analysis/`.
  */
 import { useTranslations } from 'next-intl';
-import type { ModelId, OptionsAnalysisResponse } from '@y0ngha/siglens-core';
-
-import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { formatCapturedAtKst } from './utils/formatCapturedAtKst';
-import { isEmptyOptionsAnalysis } from './utils/isEmptyOptionsAnalysis';
+import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { PerExpirationSection } from './ui/ai-analysis/PerExpirationSection';
 import { SignalsSection } from './ui/ai-analysis/SignalsSection';
-import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
-import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
-import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
-import type { OptionsExpirationSelector } from '@/shared/lib/types';
-import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
-import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { formatCapturedAtKst } from './utils/formatCapturedAtKst';
+import { isEmptyOptionsAnalysis } from './utils/isEmptyOptionsAnalysis';
 
 interface OptionsAiAnalysisViewProps {
     result: OptionsAnalysisResponse;

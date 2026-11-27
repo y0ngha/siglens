@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { getEmailDebug } from '../support/emailHelper';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Anonymous Tier 2 spec — exercises the 3-phase signup flow

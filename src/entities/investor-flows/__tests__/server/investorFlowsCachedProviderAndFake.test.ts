@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
-import { investorFlowsCachedProvider } from '../../server/getInvestorFlowsCachedProvider';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeInvestorFlowsDataProvider } from '../../server/FakeInvestorFlowsDataProvider';
+import { investorFlowsCachedProvider } from '../../server/getInvestorFlowsCachedProvider';
 
 vi.mock('server-only', () => ({}));
 

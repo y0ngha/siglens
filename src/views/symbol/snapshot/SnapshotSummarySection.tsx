@@ -1,18 +1,18 @@
 import { useTranslations } from 'next-intl';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useId, type ReactNode } from 'react';
-import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
-import { AnalysisProvenanceNote } from './AnalysisProvenanceNote';
 import type { SnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { cn } from '@/shared/lib/cn';
 import {
     formatSnapshotAsOf,
     resolveSnapshotAsOf,
 } from '@/shared/lib/formatSnapshotAsOf';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { AnalysisProvenanceNote } from './AnalysisProvenanceNote';
+import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
 
 interface SnapshotSummarySectionProps {
     /** 섹션 헤딩 텍스트. 생략 시 "최근 분석 요약". */

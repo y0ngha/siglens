@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useBollingerOverlay } from '../../hooks/useBollingerOverlay';
 import { STORAGE_KEYS } from '../../constants';
+import { useBollingerOverlay } from '../../hooks/useBollingerOverlay';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { PricePrecision } from '@/shared/config/marketProfile/types';
 import {
     formatUsdPrice,
     formatUsdCurrency,
@@ -11,7 +12,6 @@ import {
     formatSignedPercent,
     quotePrefixFor,
 } from '@/shared/lib/priceFormat';
-import type { PricePrecision } from '@/shared/config/marketProfile/types';
 
 describe('currencyFractionDigits', () => {
     it('KRW는 0자리다', () => {

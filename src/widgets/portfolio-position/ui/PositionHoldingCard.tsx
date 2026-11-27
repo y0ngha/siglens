@@ -1,15 +1,15 @@
 'use client';
 
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
+import { useInViewOnce } from '@/shared/hooks/useInViewOnce';
+import { symbolLabel } from '@/shared/lib/symbolLabel';
 /**
  * `/portfolio` 그리드의 보유종목 카드 한 장 — 종목 이름, 포지션 빌딩, 숫자 표. 화면에 들어올 때만
  * 봉을 받고(`useHoldingRangeFacts`), 그릴 수 없으면 카드 단위로 대체 본문을 보인다.
  */
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { useInViewOnce } from '@/shared/hooks/useInViewOnce';
-import { symbolLabel } from '@/shared/lib/symbolLabel';
-import type { PortfolioHoldingView } from '@/entities/portfolio/model';
-import { computePosition } from '../utils/positionGeometry';
 import { useHoldingRangeFacts } from '../hooks/useHoldingRangeFacts';
+import { computePosition } from '../utils/positionGeometry';
 import { HoldingCardBody } from './holding-card/HoldingCardBody';
 
 type HoldingCardData = Pick<

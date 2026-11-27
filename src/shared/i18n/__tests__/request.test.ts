@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { IntlError, IntlErrorCode } from 'use-intl';
-import requestConfig from '../request';
-import koMessages from '../../../../messages/ko.json';
 import jaMessages from '../../../../messages/ja.json';
+import koMessages from '../../../../messages/ko.json';
+import requestConfig from '../request';
 
 /**
  * `next-intl/server`의 `getRequestConfig`는 콜백을 그대로 돌려주는 identity

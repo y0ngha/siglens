@@ -1,6 +1,7 @@
 import { desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { escapeLikePattern } from '@/shared/db/likePattern';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { cryptoAssets } from '@/shared/db/schema';
 import type {
     CryptoAssetRecord,
@@ -12,7 +13,6 @@ import {
     type CryptoAssetRow,
     type FmpCryptoListRaw,
 } from './lib/fmpCryptoListClient';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /*
  * 크립토 자산 유니버스의 I/O(FMP 목록 조회, `crypto_assets` 테이블 조회).

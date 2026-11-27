@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
-import { renderToString } from 'react-dom/server';
 import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 import { GUIDE_FILTER_ALL } from '../../lib/guideBrowse';
 import { useGuideBrowserState } from '../useGuideBrowserState';
 

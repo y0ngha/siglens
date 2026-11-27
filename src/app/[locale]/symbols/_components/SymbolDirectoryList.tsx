@@ -1,5 +1,5 @@
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { SymbolDirectorySection } from '@/shared/lib/symbolDirectory';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface SymbolDirectoryListProps {
     readonly sections: readonly SymbolDirectorySection[];

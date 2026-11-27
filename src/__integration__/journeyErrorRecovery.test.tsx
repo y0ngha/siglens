@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NewsAiSummaryError } from '@/widgets/news/NewsAiSummaryError';
 import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
+import { NewsAiSummaryError } from '@/widgets/news/NewsAiSummaryError';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

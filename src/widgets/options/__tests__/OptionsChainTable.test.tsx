@@ -1,11 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { OptionsChainTable } from '@/widgets/options/OptionsChainTable';
 import {
     aggregateOpenInterest,
     type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
+import { OptionsChainTable } from '@/widgets/options/OptionsChainTable';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

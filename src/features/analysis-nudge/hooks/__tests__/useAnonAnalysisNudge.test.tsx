@@ -1,9 +1,9 @@
+import type { UseQueryResult } from '@tanstack/react-query';
 import { renderHook, act } from '@testing-library/react';
 import type { Mock } from 'vitest';
-import type { UseQueryResult } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
+import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
 import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
@@ -11,13 +11,13 @@ import {
     claimNextAnonNudgeVariant,
     type SignupNudgeVariant,
 } from '@/shared/lib/anonAnalysisCount';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
 import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
-import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),

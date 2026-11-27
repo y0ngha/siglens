@@ -4,13 +4,13 @@ import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
-import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import type {
     AssetClass,

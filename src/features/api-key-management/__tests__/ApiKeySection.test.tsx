@@ -1,8 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
-import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
+import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import type { ApiKeyActionState } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 

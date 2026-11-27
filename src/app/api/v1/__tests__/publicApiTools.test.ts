@@ -57,13 +57,6 @@ vi.mock('@/app/api/ai/chat/tools/getCompanyFilings', () => ({
 }));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
-import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
-import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicators';
-import { renderChartDataNotes } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
-import {
-    PUBLIC_API_CHART_DATA,
-    PUBLIC_API_CHART_DATA_MEASURED_SIZES as MEASURED,
-} from '@/shared/config/publicApi';
 import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
 import {
     findPublicApiToolSpec,
@@ -74,6 +67,13 @@ import {
     publicApiToolNames,
     publicApiToolSpecs,
 } from '@/app/api/v1/publicApiTools';
+import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicators';
+import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
+import { renderChartDataNotes } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import {
+    PUBLIC_API_CHART_DATA,
+    PUBLIC_API_CHART_DATA_MEASURED_SIZES as MEASURED,
+} from '@/shared/config/publicApi';
 
 /** 노출하는 도구. 새 도구가 늘면 의도적으로 여기도 고친다. */
 const EXPECTED_TOOLS = [

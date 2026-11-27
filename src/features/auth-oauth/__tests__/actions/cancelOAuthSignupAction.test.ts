@@ -1,7 +1,7 @@
-import type { MockedFunction } from 'vitest';
-import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
 import { redirect } from 'next/navigation';
+import type { MockedFunction } from 'vitest';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
+import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
 
 // 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
 // `getLocale()`은 next-intl config 파일을 요구한다(빌드 플러그인이 만든다).

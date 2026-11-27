@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { fetchTickerSearch } from '@/entities/ticker/lib/fetchTickerSearch';
 import {
     QUERY_KEYS,

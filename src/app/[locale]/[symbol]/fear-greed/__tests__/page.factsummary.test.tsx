@@ -188,11 +188,11 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
         .mockReturnValue({ fullTitle: '', description: '', url: '' }),
 }));
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
-import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
 
 // 실제 코어는 봉이 없으면 null을 낸다("Returns null when bars is empty"). 모킹이 이를
 // 흉내 내야 `hasFearGreedScore` 게이트가 실제와 같은 입력에서 같은 답을 한다.

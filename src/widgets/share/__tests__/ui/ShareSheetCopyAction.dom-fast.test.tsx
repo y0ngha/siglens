@@ -1,5 +1,5 @@
-import { createRef } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { createRef } from 'react';
 import { ShareSheetCopyAction } from '../../ui/sheet/ShareSheetCopyAction';
 
 const SHARE_URL = 'https://siglens.io/share/copy';

@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { getFactualAxisKeys } from '../utils/factualAxisKeys';
 import { formatConjunction } from '../utils/listFormat';
 

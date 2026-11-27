@@ -3,8 +3,8 @@
  */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /**
  * AI 해석의 `no_data` 분기 — core가 스냅샷이 없거나 모든 축이 데이터 부족이라고 판단해 LLM을 부르지 않았다.

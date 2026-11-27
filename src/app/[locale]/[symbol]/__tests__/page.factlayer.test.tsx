@@ -163,17 +163,17 @@ vi.mock('@/entities/analysis/server/peekAnalysisStaticCache', () => ({
 
 import { Suspense, isValidElement, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { default as SymbolPage } from '@/app/[locale]/[symbol]/page';
-import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
-import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
-import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
-import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
-import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
-import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
-import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { default as SymbolPage } from '@/app/[locale]/[symbol]/page';
+import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
+import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
+import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
+import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 
 const mockBarsStatic = vi.mocked(getQuantizedBarsStatic);
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);

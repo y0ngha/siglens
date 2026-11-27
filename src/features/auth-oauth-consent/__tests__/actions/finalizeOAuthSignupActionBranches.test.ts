@@ -81,10 +81,9 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-import type { Mock } from 'vitest';
-
-import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
 import { redirect } from 'next/navigation';
+import type { Mock } from 'vitest';
+import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
 
 const mockRedirect = redirect as unknown as Mock;
 

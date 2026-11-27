@@ -54,8 +54,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 
 import { SUGGESTIONS_PROMPT_VERSION } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAgentSuggestions } from '../api';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { getAgentSuggestions } from '../api';
 
 function headline(overrides: Partial<MarketNewsCardItem>): MarketNewsCardItem {
     return {

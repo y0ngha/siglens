@@ -1,18 +1,16 @@
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-
 import koMessages from '@/../messages/ko.json';
-
+import {
+    buildTechnicalFacts,
+    RECENT_BARS_WINDOW,
+} from '@/entities/bars/lib/technicalFacts';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     buildTechnicalFactsNarrative,
     buildTechnicalFactsSummaryModel,
     formatVisibleChange,
 } from '../../utils/technicalFacts';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import {
-    buildTechnicalFacts,
-    RECENT_BARS_WINDOW,
-} from '@/entities/bars/lib/technicalFacts';
 
 /** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
 const tFacts = (key: string, values?: Record<string, string | number>) => {

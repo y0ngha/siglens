@@ -37,13 +37,13 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     }),
 }));
 
-import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 import { releasePrewarmLock } from '@/app/api/cron/seo-prewarm/lock';
 import {
     BATCH_WALL_CLOCK_BUDGET_MS,
     runPrewarmBatch,
 } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
 import { runSeoPrewarmJob } from '@/app/api/cron/seo-prewarm/runSeoPrewarmJob';
+import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 
 /** 신호 이력 단계의 자기 상한 — 구현 상수와 같은 값(2.5분)을 테스트가 따로 고정한다. */
 const SIGNAL_HISTORY_STEP_MAX_MS = 150_000;

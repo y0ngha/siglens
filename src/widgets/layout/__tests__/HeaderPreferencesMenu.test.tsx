@@ -8,11 +8,11 @@ vi.mock('@/shared/i18n/navigation', () => ({
 }));
 
 import { fireEvent, screen } from '@testing-library/react';
-import { HeaderPreferencesMenu } from '../HeaderPreferencesMenu';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { stubPrefersColorScheme } from '@/shared/test-utils/matchMedia';
 import { LOCALES, LOCALE_NATIVE_LABEL } from '@/shared/i18n/locales';
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from '@/shared/lib/theme';
+import { stubPrefersColorScheme } from '@/shared/test-utils/matchMedia';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { HeaderPreferencesMenu } from '../HeaderPreferencesMenu';
 
 const languageButton = () => screen.getByRole('button', { name: /^언어:/ });
 const themeButton = () => screen.getByRole('button', { name: /^테마:/ });

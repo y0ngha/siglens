@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 /**
  * vaul 1.1.2는 `Drawer.Root`의 `modal` prop을 내부 Radix `DialogPrimitive.Root`에

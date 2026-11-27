@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 
 describe('SnapshotSummarySection', () => {

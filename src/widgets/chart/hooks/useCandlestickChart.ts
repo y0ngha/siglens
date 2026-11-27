@@ -1,13 +1,13 @@
 'use client';
 
+import type { Timeframe } from '@y0ngha/siglens-core';
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import { CandlestickSeries, createChart } from 'lightweight-charts';
 /**
  * 가격 차트(lightweight-charts) 인스턴스와 캔들 시리즈의 수명을 소유하는 훅 — 마운트 시 한 번
  * 만들고, 로케일·타임프레임·가격 자릿수 변화는 옵션 갱신으로만 반영한다.
  */
 import { type RefObject, useEffect, useRef } from 'react';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import { CandlestickSeries, createChart } from 'lightweight-charts';
-import type { Timeframe } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { chartLocalization } from '../utils/chartLocalization';

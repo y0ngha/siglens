@@ -1,11 +1,11 @@
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { releasePrewarmLock } from './lock';
 import { pruneExpiredRows } from './pruneExpiredRows';
 import { recordSignalHistory } from './recordSignalHistory';
 import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 신호 이력 단계의 상한(ms). 대상이 약 860종목(S&P 500·코스피 200·코스닥 150)이라 한 실행이 다 못 끝낸다 —

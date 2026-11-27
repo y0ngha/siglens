@@ -1,10 +1,10 @@
 import { unstable_cache } from 'next/cache';
-import { getTickerDisplayNames } from '@/entities/ticker/server/koreanNameStore';
 import { getCryptoAsset } from '@/entities/ticker/server/cryptoAssetStore';
+import { getTickerDisplayNames } from '@/entities/ticker/server/koreanNameStore';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 /** 크립토 판정용 — 매 호출마다 배열을 훑지 않는다. */
 const CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);

@@ -1,5 +1,3 @@
-import type { ReactElement } from 'react';
-import { getTranslations } from 'next-intl/server';
 import {
     CROSS_LOOKBACK_BARS,
     GOLDEN_CROSS_FAST_PERIOD,
@@ -7,6 +5,8 @@ import {
     SHORT_MA_CROSS_FAST_PERIOD,
     SHORT_MA_CROSS_SLOW_PERIOD,
 } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import type { ReactElement } from 'react';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { SIGNAL_HUB_MARKET_ORDER } from '@/entities/signal-history/lib/signalHubRows';
@@ -19,6 +19,7 @@ import type {
     SignalEpisodeRow,
     SignalHistoryMarket,
 } from '@/entities/signal-history/types';
+import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
 import { SIGNAL_SCAN_UNIVERSE_SIZE } from '@/shared/config/signalScanUniverse/signalScanUniverse';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
@@ -38,9 +39,8 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
-import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
 import { SignalBaseRateTable } from '@/views/signal-record/SignalBaseRateTable';
+import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
 import { isSignalHubDataIndexable } from '../_lib/isSignalHubDataIndexable';
 import { loadSignalHub } from '../_lib/loadSignalHub';
 import { signalHubCopy } from '../_lib/signalHubCopy';

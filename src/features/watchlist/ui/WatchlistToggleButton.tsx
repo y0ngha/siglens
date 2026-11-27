@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import type { WatchlistSource } from '@/entities/watchlist/model';
 import { cn } from '@/shared/lib/cn';
 import { StarIcon } from '@/shared/ui/StrokeIcons';

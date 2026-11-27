@@ -4,31 +4,30 @@
  * @file 이메일·비밀번호 로그인 서버 액션.
  */
 
-import { localeHref } from '@/shared/i18n/localeRedirect';
 import { getTranslations } from 'next-intl/server';
-
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
-import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
-import { loginUser } from '@/entities/auth/lib/loginUser';
-import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
+import { redirect } from 'next/navigation';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
+import { loginUser } from '@/entities/auth/lib/loginUser';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { getDatabaseClient } from '@/shared/db/client';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { localeHref } from '@/shared/i18n/localeRedirect';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 import { LOGIN_FIELD } from '../lib/loginFields';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이메일·비밀번호 로그인 서버 액션(`useActionState` 시그니처).

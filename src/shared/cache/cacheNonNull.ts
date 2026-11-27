@@ -1,7 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
-import { markSsrMiss } from './ssrMissMarker';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { markSsrMiss } from './ssrMissMarker';
 
 /** `null` 결과를 캐싱 우회용으로 throw할 때 쓰는 내부 sentinel(`cacheNonEmpty`와 같은 방식). */
 class NullResultError extends Error {}

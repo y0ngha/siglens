@@ -18,14 +18,13 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => ({ get: mockRedisGet, set: mockRedisSet }),
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     type BarsData,
     type MarketDataProvider,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     BARS_MEMORY_MAX_ENTRIES,
     __resetBarsMemoryForTests,

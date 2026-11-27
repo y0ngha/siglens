@@ -10,6 +10,11 @@ import {
     type Locale,
 } from '@/shared/i18n/locales';
 import {
+    GUIDE_PATH,
+    guideCategoryPath,
+    guideEntryPath,
+} from '@/shared/lib/guidePaths';
+import {
     ABOUT_PATH,
     OPERATOR_PERSON_JSON_LD_ID,
     SITE_OPERATOR,
@@ -22,11 +27,6 @@ import {
     SITE_URL,
     type FaqItem,
 } from '@/shared/lib/seo';
-import {
-    GUIDE_PATH,
-    guideCategoryPath,
-    guideEntryPath,
-} from '@/shared/lib/guidePaths';
 
 const WEBSITE_REF = { '@type': 'WebSite', '@id': `${SITE_URL}#website` };
 

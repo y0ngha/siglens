@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { useDeleteAccountForm } from '@/features/account-delete/hooks/useDeleteAccountForm';
+import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 

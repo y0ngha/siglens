@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { beforeAll, describe, expect, it } from 'vitest';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
 import { type SeoTranslator } from '@/shared/lib/seo';
 import {

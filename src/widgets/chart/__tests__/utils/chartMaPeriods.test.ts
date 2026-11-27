@@ -6,12 +6,12 @@ import {
     type Bar,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
+import { getPeriodColor } from '@/shared/lib/chartColors';
 import {
     CHART_MA_PERIODS,
     CHART_ONLY_MA_PERIODS,
 } from '@/widgets/chart/constants';
 import { withChartOnlyMaPeriods } from '@/widgets/chart/utils/chartMaPeriods';
-import { getPeriodColor } from '@/shared/lib/chartColors';
 
 function barsWithCloses(closes: readonly number[]): Bar[] {
     return closes.map((close, index) => ({

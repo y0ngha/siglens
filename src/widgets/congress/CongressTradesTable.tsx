@@ -1,6 +1,6 @@
+import type { CongressTrade } from '@y0ngha/siglens-core';
 /** Orchestrator of the congress trades table: row limiting, scroll hint, caption and truncation note. */
 import { useTranslations } from 'next-intl';
-import type { CongressTrade } from '@y0ngha/siglens-core';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { CongressTradesEmpty } from './CongressTradesEmpty';
 import { TradeRow } from './ui/trades-table/TradeRow';

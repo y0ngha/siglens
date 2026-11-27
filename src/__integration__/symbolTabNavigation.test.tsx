@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { SymbolTabs } from '@/views/symbol/SymbolTabs';
-import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
+import enMessages from '@/../messages/en.json';
+import koMessages from '@/../messages/ko.json';
 import type { AssetInfo } from '@/shared/lib/types';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
+import { SymbolTabs } from '@/views/symbol/SymbolTabs';
+import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 let mockPathname = '/AAPL';
 

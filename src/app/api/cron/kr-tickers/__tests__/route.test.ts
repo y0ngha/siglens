@@ -21,8 +21,8 @@ vi.mock('@/entities/ticker/server/reconcileUsTickerNames', () => ({
     reconcileUsTickerNames: mockReconcile,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { constants } from 'node:http2';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PATCH } from '@/app/api/cron/kr-tickers/route';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;

@@ -10,8 +10,8 @@ import {
     type SymbolDrawingsSources,
 } from '@/app/api/cron/email-report/loadSymbolDrawings';
 import type { ShareableAnalysisRow } from '@/entities/analysis/analysisHistoryRepository';
-import { MS_PER_DAY } from '@/shared/config/time';
 import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot/model';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 const NOW = new Date('2026-11-26T00:00:00.000Z');
 const DAY = 86_400;

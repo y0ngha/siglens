@@ -1,11 +1,17 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
+import { NEWS_LIST_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
+import { FUNDAMENTAL_SECTION_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
+import {
+    COMPANY_FILINGS_CACHE_TTL_SECONDS,
+    NEWS_SECTION_REVALIDATE_SECONDS,
+} from '@/app/[locale]/[symbol]/news/_components/NewsSections';
+import { OPTIONS_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/options/_lib/optionsData';
+import { OVERALL_PEEK_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/overall/_lib/overallPeek';
 import { PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS } from '@/entities/analysis/server/peekAnalysisStaticCache';
-import { BARS_STATIC_REVALIDATE_SECONDS } from '@/entities/bars/server/barsStaticCache';
 import { EARNINGS_HINT_REVALIDATE_SECONDS } from '@/entities/analyst-views/server/loadEarningsHint';
+import { BARS_STATIC_REVALIDATE_SECONDS } from '@/entities/bars/server/barsStaticCache';
 import { FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import {
     PRICE_TARGET_REVALIDATE_SECONDS,
@@ -16,21 +22,11 @@ import { INVESTOR_FLOWS_SNAPSHOT_REVALIDATE_SECONDS } from '@/entities/investor-
 import { DILUTION_BADGE_REVALIDATE_SECONDS } from '@/entities/investor-flows/server/getRecentDilutionEvent';
 import { KR_VALUATION_REVALIDATE_SECONDS } from '@/entities/kr-valuation/server/loadPageKrValuation';
 import { ASSET_INFO_STATIC_REVALIDATE_SECONDS } from '@/entities/ticker/server/getAssetInfoStatic';
-import { CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS } from '@/entities/ticker/server/isCryptoSymbolStatic';
 import { PROFILE_REVALIDATE_SECONDS } from '@/entities/ticker/server/getProfileResilient';
+import { CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS } from '@/entities/ticker/server/isCryptoSymbolStatic';
 import { GRADES_CONSENSUS_REVALIDATE_SECONDS } from '@/shared/api/fmp/loadPageGradesConsensus';
 import * as time from '@/shared/config/time';
 import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
-
-import { NEWS_LIST_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
-import { FUNDAMENTAL_SECTION_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
-import {
-    COMPANY_FILINGS_CACHE_TTL_SECONDS,
-    NEWS_SECTION_REVALIDATE_SECONDS,
-} from '@/app/[locale]/[symbol]/news/_components/NewsSections';
-import { OPTIONS_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/options/_lib/optionsData';
-import { OVERALL_PEEK_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/overall/_lib/overallPeek';
-
 import { blankComments } from './support/sourceScan';
 
 /**

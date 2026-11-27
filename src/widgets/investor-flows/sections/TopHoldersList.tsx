@@ -1,16 +1,16 @@
 'use client';
 
+import type { InstitutionalHolderChange } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 /**
  * 상위 보유 기관 목록 — 필터 상태를 쥔 클라이언트 섹션.
  */
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import type { InstitutionalHolderChange } from '@y0ngha/siglens-core';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { filterHolders, type HolderFilter } from '../utils/institutional';
 import { HolderFilterGroup } from '../ui/holders/HolderFilterGroup';
 import { HolderRecords } from '../ui/holders/HolderRecords';
+import { filterHolders, type HolderFilter } from '../utils/institutional';
 
 interface TopHoldersListProps {
     readonly holders: readonly InstitutionalHolderChange[];

@@ -1,8 +1,7 @@
-import { buildShareMetadata } from '../lib/buildShareSeo';
-import type { SharedAnalysisLookup, SharedAnalysisSnapshot } from '../types';
-
 import koMessages from '@/../messages/ko.json';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { buildShareMetadata } from '../lib/buildShareSeo';
+import type { SharedAnalysisLookup, SharedAnalysisSnapshot } from '../types';
 
 const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
 

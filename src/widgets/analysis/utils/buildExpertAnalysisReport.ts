@@ -18,10 +18,10 @@ import {
     resolveEffectiveActionLevels,
     type EffectiveActionLevels,
 } from '@/entities/analysis/lib/effectiveActionLevels';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
-import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { selectPanelSkillResults } from './panelSkillResults';
 import { NEAR_ZONE_ATR, isJustAboveZone } from './planZoneProximity';
 import {

@@ -25,9 +25,9 @@ import type {
     ScanCursor,
     SignalHistoryMarket,
 } from '@/entities/signal-history/types';
+import { isoDateDaysAgo } from '@/shared/api/market/barsWindow';
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-import { isoDateDaysAgo } from '@/shared/api/market/barsWindow';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /** core `confirmedSignalTimeline`의 모양 — 테스트가 갈아 끼운다. */

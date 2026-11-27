@@ -1,4 +1,3 @@
-import { INTL_LOCALE } from '@/shared/i18n/locales';
 import {
     formatClose,
     formatConsentAt,
@@ -8,6 +7,7 @@ import {
     formatSignedPercent,
     formatTimeZoneName,
 } from '@/entities/email-report/templates/emailFormat';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 
 /** ICU가 주는 시간대 이름을 테스트 안에서 같은 API·옵션으로 구한다(문구를 박아 두지 않는다). */
 function expectedZoneName(

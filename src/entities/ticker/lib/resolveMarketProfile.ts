@@ -1,10 +1,10 @@
-import type { AssetInfo } from '@/shared/lib/types';
-import { getAssetInfo } from '../server/getAssetInfo';
 import {
     marketProfileOf,
     DEFAULT_MARKET_PROFILE,
 } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import type { AssetInfo } from '@/shared/lib/types';
+import { getAssetInfo } from '../server/getAssetInfo';
 
 /** 해석된 자산 정보 → 시장 프로필. 없는(미지·레거시) 종목은 기본 프로필로 떨어진다. */
 export function marketProfileForAssetInfo(

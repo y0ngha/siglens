@@ -1,11 +1,11 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
-import type { FailureKind, UnlabelableReason } from '../types';
 import {
     MS_PER_DAY,
     MS_PER_HOUR,
     MS_PER_MINUTE,
     MS_PER_SECOND,
 } from '@/shared/config/time';
+import type { FailureKind, UnlabelableReason } from '../types';
 
 /** `analysis_outcomes` 보존 기간(일), `generated_at` 기준. `analysis_history`는 90일이라 일부러 더 길다. */
 export const OUTCOME_RETENTION_DAYS = 730;

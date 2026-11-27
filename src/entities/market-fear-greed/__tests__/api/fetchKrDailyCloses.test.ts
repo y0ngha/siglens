@@ -4,7 +4,6 @@ vi.mock('@/shared/api/yahoo/createYahooClient', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-
 import { fetchKrDailyCloses } from '@/entities/market-fear-greed/api/fetchKrDailyCloses';
 
 const chart = vi.fn();

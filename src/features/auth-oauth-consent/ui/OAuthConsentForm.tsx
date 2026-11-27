@@ -3,15 +3,15 @@
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { EmailReportSignupOptIn } from '@/features/email-report-settings/ui/EmailReportSignupOptIn';
+import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
+import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
-import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
-import { cn } from '@/shared/lib/cn';
-import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
-import { usePageShowReload } from '../hooks/usePageShowReload';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
-import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
+import { usePageShowReload } from '../hooks/usePageShowReload';
 import {
     CONSENT_AGREED_VALUE,
     CONSENT_DECLINED_VALUE,

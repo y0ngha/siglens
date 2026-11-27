@@ -1,17 +1,17 @@
 'use server';
 
-import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
+import { getTranslations } from 'next-intl/server';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
-import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
-import { createEmailDispatcher } from '@/shared/email/dispatcher';
-import { INVALID_EMAIL_CODE } from '@/shared/lib/auth/constants';
-import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
-import { getTranslations } from 'next-intl/server';
-import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
+import { INVALID_EMAIL_CODE } from '@/shared/lib/auth/constants';
+import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
+import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 
 /**
  * 가입 1단계: 입력한 주소로 이메일 인증 코드를 발급해 보낸다.

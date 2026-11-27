@@ -21,9 +21,8 @@ vi.mock('@/shared/config/aiHost', () => ({
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from '@/app/api/auth/handoff/logout/route';
 
 const CODE = 'c'.repeat(64);

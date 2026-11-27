@@ -4,8 +4,6 @@ import type {
     MarketBriefingResponse,
     NewsAnalysisResponse,
 } from '@y0ngha/siglens-core';
-import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
-import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
@@ -14,6 +12,8 @@ import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
+import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
+import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import {
     economyHubPath,
     marketHubPath,

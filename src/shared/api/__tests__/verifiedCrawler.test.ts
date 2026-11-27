@@ -36,7 +36,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     __resetVerifiedCrawlerForTests,
     canonicalIp,
@@ -48,6 +47,7 @@ import {
     VERIFIED_TTL_SECONDS,
     VERIFY_TIMEOUT_MS,
 } from '@/shared/api/verifiedCrawler';
+import { getRedisClient } from '@/shared/cache/redisClient';
 
 const GOOGLEBOT_UA =
     'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130.0.0.0 Safari/537.36';

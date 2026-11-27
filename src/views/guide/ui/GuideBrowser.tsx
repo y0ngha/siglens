@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import type { GuideCategory, GuideEntrySummary } from '@/entities/guide/types';
 import { SearchIcon } from '@/shared/ui/StrokeIcons';
 import { useGuideBrowserState } from '../hooks/useGuideBrowserState';

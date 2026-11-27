@@ -12,10 +12,9 @@ import type {
     TierInfoDepth,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import type { AnalysisFeedbackContext } from '@/entities/feedback/types';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import type { AnalysisFeedbackContext } from '@/entities/feedback/types';
-import { useFunnelMeterShown } from './hooks/useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
@@ -23,15 +22,16 @@ import { AdBanner } from './AdBanner';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisToast } from './AnalysisToast';
 import { GuideEntryLink } from './GuideEntryLink';
-import { RecordEntryLink } from './RecordEntryLink';
-import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { useAnalysisStaleness } from './hooks/useAnalysisStaleness';
 import { useCopyAnalysisReport } from './hooks/useCopyAnalysisReport';
+import { useFunnelMeterShown } from './hooks/useFunnelMeterShown';
 import { useIsFallbackAnalysis } from './hooks/useIsFallbackAnalysis';
 import type { CooldownNotice } from './model/types';
+import { RecordEntryLink } from './RecordEntryLink';
 import { AnalysisDetailSections } from './sections/AnalysisDetailSections';
 import { AnalysisPanelHeader } from './sections/AnalysisPanelHeader';
 import { AnalysisStatsLine } from './sections/AnalysisStatsLine';
+import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { AnalysisPanelFeedback } from './ui/AnalysisPanelFeedback';
 import { ReanalyzeButton } from './ui/ReanalyzeButton';
 import { resolveLockedSections } from './utils/lockedSections';

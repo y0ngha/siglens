@@ -1,23 +1,23 @@
 'use client';
 
-/**
- * 수급 AI 해석 분석 훅 — 쿼리 한 개로 로딩·완료·데이터 없음·상호작용 대기·오류를 하나의 상태로 낸다.
- */
-import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useQuery } from '@tanstack/react-query';
-import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type {
     InvestorFlowsAnalysisResponse,
     ModelId,
 } from '@y0ngha/siglens-core';
+/**
+ * 수급 AI 해석 분석 훅 — 쿼리 한 개로 로딩·완료·데이터 없음·상호작용 대기·오류를 하나의 상태로 낸다.
+ */
+import { useTranslations } from 'next-intl';
 import type { RunInvestorFlowsActionResult } from '@/entities/analysis/actions/runInvestorFlowsAction';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 
 /**
  * `no_data` 결과를 React Query `queryFn`(데이터를 돌려주거나 던지기만 할 수 있다)에서 훅의 상태 기계로

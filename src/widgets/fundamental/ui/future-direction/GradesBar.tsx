@@ -1,9 +1,9 @@
+import type { FundamentalGradesConsensusInput } from '@y0ngha/siglens-core';
 /**
  * 애널리스트 등급 분포 막대와 범례.
  */
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
-import type { FundamentalGradesConsensusInput } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {
     GRADE_BAND_KEYS,

@@ -13,8 +13,8 @@ import {
     hasLevels,
     scaleGuardedReference,
 } from '@/entities/mail-alert/lib/referenceScale';
-import { MS_PER_SECOND } from '@/shared/config/time';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import type {
     ChatChangeItem,
     ChatChangeTrend,

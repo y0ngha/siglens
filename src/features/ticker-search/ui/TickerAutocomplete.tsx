@@ -1,7 +1,7 @@
 'use client';
 
-import { type MouseEvent, useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { type MouseEvent, useId } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 import { SearchIcon } from '@/shared/ui/StrokeIcons';

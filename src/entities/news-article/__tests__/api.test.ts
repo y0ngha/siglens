@@ -6,14 +6,13 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import type { Mock } from 'vitest';
-
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import type { NewsRow } from '@/entities/news-article/api';
+import type { Mock } from 'vitest';
 import { orderColumnName } from '@/__tests__/utils/orderColumnName';
 import { renderSql } from '@/__tests__/utils/renderSql';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import type { NewsRow } from '@/entities/news-article/api';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const baseItem: NewsItem = {
     id: 'abc123',

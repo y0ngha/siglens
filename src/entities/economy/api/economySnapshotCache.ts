@@ -1,20 +1,17 @@
 import 'server-only';
-import { cache } from 'react';
-
 import type {
     EconomicIndicatorSeries,
     EconomySnapshot,
 } from '@y0ngha/siglens-core';
-
+import { cache } from 'react';
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
 import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 import { MS_PER_DAY, SECONDS_PER_DAY } from '@/shared/config/time';
-
-import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 import { etDateOf } from '../lib/calendarWindow';
+import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 
 /**
  * 레지스트리 fingerprint — 지표 목록이 바뀌면 캐시 키도 자동 무효화된다.

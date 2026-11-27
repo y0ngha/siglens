@@ -27,7 +27,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     fetchPageExcerpt,
     SIGLENS_AI_USER_AGENT,

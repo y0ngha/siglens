@@ -2,8 +2,8 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { LineStyle, LineType } from 'lightweight-charts';
-import { useDonchianOverlay } from '../../hooks/useDonchianOverlay';
 import { STORAGE_KEYS } from '../../constants';
+import { useDonchianOverlay } from '../../hooks/useDonchianOverlay';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();

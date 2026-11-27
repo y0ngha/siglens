@@ -19,12 +19,11 @@ vi.mock('@/features/ticker-search/hooks/useRecentSearches', () => ({
     }),
 }));
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { SearchOverlay } from '@/features/ticker-search/ui/SearchOverlay';
 
 const replaceMock = vi.fn();

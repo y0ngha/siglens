@@ -1,6 +1,6 @@
-import { DIRECT_TICKER_RE } from './searchLabels';
-import { resultDisplayNames } from './resultDisplay';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { resultDisplayNames } from './resultDisplay';
+import { DIRECT_TICKER_RE } from './searchLabels';
 
 export interface SubmitTarget {
     symbol: string;

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { OptionsMetricsRow } from '@/widgets/options/OptionsMetricsRow';
 import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
+import { OptionsMetricsRow } from '@/widgets/options/OptionsMetricsRow';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

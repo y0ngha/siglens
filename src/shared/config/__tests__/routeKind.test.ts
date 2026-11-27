@@ -1,5 +1,5 @@
-import { routeKindOf } from '@/shared/config/routeKind';
 import { RESERVED_FIRST_SEGMENTS } from '@/shared/config/reservedFirstSegments';
+import { routeKindOf } from '@/shared/config/routeKind';
 import { LOCALES } from '@/shared/i18n/locales';
 
 describe('routeKindOf', () => {

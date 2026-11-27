@@ -1,8 +1,8 @@
-import { useTranslations } from 'next-intl';
 import { POC_WINDOW_DEFAULT, type FearGreedFactor } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
+import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import { isExtremePercentile } from '../../utils/percentile';
 
 interface FearGreedFactorRowProps {

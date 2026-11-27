@@ -5,20 +5,20 @@ vi.mock('@/entities/feedback/actions/submitVocFeedbackAction', () => ({
 import { act, render, screen } from '@testing-library/react';
 import type { VocTrigger } from '@/entities/feedback/types';
 import { publishAgentTurnCompleted } from '@/shared/lib/agentTurnCompletedSignal';
+import { hasNudgeShownThisSession } from '@/shared/lib/nudgeSession';
 import {
     LOCAL_STORAGE_VOC_PROMPT_STATE_KEY,
     SESSION_STORAGE_NUDGE_SHOWN_KEY,
 } from '@/shared/lib/storageKeys';
 import {
+    publishSymbolAnalyzed,
+    subscribeSymbolAnalyzed,
+} from '@/shared/lib/symbolAnalyzedSignal';
+import {
     VOC_PROMPT_COOLDOWN_MS,
     VOC_PROMPT_POLICY,
     type VocPromptSurface,
 } from '@/shared/lib/vocPromptStorage';
-import { hasNudgeShownThisSession } from '@/shared/lib/nudgeSession';
-import {
-    publishSymbolAnalyzed,
-    subscribeSymbolAnalyzed,
-} from '@/shared/lib/symbolAnalyzedSignal';
 import {
     VOC_PROMPT_DELAY_MS,
     VOC_PROMPT_SETTLE_MS,

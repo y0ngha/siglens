@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import ko from '../../../../../messages/ko.json';
 import { StreamErrorBanner } from '@/widgets/agent-chat/shell/StreamErrorBanner';
+import ko from '../../../../../messages/ko.json';
 
 const labels = ko.widgets['agent-chat'].ChatShell;
 

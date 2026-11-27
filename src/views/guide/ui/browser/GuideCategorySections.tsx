@@ -6,8 +6,8 @@ import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { groupGuideByCategory } from '@/views/guide/lib/guideBrowse';
-import { GuideCard } from '@/views/guide/ui/GuideCard';
 import { GUIDE_GRID } from '@/views/guide/ui/browser/guideGrid';
+import { GuideCard } from '@/views/guide/ui/GuideCard';
 
 interface GuideCategorySectionsProps {
     /** 절 제목 id의 접두사 — 페이지 안에서 유일해야 한다. */

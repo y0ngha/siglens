@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { notFound } from 'next/navigation';
-import Script from 'next/script';
 import {
     getMessages,
     getTranslations,
     setRequestLocale,
 } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import type { ReactNode } from 'react';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
-import { SITE_VIEWPORT } from '@/shared/config/viewport';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
+import { SITE_VIEWPORT } from '@/shared/config/viewport';
 import {
     LOCALE_HREFLANG,
     isLocale,
@@ -18,9 +18,9 @@ import {
 } from '@/shared/i18n/locales';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import { AiAppProviders } from './_components/AiAppProviders';
 import { buildAiLayoutMetadata } from './_lib/aiLayoutMetadata';
-import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
 export const dynamic = 'force-dynamic';

@@ -21,8 +21,8 @@ vi.mock('@/entities/economy/api/indicatorTranslationRepository', () => ({
     },
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 
 // Shared findByNames spy — all repository instances share this mock.

@@ -58,12 +58,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+import { isValidElement, type ReactNode } from 'react';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     generateMetadata,
     default as AboutRoute,
 } from '@/app/[locale]/about/page';
-import { isValidElement, type ReactNode } from 'react';
-import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import {
     ABOUT_UPDATED_AT,

@@ -62,12 +62,9 @@ vi.mock(
     })
 );
 
+import * as core from '@y0ngha/siglens-core';
 // 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import koMessages from '../../../../messages/ko.json';
-import { isBot } from '@/shared/api/isBot';
-import * as core from '@y0ngha/siglens-core';
-import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 import {
     readLatestMarketNewsDigest,
     releaseMarketNewsDigestSlot,
@@ -75,6 +72,9 @@ import {
     writeLatestMarketNewsDigest,
 } from '@/entities/market-news/api/marketNewsDigestCooldown';
 import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
+import { isBot } from '@/shared/api/isBot';
+import koMessages from '../../../../messages/ko.json';
+import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 
 // 3. 테스트
 

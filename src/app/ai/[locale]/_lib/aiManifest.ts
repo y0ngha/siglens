@@ -1,10 +1,10 @@
 import type { MetadataRoute } from 'next';
+import type { Locale } from '@/shared/i18n/locales';
 import { brandAiName } from '@/shared/lib/brandName';
 import {
     buildManifestBase,
     type ManifestTranslator,
 } from '@/shared/lib/buildManifest';
-import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * ai 호스트 문서가 `<link rel="manifest">`로 가리키는 경로.

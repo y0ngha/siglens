@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useWatchlistQuery } from '@/entities/watchlist/hooks/useWatchlistQuery';

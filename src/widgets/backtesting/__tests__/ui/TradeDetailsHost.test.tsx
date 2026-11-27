@@ -1,9 +1,8 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
-import type { MockInstance } from 'vitest';
 import type { BacktestRunData } from '@y0ngha/siglens-core';
+import type { MockInstance } from 'vitest';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import backtestData from '@/entities/backtest-case/data/data.json';
-
 import { TradeDetailsHost } from '../../TradeDetailsHost';
 
 const DATA = backtestData as unknown as BacktestRunData;

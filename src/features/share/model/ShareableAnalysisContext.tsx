@@ -1,5 +1,6 @@
 'use client';
 
+import type { Bar } from '@y0ngha/siglens-core';
 /**
  * 종목 페이지의 "현재 공유할 분석" 레지스트리. 활성 탭 위젯이 자기 분석 상태를
  * 등록하고, 헤더의 ShareButton(`useShareFlow`)이 그 등록값을 읽는다.
@@ -19,7 +20,6 @@ import type {
     SnapshotResultOf,
 } from '@/entities/shared-analysis/types';
 import type { ShareableKind } from '@/shared/db/constants';
-import type { Bar } from '@y0ngha/siglens-core';
 
 /** 공유 플로우가 이해하는 분석 상태. 위젯 고유 상태는 `mapAnalysisStatus`/`deriveChartStatus`로 여기에 맞춘다. */
 export type ShareableStatus =

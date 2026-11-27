@@ -16,8 +16,8 @@ import {
     buildGuideBreadcrumbJsonLd,
     buildGuideFaqJsonLd,
 } from '@/views/guide/lib/guideJsonLd';
-import { SignalBaseRateTable } from '@/views/signal-record/SignalBaseRateTable';
 import { hubsForGuide } from '@/views/signal-record/lib/hubsForGuide';
+import { SignalBaseRateTable } from '@/views/signal-record/SignalBaseRateTable';
 import {
     guideEntryMetadata,
     renderGuideUnavailable,

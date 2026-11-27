@@ -1,38 +1,38 @@
-import { deduplicateResults, isKoreanInput } from '../lib/ticker';
+import { createCacheProvider } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import {
+    fireAndForget,
+    type BackgroundTaskOptions,
+} from '@/shared/lib/backgroundTask';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
+import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import {
     API_UNTRANSLATED_CACHE_TTL,
     buildApiTickerSearchCacheKey,
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
 } from '../lib/cacheKeys';
+import { preferPrimaryListing } from '../lib/preferPrimaryListing';
+import { rankByRelevance } from '../lib/searchRelevance';
+import { deduplicateResults, isKoreanInput } from '../lib/ticker';
+import { searchCryptoAssets } from './cryptoAssetStore';
 import {
     filterUsExchanges,
     searchByName,
     searchBySymbol,
     toTickerSearchResult,
 } from './fmpTickerApi';
-import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
-import { translateCompanyNames } from './koreanTranslator';
 import {
     getKoreanNames,
     searchByKoreanName,
     setKoreanTickers,
 } from './koreanNameStore';
-import { searchCryptoAssets } from './cryptoAssetStore';
+import { translateCompanyNames } from './koreanTranslator';
 import { searchKrEquity } from './krEquitySearch';
-import { preferPrimaryListing } from '../lib/preferPrimaryListing';
-import { rankByRelevance } from '../lib/searchRelevance';
-import {
-    fireAndForget,
-    type BackgroundTaskOptions,
-} from '@/shared/lib/backgroundTask';
-import {
-    createSingleFlight,
-    __resetSingleFlightForTests,
-} from '@/shared/lib/singleFlight';
-import { createCacheProvider } from '@y0ngha/siglens-core';
-import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const MAX_SEARCH_RESULTS = 10;
 

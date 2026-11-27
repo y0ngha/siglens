@@ -1,12 +1,12 @@
 'use client';
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { ModelId, Tier } from '@y0ngha/siglens-core';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
 import {
     useModelGate,
     type ModelGateState,
 } from '@/features/premium-gate/hooks/useModelGate';
-import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 import { useEffectiveReasoning } from '../hooks/useEffectiveReasoning';
 import { useModelSelection } from '../hooks/useModelSelection';

@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
+import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 
 vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => (

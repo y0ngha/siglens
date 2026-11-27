@@ -1,12 +1,12 @@
 import 'server-only';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import type { AnalystEarningsHint } from '../model';
 import { getAnalystViews } from './getAnalystViews';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Yahoo 실적 힌트 정적 캐시(`fundamental-facts:earnings-hint`)의 revalidate. 펀더멘털·뉴스 탭이 읽으므로 `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
