@@ -27,10 +27,10 @@ import {
 } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isGuestSubject } from '../guestSubject';
