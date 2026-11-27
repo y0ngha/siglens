@@ -24,6 +24,9 @@ export const AI_CLIENT_PATHS: readonly string[] = [
     ...CHROME_CLIENT_PATHS,
     'widgets.agent-chat',
     'features.agent-chat',
+    // 답변 아래 가격대 알림 카드의 이메일·코드 단계(`MailAlertEmailStep`·`MailAlertCodeStep`)가 쓰는 문구. 카드가 처음
+    // 나올 때만 쓰이지만 메시지는 레이아웃이 한 번에 내려보낸다.
+    'features.mail-alert',
     // 답변 아래 👍/👎(MessageActions)와 그 입력창.
     'features.ai-feedback',
     'features.pwa-install',

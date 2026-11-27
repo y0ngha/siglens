@@ -11,7 +11,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type { XPostItem, XPostsAccount } from '@/entities/x-posts/model';
 import { getXPostsTool } from '@/app/api/ai/chat/tools/getXPosts';
-import { guestSubject } from '@/app/api/ai/chat/guestSubject';
+import { guestSubject } from '@/shared/lib/guestSubject';
 import { X_POSTS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const ctx = {

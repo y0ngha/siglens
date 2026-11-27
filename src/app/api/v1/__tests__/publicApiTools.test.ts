@@ -18,6 +18,12 @@ vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
 vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
     getMyPortfolioTool: vi.fn(),
 }));
+vi.mock('@/app/api/ai/chat/tools/getMyWatchlist', () => ({
+    getMyWatchlistTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/proposePriceAlert', () => ({
+    proposePriceAlertTool: vi.fn(),
+}));
 vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
     runFreshAnalysisTool: vi.fn(),
 }));
@@ -108,8 +114,22 @@ describe('publicApiToolNames', () => {
             'get_swing_history',
             'get_price_stats',
             'show_chart',
+            'get_my_watchlist',
+            'propose_price_alert',
         ]);
     });
+
+    it.each(['get_my_watchlist', 'propose_price_alert'])(
+        '%s는 siglens가 소유한 도구라 API 목록·스펙에 나가지 않는다(관심종목 읽기는 별도 결정, 제안 카드는 API에 의미가 없다)',
+        name => {
+            expect(PUBLIC_API_EXCLUDED_TOOLS.has(name)).toBe(true);
+            expect(publicApiToolNames().has(name)).toBe(false);
+            expect(findPublicApiToolSpec(name)).toBeUndefined();
+            expect(publicApiToolSpecs().map(spec => spec.name)).not.toContain(
+                name
+            );
+        }
+    );
 
     it.each(['get_analyst_views', 'get_macro_quotes'])(
         '%s는 실행기에는 있어도 API 목록·스펙에서 빠진다',

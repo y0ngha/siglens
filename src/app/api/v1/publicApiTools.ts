@@ -5,6 +5,10 @@ import {
     type AgentToolSpec,
 } from '@y0ngha/siglens-core';
 import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
+import {
+    GET_MY_WATCHLIST_TOOL,
+    PROPOSE_PRICE_ALERT_TOOL,
+} from '@/features/agent-tools/spec/watchlistAlertTools';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
@@ -70,6 +74,11 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  *   제3자 API 계약에 쓸모가 없고, 그림 데이터는 `emitChart`로만 나가는데 API 실행기에는 그 길이 없다(데이터는 각
  *   데이터 도구가 이미 준다). SiglensAI 에이전트에서만 쓴다.
  *
+ * `get_my_watchlist`·`propose_price_alert`(2026-11): **공개 API에서 제외**한다. 관심종목을 API 키로 읽을지는 별도 결정이고,
+ *   알림 제안은 카드 블록(`emitChart`)으로만 의미가 있는데 API 실행기에는 그 길이 없다(제안은 아무것도 만들지 않는다).
+ *   siglens가 소유한 도구라 core `selectTools`가 모르는 이름이기도 하다 — 제외하지 않으면 명세 없이 노출된다.
+ *   SiglensAI 에이전트에서만 쓴다.
+ *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
@@ -95,6 +104,8 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'get_swing_history',
     'get_price_stats',
     'show_chart',
+    GET_MY_WATCHLIST_TOOL,
+    PROPOSE_PRICE_ALERT_TOOL,
 ]);
 
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */

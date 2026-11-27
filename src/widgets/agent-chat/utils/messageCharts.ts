@@ -1,7 +1,10 @@
-import { isVisualBlock } from '@/entities/chat-conversation/lib/chartBlock';
+import {
+    isActionBlock,
+    isVisualBlock,
+} from '@/entities/chat-conversation/lib/chartBlock';
 import type {
-    ChatBlock,
     ChatChartBlock,
+    ChatDrawableBlock,
     ChatVisualBlock,
 } from '@/entities/chat-conversation/types';
 import type { ToolActivityItem } from '@/features/agent-chat/model/types';
@@ -12,7 +15,7 @@ export const MESSAGE_CHARTS_MAX = 3;
 /** 그릴 차트 한 장과 그 키. 키에 분석 시각이 들어가 같은 자리의 블록이 바뀌면 차트 상태(꺼 둔 작도)도 새로 시작한다. */
 interface MessageChart {
     key: string;
-    block: ChatBlock;
+    block: ChatDrawableBlock;
 }
 
 /**
@@ -62,6 +65,8 @@ export function messageCharts(
     const byKey = tools.reduce((acc, t) => {
         if (t.status !== 'ok' || t.chart === undefined) return acc;
         const block = t.chart;
+        // 가격대 알림 제안 카드는 차트가 아니다 — 차트 상한(`MESSAGE_CHARTS_MAX`)에도 세지 않고 `messageProposals`가 그린다.
+        if (isActionBlock(block)) return acc;
         const key = isVisualBlock(block)
             ? visualBlockKey(block)
             : `${block.symbol}|${block.timeframe}`;
@@ -72,7 +77,7 @@ export function messageCharts(
                 ? block
                 : preferred(prev, block)
         );
-    }, new Map<string, ChatBlock>());
+    }, new Map<string, ChatDrawableBlock>());
     // 모델이 `show_chart`로 일부러 그린 블록이 데이터 조회(봉 지표·분석)에 딸려 나온 캔들 차트보다 먼저다 — 비교
     // 질문에서 종목마다 봉을 읽어 캔들이 상한을 채우면, 정작 요청한 비교 차트가 잘려 나갔다. 같은 종류 안에서는
     // 처음 나온 순서를 지킨다(`toSorted`는 안정 정렬).

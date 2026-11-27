@@ -1,10 +1,16 @@
+import {
+    PRICE_ALERT_TOKEN_MAX_LENGTH,
+    parsePriceAlertProposal,
+} from '@/entities/mail-alert/lib/priceAlertProposal';
 import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type {
+    ChatActionBlock,
     ChatBlock,
     ChatChartBlock,
     ChatChartTimeframe,
     ChatCompareChartPeriod,
+    ChatPriceAlertProposalBlock,
     ChatVisualBlock,
     ChatVisualBlockKind,
 } from '../types';
@@ -258,14 +264,49 @@ export function isChatVisualBlock(value: unknown): value is ChatVisualBlock {
     );
 }
 
-/** 캔들 차트 블록은 `kind`가 없다 — `kind`가 있으면 시각화 블록이다. */
-export function isVisualBlock(block: ChatBlock): block is ChatVisualBlock {
-    return 'kind' in block;
+/** 행동 블록의 `kind` 목록. 시각화 블록 목록({@link CHAT_VISUAL_BLOCK_KINDS})과 겹치지 않는다. */
+export const CHAT_ACTION_BLOCK_KINDS: readonly ChatActionBlock['kind'][] = [
+    'price_alert_proposal',
+];
+
+/**
+ * 저장된 행·SSE 프레임에서 읽은 값이 그릴 수 있는 가격대 알림 제안 카드인지 — 제안의 값(가격·날짜·종목)이 의미까지
+ * 맞을 때만 참이다. 토큰의 서명은 서버만 확인할 수 있어 여기서는 보지 않는다(눌렀을 때 액션이 확인한다).
+ */
+export function isChatPriceAlertProposalBlock(
+    value: unknown
+): value is ChatPriceAlertProposalBlock {
+    return (
+        isPlainRecord(value) &&
+        value.version === 1 &&
+        value.kind === 'price_alert_proposal' &&
+        typeof value.token === 'string' &&
+        value.token.length > 0 &&
+        value.token.length <= PRICE_ALERT_TOKEN_MAX_LENGTH &&
+        (value.name === null || typeof value.name === 'string') &&
+        parsePriceAlertProposal(value.proposal) !== null
+    );
 }
 
-/** 그릴 수 있는 블록(캔들 차트 또는 시각화)인지. 옛 캔들 행은 그대로 통과한다. */
+/**
+ * 시각화 블록인지 — `kind`가 시각화 목록에 있을 때만이다. 캔들 차트 블록은 `kind`가 없고, 행동 블록은 `kind`가 있어도
+ * 시각화가 아니다(`'kind' in block`으로 가르면 행동 카드가 시각화 그림으로 읽힌다).
+ */
+export function isVisualBlock(block: ChatBlock): block is ChatVisualBlock {
+    return 'kind' in block && isOneOf(CHAT_VISUAL_BLOCK_KINDS, block.kind);
+}
+
+/** 행동 블록(답변 아래 카드)인지. */
+export function isActionBlock(block: ChatBlock): block is ChatActionBlock {
+    return 'kind' in block && isOneOf(CHAT_ACTION_BLOCK_KINDS, block.kind);
+}
+
+/** 그릴 수 있는 블록(캔들 차트·시각화·행동 카드)인지. 옛 캔들 행은 그대로 통과한다. */
 export function isChatBlock(value: unknown): value is ChatBlock {
-    return isPlainRecord(value) && 'kind' in value
-        ? isChatVisualBlock(value)
-        : isChatChartBlock(value);
+    if (!isPlainRecord(value) || !('kind' in value)) {
+        return isChatChartBlock(value);
+    }
+    return isOneOf(CHAT_ACTION_BLOCK_KINDS, value.kind)
+        ? isChatPriceAlertProposalBlock(value)
+        : isChatVisualBlock(value);
 }

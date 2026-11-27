@@ -14,7 +14,7 @@ import type {
 } from '@/entities/chat-conversation/types';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { withTimeout } from '@/shared/lib/withTimeout';
-import { isGuestSubject } from '../guestSubject';
+import { isGuestSubject } from '@/shared/lib/guestSubject';
 import type { ToolExecutor } from './chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';

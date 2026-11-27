@@ -8,6 +8,11 @@ import type { ChatBlock } from '@/entities/chat-conversation/types';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
+import {
+    GET_MY_WATCHLIST_TOOL,
+    PROPOSE_PRICE_ALERT_TOOL,
+} from '@/features/agent-tools/spec/watchlistAlertTools';
+import { isPriceAlertLaunched } from '@/entities/mail-alert/lib/priceAlertConstants';
 import { xBearerToken } from '@/shared/api/x/xClient';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
@@ -23,6 +28,7 @@ import {
     ANALYST_VIEWS_RESULT_MAX_CHARS,
     BARS_ANNOTATE_HEADROOM_CHARS,
     WEB_SEARCH_RESULT_MAX_CHARS,
+    WATCHLIST_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -38,6 +44,8 @@ import { getCachedAnalysisTool } from './getCachedAnalysis';
 import { getNewsTool } from './getNews';
 import { getOptionsSummaryTool } from './getOptionsSummary';
 import { getMyPortfolioTool } from './getMyPortfolio';
+import { getMyWatchlistTool } from './getMyWatchlist';
+import { proposePriceAlertTool } from './proposePriceAlert';
 import { runFreshAnalysisTool } from './runFreshAnalysis';
 import { webSearchTool } from './webSearch';
 import { getFundamentalsTool } from './getFundamentals';
@@ -57,7 +65,8 @@ import { getSwingHistoryTool } from './getSwingHistory';
 import { showChartTool } from './showChart';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
-import { isGuestSubject } from '../guestSubject';
+import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { MEMBER_ONLY_TOOLS } from './memberOnlyTools';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
@@ -160,6 +169,8 @@ export interface ToolResultCaps {
     news: number;
     /** `web_search` (five results plus up to two page excerpts of 1,800 characters). */
     webSearch: number;
+    /** `get_my_watchlist` (up to 50 saved symbols with quotes, plus the active price alerts). */
+    watchlist: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -184,6 +195,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     fundamentals: FUNDAMENTALS_RESULT_MAX_CHARS,
     news: NEWS_RESULT_MAX_CHARS,
     webSearch: WEB_SEARCH_RESULT_MAX_CHARS,
+    watchlist: WATCHLIST_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -220,13 +232,6 @@ export type ToolExecutor = (
     runtime: ToolRuntime
 ) => Promise<unknown>;
 
-/**
- * Tools a guest may not run: only their own holdings — there is no account to
- * hold any. Fresh analyses and web search are open to guests (SIGLENS sets no
- * count limit on analysis), bounded by core's per-turn caps instead.
- */
-const MEMBER_ONLY_TOOLS: ReadonlySet<string> = new Set(['get_my_portfolio']);
-
 const EXECUTORS: Record<string, ToolExecutor> = {
     search_ticker: searchTickerTool,
     get_quote: getQuoteTool,
@@ -235,6 +240,8 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_news: getNewsTool,
     get_options_summary: getOptionsSummaryTool,
     get_my_portfolio: getMyPortfolioTool,
+    [GET_MY_WATCHLIST_TOOL]: getMyWatchlistTool,
+    [PROPOSE_PRICE_ALERT_TOOL]: proposePriceAlertTool,
     run_fresh_analysis: runFreshAnalysisTool,
     web_search: webSearchTool,
     get_fundamentals: getFundamentalsTool,
@@ -279,6 +286,8 @@ export function availableToolNames(): Set<string> {
     if (e2eFake) names.delete('get_swing_history');
     // 가격 통계도 같다 — 종가 이력을 같은 엔티티 경로로 읽고, fake 공급자의 봉은 3개뿐이다.
     if (e2eFake) names.delete('get_price_stats');
+    // 가격대 알림 제안은 공개 전에는 모델에 내놓지 않는다 — 카드의 만들기 버튼이 전부 `unavailable`일 때 제안만 나가면 안 된다.
+    if (!isPriceAlertLaunched()) names.delete(PROPOSE_PRICE_ALERT_TOOL);
     return names;
 }
 
@@ -397,6 +406,7 @@ export function createToolExecutor(
         if (name === 'get_news') return resultCaps.news;
         if (name === 'get_fundamentals') return resultCaps.fundamentals;
         if (name === 'web_search') return resultCaps.webSearch;
+        if (name === GET_MY_WATCHLIST_TOOL) return resultCaps.watchlist;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

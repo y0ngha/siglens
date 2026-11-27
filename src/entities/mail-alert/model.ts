@@ -253,3 +253,130 @@ export interface MailAlertPriceAlertItem {
      */
     readonly zonePosition: 'inside' | 'below' | 'above' | null;
 }
+
+/**
+ * 시그렌즈 AI 대화가 만든 가격대 알림 제안. 서명된 토큰이 담는 값이자 카드가 그리는 값이다. 서버가 쓰는 곳은
+ * 한 곳(`proposePriceAlert` 도구)이고, 만들기 버튼이 누르는 액션이 서명·만료·소유자를 확인한 뒤에야 DB에 쓴다.
+ * 모델이 쓴 자유 문구는 담지 않는다 — 가격은 분석·시세·사용자가 말한 숫자에서만 온다.
+ */
+export interface PriceAlertProposal {
+    /** 같은 제안을 두 번 눌러도 알림이 하나만 생기게 하는 id(`price_alerts.proposal_id`). */
+    readonly proposalId: string;
+    /** 제안을 받은 호출자의 서명된 해시. 다른 브라우저로 복사한 토큰이 아무것도 만들지 못하게 한다. */
+    readonly subject: string;
+    readonly symbol: string;
+    readonly market: PriceAlertRecord['market'];
+    readonly condition: PriceAlertCondition;
+    readonly basis: PriceAlertBasis;
+    /** 가격대가 나온 AI 분석의 `analyzedAt`(ISO). 직접 말한 가격이면 null. */
+    readonly analysisAt: string | null;
+    /**
+     * `startsAfterSession` 세션의 종가(장중이면 전일 종가). 발송기의 분할 판정이 지금 읽은 일봉의 그 세션 종가와 견주는
+     * 값이라 장중 시세가 아니라 마감 종가여야 한다 — 하루 +70% 같은 등락이 분할로 오인되지 않는다.
+     */
+    readonly referenceClose: number;
+    /** 알림을 제안할 때 읽은 시세의 시각(ISO). 공급자가 시각을 주지 않으면 null. */
+    readonly quoteAt: string | null;
+    /** 만들 때 마지막으로 마감된 세션(`YYYY-MM-DD`). 그 뒤 종가만 판정한다. */
+    readonly startsAfterSession: string;
+    /** 종가를 판정하는 마지막 세션(`YYYY-MM-DD`). */
+    readonly expiresOn: string;
+    /** 제안이 만료되는 시각(unix 초). */
+    readonly exp: number;
+}
+
+/** 만든 알림에 실제로 저장된 조건과 마지막 판정 세션(`YYYY-MM-DD`). */
+export interface PriceAlertStoredTerms {
+    readonly condition: PriceAlertCondition;
+    readonly expiresOn: string;
+}
+
+/**
+ * 만든 알림을 어디서 관리하는지. `member`는 siglens.io에 로그인한 회원이라 알림 메일 설정 화면이 알아본다. `guest`는 쿠키가
+ * ai 호스트에만 있어 siglens.io에서는 알아볼 수 없으므로 메일 속 설정 링크로 관리한다.
+ */
+export type PriceAlertOwnerKind = 'member' | 'guest';
+
+/**
+ * 카드가 열릴 때의 상태. `ready`는 누르면 만들 수 있다는 뜻이고 `mode`가 어떻게 만드는지 가른다:
+ * `member`(이메일이 인증된 회원) · `known`(같은 브라우저에서 이미 신청한 주소) · `new`(코드로 주소를 확인해야 한다).
+ */
+export type PriceAlertProposalState =
+    | {
+          readonly status: 'ready';
+          readonly mode: 'member' | 'known';
+          readonly maskedEmail: string;
+      }
+    | {
+          readonly status: 'ready';
+          readonly mode: 'new';
+          /** 이메일 인증 전 회원이면 계정 주소 — 입력 칸에 채워 고정한다. */
+          readonly accountEmail: string | null;
+      }
+    | {
+          readonly status: 'created';
+          readonly maskedEmail: string;
+          readonly owner: PriceAlertOwnerKind;
+          /** 저장된 알림의 값. 만든 시각에 다시 계산되므로 제안과 다를 수 있어, 카드는 이 값을 보인다. */
+          readonly stored: PriceAlertStoredTerms;
+      }
+    | {
+          readonly status:
+              | 'exists'
+              | 'limit_reached'
+              | 'proposal_expired'
+              | 'proposal_stale'
+              | 'already_met'
+              | 'invalid'
+              | 'unavailable';
+      };
+
+/** 만들기 버튼 결과. `needs_code`는 이 브라우저에 확인된 주소가 없다는 뜻이라 코드 확인부터 해야 한다. */
+export type PriceAlertCreateResult =
+    | {
+          readonly status: 'created';
+          readonly maskedEmail: string;
+          readonly owner: PriceAlertOwnerKind;
+          /** 저장된 알림의 값. 만든 시각에 다시 계산되므로 제안과 다를 수 있어, 카드는 이 값을 보인다. */
+          readonly stored: PriceAlertStoredTerms;
+      }
+    | {
+          readonly status:
+              | 'exists'
+              | 'limit_reached'
+              | 'needs_code'
+              | 'rate_limited'
+              | 'proposal_expired'
+              /** 제안 뒤 세션이 마감돼 가격을 다시 읽어야 하는데 읽지 못했다 — 다시 요청해 달라고 안내한다. */
+              | 'proposal_stale'
+              /** 제안 뒤 세션이 마감됐고 새 시세가 이미 조건을 충족한다 — 알림을 만들지 않았다. */
+              | 'already_met'
+              | 'invalid'
+              | 'unavailable';
+      };
+
+/** 코드 확인과 알림 만들기를 한 번에 하는 비회원 흐름의 결과. 코드 오류는 `MailAlertConfirmState`와 같은 이름이다. */
+export type PriceAlertConfirmState =
+    | { readonly status: 'idle' }
+    | {
+          readonly status: 'created';
+          readonly maskedEmail: string;
+          readonly owner: PriceAlertOwnerKind;
+          /** 저장된 알림의 값. 만든 시각에 다시 계산되므로 제안과 다를 수 있어, 카드는 이 값을 보인다. */
+          readonly stored: PriceAlertStoredTerms;
+      }
+    | {
+          readonly status:
+              | 'exists'
+              | 'wrong_code'
+              | 'expired'
+              | 'too_many'
+              | 'rate_limited'
+              | 'limit_reached'
+              | 'proposal_expired'
+              | 'proposal_stale'
+              | 'already_met'
+              | 'invalid'
+              | 'invalid_email'
+              | 'unavailable';
+      };

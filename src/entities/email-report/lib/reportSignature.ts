@@ -26,7 +26,9 @@ export type ReportSignaturePurpose =
     /** 알림 메일: 메일 속 설정 링크. */
     | 'alert-manage'
     /** 알림 메일: 메일 속 수신거부 링크. */
-    | 'alert-unsubscribe';
+    | 'alert-unsubscribe'
+    /** 시그렌즈 AI 대화의 가격대 알림 제안 토큰. 만들기 버튼이 누르는 액션이 값과 서명을 함께 검증한다. */
+    | 'price-alert-proposal';
 
 function digest(
     secret: string,

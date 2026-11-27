@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
     ChatBlock,
+    ChatPriceAlertProposalBlock,
     ChatChartBlock,
     ChatChartTimeframe,
     ChatCompareBlock,
@@ -247,5 +248,41 @@ describe('messageCharts — 시각화 블록', () => {
         expect(
             messageCharts([tool('a', compare(['A', 'B']), 'error')])
         ).toEqual([]);
+    });
+
+    it('가격대 알림 제안 카드는 차트가 아니다 — 차트 상한에도 세지 않는다', () => {
+        const proposal: ChatPriceAlertProposalBlock = {
+            version: 1,
+            kind: 'price_alert_proposal',
+            token: 'body.signature',
+            name: null,
+            proposal: {
+                proposalId: '5b1f7c1e-3d41-4a6a-9a5c-0a3b6f7d9e10',
+                subject: 'subject-hash',
+                symbol: 'AAPL',
+                market: 'us',
+                condition: { kind: 'close_below', level: 180 },
+                basis: 'price_level',
+                analysisAt: null,
+                referenceClose: 190,
+                quoteAt: null,
+                startsAfterSession: '2026-11-24',
+                expiresOn: '2026-12-24',
+                exp: 1_795_000_000,
+            },
+        };
+
+        expect(messageCharts([tool('p', proposal)])).toEqual([]);
+        expect(
+            messageCharts([
+                tool('a', block('QQQ')),
+                tool('p', proposal),
+                tool('b', compare(['NVDA', 'AMD'])),
+                tool('c', dividends('KO')),
+            ]).map(chart => chart.block)
+        ).toHaveLength(MESSAGE_CHARTS_MAX);
+        expect(
+            messageCharts([tool('p', proposal), tool('a', block('QQQ'))])
+        ).toHaveLength(1);
     });
 });

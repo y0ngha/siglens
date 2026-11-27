@@ -12,10 +12,12 @@ import { AgentMarkdown } from '../AgentMarkdown';
 import { SiglensMark } from '../SiglensMark';
 import { ToolActivity } from '../ToolActivity';
 import { FollowUps } from './FollowUps';
+import { PriceAlertProposalCard } from './PriceAlertProposalCard';
 import { RelatedPages } from './RelatedPages';
 import { Thinking } from './Thinking';
 import { ChatChartSlot } from '../model/chatChartSlot';
 import { messageCharts } from '../utils/messageCharts';
+import { messageProposals } from '../utils/messageProposals';
 
 interface AssistantMessageProps {
     readonly message: AgentUiMessage;
@@ -51,6 +53,7 @@ export function AssistantMessage({
     const body = m.content;
     const Chart = useContext(ChatChartSlot);
     const charts = useMemo(() => messageCharts(m.tools), [m.tools]);
+    const proposals = useMemo(() => messageProposals(m.tools), [m.tools]);
     const statusNote: Partial<Record<AgentUiMessage['status'], ReactNode>> = {
         aborted: (
             <p className="mt-2 text-xs text-secondary-400">
@@ -104,6 +107,17 @@ export function AssistantMessage({
                         ? null
                         : charts.map(c => (
                               <Chart key={c.key} block={c.block} />
+                          ))}
+                    {/* 가격대 알림 제안 카드는 답이 끝난 뒤 본문·차트 아래에 둔다 — 도구가 끝난 순간부터 보이면 아직 쓰이는 문장 위에 버튼이 먼저 뜬다. */}
+                    {isStreaming
+                        ? null
+                        : proposals.map(block => (
+                              <PriceAlertProposalCard
+                                  key={block.proposal.proposalId}
+                                  block={block}
+                                  siteUrl={siteUrl}
+                                  localePrefix={localePrefix}
+                              />
                           ))}
                     {!isStreaming && body ? (
                         <RelatedPages

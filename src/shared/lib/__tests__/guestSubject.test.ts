@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { guestSubject, isGuestSubject } from '@/app/api/ai/chat/guestSubject';
+import { guestSubject, isGuestSubject } from '@/shared/lib/guestSubject';
 
 const GUEST_ID = '550e8400-e29b-41d4-a716-446655440000';
 

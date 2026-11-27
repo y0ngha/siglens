@@ -2,7 +2,7 @@ import 'server-only';
 import type { XPostItem } from '@/entities/x-posts/model';
 import { getXPosts } from '@/entities/x-posts/server/getXPosts';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { isGuestSubject } from '../guestSubject';
+import { isGuestSubject } from '@/shared/lib/guestSubject';
 import { X_POSTS_RESULT_MAX_CHARS } from './truncate';
 
 const SOURCE = 'X';

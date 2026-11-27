@@ -39,6 +39,7 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
 }));
 
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
+import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { AgentTurnError } from '@/app/api/ai/chat/agentEventStream';
 import {
     agentTurnStream,
@@ -368,6 +369,104 @@ describe('agentTurnStream', () => {
             expect.objectContaining({ role: 'tool', chart: block }),
             expect.objectContaining({ role: 'assistant', content: 'hi' }),
         ]);
+    });
+
+    it('가격대 알림 제안 카드도 같은 chart 프레임으로 가고 그 도구 행에 저장된다(차트로 읽히지 않는다)', async () => {
+        const block = {
+            version: 1,
+            kind: 'price_alert_proposal',
+            token: 'body.signature',
+            name: '애플',
+            proposal: {
+                proposalId: '5b1f7c1e-3d41-4a6a-9a5c-0a3b6f7d9e10',
+                subject: 'subject-hash',
+                symbol: 'AAPL',
+                market: 'us',
+                condition: { kind: 'close_below', level: 180 },
+                basis: 'price_level',
+                analysisAt: null,
+                referenceClose: 190,
+                quoteAt: null,
+                startsAfterSession: '2026-11-24',
+                expiresOn: '2026-12-24',
+                exp: 1_795_000_000,
+            },
+        };
+        const args = { symbol: 'AAPL', basis: 'price_below', price: 180 };
+        runTurn.mockImplementation(
+            async (
+                _params: unknown,
+                deps: { onEvent: (e: Record<string, unknown>) => void }
+            ) => {
+                deps.onEvent({
+                    type: 'tool_start',
+                    id: 'call-p',
+                    name: 'propose_price_alert',
+                    args,
+                });
+                executorOptions.onChart?.(
+                    { name: 'propose_price_alert', args },
+                    Promise.resolve(block)
+                );
+                deps.onEvent({
+                    type: 'tool_end',
+                    id: 'call-p',
+                    name: 'propose_price_alert',
+                    status: 'ok',
+                    ms: 1,
+                    summary: '',
+                });
+                return {
+                    ...OK_TURN,
+                    intermediate: [
+                        {
+                            role: 'assistant',
+                            content: '',
+                            toolCalls: [
+                                {
+                                    id: 'call-p',
+                                    name: 'propose_price_alert',
+                                    args,
+                                },
+                            ],
+                        },
+                        {
+                            role: 'tool',
+                            content: '{}',
+                            toolCallId: 'call-p',
+                            toolName: 'propose_price_alert',
+                        },
+                    ],
+                };
+            }
+        );
+
+        const text = await readAll(start().stream);
+
+        expect(text).toContain('event: chart');
+        expect(text).toContain('"kind":"price_alert_proposal"');
+        expect(text.indexOf('event: chart')).toBeLessThan(
+            text.indexOf('event: done')
+        );
+        expect(appendMessages).toHaveBeenCalledWith('c1', [
+            expect.not.objectContaining({ chart: expect.anything() }),
+            expect.objectContaining({ role: 'tool', chart: block }),
+            expect.objectContaining({ role: 'assistant', content: 'hi' }),
+        ]);
+    });
+
+    it('에이전트 턴은 core 기본 도구 모음에 관심종목·가격대 알림 도구를 덧붙인 모음으로 돈다', async () => {
+        runTurn.mockResolvedValue(OK_TURN);
+
+        await readAll(start().stream);
+
+        expect(runTurn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                toolSet: AGENT_TOOL_SET,
+                availableTools: new Set(['get_quote']),
+            }),
+            expect.anything()
+        );
     });
 
     it('실패한 도구(tool_end error)의 블록은 프레임으로도 저장으로도 내지 않는다', async () => {

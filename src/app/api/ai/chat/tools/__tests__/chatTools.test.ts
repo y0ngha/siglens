@@ -46,6 +46,22 @@ vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
 vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
     getMyPortfolioTool: vi.fn(),
 }));
+vi.mock('@/app/api/ai/chat/tools/getMyWatchlist', () => ({
+    getMyWatchlistTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/proposePriceAlert', () => ({
+    proposePriceAlertTool: vi.fn(),
+}));
+const priceAlertState = vi.hoisted(() => ({ launched: false }));
+vi.mock(
+    '@/entities/mail-alert/lib/priceAlertConstants',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/mail-alert/lib/priceAlertConstants')
+        >()),
+        isPriceAlertLaunched: () => priceAlertState.launched,
+    })
+);
 vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
     runFreshAnalysisTool: vi.fn(),
 }));
@@ -98,7 +114,7 @@ import {
     createToolExecutor,
     type ToolRuntime,
 } from '@/app/api/ai/chat/tools/chatTools';
-import { guestSubject } from '@/app/api/ai/chat/guestSubject';
+import { guestSubject } from '@/shared/lib/guestSubject';
 import {
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
@@ -131,7 +147,7 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 22종(web_search·get_x_posts는 키 있을 때만)', () => {
+    it('가용 툴 23종(web_search·get_x_posts는 키 있을 때만, propose_price_alert는 공개 뒤에만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_analyst_views',
             'get_bars_indicators',
@@ -146,6 +162,7 @@ describe('tool registry', () => {
             'get_macro_quotes',
             'get_market_overview',
             'get_my_portfolio',
+            'get_my_watchlist',
             'get_news',
             'get_options_summary',
             'get_price_stats',
@@ -156,6 +173,16 @@ describe('tool registry', () => {
             'search_ticker',
             'show_chart',
         ]);
+    });
+
+    it('propose_price_alert는 가격대 알림이 공개된 뒤에만 가용 목록에 든다', () => {
+        expect(availableToolNames().has('propose_price_alert')).toBe(false);
+        priceAlertState.launched = true;
+        try {
+            expect(availableToolNames().has('propose_price_alert')).toBe(true);
+        } finally {
+            priceAlertState.launched = false;
+        }
     });
 
     it('BRAVE_SEARCH_API_KEY가 있으면 web_search도 가용 목록에 포함된다', () => {
@@ -313,6 +340,59 @@ describe('tool registry', () => {
             )
         ).resolves.toEqual({ error: 'login_required' });
         expect(getMyPortfolioTool).not.toHaveBeenCalled();
+    });
+
+    it('게스트의 get_my_watchlist → login_required, 실행기 미호출(관심종목은 siglens.io 브라우저에만 있다)', async () => {
+        const { getMyWatchlistTool } =
+            await import('@/app/api/ai/chat/tools/getMyWatchlist');
+        const execute = createToolExecutor({ analysisModel: 'm' as never });
+        await expect(
+            execute(
+                'get_my_watchlist',
+                {},
+                {
+                    ...makeCtx(),
+                    userId: guestSubject(
+                        '11111111-1111-4111-8111-111111111111'
+                    ),
+                    tier: 'free' as never,
+                }
+            )
+        ).resolves.toEqual({ error: 'login_required' });
+        expect(getMyWatchlistTool).not.toHaveBeenCalled();
+    });
+
+    it('회원의 get_my_watchlist는 기본 상한(4,000자)이 아니라 관심종목 결과 상한을 쓴다', async () => {
+        const { getMyWatchlistTool } =
+            await import('@/app/api/ai/chat/tools/getMyWatchlist');
+        const body = { blob: 'x'.repeat(5_500) };
+        vi.mocked(getMyWatchlistTool).mockResolvedValue(body);
+        const execute = createToolExecutor({ analysisModel: 'm' as never });
+        await expect(
+            execute('get_my_watchlist', {}, makeCtx())
+        ).resolves.toEqual(body);
+    });
+
+    it('게스트도 propose_price_alert는 실행한다 — 알림은 사용자의 버튼과 이메일 코드로만 만들어진다', async () => {
+        const { proposePriceAlertTool } =
+            await import('@/app/api/ai/chat/tools/proposePriceAlert');
+        vi.mocked(proposePriceAlertTool).mockResolvedValue({
+            status: 'proposed',
+        });
+        const execute = createToolExecutor({ analysisModel: 'm' as never });
+        await expect(
+            execute(
+                'propose_price_alert',
+                { symbol: 'AAPL', basis: 'price_below', price: 180 },
+                {
+                    ...makeCtx(),
+                    userId: guestSubject(
+                        '11111111-1111-4111-8111-111111111111'
+                    ),
+                    tier: 'free' as never,
+                }
+            )
+        ).resolves.toEqual({ status: 'proposed' });
     });
 
     it.each(['run_fresh_analysis', 'web_search'])(
@@ -899,6 +979,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         news: 9_000,
         fundamentals: 9_000,
         webSearch: 9_000,
+        watchlist: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };

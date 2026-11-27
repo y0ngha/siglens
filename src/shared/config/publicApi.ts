@@ -134,6 +134,8 @@ export const PUBLIC_API_RESULT_CAPS = {
     fundamentals: 16_000,
     // `web_search`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
     webSearch: 24_000,
+    // `get_my_watchlist`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
+    watchlist: 24_000,
     cachedAnalysis: 32_000,
     cachedAnalysisBudget: 32_000,
 } as const;

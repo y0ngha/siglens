@@ -1,20 +1,15 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { confirmMailAlertAction } from '@/entities/mail-alert/actions/confirmMailAlertAction';
 import { requestMailAlertCodeAction } from '@/entities/mail-alert/actions/requestMailAlertCodeAction';
 import {
     MAIL_ALERT_HONEYPOT_FIELD,
     MAIL_ALERT_RESEND_COOLDOWN_SECONDS,
 } from '@/entities/mail-alert/lib/mailAlertConstants';
-import type {
-    MailAlertConfirmState,
-    MailAlertRequestCodeState,
-} from '@/entities/mail-alert/model';
+import type { MailAlertRequestCodeState } from '@/entities/mail-alert/model';
 import { MS_PER_SECOND } from '@/shared/config/time';
 
 const IDLE_REQUEST: MailAlertRequestCodeState = { status: 'idle' };
-const IDLE_CONFIRM: MailAlertConfirmState = { status: 'idle' };
 
 /**
  * 코드를 보낸 뒤 "다시 받기"를 잠그는 쿨다운. 서버 한도(주소당 시간당 3회)와는 별개로 연타를 막는 화면
@@ -51,9 +46,14 @@ function useResendCooldown(): {
 
 /**
  * 비회원 신청의 두 단계(코드 받기 → 코드 확인)와 "다시 받기" 쿨다운. 두 단계의 상태는 각자의
- * `useActionState`가 들고, 코드를 보내는 데 성공하면 쿨다운이 시작된다.
+ * `useActionState`가 들고, 코드를 보내는 데 성공하면 쿨다운이 시작된다. 코드 확인이 확정하는 것은 호출자가
+ * 정한다 — 알림 항목(`confirmMailAlertAction`) 또는 가격대 알림 제안(`confirmPriceAlertAction`) — 이라 확인 액션과
+ * 그 처음 상태(`idle`)를 받는다.
  */
-export function useMailAlertCodeFlow() {
+export function useMailAlertCodeFlow<S extends { readonly status: string }>(
+    confirm: (previous: Awaited<S>, formData: FormData) => Promise<S>,
+    idleConfirm: Awaited<S>
+) {
     const cooldown = useResendCooldown();
     const requestAndCool = async (
         previous: MailAlertRequestCodeState,
@@ -73,8 +73,8 @@ export function useMailAlertCodeFlow() {
         IDLE_REQUEST
     );
     const [confirmState, confirmAction, isConfirming] = useActionState(
-        confirmMailAlertAction,
-        IDLE_CONFIRM
+        confirm,
+        idleConfirm
     );
     return {
         requestState,

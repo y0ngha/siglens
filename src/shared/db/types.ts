@@ -624,7 +624,7 @@ export interface PriceAlertRecord {
     basis: PriceAlertBasisValue;
     /** `analyzedAt` of the AI analysis the levels came from; `null` for a price the user named. */
     analysisAt: Date | null;
-    /** The price shown on the card when the alert was proposed. */
+    /** Close of the `startsAfterSession` session (the previous close while that session's successor is open): the scale the sender's split guard compares against. */
     referenceClose: number;
     /** Market-local `YYYY-MM-DD` of the last closed session at creation: only later closes count. */
     startsAfterSession: string;
