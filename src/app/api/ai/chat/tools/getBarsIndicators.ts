@@ -91,29 +91,23 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
 import { chartBlockFrom } from './chartBlock';
 
 /**
- * Restored 20 → 30 (2026-09-14): this tool now fits against its own bars cap
- * (`ToolRuntime.barsResultMaxChars`: 7,000 for the agent and for the public API,
- * not the shared `TOOL_RESULT_MAX_CHARS` 4,000) — `fitBarsToBudget`'s trim loop already guarantees that ceiling
- * for any `bars` the model requests, so the default no longer needs to
- * shrink just to keep the common (unbudgeted) case comfortably under 4,000.
+ * Default bar count. This tool fits against its own bars cap
+ * (`ToolRuntime.barsResultMaxChars`: 7,000 for the agent `BARS_RESULT_MAX_CHARS`
+ * and the public API `PUBLIC_API_RESULT_CAPS.bars`, not the shared
+ * `TOOL_RESULT_MAX_CHARS` 4,000), and `fitBarsToBudget`'s trim loop guarantees
+ * that ceiling for any `bars` the model requests, so the default does not have
+ * to shrink to keep the common case under 4,000.
  *
- * Headroom history (default 30-bar 1Day request, production-sized series:
- * 500 bars, real indicators, fear & greed, three signals, no MA cross, in the
- * live regular-session shape `lastBarInProgress` + `lastCompletedClose` that
- * the "기본 요청(30봉, 1Day)" test pins; re-measure by serializing that test's
- * result):
- * - 2026-10-24: ~5,835 untrimmed, ~5,892 live shape — ~608 under the then
- *   6,500 cap (raised from 6,000 when the headroom was down to ~108).
- * - 2026-11-20: `latest.oscillatorZones` + `oscillatorSummary` brought the live
- *   shape to ~6,155 (+~260); with the longest tally ("not available: …" tail
- *   and four "just below" suffixes) ~6,330. That is ~170 under 6,500, so the
- *   cap went to 7,000 for both callers (agent `BARS_RESULT_MAX_CHARS`, public
- *   API `PUBLIC_API_RESULT_CAPS.bars`).
- * Current baseline: the tool fits against the calling executor's cap minus
- * `BARS_ANNOTATE_HEADROOM_CHARS` (100) = 6,900, so the live shape has ~745
- * (~570 with the longest tally) of headroom. Each listed cross adds ~35 chars,
- * so ~16 crosses are what the worst case absorbs before `fitBarsToBudget`
- * starts trimming bars. Re-measure when a top-level or `derived` field is added.
+ * Headroom at 30 bars (1Day, production-sized series: 500 bars, real
+ * indicators, fear & greed, three signals, no MA cross, in the live
+ * regular-session shape `lastBarInProgress` + `lastCompletedClose` that the
+ * "기본 요청(30봉, 1Day)" test pins): ~6,155 chars with a typical oscillator
+ * tally, ~6,330 with the longest. The tool fits against the calling executor's
+ * cap minus `BARS_ANNOTATE_HEADROOM_CHARS` (100) = 6,900, leaving ~745 (~570
+ * with the longest tally). Each listed cross adds ~35 chars, so ~16 crosses are
+ * what the worst case absorbs before `fitBarsToBudget` starts trimming bars.
+ * Re-measure by serializing that test's result when a top-level or `derived`
+ * field is added.
  */
 const DEFAULT_BARS = 30;
 /**
