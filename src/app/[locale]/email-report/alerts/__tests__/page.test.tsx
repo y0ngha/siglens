@@ -189,27 +189,57 @@ describe('알림 메일 설정 페이지', () => {
                         id: 'alert-1',
                         label: 'AAPL 종가가 US$180.00 이하로 내려가면 메일로 알려 드려요.',
                         lines: [
-                            '대화에서 정한 가격이에요.',
-                            '만든 날 11월 20일, 그때 가격 US$190.50',
-                            '12월 20일 종가까지 확인하고, 한 번 알리면 끝나요.',
+                            { key: 'basis', text: '대화에서 정한 가격이에요.' },
+                            {
+                                key: 'created',
+                                text: '만든 날 11월 20일, 그때 가격 US$190.50',
+                            },
+                            {
+                                key: 'expires',
+                                text: '12월 20일 종가까지 확인하고, 한 번 알리면 끝나요.',
+                            },
                         ],
                     },
                     {
                         id: 'alert-2',
                         label: 'AAPL 종가가 US$200.00 이상으로 올라가면 메일로 알려 드려요.',
                         lines: [
-                            '11월 20일 AI 분석의 무효화 기준이에요.',
-                            expect.stringContaining('만든 날 11월 20일'),
-                            expect.stringContaining('12월 20일 종가까지'),
+                            {
+                                key: 'basis',
+                                text: '11월 20일 AI 분석의 무효화 기준이에요.',
+                            },
+                            {
+                                key: 'created',
+                                text: expect.stringContaining(
+                                    '만든 날 11월 20일'
+                                ),
+                            },
+                            {
+                                key: 'expires',
+                                text: expect.stringContaining(
+                                    '12월 20일 종가까지'
+                                ),
+                            },
                         ],
                     },
                     {
                         id: 'alert-3',
                         label: '005930 종가가 ₩70,000~₩71,500 구간에 들어오거나 지나치면 메일로 알려 드려요.',
                         lines: [
-                            '11월 20일 AI 분석의 진입 구간이에요.',
-                            '만든 날 11월 20일, 그때 가격 ₩72,500',
-                            expect.stringContaining('12월 20일 종가까지'),
+                            {
+                                key: 'basis',
+                                text: '11월 20일 AI 분석의 진입 구간이에요.',
+                            },
+                            {
+                                key: 'created',
+                                text: '만든 날 11월 20일, 그때 가격 ₩72,500',
+                            },
+                            {
+                                key: 'expires',
+                                text: expect.stringContaining(
+                                    '12월 20일 종가까지'
+                                ),
+                            },
                         ],
                     },
                 ],
@@ -222,10 +252,13 @@ describe('알림 메일 설정 페이지', () => {
             await renderPage();
 
             const props = manageProps.value as {
-                priceAlerts: { lines: string[] }[];
+                priceAlerts: { lines: { key: string; text: string }[] }[];
             };
             expect(props.priceAlerts[0]?.lines).toHaveLength(2);
-            expect(props.priceAlerts[0]?.lines[0]).toContain('만든 날');
+            expect(props.priceAlerts[0]?.lines[0]).toMatchObject({
+                key: 'created',
+                text: expect.stringContaining('만든 날'),
+            });
         });
 
         it('알린 알림은 조건을 충족한 종가 세션과 종가만 말한다(메일이 나갔다고 쓰지 않는다)', async () => {
@@ -308,11 +341,16 @@ describe('알림 메일 설정 페이지', () => {
             await renderPage({}, 'en');
 
             const props = manageProps.value as {
-                priceAlerts: { label: string; lines: string[] }[];
+                priceAlerts: {
+                    label: string;
+                    lines: { key: string; text: string }[];
+                }[];
             };
             expect(props.priceAlerts[0]?.label).toContain('$180.00');
-            expect(props.priceAlerts[0]?.lines[1]).toContain('$190.50');
-            expect(props.priceAlerts[0]?.lines[1]).toContain('November 20');
+            expect(props.priceAlerts[0]?.lines[1]?.text).toContain('$190.50');
+            expect(props.priceAlerts[0]?.lines[1]?.text).toContain(
+                'November 20'
+            );
         });
     });
 

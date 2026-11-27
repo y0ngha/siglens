@@ -5,6 +5,7 @@ import type { Bar } from '@y0ngha/siglens-core';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { describeTarget } from '../../../../../../db/scripts/lib/dbTarget';
 import {
     DrizzleMailAlertDeliveryRepository,
@@ -413,7 +414,7 @@ describe.skipIf(!URL)(
         describe('가격대 알림', () => {
             const dailyBars = (...closes: Array<[string, number]>): Bar[] =>
                 closes.map(([session, close]) => ({
-                    time: Date.parse(`${session}T00:00:00Z`) / 1000,
+                    time: Date.parse(`${session}T00:00:00Z`) / MS_PER_SECOND,
                     open: close,
                     high: close,
                     low: close,
@@ -1358,9 +1359,9 @@ describe.skipIf(!URL)(
                 ...Array.from({ length: 4 }, (_, i) => 100 + (i + 1) * 3),
             ];
             const barsEndingOn = (session: string): Bar[] => {
-                const last = Date.parse(`${session}T00:00:00Z`) / 1000;
+                const last = Date.parse(`${session}T00:00:00Z`) / MS_PER_SECOND;
                 return climb.map((close, i) => ({
-                    time: last - (climb.length - 1 - i) * 86_400,
+                    time: last - (climb.length - 1 - i) * SECONDS_PER_DAY,
                     open: close,
                     high: close + 1,
                     low: close - 1,

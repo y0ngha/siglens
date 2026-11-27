@@ -58,6 +58,7 @@ import type {
     Tier,
 } from '@y0ngha/siglens-core';
 import { MAIL_ALERT_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import type {
     FiredPriceAlert,
     MailAlertClaim,
@@ -132,9 +133,9 @@ const fgTopic = (key: string) => ({ kind: 'fear_greed' as const, key });
 
 /** 마지막 봉이 `session`인 평평한 일봉 `count`개 — 새 신호가 없는 봉이다. */
 function barsEndingOn(session: string, count = 300): Bar[] {
-    const last = Date.parse(`${session}T00:00:00Z`) / 1000;
+    const last = Date.parse(`${session}T00:00:00Z`) / MS_PER_SECOND;
     return Array.from({ length: count }, (_, i) => ({
-        time: last - (count - 1 - i) * 86_400,
+        time: last - (count - 1 - i) * SECONDS_PER_DAY,
         open: 100,
         high: 100,
         low: 100,
@@ -1561,7 +1562,7 @@ describe('runMailAlertBatch', () => {
         /** 일봉: (세션, 종가) 쌍을 UTC 자정 봉으로 만든다. */
         function dailyBars(...closes: Array<[string, number]>): Bar[] {
             return closes.map(([session, close]) => ({
-                time: Date.parse(`${session}T00:00:00Z`) / 1000,
+                time: Date.parse(`${session}T00:00:00Z`) / MS_PER_SECOND,
                 open: close,
                 high: close,
                 low: close,
@@ -2404,9 +2405,9 @@ describe('runMailAlertBatch', () => {
 
         /** 마지막 봉이 `session`인 일봉. 종가열은 64봉째에서 중립 → 강세로 바뀌고 어제 109, 오늘 112다. */
         function barsOf(closes: readonly number[], session: string): Bar[] {
-            const last = Date.parse(`${session}T00:00:00Z`) / 1000;
+            const last = Date.parse(`${session}T00:00:00Z`) / MS_PER_SECOND;
             return closes.map((close, i) => ({
-                time: last - (closes.length - 1 - i) * 86_400,
+                time: last - (closes.length - 1 - i) * SECONDS_PER_DAY,
                 open: close,
                 high: close + 1,
                 low: close - 1,
@@ -2416,7 +2417,9 @@ describe('runMailAlertBatch', () => {
         }
 
         const TREND_BARS = barsOf(CLOSES.slice(0, 64), US_SESSION);
-        const ANALYZED_AT = new Date((TREND_BARS[60]?.time ?? 0) * 1000);
+        const ANALYZED_AT = new Date(
+            (TREND_BARS[60]?.time ?? 0) * MS_PER_SECOND
+        );
         const STORED = {
             keyLevels: {
                 support: [{ price: 110 }],

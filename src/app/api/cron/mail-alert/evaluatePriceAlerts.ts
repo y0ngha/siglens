@@ -6,6 +6,7 @@ import type {
     MailAlertPriceAlertItem,
     MailAlertVoidedPriceAlertItem,
 } from '@/entities/mail-alert/model';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { PriceAlertRecord } from '@/shared/db/types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
@@ -14,8 +15,6 @@ import {
     COMPUTE_CONCURRENCY,
     type ExpectedSessions,
 } from './collectAlertSources';
-
-const MS_PER_SECOND = 1000;
 
 /** 일봉의 세션 날짜 — 신호 판정(`lastDailyBarDate`)과 같이 봉 시각의 UTC 날짜다. */
 function sessionOfTime(time: number): string {
@@ -103,26 +102,17 @@ function evaluateAlert(
     bars: readonly Bar[],
     expectedSession: string
 ): AlertOutcome {
+    if (hasScaleChanged(alert, bars)) return { kind: 'void' };
     const limit =
         alert.expiresOn < expectedSession ? alert.expiresOn : expectedSession;
     const window = barsUpToDate(bars, limit).bars.filter(
         bar => sessionOfTime(bar.time) > alert.startsAfterSession
     );
-    if (hasScaleChanged(alert, bars)) return { kind: 'void' };
-    const { condition } = alert;
-    if (condition.kind === 'enter_zone') {
-        const trigger = findPriceLevelTrigger(window, condition);
-        return trigger === null
-            ? { kind: 'none' }
-            : {
-                  kind: 'fire',
-                  item: toItem(alert, trigger, trigger.position),
-              };
-    }
-    const trigger = findPriceLevelTrigger(window, condition);
-    return trigger === null
-        ? { kind: 'none' }
-        : { kind: 'fire', item: toItem(alert, trigger, null) };
+    const trigger = findPriceLevelTrigger(window, alert.condition);
+    if (trigger === null) return { kind: 'none' };
+    // 구간 알림만 코어가 종가의 위치(구간 안·아래·위)를 함께 판정한다.
+    const zonePosition = 'position' in trigger ? trigger.position : null;
+    return { kind: 'fire', item: toItem(alert, trigger, zonePosition) };
 }
 
 /** 구독자 id → 값 목록(들어온 순서 그대로). */

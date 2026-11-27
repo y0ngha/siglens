@@ -14,6 +14,7 @@ import {
 import type {
     MailAlertManageFiredAlert,
     MailAlertManagePriceAlert,
+    MailAlertManagePriceAlertLine,
 } from '@/features/mail-alert/ui/MailAlertPriceAlerts';
 import type { Locale } from '@/shared/i18n/locales';
 import { displayTicker } from '@/shared/lib/displayTicker';
@@ -145,14 +146,22 @@ async function labelPriceAlerts(
                 });
         }
     };
-    const basisLines = (alert: PriceAlertView): string[] => {
-        if (alert.basis === 'price_level') return [t('priceAlertBasisPrice')];
+    const basisLines = (
+        alert: PriceAlertView
+    ): MailAlertManagePriceAlertLine[] => {
+        if (alert.basis === 'price_level') {
+            return [{ key: 'basis', text: t('priceAlertBasisPrice') }];
+        }
         if (alert.analysisAt === null) return [];
         const date = formatDate(kstDateKey(alert.analysisAt), locale);
         return [
-            alert.basis === 'analysis_entry_zone'
-                ? t('priceAlertBasisEntry', { date })
-                : t('priceAlertBasisInvalidation', { date }),
+            {
+                key: 'basis',
+                text:
+                    alert.basis === 'analysis_entry_zone'
+                        ? t('priceAlertBasisEntry', { date })
+                        : t('priceAlertBasisInvalidation', { date }),
+            },
         ];
     };
     return alerts.map(alert => ({
@@ -160,13 +169,19 @@ async function labelPriceAlerts(
         label: conditionText(alert),
         lines: [
             ...basisLines(alert),
-            t('priceAlertCreated', {
-                date: formatDate(kstDateKey(alert.createdAt), locale),
-                price: price(alert, alert.referenceClose),
-            }),
-            t('priceAlertExpires', {
-                date: formatDate(alert.expiresOn, locale),
-            }),
+            {
+                key: 'created',
+                text: t('priceAlertCreated', {
+                    date: formatDate(kstDateKey(alert.createdAt), locale),
+                    price: price(alert, alert.referenceClose),
+                }),
+            },
+            {
+                key: 'expires',
+                text: t('priceAlertExpires', {
+                    date: formatDate(alert.expiresOn, locale),
+                }),
+            },
         ],
     }));
 }

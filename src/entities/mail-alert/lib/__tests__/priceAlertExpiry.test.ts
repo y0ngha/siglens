@@ -1,7 +1,6 @@
 import { SIGNAL_SETTLE_MINUTES } from '@/entities/signal-history/lib/signalEventRows';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { isPriceAlertLive, priceAlertAsOf } from '../priceAlertExpiry';
-
-const MINUTE_MS = 60_000;
 
 /** 2026-11-24(화) 미국 정규장 마감: 16:00 ET = 21:00Z(표준시). */
 const US_CLOSE = Date.parse('2026-11-24T21:00:00Z');
@@ -10,18 +9,18 @@ const KR_CLOSE = Date.parse('2026-11-24T06:30:00Z');
 
 describe('priceAlertAsOf', () => {
     it('미국은 마감에 정착 시간이 지나야 그 세션으로 넘어간다', () => {
-        const settled = US_CLOSE + SIGNAL_SETTLE_MINUTES.us * MINUTE_MS;
+        const settled = US_CLOSE + SIGNAL_SETTLE_MINUTES.us * MS_PER_MINUTE;
 
-        expect(priceAlertAsOf(new Date(settled - MINUTE_MS)).us).toBe(
+        expect(priceAlertAsOf(new Date(settled - MS_PER_MINUTE)).us).toBe(
             '2026-11-23'
         );
         expect(priceAlertAsOf(new Date(settled)).us).toBe('2026-11-24');
     });
 
     it('한국도 마감에 한국 정착 시간이 지나야 그 세션으로 넘어간다', () => {
-        const settled = KR_CLOSE + SIGNAL_SETTLE_MINUTES.kr * MINUTE_MS;
+        const settled = KR_CLOSE + SIGNAL_SETTLE_MINUTES.kr * MS_PER_MINUTE;
 
-        expect(priceAlertAsOf(new Date(settled - MINUTE_MS)).kr).toBe(
+        expect(priceAlertAsOf(new Date(settled - MS_PER_MINUTE)).kr).toBe(
             '2026-11-23'
         );
         expect(priceAlertAsOf(new Date(settled)).kr).toBe('2026-11-24');

@@ -211,6 +211,19 @@ interface PreparedSubscriber {
 }
 
 /**
+ * 메일을 만들고 보낸 결과. `mailNotSent`는 메일이 나가지 않았다고 확정된 경우다: 보내기 전에 실패했거나(메일을
+ * 만들다 던짐) 제공자가 확정적으로 거절했다. 보내다 던진 경우는 나갔는지 알 수 없어 `false`다.
+ */
+type SendResult =
+    | { readonly kind: 'accepted'; readonly mailNotSent: false }
+    | { readonly kind: 'rejected'; readonly mailNotSent: true }
+    | {
+          readonly kind: 'threw';
+          readonly error: unknown;
+          readonly mailNotSent: boolean;
+      };
+
+/**
  * 멱등 키 발송 결과를 `sent`로 기록할지. `already_accepted`는 같은 키(같은 구독자, 같은 날)의 첫 요청을 제공자가
  * 이미 받았다는 뜻이라 DB-11 그대로 성공이다(실패로 남기면 받은 항목이 다음 날 억제되지 않는다).
  *
@@ -787,19 +800,6 @@ async function runInWindow(
                 priceAlertEvaluation.voids.get(subscriber.target.id) ?? [],
         });
     }
-
-    /**
-     * 메일을 만들고 보낸 결과. `mailNotSent`는 메일이 나가지 않았다고 확정된 경우다: 보내기 전에 실패했거나(메일을
-     * 만들다 던짐) 제공자가 확정적으로 거절했다. 보내다 던진 경우는 나갔는지 알 수 없어 `false`다.
-     */
-    type SendResult =
-        | { readonly kind: 'accepted'; readonly mailNotSent: false }
-        | { readonly kind: 'rejected'; readonly mailNotSent: true }
-        | {
-              readonly kind: 'threw';
-              readonly error: unknown;
-              readonly mailNotSent: boolean;
-          };
 
     async function sendPhase(
         buildMessage: () => Promise<

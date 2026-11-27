@@ -24,6 +24,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MailAlertTopic } from '@/entities/mail-alert/model';
 import { MailAlertManage } from '@/features/mail-alert/ui/MailAlertManage';
+import type { MailAlertManagePriceAlert } from '@/features/mail-alert/ui/MailAlertPriceAlerts';
 import { createQueryWrapper } from './support';
 
 const AAPL: MailAlertTopic = { kind: 'symbol', symbol: 'AAPL' };
@@ -31,20 +32,23 @@ const HUB: MailAlertTopic = { kind: 'signal', signalType: 'golden_cross' };
 const LINK = { s: 'sub-1', sig: 'abc' };
 
 const ALERT_ID = '3f0c8e3e-6b9a-4e4d-9d3a-1a2b3c4d5e6f';
-const PRICE_ALERTS = [
+const PRICE_ALERTS: readonly MailAlertManagePriceAlert[] = [
     {
         id: ALERT_ID,
         label: 'AAPL 종가가 US$180.00 이하로 내려가면 메일로 알려 드려요.',
         lines: [
-            '대화에서 정한 가격이에요.',
-            '만든 날 11월 20일, 그때 가격 US$190.50',
-            '12월 20일까지 유지되고, 한 번 알리면 끝나요.',
+            { key: 'basis', text: '대화에서 정한 가격이에요.' },
+            { key: 'created', text: '만든 날 11월 20일, 그때 가격 US$190.50' },
+            {
+                key: 'expires',
+                text: '12월 20일까지 유지되고, 한 번 알리면 끝나요.',
+            },
         ],
     },
     {
         id: 'second-id',
         label: 'MSFT 종가가 US$400.00 이상으로 올라가면 메일로 알려 드려요.',
-        lines: ['대화에서 정한 가격이에요.'],
+        lines: [{ key: 'basis', text: '대화에서 정한 가격이에요.' }],
     },
 ];
 const FIRED_ALERTS = [
@@ -302,7 +306,7 @@ describe('MailAlertManage', () => {
                 .getByText(PRICE_ALERTS[0]?.label ?? '')
                 .closest('li') as HTMLElement;
             PRICE_ALERTS[0]?.lines.forEach(line =>
-                expect(within(first).getByText(line)).toBeInTheDocument()
+                expect(within(first).getByText(line.text)).toBeInTheDocument()
             );
             expect(
                 screen.getByRole('heading', {

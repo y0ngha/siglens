@@ -9,7 +9,14 @@ import { cn } from '@/shared/lib/cn';
 export interface MailAlertManagePriceAlert {
     readonly id: string;
     readonly label: string;
-    readonly lines: readonly string[];
+    /** 설명 줄. `key`는 줄의 종류라 한 알림 안에서 겹치지 않는다(같은 문구가 두 줄이어도 키가 다르다). */
+    readonly lines: readonly MailAlertManagePriceAlertLine[];
+}
+
+/** 알림 설명 한 줄: 기준(무엇을 보고 만들었나), 만든 날과 그때 가격, 확인 기한. */
+export interface MailAlertManagePriceAlertLine {
+    readonly key: 'basis' | 'created' | 'expires';
+    readonly text: string;
 }
 
 /** 이미 알린 알림 한 건의 문장. */
@@ -66,10 +73,10 @@ export function MailAlertPriceAlerts({
                                         </p>
                                         {alert.lines.map(line => (
                                             <p
-                                                key={line}
+                                                key={line.key}
                                                 className="text-xs text-secondary-400"
                                             >
-                                                {line}
+                                                {line.text}
                                             </p>
                                         ))}
                                     </div>

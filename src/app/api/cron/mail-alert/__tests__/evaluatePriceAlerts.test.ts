@@ -1,5 +1,6 @@
 import type { Bar } from '@y0ngha/siglens-core';
 import { PRICE_ALERT_SCALE_GUARD } from '@/entities/mail-alert/lib/priceAlertConstants';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import type { PriceAlertRecord } from '@/shared/db/types';
 import type { ExpectedSessions } from '../collectAlertSources';
 import {
@@ -14,7 +15,7 @@ const EXPECTED: ExpectedSessions = {
 };
 
 const bar = (session: string, close: number): Bar => ({
-    time: Date.parse(`${session}T00:00:00Z`) / 1000,
+    time: Date.parse(`${session}T00:00:00Z`) / MS_PER_SECOND,
     open: close,
     high: close,
     low: close,

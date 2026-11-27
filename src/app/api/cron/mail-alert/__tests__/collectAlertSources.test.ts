@@ -7,6 +7,13 @@ import {
 } from '@y0ngha/siglens-core';
 import { MAIL_ALERT_CHANGE_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
 import {
+    MS_PER_DAY,
+    MS_PER_HOUR,
+    MS_PER_MINUTE,
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+} from '@/shared/config/time';
+import {
     checkSignalReadiness,
     COMPUTE_CONCURRENCY,
     expectedSessions,
@@ -17,10 +24,10 @@ import {
     type ExpectedSessions,
 } from '../collectAlertSources';
 
-const SECONDS_PER_DAY = 86_400;
-
 function isoOf(index: number): string {
-    return new Date(Date.UTC(2026, 0, 1) + index * SECONDS_PER_DAY * 1000)
+    return new Date(
+        Date.UTC(2026, 0, 1) + index * SECONDS_PER_DAY * MS_PER_SECOND
+    )
         .toISOString()
         .slice(0, 10);
 }
@@ -28,7 +35,7 @@ function isoOf(index: number): string {
 /** 평평한 일봉 `count`개 — 날짜는 2026-01-01부터 하루씩. */
 function flatBars(count: number, close = 100): Bar[] {
     return Array.from({ length: count }, (_, i) => ({
-        time: Date.UTC(2026, 0, 1) / 1000 + i * SECONDS_PER_DAY,
+        time: Date.UTC(2026, 0, 1) / MS_PER_SECOND + i * SECONDS_PER_DAY,
         open: close,
         high: close,
         low: close,
@@ -126,7 +133,10 @@ describe('공포탐욕 진입일과 발송일의 간격', () => {
             .map(
                 i =>
                     new Date(
-                        base + i * 86_400_000 + 22 * 3_600_000 + 5 * 60_000
+                        base +
+                            i * MS_PER_DAY +
+                            22 * MS_PER_HOUR +
+                            5 * MS_PER_MINUTE
                     )
             )
             .find(now => expectedSessions(now).fearGreed[market] === entryDate);
@@ -351,7 +361,7 @@ describe('loadComputedSources', () => {
 
     it('마지막 봉이 기대 세션이면 코어가 판정한 새 신호를 알림 유형만 돌려준다', async () => {
         const bars = breakoutBars(300);
-        const lastDate = new Date((bars.at(-1)?.time ?? 0) * 1000)
+        const lastDate = new Date((bars.at(-1)?.time ?? 0) * MS_PER_SECOND)
             .toISOString()
             .slice(0, 10);
 
@@ -383,7 +393,7 @@ describe('loadComputedSources', () => {
 
     it('신호가 없는 날도 판정은 했으므로 빈 목록으로 돌려준다', async () => {
         const bars = flatBars(300);
-        const lastDate = new Date((bars.at(-1)?.time ?? 0) * 1000)
+        const lastDate = new Date((bars.at(-1)?.time ?? 0) * MS_PER_SECOND)
             .toISOString()
             .slice(0, 10);
 
@@ -410,7 +420,7 @@ describe('loadComputedSources', () => {
 
     it('기대 세션보다 뒤의 봉은 잘라 내고 그 세션의 마지막 봉으로 판정한다', async () => {
         const bars = breakoutBars(300);
-        const session = new Date((bars.at(-2)?.time ?? 0) * 1000)
+        const session = new Date((bars.at(-2)?.time ?? 0) * MS_PER_SECOND)
             .toISOString()
             .slice(0, 10);
 
@@ -477,7 +487,6 @@ describe('loadComputedSources', () => {
 });
 
 describe('loadComputedSources: 달라진 점', () => {
-    const BAR_DAY = 86_400;
     const T0 = 1_700_000_000;
     /** 60봉 횡보 뒤 계단식 상승. 64봉에서 어제(109)와 오늘(112) 사이에 추세 판정이 중립에서 강세로 바뀐다. */
     const CLOSES = [
@@ -486,7 +495,7 @@ describe('loadComputedSources: 달라진 점', () => {
     ];
     const mkBars = (closes: readonly number[]): Bar[] =>
         closes.map((close, i) => ({
-            time: T0 + i * BAR_DAY,
+            time: T0 + i * SECONDS_PER_DAY,
             open: close,
             high: close + 1,
             low: close - 1,
@@ -494,7 +503,9 @@ describe('loadComputedSources: 달라진 점', () => {
             volume: 1000,
         }));
     const BARS = mkBars(CLOSES.slice(0, 64));
-    const ANALYZED_AT = new Date((BARS[60]?.time ?? 0) * 1000).toISOString();
+    const ANALYZED_AT = new Date(
+        (BARS[60]?.time ?? 0) * MS_PER_SECOND
+    ).toISOString();
     const GENERATED_AT = new Date(ANALYZED_AT);
 
     /** `analysis_history.result` 모양: 지지선 110(어제 109 → 오늘 112로 위로 건넘), 진입 구간 111~113. */
@@ -526,7 +537,9 @@ describe('loadComputedSources: 달라진 점', () => {
                 {
                     symbol: 'AAPL',
                     market: 'us',
-                    sessionDate: new Date((bars.at(-1)?.time ?? 0) * 1000)
+                    sessionDate: new Date(
+                        (bars.at(-1)?.time ?? 0) * MS_PER_SECOND
+                    )
                         .toISOString()
                         .slice(0, 10),
                 },
@@ -629,15 +642,15 @@ describe('loadComputedSources: 달라진 점', () => {
     it('척도는 분석 시각에 이미 마감돼 있던 봉과 견준다(장 시작 전 분석이 아직 열리지 않은 그날 봉에 붙지 않는다)', async () => {
         // UTC 자정 일봉. 2026-11-18(수) 봉만 종가가 두 배다. 그날 03:00Z(한국 낮, 미국 개장 전) 분석의 마지막 마감
         // 세션은 11-17이므로 기준 종가는 100이다. 분석 시각 이전 봉(11-18, 종가 200)으로 견주면 중앙값이 가드 밖이다.
-        const DAY_MS = 86_400_000;
         const start = Date.parse('2026-09-01T00:00:00Z');
         const days = Math.round(
-            (Date.parse('2026-11-19T00:00:00Z') - start) / DAY_MS
+            (Date.parse('2026-11-19T00:00:00Z') - start) / MS_PER_DAY
         );
         const bars: Bar[] = Array.from({ length: days + 1 }, (_, i) => {
-            const time = (start + i * DAY_MS) / 1000;
+            const time = (start + i * MS_PER_DAY) / MS_PER_SECOND;
             const close =
-                new Date(time * 1000).toISOString().slice(0, 10) >= '2026-11-18'
+                new Date(time * MS_PER_SECOND).toISOString().slice(0, 10) >=
+                '2026-11-18'
                     ? 200
                     : 100;
             return {
@@ -683,7 +696,9 @@ describe('loadComputedSources: 달라진 점', () => {
 
     it('한 번의 일봉 읽기로 신호와 변화를 함께 읽고, 신호는 MACD 교차를 뺀 유형만이다', async () => {
         const loadDailyBars = vi.fn().mockResolvedValue(breakoutBars(300));
-        const lastDate = new Date((breakoutBars(300).at(-1)?.time ?? 0) * 1000)
+        const lastDate = new Date(
+            (breakoutBars(300).at(-1)?.time ?? 0) * MS_PER_SECOND
+        )
             .toISOString()
             .slice(0, 10);
 
