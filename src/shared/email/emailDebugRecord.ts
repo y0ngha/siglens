@@ -16,6 +16,12 @@ export interface EmailDebugRecord {
 /** Redis에 캡처 결과를 쓰는 키의 prefix. `e2e/support/emailHelper.ts`와 같은 문자열이어야 한다. */
 const EMAIL_DEBUG_KEY_PREFIX = 'email_debug';
 
+/** 수신자별 누적 발송 횟수 키의 prefix. 멱등 키로 걸러진 재발송은 세지 않는다. */
+const EMAIL_DEBUG_COUNT_KEY_PREFIX = 'email_debug_count';
+
+/** 이미 처리한 멱등 키의 표지 prefix. */
+const EMAIL_DEBUG_IDEM_KEY_PREFIX = 'email_debug_idem';
+
 // `인증 코드: 482917` 형태의 라벨을 기준으로 잡아 무관한 숫자열을 피하고,
 // `\b`로 정확히 6자리만 허용한다.
 const VERIFICATION_CODE_RE = /인증\s*코드[:：]?\s*(\d{6})\b/;
@@ -29,6 +35,19 @@ const RESET_TOKEN_RE = /[?&]token=([^&\s"']+)/;
 /** 수신자별 debug Redis 키 — 쓰는 쪽(E2eEmailDispatcher)과 읽는 쪽(E2E 스펙)이 공유하는 형식. */
 export function buildEmailDebugKey(recipient: string): string {
     return `${EMAIL_DEBUG_KEY_PREFIX}:${recipient}`;
+}
+
+/**
+ * 수신자에게 실제로 "나간" 메일 수의 Redis 키. `email_debug:{to}`는 마지막 메일만 남아 "정확히 한 통"을
+ * 단언할 수 없으므로 E2E가 쓰는 별도 카운터다.
+ */
+export function buildEmailDebugCountKey(recipient: string): string {
+    return `${EMAIL_DEBUG_COUNT_KEY_PREFIX}:${recipient}`;
+}
+
+/** 멱등 키 하나를 이미 받았는지 기록하는 Redis 키. */
+export function buildEmailDebugIdemKey(idempotencyKey: string): string {
+    return `${EMAIL_DEBUG_IDEM_KEY_PREFIX}:${idempotencyKey}`;
 }
 
 /**

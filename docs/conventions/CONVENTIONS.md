@@ -870,7 +870,7 @@ store found during the revision that was never disclosed (user-supplied keys, ba
 numbers (attempt caps, TTLs, windows) published there are pinned by a guard reading code constants (durations:
 `privacyRetention.test.ts`; caps: `*Privacy.test.ts`), not test literals.
 
-- Copy never promises a delivery or effect some users skip (gate it on the real state or word it conditionally), names
+- Copy never promises a delivery or effect some users skip, or a delivery timing the schedule never meets (gate it on the real state or word it conditionally; pin the real lag with a test), names
   a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it
   (a filing proves "filed", not "in progress"). A timing promise ("right away") is checked against the path's real
   latency (a cron cadence is not instant) in every locale's copy. A heading or label that groups items holds for every item under it (a non-holding comparison is not listed under "holding strategies").

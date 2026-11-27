@@ -8,6 +8,7 @@ import {
     inArray,
     isNull,
     lt,
+    ne,
     sql,
     type SQL,
 } from 'drizzle-orm';
@@ -532,13 +533,19 @@ export class DrizzleMailAlertDeliveryRepository implements MailAlertDeliveryRepo
 
     async claim(
         subscriberId: string,
-        alertDate: string
+        alertDate: string,
+        itemKeys: readonly string[] = []
     ): Promise<string | null> {
         const [row] = await withRetry(
             () =>
                 this.db
                     .insert(mailAlertDeliveries)
-                    .values({ subscriberId, alertDate, status: 'pending' })
+                    .values({
+                        subscriberId,
+                        alertDate,
+                        status: 'pending',
+                        itemKeys: [...itemKeys],
+                    })
                     .onConflictDoNothing({
                         target: [
                             mailAlertDeliveries.subscriberId,
@@ -567,12 +574,22 @@ export class DrizzleMailAlertDeliveryRepository implements MailAlertDeliveryRepo
                         error,
                         updatedAt: sql`now()`,
                     })
-                    .where(eq(mailAlertDeliveries.id, id)),
+                    // 끝난 기록이 이미 `sent`면 덮지 않는다(DB-11) — 늦게 도착한 실패 경로가 나간 메일을
+                    // 실패로 바꾸면 그 항목이 다음 날 억제되지 않는다.
+                    .where(
+                        and(
+                            eq(mailAlertDeliveries.id, id),
+                            ne(mailAlertDeliveries.status, 'sent')
+                        )
+                    ),
             DB_TRANSIENT_RETRY
         );
     }
 
-    /** 실패한 발송은 반복 방지에 세지 않는다(그 항목은 받지 못했다). */
+    /**
+     * 보낸(`sent`) 행과 선점만 하고 끝나지 않은(`pending`) 행의 항목을 센다 — 보낸 뒤 기록 전에 죽은 행이 같은
+     * 항목을 다음 날 다시 보내게 두지 않는다. 실패한 발송은 세지 않는다(그 항목은 받지 못했다).
+     */
     async recentItemKeys(
         sinceAlertDate: string
     ): Promise<Map<string, Set<string>>> {
@@ -586,7 +603,10 @@ export class DrizzleMailAlertDeliveryRepository implements MailAlertDeliveryRepo
                     .from(mailAlertDeliveries)
                     .where(
                         and(
-                            eq(mailAlertDeliveries.status, 'sent'),
+                            inArray(mailAlertDeliveries.status, [
+                                'sent',
+                                'pending',
+                            ]),
                             gte(mailAlertDeliveries.alertDate, sinceAlertDate)
                         )
                     ),

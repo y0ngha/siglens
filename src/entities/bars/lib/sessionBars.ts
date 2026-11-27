@@ -67,12 +67,20 @@ export function toSessionBarsData(
 }
 
 /**
+ * 일봉 배열의 마지막 봉 세션 날짜(`YYYY-MM-DD`, 일봉 `Bar.time` = 그 날 UTC 자정). 봉이 없으면 `null`.
+ * 알림 메일 발송기가 "마지막 봉이 기대 세션인가"를 가를 때도 같은 정의를 쓴다.
+ */
+export function lastDailyBarDate(bars: readonly Bar[]): string | null {
+    const last = bars.at(-1);
+    return last === undefined
+        ? null
+        : toUtcIsoDate(new Date(last.time * MS_PER_SECOND));
+}
+
+/**
  * 마지막 봉의 세션 날짜(`YYYY-MM-DD`, 일봉 `Bar.time` = 그 날 UTC 자정). 봉이 없으면 `null`.
  * 세션 키 캐시가 `sessionCoverage`로 "저장해도 되는 값인가"를 가를 때 쓴다.
  */
 export function lastBarSessionDate(data: BarsData): string | null {
-    const last = data.bars.at(-1);
-    return last === undefined
-        ? null
-        : toUtcIsoDate(new Date(last.time * MS_PER_SECOND));
+    return lastDailyBarDate(data.bars);
 }
