@@ -860,6 +860,19 @@ on it; find the readers by grepping the repository, and treat a legacy `NULL` as
 - ❌ An outcome capture and a prior-analysis read take every row, so one member's holdings-based plan feeds other users.
 - ✅ The capture takes `= false`; the prior read takes `false`, or `NULL` only where the tier rules holdings out (`free`).
 
+<a id="DB-11"></a>
+
+#### DB-11 — Exactly-once sends: terminal writes never overwrite a success, and streams cross-check each other
+
+A send that must happen once per recipient keeps its outcome in a durable record, and:
+
+- The final status write is conditional (`WHERE status <> 'sent'`); a late failure path never overwrites `sent`.
+- With an idempotency-keyed provider, an "already accepted" rejection on a retry is a success, and "in flight" means retry later without spending an attempt. Neither is a send failure.
+- When two jobs can mail the same person (e.g. a welcome and a regular report), each checks the other's sent and in-flight records before claiming, so a retry or a duplicate cron invocation cannot send both.
+
+- ❌ `UPDATE ... SET status = 'failed'` after the provider rejected a retry with "already accepted"; the delivered mail is recorded as failed and re-sent.
+- ✅ Map the rejection to success, guard the write with `status <> 'sent'`, and exclude recipients the other stream already sent to or has in flight.
+
 <a id="DB-12"></a>
 
 #### DB-12 — Row-mutating data methods bind ownership inside the statement

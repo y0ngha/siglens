@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { resolve } from 'node:path';
 import { defined } from '@/shared/test-utils/defined';
 import {
@@ -18,6 +19,19 @@ import type {
     ReportEmailTranslator,
     SignalLabelResolver,
 } from '@/entities/email-report/templates/reportEmailTypes';
+
+/** ICU가 주는 시간대 이름을 테스트 안에서 같은 API·옵션으로 구한다(문구를 박아 두지 않는다). */
+function expectedZoneName(
+    timeZone: string,
+    locale: 'ko' | 'en'
+): string | undefined {
+    return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone,
+        timeZoneName: 'longGeneric',
+    })
+        .formatToParts(new Date('2024-01-07T00:00:00Z'))
+        .find(part => part.type === 'timeZoneName')?.value;
+}
 
 /** 키와 인자를 그대로 드러내는 번역자 — 어떤 키가 쓰였는지 단언할 수 있다. */
 const t: ReportEmailTranslator = (key, values) =>
@@ -147,6 +161,135 @@ describe('buildReportEmail', () => {
 
         expect(email.html).not.toContain('marketHint');
         expect(email.text).not.toContain('marketMore');
+    });
+
+    describe('가입 첫 리포트', () => {
+        const WELCOME = {
+            consentedAt: new Date('2026-10-07T23:30:00.000Z'),
+            daysOfWeek: 0b0000010,
+            sendHour: 8,
+            sampleUrl: 'https://siglens.io/email-report/sample',
+        };
+
+        it('환영 제목과 머리글, 일정, 동의 일시를 맨 위에 싣고 리포트가 이어진다', () => {
+            const email = buildReportEmail({ ...INPUT, welcome: WELCOME });
+
+            expect(email.subject).toBe('welcomeSubject(시그렌즈)');
+            [email.html, email.text].forEach(body => {
+                expect(body).toContain('welcomeHeading');
+                expect(body).toContain(
+                    `welcomeIntro(월요일,오전 8:00,${expectedZoneName('Asia/Seoul', 'ko')})`
+                );
+                expect(body).toContain(
+                    'welcomeConsentAt(2026년 10월 8일 오전 8:30)'
+                );
+                // 이어지는 실제 리포트.
+                expect(body).toContain('intro(10월 8일)');
+                expect(body).not.toContain('welcomeNoData');
+            });
+            expect(email.html).toContain('AAPL');
+            expect(email.html.indexOf('welcomeHeading')).toBeLessThan(
+                email.html.indexOf('intro(10월 8일)')
+            );
+        });
+
+        it('일정의 시간대 이름과 동의 일시는 메일의 수신자 시간대(timeZone)로 쓴다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                timeZone: 'America/New_York',
+                welcome: WELCOME,
+            });
+
+            expect(email.text).toContain(
+                `welcomeIntro(월요일,오전 8:00,${expectedZoneName('America/New_York', 'ko')})`
+            );
+            expect(email.text).toContain(
+                'welcomeConsentAt(2026년 10월 7일 오후 7:30)'
+            );
+        });
+
+        it('수신거부 헤더, 사유 문구, 관리·수신거부 링크를 그대로 단다', () => {
+            const email = buildReportEmail({ ...INPUT, welcome: WELCOME });
+
+            expect(email.headers).toEqual({
+                'List-Unsubscribe':
+                    '<https://siglens.io/api/email-report/unsubscribe?u=1>',
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            });
+            expect(email.html).toContain('reason(시그렌즈)');
+            expect(email.html).toContain(
+                'href="https://siglens.io/email-report/unsubscribe?u=1"'
+            );
+            expect(email.text).toContain('https://siglens.io/email-report');
+        });
+
+        it('광고 표시나 홍보 문구를 싣지 않는다', () => {
+            const email = buildReportEmail({ ...INPUT, welcome: WELCOME });
+
+            expect(email.subject).not.toContain('광고');
+            expect(email.html).not.toContain('(광고)');
+            expect(email.text).not.toContain('(광고)');
+        });
+
+        it('보낼 종목이 없으면 인사말·표 대신 안내와 샘플 링크만 싣는다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                sections: [],
+                briefRows: [],
+                welcome: WELCOME,
+            });
+
+            [email.html, email.text].forEach(body => {
+                expect(body).toContain('welcomeNoData');
+                expect(body).toContain('welcomeSampleLink');
+                expect(body).toContain(
+                    'https://siglens.io/email-report/sample'
+                );
+                expect(body).not.toContain('intro(10월 8일)');
+                expect(body).not.toContain('briefColSymbol');
+            });
+        });
+
+        it('시장 브리핑 종목이 있으면 환영 머리글 아래에 브리핑 소개와 표를 싣는다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                sections: [],
+                briefRows: [
+                    {
+                        brief: briefOf('NVDA'),
+                        pageUrl: 'https://siglens.io/NVDA?utm_source=email',
+                    },
+                ],
+                marketBriefing: { marketUrl: 'https://siglens.io/market' },
+                welcome: WELCOME,
+            });
+
+            expect(email.subject).toBe('welcomeSubject(시그렌즈)');
+            expect(email.html).toContain('welcomeHeading');
+            expect(email.html).toContain('marketIntro(10월 8일)');
+            expect(email.html).toContain('NVDA');
+            expect(email.html).not.toContain('welcomeNoData');
+        });
+
+        it('샘플 링크 같은 외부 값은 이스케이프한다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                sections: [],
+                briefRows: [],
+                welcome: { ...WELCOME, sampleUrl: 'https://x.test/?a=1&b="2"' },
+            });
+
+            expect(email.html).toContain(
+                'href="https://x.test/?a=1&amp;b=&quot;2&quot;"'
+            );
+        });
+
+        it('환영 블록이 없는 정기 메일은 환영 문구를 싣지 않는다', () => {
+            const email = buildReportEmail(INPUT);
+
+            expect(email.html).not.toContain('welcome');
+            expect(email.text).not.toContain('welcome');
+        });
     });
 
     it('원클릭 수신거부 헤더를 단다', () => {

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
     findHoldings: vi.fn(),
     findWatchlist: vi.fn(),
     exclusionCtor: vi.fn(),
+    welcomeCtor: vi.fn(),
     portfolioCtor: vi.fn(),
     watchlistCtor: vi.fn(),
     loadBarsData: vi.fn(),
@@ -18,6 +19,12 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/email-report/api', () => ({
     DrizzleEmailReportDeliveryRepository: vi.fn(),
     DrizzleEmailReportSubscriptionRepository: vi.fn(),
+    DrizzleEmailReportWelcomeRepository: vi.fn().mockImplementation(function (
+        db: unknown
+    ) {
+        mocks.welcomeCtor(db);
+        return { marker: 'welcomes' };
+    }),
     DrizzleEmailReportExclusionRepository: vi.fn().mockImplementation(function (
         db: unknown
     ) {
@@ -93,6 +100,13 @@ describe('createEmailReportDeps', () => {
         expect(mocks.findWatchlist).toHaveBeenCalledWith('u-1');
         expect(mocks.portfolioCtor).toHaveBeenCalledWith(mocks.db);
         expect(mocks.watchlistCtor).toHaveBeenCalledWith(mocks.db);
+    });
+
+    it('첫 리포트 저장소를 같은 DB 클라이언트로 만들어 연결한다', () => {
+        const deps = createEmailReportDeps('secret', new Date());
+
+        expect(deps.welcomes).toEqual({ marker: 'welcomes' });
+        expect(mocks.welcomeCtor).toHaveBeenCalledWith(mocks.db);
     });
 
     describe('일봉 메모', () => {

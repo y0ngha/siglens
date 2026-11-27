@@ -679,7 +679,13 @@
                     "uptrend": "Uptrend"
                 },
                 "unsubscribe": "Unsubscribe",
-                "viewOnSite": "See details on {v0}"
+                "viewOnSite": "See details on {v0}",
+                "welcomeConsentAt": "Consent given: {v0}",
+                "welcomeHeading": "Your email report is set up",
+                "welcomeIntro": "We'll send your email report every {v0} at {v1} ({v2}).",
+                "welcomeNoData": "We don't have any stocks to include in your report yet. We'll start putting it together with your next email. See what it looks like in the sample.",
+                "welcomeSampleLink": "View sample email",
+                "welcomeSubject": "[{v0}] Your email report is set up"
             },
             "sample": {
                 "aapl": {
@@ -1013,7 +1019,7 @@
                 "includedToast": "Included in report again: {v0}"
             },
             "EmailReportSignupOptIn": {
-                "description": "Every {weekday} at {time}, we email you updates on your holdings and watchlist. If you have not added any symbols, we summarize the notable symbols that triggered signals that day. The time follows this device's time zone, and you can change it or turn it off anytime in the email report settings.",
+                "description": "Every {weekday} at {time}, we email you updates on your holdings and watchlist. If you have not added any symbols, we summarize the notable symbols that triggered signals that day. When you sign up, we'll send you a first report too. The time follows this device's time zone, and you can change it or turn it off anytime in the email report settings.",
                 "label": "Receive the email report",
                 "legend": "Optional items"
             }
