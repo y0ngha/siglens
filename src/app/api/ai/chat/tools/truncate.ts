@@ -2,22 +2,32 @@
 export const TOOL_RESULT_MAX_CHARS = 4_000;
 
 /**
- * `get_bars_indicators`' own ceiling — its `latest` block now covers ~16
- * indicator groups plus `candlePatterns` (2026-09-14), pushing even the
+ * `get_bars_indicators`' own ceiling. Its `latest` block (~16 indicator groups,
+ * `candlePatterns`, `oscillatorZones` + `oscillatorSummary`) pushes even the
  * default-sized request past `TOOL_RESULT_MAX_CHARS` before `fitBarsToBudget`
- * gets to trim a single bar. `tools/index.ts`'s `ceilingFor` must route this
- * tool to this constant — otherwise the registry's generic
+ * gets to trim a single bar. `chatTools.ts`'s `ceilingFor` must route this tool
+ * to this constant — otherwise the registry's generic
  * `truncateToolResult(..., TOOL_RESULT_MAX_CHARS)` re-cuts the already-fit
  * result down to 4,000 and collapses it into a front-cut preview blob.
  *
- * Raised 6,000 → 6,500 (2026-10-24): after `derived.closeStreak` and the six
- * `*Close` fields on every `RangeWindow`, the default 30-bar 1Day request
- * measures 5,835 chars untrimmed and 5,892 in the live regular-session shape
- * (`lastBarInProgress` + `lastCompletedClose`) — only ~108 under 6,000, so a few
- * MA crosses would have tipped the DEFAULT request into `fitBarsToBudget`
- * trimming bars. 6,500 restores ~600 chars of headroom for that live shape.
+ * Basis for 7,000: the default 30-bar 1Day request in the live regular-session
+ * shape (`lastBarInProgress` + `lastCompletedClose`) measures ~6,155 chars with
+ * a typical oscillator tally and ~6,330 with the longest one ("… not
+ * available: CCI" tail, four "just below its overbought line" suffixes). The
+ * tool fits against this cap minus `BARS_ANNOTATE_HEADROOM_CHARS`, i.e. 6,900,
+ * so the worst case keeps ~570 chars — room for ~16 MA crosses (~35 chars each)
+ * before `fitBarsToBudget` starts trimming bars. Re-measure by serializing the
+ * "기본 요청(30봉, 1Day)" result in `getBarsIndicators.test.ts` whenever a
+ * top-level or `derived` field is added; see `DEFAULT_BARS` for the fixture.
  */
-export const BARS_RESULT_MAX_CHARS = 6_500;
+export const BARS_RESULT_MAX_CHARS = 7_000;
+
+/**
+ * Chars the executor reserves under a `get_bars_indicators` cap for what `annotate` prepends after the tool has fit
+ * itself (`symbolCorrectedFrom: "<symbol>"`, ~40 chars for a single symbol). The tool fits against
+ * `cap - this`, so the annotated result still ends under `cap` and `truncateToolResult` never sees an overflow.
+ */
+export const BARS_ANNOTATE_HEADROOM_CHARS = 100;
 
 /**
  * `get_market_overview` ceiling. Measured on a representative worst-case

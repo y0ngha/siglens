@@ -2,6 +2,27 @@ import type OpenAI from 'openai';
 import type { AgentMessage } from '@y0ngha/siglens-core';
 
 /**
+ * 객체 키를 모든 깊이에서 코드 유닛 순으로 정렬해 직렬화한다(배열 순서는 그대로).
+ *
+ * `chat_messages.tool_calls`는 jsonb라 Postgres가 키 순서를 보존하지 않는다(길이, 바이트 순으로 돌려준다).
+ * 같은 호출이 이번 턴에는 모델이 낸 순서로, 다음 턴에는 저장소가 돌려준 순서로 직렬화되면 요청이 지난 턴
+ * 요청의 접두사에서 어긋나 provider 캐시가 끊긴다. 정렬해 두면 어느 쪽이든 같은 바이트가 나온다.
+ */
+function stableStringify(value: unknown): string {
+    return JSON.stringify(sortKeys(value));
+}
+
+function sortKeys(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(sortKeys);
+    if (typeof value !== 'object' || value === null) return value;
+    return Object.fromEntries(
+        Object.entries(value)
+            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+            .map(([key, v]) => [key, sortKeys(v)])
+    );
+}
+
+/**
  * core의 provider-중립 `AgentMessage` transcript를 OpenAI 호환 엔드포인트(DeepSeek, Gemini)가
  * 기대하는 OpenAI Chat Completions 메시지 모양으로 바꾼다.
  *
@@ -32,7 +53,7 @@ export function toOpenAiChatMessages(
                     type: 'function' as const,
                     function: {
                         name: c.name,
-                        arguments: JSON.stringify(c.args),
+                        arguments: stableStringify(c.args),
                     },
                     // openai SDK 타입이 선언하지 않는 provider 전용 필드(예: Gemini `extra_content`).
                     // spread로 넣어 캐스트 없이 리터럴 타입을 유지한다.

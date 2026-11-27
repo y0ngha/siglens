@@ -155,7 +155,7 @@ describe('appendUserMessage', () => {
         ).appendUserMessage(CONV, 'q', []);
         expect(saved?.id).toBe(MSG_A);
         expect(captured[0]?.sql.toLowerCase()).toBe(
-            'insert into "chat_messages" ("id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "chart", "status", "created_at") values (default, $1, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $2) + $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, default) returning "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "chart", "status", "created_at"'
+            'insert into "chat_messages" ("id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "chart", "status", "created_at") values (default, $1, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $2) + $3, $4, $5, $6, $7, $8, $9, $10, default, $11, $12, default) returning "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "chart", "status", "created_at"'
         );
     });
 
