@@ -7,6 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
+import { isServedTimeframe } from '@/shared/config/market';
 import { loadBarsData } from '../server/loadBarsData';
 
 /**
@@ -26,6 +27,9 @@ export async function getBarsAction(
     timeframe: Timeframe,
     fmpSymbol?: string
 ): Promise<BarsData> {
+    // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (`isServedTimeframe`).
+    if (!isServedTimeframe(timeframe))
+        throw new Error(`Invalid timeframe: ${String(timeframe)}`);
     const tier = await resolveCallerTier('getBarsAction');
     if (!isTimeframeAllowed(tier, timeframe)) {
         throw new Error(

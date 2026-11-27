@@ -1905,6 +1905,8 @@
                 "rsi_bullish_divergence": "RSI 상승 다이버전스",
                 "rsi_overbought": "RSI 과매수",
                 "rsi_oversold": "RSI 과매도",
+                "short_ma_bearish_cross": "단기 이동평균선 하락 교차",
+                "short_ma_bullish_cross": "단기 이동평균선 상승 교차",
                 "squeeze_momentum_bearish": "Squeeze 음전환",
                 "squeeze_momentum_bullish": "Squeeze 양전환",
                 "supertrend_bearish_flip": "Supertrend 하락 전환",

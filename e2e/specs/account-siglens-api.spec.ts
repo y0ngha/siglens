@@ -18,7 +18,7 @@ import { test, expect } from '../support/fixtures';
  */
 const KEY_NAME = 'e2e-agent';
 /** OpenAI byok 등급 모델 — 이 사용자는 OpenAI 키를 등록하지 않은 상태에서 시작한다. */
-const UNKEYED_MODEL = 'gpt-6-astra';
+const UNKEYED_MODEL = 'gpt-6.2-astra';
 const SETTLE_TIMEOUT_MS = 45_000;
 const BYOK_REQUIRED_TITLE = 'AI 모델 키를 먼저 등록해 주세요';
 const CREATE_ANYWAY = '데이터 도구만 쓸게요, 키 만들기';
@@ -220,7 +220,7 @@ test.describe('SigLens API keys', () => {
         await trigger.click();
         const listbox = page.getByRole('listbox', { name: '기본 모델' });
         await expect(
-            listbox.getByRole('option', { name: /GPT-6 Astra/ })
+            listbox.getByRole('option', { name: /GPT-6.2 Astra/ })
         ).toHaveCount(1, { timeout: SETTLE_TIMEOUT_MS });
         // 키를 등록하지 않은 회사(Anthropic)의 모델은 선택지에 없다.
         await expect(
@@ -228,9 +228,9 @@ test.describe('SigLens API keys', () => {
         ).toHaveCount(0);
 
         // 3) 선택·저장 -> 상태 문구.
-        await listbox.getByRole('option', { name: /GPT-6 Astra/ }).click();
+        await listbox.getByRole('option', { name: /GPT-6.2 Astra/ }).click();
         await expect(listbox).toBeHidden();
-        await expect(trigger).toContainText('GPT-6 Astra');
+        await expect(trigger).toContainText('GPT-6.2 Astra');
         await modelSection
             .getByRole('button', { name: '저장', exact: true })
             .click();
@@ -252,7 +252,7 @@ test.describe('SigLens API keys', () => {
                 headers: { Authorization: `Bearer ${rawKey}` },
             });
             const body = (await me.json()).data;
-            expect(body.defaultModel).toBe('gpt-6-astra');
+            expect(body.defaultModel).toBe('gpt-6.2-astra');
             expect(body.byokProviders).toContain('openai');
         } finally {
             await api.dispose();

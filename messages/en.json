@@ -1905,6 +1905,8 @@
                 "rsi_bullish_divergence": "RSI bullish divergence",
                 "rsi_overbought": "RSI overbought",
                 "rsi_oversold": "RSI oversold",
+                "short_ma_bearish_cross": "Short-term moving average bearish cross",
+                "short_ma_bullish_cross": "Short-term moving average bullish cross",
                 "squeeze_momentum_bearish": "Squeeze turns negative",
                 "squeeze_momentum_bullish": "Squeeze turns positive",
                 "supertrend_bearish_flip": "Supertrend flips down",
