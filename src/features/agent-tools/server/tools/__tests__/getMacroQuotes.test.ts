@@ -8,11 +8,11 @@ vi.mock('@/shared/api/yahoo/yahooMacroSource', () => ({
     getYahooMacroDailyCloses: getCloses,
 }));
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     AGENT_MACRO_INSTRUMENTS,
     AGENT_MACRO_QUOTES_MAX,
-} from '@y0ngha/siglens-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+} from '@/features/agent-tools/lib/macroInstruments';
 import { MACRO_QUOTES_RESULT_MAX_CHARS } from '@/features/agent-tools/lib/truncate';
 import { getMacroQuotesTool } from '@/features/agent-tools/server/tools/getMacroQuotes';
 import type {

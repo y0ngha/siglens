@@ -7,11 +7,11 @@ vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
     readCompanyFiling: readFiling,
 }));
 
-import {
-    AGENT_FILING_TEXT_MAX_CHARS,
-    AGENT_FILINGS_LIST_MAX,
-} from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    AGENT_FILINGS_LIST_MAX,
+    AGENT_FILING_TEXT_MAX_CHARS,
+} from '@/entities/company-filings/lib/companyFilingsConstants';
 import type {
     CompanyFiling,
     CompanyFilingBody,

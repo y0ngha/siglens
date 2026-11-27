@@ -1,8 +1,8 @@
-import {
-    AGENT_X_POST_TEXT_MAX_CHARS,
-    AGENT_X_POSTS_WINDOW_DAYS,
-} from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
+import {
+    AGENT_X_POSTS_WINDOW_DAYS,
+    AGENT_X_POST_TEXT_MAX_CHARS,
+} from '@/entities/x-posts/lib/xPostsConstants';
 import { toXPostItems, xPostsWindowStart } from '../toXPostItems';
 
 const NOW = new Date('2026-11-16T12:00:00Z');

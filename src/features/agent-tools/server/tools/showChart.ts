@@ -1,12 +1,12 @@
 import 'server-only';
+import { isChatVisualBlock } from '@/entities/chat-conversation/lib/chartBlock';
 import {
     AGENT_CHART_KINDS,
     AGENT_CHART_PERIODS,
     AGENT_COMPARE_SYMBOLS_MAX,
     AGENT_COMPARE_SYMBOLS_MIN,
     type AgentChartKind,
-} from '@y0ngha/siglens-core';
-import { isChatVisualBlock } from '@/entities/chat-conversation/lib/chartBlock';
+} from '@/entities/chat-conversation/lib/chartToolConstants';
 import { CHAT_VISUAL_BLOCK_MAX_BYTES } from '@/entities/chat-conversation/types';
 import type {
     ChatCompareChartPeriod,

@@ -42,9 +42,9 @@ vi.mock(
     }
 );
 
-import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { publicApiToolSpecs } from '@/app/api/v1/publicApiTools';
 import { GET } from '@/app/api/v1/skill/route';
+import { SIGLENS_AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { PUBLIC_API_RATE_LIMITS } from '@/shared/config/publicApi';
 
 /** 마크다운의 도구 섹션 제목(### `name`)만 뽑는다 — 설명문 속 언급과 구분하려고 제목으로 센다. */
@@ -81,7 +81,7 @@ describe('GET /api/v1/skill', () => {
             )
         );
         expect(section).toContain('Investor flows');
-        // core 2.20 설명이 한국(DART) 결과를 포함한다 — SKILL.md는 요청 때 core 스펙에서 만든다.
+        // 설명이 한국(DART) 결과를 포함한다 — SKILL.md는 요청 때 에이전트 도구 명세에서 만든다.
         expect(section).toContain('DART');
         expect(section).toContain('- `symbol` (');
         expect(section).not.toContain('- `model` (');
@@ -92,9 +92,9 @@ describe('GET /api/v1/skill', () => {
         const headings = toolHeadings(markdown);
         expect(headings).not.toContain('web_search');
         expect(headings).toContain('run_fresh_analysis');
-        // 제외 도구도 core 스펙에는 실제로 있다 — 목록에서 빠진 이유가 "원래 없어서"가 아님을 보인다.
-        const coreNames = AGENT_TOOL_SPECS.map(spec => spec.name);
-        expect(coreNames).toContain('web_search');
+        // 제외 도구도 에이전트 도구 모음에는 실제로 있다 — 목록에서 빠진 이유가 "원래 없어서"가 아님을 보인다.
+        const agentNames = SIGLENS_AGENT_TOOL_SET.tools.map(spec => spec.name);
+        expect(agentNames).toContain('web_search');
     });
 
     it('run_fresh_analysis 섹션은 API 전용 설명과 model 인자를 담는다(에이전트의 "턴당 3회" 안내가 아니다)', async () => {

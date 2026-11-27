@@ -72,7 +72,7 @@ export function isChatChartBlock(value: unknown): value is ChatChartBlock {
     );
 }
 
-/** core `AGENT_CHART_KINDS`와 같은 목록. */
+/** `AGENT_CHART_KINDS`(`chartToolConstants.ts`)와 같은 목록. */
 export const CHAT_VISUAL_BLOCK_KINDS: readonly ChatVisualBlockKind[] = [
     'compare',
     'financials',
@@ -83,7 +83,7 @@ export const CHAT_VISUAL_BLOCK_KINDS: readonly ChatVisualBlockKind[] = [
     'dividends',
 ];
 
-/** core `AGENT_CHART_PERIODS`와 같은 목록. */
+/** `AGENT_CHART_PERIODS`(`chartToolConstants.ts`)와 같은 목록. */
 export const CHAT_COMPARE_PERIODS: readonly ChatCompareChartPeriod[] = [
     '1M',
     '3M',

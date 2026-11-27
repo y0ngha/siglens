@@ -100,7 +100,6 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
-    BARS_RESULT_NOTES,
     calculateIndicators,
     calculateMA,
     classifyOscillatorZones,
@@ -124,6 +123,7 @@ import {
     buildFearGreedHistoryView,
     getBarsIndicatorsTool,
 } from '@/features/agent-tools/server/tools/getBarsIndicators';
+import { BARS_RESULT_NOTES } from '@/features/agent-tools/spec/resultNotes';
 
 /**
  * The fixed SMA period behind `priceVsMa.ma50Pct` (core's
@@ -2423,9 +2423,8 @@ describe('getBarsIndicatorsTool', () => {
     });
 
     /**
-     * `notes`: core's `BARS_RESULT_NOTES` attached verbatim, only where the field is null
-     * (`PUBLIC_API.md`, `runAgentTurn` action ⑩). The expected arrays are built from the same
-     * exported texts, so a reworded note never breaks a test but a wrong condition does.
+     * `notes`: `BARS_RESULT_NOTES` (`spec/resultNotes.ts`) attached verbatim, only where the
+     * field is null. The expected arrays are built from the same exported texts, so a reworded note never breaks a test but a wrong condition does.
      */
     describe('notes (BARS_RESULT_NOTES)', () => {
         const DAY = 86_400;

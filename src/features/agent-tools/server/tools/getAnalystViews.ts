@@ -13,7 +13,7 @@ import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 /**
- * 모델에 싣는 변경 이력 행 수. core 설명은 "up to 15"이고, 긴 증권사명·등급 문구를 담은 15행과 추정치 4기간을 함께 실은
+ * 모델에 싣는 변경 이력 행 수. 도구 설명(`spec/getAnalystViews.ts`)은 "up to 15"이고, 긴 증권사명·등급 문구를 담은 15행과 추정치 4기간을 함께 실은
  * 실측이 이 도구의 전용 상한 `ANALYST_VIEWS_RESULT_MAX_CHARS`(5,500자) 안에 들어와 15를 유지한다(`getAnalystViews.test.ts`가
  * 고정한다). 넘으면 상한을 올리지 말고 이 값을 줄일 것.
  */

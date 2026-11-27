@@ -7,7 +7,7 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
-import { AGENT_TOOL_SPECS, type AgentStreamEvent } from '@y0ngha/siglens-core';
+import type { AgentStreamEvent, AgentToolSpec } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     AGENT_PROVIDER_STALLED,
@@ -15,6 +15,25 @@ import {
     streamOpenAiCompatibleAgent,
 } from '@/entities/llm-provider/api/agent/openAiCompatibleStream';
 import { AGENT_NARRATION_HOLD_CHARS } from '@/entities/llm-provider/lib/agentStream';
+
+/** 공급자 어댑터가 도구 명세를 공급자 형식으로 옮기는지만 보는 작은 명세. 실제 도구 문구는 siglens `features/agent-tools/spec`에 있다. */
+const QUOTE_TOOL: AgentToolSpec = {
+    name: 'get_quote',
+    description: 'Latest price and day change for up to 3 symbols.',
+    costClass: 'free',
+    inputSchema: {
+        type: 'object',
+        properties: {
+            symbols: {
+                type: 'array',
+                description: 'Up to 3 symbols',
+                items: { type: 'string' },
+            },
+        },
+        required: ['symbols'],
+        additionalProperties: false,
+    },
+};
 
 const REQ = { baseURL: 'https://x', messages: [], extraBody: {} };
 
@@ -173,7 +192,7 @@ describe('streamOpenAiCompatibleAgent stall watchdog', () => {
 });
 
 describe('streamOpenAiCompatibleAgent pre-tool narration hold', () => {
-    const TOOLS = AGENT_TOOL_SPECS.filter(t => t.name === 'get_quote');
+    const TOOLS = [QUOTE_TOOL];
 
     function streamOf(chunks: unknown[]) {
         mockCreate.mockImplementation(async () =>

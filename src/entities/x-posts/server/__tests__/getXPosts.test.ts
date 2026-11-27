@@ -59,11 +59,11 @@ vi.mock('../xDailyBudget', () => ({
     refundXReads: budget.refund,
 }));
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     AGENT_X_POSTS_MAX,
     AGENT_X_POSTS_PAGE_SIZE,
-} from '@y0ngha/siglens-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+} from '@/entities/x-posts/lib/xPostsConstants';
 import { XApiError } from '@/shared/api/x/xClient';
 import { getXPosts } from '../getXPosts';
 

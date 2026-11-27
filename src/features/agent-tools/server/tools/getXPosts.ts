@@ -24,7 +24,7 @@ function dropOneFromBusiestAccount(posts: readonly XPostItem[]): XPostItem[] {
  * 빼면 한 계정의 글이 통째로 사라질 수 있다(`mergeXPosts`가 막으려는 쏠림). 상한은 실측 최악에 여유를 둔 값이라
  * 보통 닿지 않지만, 줄바꿈·따옴표가 많은 글은 JSON 이스케이프로 더 길어진다 — 그때 레지스트리의 일반 절단에
  * 맡기면 결과 전체가 앞부분 미리보기 덩어리로 무너진다. 빠진 글은 계정의 `postsInWindow`가 실린 글 수보다 큰
- * 것으로 드러난다(core 설명의 규칙). 글이 최대 12건이라 반복 직렬화는 많아야 12번이다.
+ * 것으로 드러난다(도구 설명 `spec/getXPosts.ts`의 규칙). 글이 최대 12건이라 반복 직렬화는 많아야 12번이다.
  */
 function fitPosts<T extends { posts: XPostItem[] }>(result: T): T {
     let fitted = result;

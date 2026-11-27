@@ -6,8 +6,8 @@ import { enforceRateLimit } from '../rateLimitHeaders';
 export const dynamic = 'force-dynamic';
 
 /**
- * `GET /api/v1/tools` — 사용할 수 있는 도구와 JSON schema. 스펙은 core의
- * `AGENT_TOOL_SPECS` 그대로이고, 에이전트의 쿼터 구분용 `costClass`만 뺀다(외부 소비자에게
+ * `GET /api/v1/tools` — 사용할 수 있는 도구와 JSON schema. 스펙은 에이전트 도구 모음
+ * (`SIGLENS_AGENT_TOOL_SET`) 그대로이고, 에이전트의 쿼터 구분용 `costClass`만 뺀다(외부 소비자에게
  * 의미가 없는 내부 분류다). `data` 버킷의 한도를 1회 소비한다(키 조회 폭주로 인증 저장소를 두드리는 것을 막는다).
  */
 export async function GET(request: Request): Promise<Response> {

@@ -3,11 +3,11 @@ vi.mock('server-only', () => ({}));
 const { load } = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock('@/entities/x-posts/server/getXPosts', () => ({ getXPosts: load }));
 
-import {
-    AGENT_X_POST_TEXT_MAX_CHARS,
-    AGENT_X_POSTS_MAX,
-} from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    AGENT_X_POSTS_MAX,
+    AGENT_X_POST_TEXT_MAX_CHARS,
+} from '@/entities/x-posts/lib/xPostsConstants';
 import type { XPostItem, XPostsAccount } from '@/entities/x-posts/model';
 import { X_POSTS_RESULT_MAX_CHARS } from '@/features/agent-tools/lib/truncate';
 import { getXPostsTool } from '@/features/agent-tools/server/tools/getXPosts';
@@ -71,7 +71,7 @@ const ok = (posts: XPostItem[]) => ({
 });
 
 describe('getXPostsTool', () => {
-    it('ok: core 설명이 약속한 모양(asOf·source·accounts·posts)', async () => {
+    it('ok: 도구 설명이 약속한 모양(asOf·source·accounts·posts)', async () => {
         load.mockResolvedValue({
             ...ok([post(0, 'hello')]),
             accounts: [account('company')],

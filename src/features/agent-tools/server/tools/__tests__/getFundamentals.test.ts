@@ -109,7 +109,6 @@ vi.mock('@/entities/index-history/server/indexMembership', () => ({
     loadIndexMemberships,
 }));
 
-import { FUNDAMENTALS_RESULT_NOTES } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResolvedNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import { providerKrValuation } from '@/entities/kr-valuation/lib/computeKrValuation';
@@ -122,6 +121,7 @@ import {
     getFundamentalsTool,
     withEarningsReactionTally,
 } from '@/features/agent-tools/server/tools/getFundamentals';
+import { FUNDAMENTALS_RESULT_NOTES } from '@/features/agent-tools/spec/resultNotes';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
@@ -2532,9 +2532,8 @@ describe('getFundamentalsTool - Yahoo 애널리스트 보강', () => {
 });
 
 /**
- * `notes`: core's `FUNDAMENTALS_RESULT_NOTES` attached verbatim, only where the field is null
- * (`PUBLIC_API.md`, `runAgentTurn` action ⑩). Expected arrays are built from the same exported
- * texts, so a reworded note never breaks a test but a wrong condition does.
+ * `notes`: `FUNDAMENTALS_RESULT_NOTES` (`spec/resultNotes.ts`) attached verbatim, only where
+ * the field is null. Expected arrays are built from the same exported texts, so a reworded note never breaks a test but a wrong condition does.
  */
 describe('getFundamentalsTool notes (FUNDAMENTALS_RESULT_NOTES)', () => {
     const N = FUNDAMENTALS_RESULT_NOTES;

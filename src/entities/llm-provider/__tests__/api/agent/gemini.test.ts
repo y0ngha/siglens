@@ -8,12 +8,31 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
 import {
-    AGENT_TOOL_SPECS,
     MODEL_SPECS,
     type AgentStreamEvent,
+    type AgentToolSpec,
 } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { callGeminiAgent } from '@/entities/llm-provider/api/agent/gemini';
+
+/** 공급자 어댑터가 도구 명세를 공급자 형식으로 옮기는지만 보는 작은 명세. 실제 도구 문구는 siglens `features/agent-tools/spec`에 있다. */
+const QUOTE_TOOL: AgentToolSpec = {
+    name: 'get_quote',
+    description: 'Latest price and day change for up to 3 symbols.',
+    costClass: 'free',
+    inputSchema: {
+        type: 'object',
+        properties: {
+            symbols: {
+                type: 'array',
+                description: 'Up to 3 symbols',
+                items: { type: 'string' },
+            },
+        },
+        required: ['symbols'],
+        additionalProperties: false,
+    },
+};
 
 async function* chunks(items: unknown[]) {
     for (const i of items) yield i;
@@ -58,7 +77,7 @@ function opts(overrides = {}) {
         model: 'gemini-3.6-flash' as const,
         system: 'sys',
         messages: [{ role: 'user' as const, content: 'AAPL?' }],
-        tools: AGENT_TOOL_SPECS.filter(t => t.name === 'get_quote'),
+        tools: [QUOTE_TOOL],
         maxOutputTokens: 4096,
         signal: new AbortController().signal,
         onEvent: vi.fn<(e: AgentStreamEvent) => void>(),
@@ -94,6 +113,9 @@ describe('callGeminiAgent', () => {
             tool_choice: 'auto',
         });
         expect(params.tools[0].function.name).toBe('get_quote');
+        expect(params.tools[0].function.description).toBe(
+            QUOTE_TOOL.description
+        );
     });
 
     it("core가 toolChoice 'required'를 주면 그대로 전달한다(도구 결과 없는 이어 묻기)", async () => {

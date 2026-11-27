@@ -3,7 +3,6 @@ import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
     barPeriodStartSeconds,
-    BARS_RESULT_NOTES,
     calculateIndicators,
     classifyOscillatorZones,
     fearGreedInputs,
@@ -89,6 +88,7 @@ import {
 } from '@/features/agent-tools/lib/rangeWindow';
 import { BARS_RESULT_MAX_CHARS } from '@/features/agent-tools/lib/truncate';
 import type { ToolExecutor } from '@/features/agent-tools/model';
+import { BARS_RESULT_NOTES } from '@/features/agent-tools/spec/resultNotes';
 import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -117,7 +117,7 @@ import { zonedDate } from '@/shared/lib/marketSessionDate';
  * with the longest tally). Each listed cross adds ~35 chars, so ~16 crosses are
  * what the worst case absorbs before `fitBarsToBudget` starts trimming bars.
  *
- * Result `notes` (core `BARS_RESULT_NOTES`) appear only where a field is null.
+ * Result `notes` (`BARS_RESULT_NOTES`, `spec/resultNotes.ts`) appear only where a field is null.
  * Measured at the default 30 bars on production-shaped series (2026-11-21):
  * 1Day with every field present 5,938 (no `notes` key); 1Day with 451 bars
  * (`maCrossShortHistory`, 260 chars) 6,230; 4Hour with `dailyOnlyFields`
@@ -810,8 +810,8 @@ function maCross50_200View(bars: readonly Bar[]): MaCrossView[] | null {
  * Bars back for each `changePct` key — a fixed bar count, not a calendar
  * day count, for every timeframe (spec §3.1). Named `NbarS` (not `Nd`) —
  * a 1Hour "1d" key previously read as a calendar day when it was actually
- * a 1-BAR change; renamed to avoid that misreading (core's tool description
- * mirrors this contract). `252bars` (dev-2026-10-22 A4) is the 1-year bar
+ * a 1-BAR change; renamed to avoid that misreading (the tool description in
+ * `spec/getBarsIndicators.ts` mirrors this contract). `252bars` (dev-2026-10-22 A4) is the 1-year bar
  * count on 1Day; it is `null` unless more than 252 bars are loaded. Calendar
  * periods ("1개월", "작년 이맘때") read `calendarChange`, never these keys.
  */
@@ -965,8 +965,8 @@ function computeDerived(
 
 /**
  * `notes` for the result: why a field is null HERE and what the model must do
- * about it (`PUBLIC_API.md`, `runAgentTurn` action ⑩; the texts are core's
- * `BARS_RESULT_NOTES`, attached verbatim). The descriptions no longer carry
+ * about it (the texts are `BARS_RESULT_NOTES` in `spec/resultNotes.ts`,
+ * attached verbatim). The descriptions no longer carry
  * these null rules, so a missing note means the model never sees the rule.
  *
  * - Any timeframe but `1Day`: the daily-only fields are not computed, one note

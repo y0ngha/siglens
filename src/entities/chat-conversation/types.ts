@@ -1,9 +1,9 @@
 import type {
     AgentBarsTimeframe,
-    AgentChartPeriod,
     Bar,
     ChartOverlay,
 } from '@y0ngha/siglens-core';
+import { type AgentChartPeriod } from '@/entities/chat-conversation/lib/chartToolConstants';
 import type { PriceAlertProposal } from '@/entities/mail-alert/model';
 import type { SignalHubType } from '@/entities/signal-history/lib/signalHubs';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
@@ -46,7 +46,7 @@ export interface ChatChartBlock {
     referenceOnlyOverlayKeys?: string[];
 }
 
-/** 비교 차트의 기간 — core `AGENT_CHART_PERIODS`와 같은 목록(테스트가 맞는지 확인한다). */
+/** 비교 차트의 기간 — `AGENT_CHART_PERIODS`(`lib/chartToolConstants.ts`)와 같은 목록. */
 export type ChatCompareChartPeriod = AgentChartPeriod;
 
 /**
@@ -198,7 +198,7 @@ export type ChatVisualBlock =
     | ChatHeatmapBlock
     | ChatDividendsBlock;
 
-/** 시각화 블록 종류 — core `AGENT_CHART_KINDS`와 같은 목록. */
+/** 시각화 블록 종류 — `AGENT_CHART_KINDS`(`lib/chartToolConstants.ts`)와 같은 목록. */
 export type ChatVisualBlockKind = ChatVisualBlock['kind'];
 
 /**

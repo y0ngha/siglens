@@ -1,7 +1,7 @@
 import {
-    AGENT_X_POST_TEXT_MAX_CHARS,
     AGENT_X_POSTS_WINDOW_DAYS,
-} from '@y0ngha/siglens-core';
+    AGENT_X_POST_TEXT_MAX_CHARS,
+} from '@/entities/x-posts/lib/xPostsConstants';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { sliceUtf16 } from '@/shared/lib/sliceUtf16';
 import type { XAccountRole, XPostItem, XRawPost } from '../model';

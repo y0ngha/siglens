@@ -48,7 +48,10 @@ import {
 import type { ReadyTurn } from '@/app/api/ai/chat/stream/_lib/prepareTurn';
 import type { TurnSlot } from '@/app/api/ai/chat/stream/_lib/turnSlots';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
-import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
+import {
+    AGENT_TOOLSET_VERSION,
+    SIGLENS_AGENT_TOOL_SET,
+} from '@/features/agent-tools/spec/agentToolSet';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 
 const OK_TURN = {
@@ -472,14 +475,14 @@ describe('agentTurnStream', () => {
         ]);
     });
 
-    it('에이전트 턴은 core 기본 도구 모음에 관심종목·가격대 알림 도구를 덧붙인 모음으로 돈다', async () => {
+    it('에이전트 턴은 siglens가 소유한 도구 모음으로 돈다', async () => {
         runTurn.mockResolvedValue(OK_TURN);
 
         await readAll(start().stream);
 
         expect(runTurn).toHaveBeenCalledWith(
             expect.objectContaining({
-                toolSet: AGENT_TOOL_SET,
+                toolSet: SIGLENS_AGENT_TOOL_SET,
                 availableTools: new Set(['get_quote']),
             }),
             expect.anything()
@@ -825,6 +828,16 @@ describe('agentTurnStream', () => {
         const line = info.mock.calls.find(([tag]) => tag === '[Agent]');
         expect(JSON.parse(String(line?.[1]))).toMatchObject({
             queuedMs: 4_321,
+        });
+    });
+
+    it('[Agent] 줄에 core 프레임 버전과 함께 도구 문구 버전(toolsetVersion)을 싣는다', async () => {
+        const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+        await readAll(start().stream);
+        const line = info.mock.calls.find(([tag]) => tag === '[Agent]');
+        expect(JSON.parse(String(line?.[1]))).toMatchObject({
+            promptVersion: OK_TURN.promptVersion,
+            toolsetVersion: AGENT_TOOLSET_VERSION,
         });
     });
 });

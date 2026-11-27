@@ -1,4 +1,4 @@
-import { AGENT_FILINGS_WINDOW_DAYS } from '@y0ngha/siglens-core';
+import { AGENT_FILINGS_WINDOW_DAYS } from '@/entities/company-filings/lib/companyFilingsConstants';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';

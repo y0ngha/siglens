@@ -97,8 +97,8 @@ export function renderChartDataNotes(): string[] {
 }
 
 /**
- * 노출 도구 스펙에서 SKILL.md를 만든다. 도구 목록·설명·인자는 core의 `AGENT_TOOL_SPECS`를
- * 그대로 옮기고 이 파일은 말을 덧붙이지 않는다 — 스펙이 바뀌면 문서도 따라온다.
+ * 노출 도구 스펙에서 SKILL.md를 만든다. 도구 목록·설명·인자는 에이전트 도구 명세(siglens
+ * `features/agent-tools/spec`)를 그대로 옮기고 이 파일은 말을 덧붙이지 않는다 — 스펙이 바뀌면 문서도 따라온다.
  */
 export function buildSkillMarkdown({
     baseUrl,

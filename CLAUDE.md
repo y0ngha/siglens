@@ -33,7 +33,7 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
 - Cache/queue/cooldown: "분석 캐시 TTL", "Job 큐 lifecycle", "재분석 쿨다운"
 - Tier policy: "TIER_CONFIG 변경", "isAllowed 룰"
 - Dashboard signal scanner: "섹터 신호 스캔 알고리즘"
-- Chat prompt builder
+- Chat prompt builder: loop, quotas, tool-agnostic answer rules (tool specs, routing rows, tool rule text and result notes stay in siglens `features/agent-tools/spec`)
 - Usage limit policy: "checkAnalysisLimit / checkChatbotLimit"
 
 > siglens에는 종목 페이지 챗봇이 없다(`/[symbol]`의 플로팅 버튼은 `ai.siglens.io` 링크, 유일한 챗은 그 에이전트).
@@ -48,9 +48,8 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
    필요한지 다시 확인해 주세요.)"
 3. Do NOT implement the change in siglens locally as a workaround.
 
-This guard exists because over time generic backend code leaked into
-siglens-core; this refactor (Phase 0~7) put it back in siglens. New
-analysis logic landing in siglens would re-create the same drift.
+This guard exists because generic backend code once leaked into
+siglens-core; new analysis logic landing in siglens would re-create the drift.
 
 ---
 
