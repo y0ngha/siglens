@@ -23,6 +23,7 @@ import { AdBanner } from './AdBanner';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisToast } from './AnalysisToast';
 import { GuideEntryLink } from './GuideEntryLink';
+import { RecordEntryLink } from './RecordEntryLink';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { useAnalysisStaleness } from './hooks/useAnalysisStaleness';
 import { useCopyAnalysisReport } from './hooks/useCopyAnalysisReport';
@@ -287,6 +288,7 @@ export function AnalysisPanel({
                             keyLevels={keyLevels}
                             symbol={symbol}
                             krxTickTable={krxTickTable}
+                            timeframe={timeframe}
                             locked={locked}
                             skillResults={skillResults}
                             meter={meter}
@@ -306,6 +308,9 @@ export function AnalysisPanel({
             {/* 패널 전체에 한 줄만 두는 차트 가이드 진입점. 캔들 패턴은 차트 캔버스 마커로만
                 그려져 항목별 "뜻 보기"를 달 수 없으므로, 여기서 가이드 전체로 보낸다. */}
             {!showProgress && <GuideEntryLink />}
+
+            {/* 패턴·캔들·가격대 문구의 비율이 어디서 나왔는지 보여 주는 기록 구역으로 보낸다. */}
+            {!showProgress && <RecordEntryLink />}
 
             <AnalysisPanelFeedback
                 symbol={symbol}

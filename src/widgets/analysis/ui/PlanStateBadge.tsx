@@ -8,6 +8,10 @@
  * 저장된 옛 결과, 종가가 없던 경로) 아무것도 그리지 않는다: 옛 행에서 이전 판정 배지를
  * 되살리지 않는다.
  *
+ * 종가가 구간 상단을 넘은 정도가 작으면(`isJustAboveZone`) "진입 구간 바로 위"로 적는다.
+ * 구간 경계가 정확해(허용 오차 없음) 한 틱 위여도 `above_zone`이라, "보다 위"만 쓰면 멀리
+ * 벗어난 것처럼 읽힌다. 거리(`distanceAtr`)를 모르면 일반 문구를 쓴다.
+ *
  * 손절 기준이 가격대가 아니라 ATR 배수로 잡힌 경우(`stopBasis: 'atr'`)는 차트에 그 선에
  * 대응하는 가격대가 없다는 점을 한 줄로 알린다. `stoploss` 깊이가 없는 티어에서는
  * `stopBasis`가 null이라 이 줄이 나오지 않는다.
@@ -15,6 +19,7 @@
 import { useTranslations } from 'next-intl';
 import type { NoSetupReason, PlanState } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { isJustAboveZone } from '../utils/planZoneProximity';
 
 interface PlanStateBadgeProps {
     planState: PlanState | undefined;
@@ -40,7 +45,9 @@ export function PlanStateBadge({ planState }: PlanStateBadgeProps) {
 
     const positionLabels: Record<PlanPositionKey, string> = {
         in_zone: t('inZone'),
-        above_zone: t('aboveZone'),
+        above_zone: isJustAboveZone(planState)
+            ? t('justAboveZone')
+            : t('aboveZone'),
         below_zone: t('belowZone'),
         no_setup: t('noSetup'),
     };

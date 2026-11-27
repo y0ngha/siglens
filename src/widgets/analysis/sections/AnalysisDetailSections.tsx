@@ -10,6 +10,7 @@ import type {
     AnalysisResponse,
     ClusteredKeyLevels,
     KrxTickTable,
+    Timeframe,
 } from '@y0ngha/siglens-core';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import type { OverlayCardControls } from '../model/types';
@@ -30,6 +31,7 @@ interface AnalysisDetailSectionsProps {
     keyLevels: ClusteredKeyLevels;
     symbol: string;
     krxTickTable: KrxTickTable;
+    timeframe: Timeframe;
     locked: LockedSections;
     skillResults: PanelSkillResults;
     meter: MeterState | null;
@@ -47,6 +49,7 @@ export function AnalysisDetailSections({
     keyLevels,
     symbol,
     krxTickTable,
+    timeframe,
     locked,
     skillResults,
     meter,
@@ -87,6 +90,7 @@ export function AnalysisDetailSections({
                 keyLevels={keyLevels}
                 symbol={symbol}
                 krxTickTable={krxTickTable}
+                timeframe={timeframe}
             />
 
             <TrendlinesSection
@@ -107,7 +111,7 @@ export function AnalysisDetailSections({
 
             <PatternsSection
                 detectedPatterns={skillResults.detectedPatterns}
-                showConfidence={!locked.hasLockedConfidence}
+                timeframe={timeframe}
                 overlaySourceRefs={overlaySourceRefs}
                 overlayControls={overlayControls}
                 symbol={symbol}

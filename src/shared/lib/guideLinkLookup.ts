@@ -1,6 +1,7 @@
 import {
     GUIDE_PATH_BY_SKILL_NAME,
     GUIDE_PATH_BY_TRIGGER,
+    PATTERN_ID_BY_SKILL_NAME,
 } from '@/shared/config/guideLinks.generated';
 
 /**
@@ -23,4 +24,14 @@ export function guidePathForSkill(
         return GUIDE_PATH_BY_TRIGGER[triggerId] ?? null;
     }
     return null;
+}
+
+/**
+ * 차트 패턴 스킬 이름(카드의 `skillName`)에 대응하는 정본 패턴 id. 카탈로그에 없으면 `null`.
+ * `Object.hasOwn`으로 읽어 프로토타입 키가 id로 새지 않게 한다.
+ */
+export function patternIdForSkill(skillName: string): string | null {
+    return Object.hasOwn(PATTERN_ID_BY_SKILL_NAME, skillName)
+        ? (PATTERN_ID_BY_SKILL_NAME[skillName] ?? null)
+        : null;
 }

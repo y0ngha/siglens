@@ -217,3 +217,29 @@ export const GUIDE_PATH_BY_TRIGGER: Readonly<Record<string, string>> = {
     new_52w_high: '/guide/strategies/52-week-high-momentum',
     new_52w_low: '/guide/strategies/52-week-high-momentum',
 };
+
+/** 차트 패턴 스킬 `name` → 정본 패턴 id(frontmatter `pattern`). 실측 base rate 조회 키. */
+export const PATTERN_ID_BY_SKILL_NAME: Readonly<Record<string, string>> = {
+    '상승 채널': 'ascending_channel',
+    상승삼각형: 'ascending_triangle',
+    상승쐐기: 'ascending_wedge',
+    하락깃발: 'bear_flag',
+    '확장형 패턴(브로드닝)': 'broadening_formation',
+    상승깃발: 'bull_flag',
+    컵앤핸들: 'cup_and_handle',
+    '하락 채널': 'descending_channel',
+    하락삼각형: 'descending_triangle',
+    하락쐐기: 'descending_wedge',
+    이중바닥: 'double_bottom',
+    이중천장: 'double_top',
+    헤드앤숄더: 'head_and_shoulders',
+    '하이 타이트 플래그': 'high_tight_flag',
+    역헤드앤숄더: 'inverse_head_and_shoulders',
+    페넌트: 'pennant',
+    직사각형: 'rectangle',
+    원형바닥: 'rounding_bottom',
+    원형천장: 'rounding_top',
+    대칭삼각형: 'symmetrical_triangle',
+    삼중바닥: 'triple_bottom',
+    삼중천장: 'triple_top',
+};

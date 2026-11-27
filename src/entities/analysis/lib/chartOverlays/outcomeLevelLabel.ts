@@ -40,6 +40,8 @@ export function elliottStructureOf(
 export interface OutcomeLevelTexts {
     invalidation: (owner: string | undefined) => string;
     target: (owner: string | undefined) => string;
+    /** 위약 대비 우위가 확인되지 않은 패턴 목표 — "목표" 대신 "참고 거리"로 부른다. */
+    referenceTarget: (owner: string | undefined) => string;
     wave5Cap: (owner: string | undefined) => string;
     elliottStructure: Readonly<Record<ElliottStructureName, string>>;
 }
@@ -62,18 +64,23 @@ function ownerOf(
  * 무효화"·"삼각형 목표"처럼 주인 이름을 붙인 문구로, 아니면 `null`. 패턴은 카드 이름을,
  * 엘리어트는 구조 이름을 주인으로 쓴다 — 같은 카드 밑 주·대안 카운트가 서로 다른 구조일 수
  * 있어서다. 비율이 붙은 목표(A–B–C의 C 목표)는 A–B–C 이름에 비율을 그대로 뒤에 붙인다.
+ * `referenceOnly`면 목표선을 "목표" 대신 "참고 거리"로 부른다(`isReferenceTarget`).
  */
 export function formatOutcomeLevelLabel(
     label: string,
     overlay: Pick<ChartOverlay, 'kind' | 'id'>,
     cardName: string | undefined,
-    texts: OutcomeLevelTexts
+    texts: OutcomeLevelTexts,
+    referenceOnly = false
 ): string | null {
     const owner = ownerOf(overlay, cardName, texts);
     if (label === OVERLAY_LEVEL_LABELS.invalidation)
         return texts.invalidation(owner);
     if (label === OVERLAY_LEVEL_LABELS.wave5Cap) return texts.wave5Cap(owner);
-    if (label === OVERLAY_LEVEL_LABELS.target) return texts.target(owner);
+    if (label === OVERLAY_LEVEL_LABELS.target)
+        return referenceOnly
+            ? texts.referenceTarget(owner)
+            : texts.target(owner);
     // 비율 목표는 늘 A–B–C의 C 투영이다 — 임펄스 뒤에 붙은 A–B–C여도 주인은 A–B–C.
     if (label.startsWith(TARGET_PREFIX))
         return `${texts.target(

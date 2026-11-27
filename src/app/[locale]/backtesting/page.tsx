@@ -5,6 +5,7 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { BacktestComparison } from '@/widgets/backtesting/BacktestComparison';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
+import { BacktestMeasuredRecord } from '@/widgets/backtesting/BacktestMeasuredRecord';
 import { BacktestStrategy } from '@/widgets/backtesting/BacktestStrategy';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
 import { BacktestTimingCheck } from '@/widgets/backtesting/BacktestTimingCheck';
@@ -76,6 +77,8 @@ export default async function BacktestingPage({
                         rows={BACKTEST_TRADE_ROWS}
                     />
                 </BacktestTabs>
+                {/* 매매 목록 뒤의 측정 기록 구역. 패턴·캔들·가격대 숫자의 출처이며 분석 패널 링크가 #record로 온다. */}
+                <BacktestMeasuredRecord />
                 <div
                     role="note"
                     aria-label={t('page.693b62')}

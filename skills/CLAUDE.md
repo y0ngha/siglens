@@ -48,6 +48,8 @@ all skills are injected regardless of value.
 | `0.5 – 0.8` | Medium | Included, shown with `[중간 신뢰도]` label |
 | `>= 0.8` | High | Included, shown with `[높은 신뢰도]` label |
 
+For `type: pattern` and `type: candlestick` the weight is neither shown nor prompted (core attaches the measured `baseRate`, with n, instead), but the values stay in the files because changing them moves the catalog fingerprint.
+
 Note: `confidence_weight` represents an *analysis weight*, not a hit-rate or probability.
 
 ## usage_roles (indicator_guide skills only)
