@@ -1,19 +1,33 @@
 import {
-    detectNewConfirmedSignals,
+    alertablePlanLevels,
+    anchorBarIndexOf,
+    changeReferenceOf,
     findExtremeZoneEntryOn,
+    technicalChangesBetween,
     type Bar,
+    type ChangeReference,
     type FearGreedReading,
     type SignalType,
+    type Tier,
 } from '@y0ngha/siglens-core';
 import { lastDailyBarDate } from '@/entities/bars/lib/sessionBars';
 import { barsUpToDate } from '@/entities/email-report/lib/barsUpToDate';
-import { MAIL_ALERT_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
+import {
+    MAIL_ALERT_CHANGE_SIGNAL_TYPES,
+    MAIL_ALERT_SIGNAL_TYPES,
+} from '@/entities/mail-alert/lib/mailAlertConstants';
+import { toMailAlertChanges } from '@/entities/mail-alert/lib/mailAlertChanges';
+import { PRICE_ALERT_SCALE_GUARD } from '@/entities/mail-alert/lib/priceAlertConstants';
+import { priceAlertAsOf } from '@/entities/mail-alert/lib/priceAlertExpiry';
 import type {
     MailAlertComputedSymbol,
     MailAlertEpisodeRow,
     MailAlertFearGreedEntry,
 } from '@/entities/mail-alert/lib/planMailAlertItems';
-import type { MailAlertFearGreedMarket } from '@/entities/mail-alert/model';
+import type {
+    MailAlertChange,
+    MailAlertFearGreedMarket,
+} from '@/entities/mail-alert/model';
 import { SIGNAL_SETTLE_MINUTES } from '@/entities/signal-history/lib/signalEventRows';
 import type { SignalHistoryRepository } from '@/entities/signal-history/api';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
@@ -22,7 +36,7 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { mapChunked } from '@/shared/lib/mapChunked';
 
-/** 스캐너 범위 밖 종목의 일봉을 동시에 받는 수(CC-1). 일봉은 대개 종목 페이지가 채운 캐시 적중이다. */
+/** 담은 모든 종목의 일봉을 동시에 받는 수(CC-1). 일봉은 대개 종목 페이지가 채운 캐시 적중이다. */
 export const COMPUTE_CONCURRENCY = 5;
 
 /** 시장별로 "이 알림 날짜가 다뤄야 할" 마지막 마감 세션 날짜. */
@@ -46,10 +60,8 @@ export function expectedSessions(now: Date): ExpectedSessions {
     const us = sessionSpecForDashboardScope('us');
     const kr = sessionSpecForDashboardScope('kr');
     return {
-        signals: {
-            us: lastClosedSessionDate(us, now, SIGNAL_SETTLE_MINUTES.us),
-            kr: lastClosedSessionDate(kr, now, SIGNAL_SETTLE_MINUTES.kr),
-        },
+        // 가격대 알림의 만료 판정도 같은 값을 쓴다(`priceAlertAsOf`) — 한 정의.
+        signals: priceAlertAsOf(now),
         fearGreed: {
             us: lastClosedSessionDate(us, now),
             kr: lastClosedSessionDate(kr, now, SIGNAL_SETTLE_MINUTES.kr),
@@ -71,6 +83,20 @@ export interface AlertSourceDeps {
         market: MailAlertFearGreedMarket
     ) => Promise<readonly FearGreedReading[]>;
     readonly loadDailyBars: (symbol: string) => Promise<readonly Bar[]>;
+    /**
+     * 종목별 가장 최근의 **개인화되지 않은** 일봉 기술적 분석(`notBefore` 이후)을 읽는다. 없으면 가격대·진입 구간
+     * 줄은 만들지 않고 추세·신호 줄만 나간다. 던지면 호출자가 그 줄들 없이 진행한다.
+     */
+    readonly loadChangeReferences?: (
+        symbols: readonly string[],
+        notBefore: Date
+    ) => Promise<ReadonlyMap<string, StoredChangeReference>>;
+}
+
+/** 저장된 분석 한 건: 만든 시각과 `analysis_history.result` 그대로의 본문(모양은 코어가 읽는다). */
+export interface StoredChangeReference {
+    readonly generatedAt: Date;
+    readonly result: unknown;
 }
 
 /** 신호 기록의 준비 여부. 기록기가 기대 세션까지 남겼을 때만 그 시장의 `signal_events`를 믿는다. */
@@ -180,9 +206,19 @@ export async function loadFearGreedSources(
     };
 }
 
+/** 한 종목이 읽은 달라진 점. 추세는 모두에게, 가격대·진입 구간은 그 깊이를 보는 등급에게만 있다. */
+export interface SymbolReading {
+    /** 분석 없이 두 종가만으로 읽은 줄(추세). */
+    readonly trend: readonly MailAlertChange[];
+    /** 등급별로 그 등급이 보는 분석의 가격 판정·가격대·진입 구간 줄. 줄이 없는 등급은 키가 없다. */
+    readonly byTier: ReadonlyMap<Tier, readonly MailAlertChange[]>;
+}
+
 export interface ComputedSources {
     readonly computed: ReadonlyMap<string, MailAlertComputedSymbol>;
-    /** 일봉으로 판정을 시도한 종목 수. */
+    /** 종목별 달라진 점. 신선한 봉이 없는 종목은 키가 없다. */
+    readonly readings: ReadonlyMap<string, SymbolReading>;
+    /** 일봉으로 판정을 시도한 종목 수(스캐너 대상 포함). */
     readonly computedSymbols: number;
     /** 마지막 일봉이 기대 세션이 아니어서 판정하지 않은 종목 수. */
     readonly noFreshBar: number;
@@ -190,26 +226,152 @@ export interface ComputedSources {
     readonly computeErrors: number;
     /** 판정하지 못한 종목(낡은 봉 또는 오류). 준비 게이트가 이 종목을 담은 구독자를 첫 슬롯에서 미룬다. */
     readonly notReadySymbols: ReadonlySet<string>;
+    /** `computeErrors` 중 일봉을 못 읽은 종목 수(판정이 던진 것은 세지 않는다). */
+    readonly barLoadErrors: number;
+    /** 가격대·진입 구간 줄을 읽는 데 쓴 (종목, 등급) 분석 수. */
+    readonly referencesUsed: number;
+}
+
+/** 분석을 읽을 등급과 종목별 저장된 분석. 비어 있으면 추세·신호만 읽는다. */
+export interface ChangeReferenceInput {
+    readonly rows: ReadonlyMap<string, StoredChangeReference>;
+    /** 가격대를 볼 수 있는 등급들(받는 사람이 있는 등급만). */
+    readonly tiers: readonly Tier[];
 }
 
 type ComputeOutcome =
-    | { readonly kind: 'ok'; readonly value: MailAlertComputedSymbol }
+    | {
+          readonly kind: 'ok';
+          readonly value: MailAlertComputedSymbol;
+          readonly reading: SymbolReading;
+          readonly referencesUsed: number;
+      }
     | { readonly kind: 'stale' }
+    | { readonly kind: 'load_error' }
     | { readonly kind: 'error' };
 
+function referencePrices(reference: ChangeReference): number[] {
+    const plan =
+        reference.plan === null ? null : alertablePlanLevels(reference.plan);
+    return [
+        ...reference.supports,
+        ...reference.resistances,
+        ...(plan?.entryZone == null
+            ? []
+            : [plan.entryZone.low, plan.entryZone.high]),
+        ...(plan?.invalidation == null ? [] : [plan.invalidation]),
+    ];
+}
+
 /**
- * 일봉 한 종목의 새 확정 신호. 마지막 봉의 날짜가 기대 세션일 때만 판정한다 — 코어 함수는 받은 봉의 마지막
- * 봉을 그대로 판정하므로, 낡은 봉으로 부르면 지난 세션의 신호를 오늘 새로 켜진 것처럼 낸다. 기대 세션보다
- * 뒤의 봉(장중 봉 등)은 먼저 잘라 낸다.
+ * 분석의 기준 봉 — 분석 시각에 **이미 마감돼 있던** 마지막 세션의 일봉 인덱스. 일봉은 세션 날짜의 UTC 자정에
+ * 찍히므로 분석 시각을 그대로 `anchorBarIndexOf`에 넘기면, 장이 열리기 전(한국 낮)의 미국 종목 분석이 아직 열리지
+ * 않은 그날 봉에 붙는다. 그 시각의 마지막 마감 세션 날짜의 끝으로 바꿔 넘긴다. 받은 봉보다 앞서면 `null`.
  */
-function computeOne(bars: readonly Bar[], sessionDate: string): ComputeOutcome {
+function closedAnchorIndexOf(
+    bars: readonly Bar[],
+    market: SignalHistoryMarket,
+    analyzedAt: string
+): number | null {
+    const closedDate = lastClosedSessionDate(
+        sessionSpecForDashboardScope(market),
+        new Date(analyzedAt),
+        0
+    );
+    return anchorBarIndexOf(bars, `${closedDate}T23:59:59.999Z`);
+}
+
+/**
+ * 분석의 가격대가 지금 일봉과 같은 가격 척도인지. 봉은 분할이 소급 반영되지만 저장된 분석의 가격은 그렇지 않아
+ * (코어 문서의 호출자 몫), 분석 시점에 마감돼 있던 봉(`closedAnchorIndexOf`)의 종가에 견준 가격들의 중앙값이
+ * 가격대 알림의 척도 가드(`PRICE_ALERT_SCALE_GUARD`) 밖이면 분할이 있었다고 보고 그 분석을 쓰지 않는다. 시점의
+ * 봉을 찾지 못하거나 가격이 하나도 없으면 견줄 근거가 없어 쓰지 않는다.
+ */
+function referenceScaleHolds(
+    reference: ChangeReference,
+    bars: readonly Bar[],
+    market: SignalHistoryMarket
+): boolean {
+    const index = closedAnchorIndexOf(bars, market, reference.analyzedAt);
+    const close = index === null ? undefined : bars[index]?.close;
+    if (close === undefined || !(close > 0)) return false;
+    const ratios = referencePrices(reference)
+        .map(price => price / close)
+        .toSorted((a, b) => a - b);
+    const median = ratios[Math.floor(ratios.length / 2)];
+    return (
+        median !== undefined &&
+        median >= PRICE_ALERT_SCALE_GUARD.min &&
+        median <= PRICE_ALERT_SCALE_GUARD.max
+    );
+}
+
+function hasLevels(reference: ChangeReference): boolean {
+    return (
+        reference.supports.length > 0 ||
+        reference.resistances.length > 0 ||
+        reference.plan !== null
+    );
+}
+
+/**
+ * 일봉 한 종목이 어제 종가에서 오늘 종가 사이에 달라진 점. 마지막 봉의 날짜가 기대 세션일 때만 판정한다 — 코어
+ * 함수는 받은 봉의 마지막 봉을 그대로 판정하므로, 낡은 봉으로 부르면 지난 세션의 변화를 오늘 새로 생긴 것처럼
+ * 낸다. 기대 세션보다 뒤의 봉(장중 봉 등)은 먼저 잘라 낸다.
+ *
+ * 신호는 허브 유형에서 MACD 교차를 뺀 여섯 개만 읽고(`MAIL_ALERT_CHANGE_SIGNAL_TYPES`), 담은 종목은 스캐너 대상이어도
+ * 이 결과가 신호의 정본이다(별도 `detectNewConfirmedSignals` 호출이 없다 — 같은 규칙을 한 번만 계산한다).
+ */
+function computeOne(
+    bars: readonly Bar[],
+    market: SignalHistoryMarket,
+    sessionDate: string,
+    references: {
+        readonly row: StoredChangeReference | undefined;
+        readonly tiers: readonly Tier[];
+    }
+): ComputeOutcome {
     const { bars: upTo } = barsUpToDate(bars, sessionDate);
     if (lastDailyBarDate(upTo) !== sessionDate) return { kind: 'stale' };
     const last = upTo.at(-1);
     const previous = upTo.at(-2);
-    const signalTypes: SignalType[] = detectNewConfirmedSignals(upTo)
-        .map(signal => signal.type)
-        .filter(type => MAIL_ALERT_SIGNAL_TYPES.includes(type));
+    const base = technicalChangesBetween(upTo, {
+        fromIndex: upTo.length - 2,
+        signalTypes: MAIL_ALERT_CHANGE_SIGNAL_TYPES,
+    });
+    const signalTypes: SignalType[] = base.ok
+        ? base.changes.flatMap(change =>
+              change.kind === 'signal_started' ? [change.type] : []
+          )
+        : [];
+    const byTier = new Map<Tier, readonly MailAlertChange[]>();
+    const row = references.row;
+    if (row !== undefined) {
+        references.tiers.forEach(tier => {
+            const reference = changeReferenceOf(
+                row.result,
+                { tier },
+                { analyzedAt: row.generatedAt.toISOString() }
+            );
+            if (
+                reference === null ||
+                !hasLevels(reference) ||
+                !referenceScaleHolds(reference, upTo, market)
+            ) {
+                return;
+            }
+            const result = technicalChangesBetween(upTo, {
+                fromIndex: upTo.length - 2,
+                reference,
+            });
+            const lines = result.ok
+                ? toMailAlertChanges(result.changes, reference).filter(
+                      change => change.kind !== 'trend'
+                  )
+                : [];
+            byTier.set(tier, lines);
+        });
+    }
     return {
         kind: 'ok',
         value: {
@@ -222,31 +384,54 @@ function computeOne(bars: readonly Bar[], sessionDate: string): ComputeOutcome {
                     : null,
             signalTypes,
         },
+        reading: {
+            trend: base.ok ? toMailAlertChanges(base.changes, null) : [],
+            byTier,
+        },
+        referencesUsed: byTier.size,
     };
 }
 
 /**
- * 담은 종목들의 새 신호를 일봉으로 판정한다(스캐너 대상 종목도 같다). 종목마다 따로 잡아 한 종목의 실패가
+ * 담은 종목들의 달라진 점(추세, 새 신호, 그리고 분석이 있으면 가격대·진입 구간)을 일봉으로 읽는다(스캐너 대상
+ * 종목도 같다 — 담은 종목의 신호는 신호 기록이 아니라 그 종목의 봉이 정한다). 종목마다 따로 잡아 한 종목의 실패가
  * 나머지를 막지 않고, 동시에 받는 일봉은 `COMPUTE_CONCURRENCY`개다.
  */
 export async function loadComputedSources(
     deps: AlertSourceDeps,
     targets: ReadonlyArray<{
         readonly symbol: string;
+        readonly market: SignalHistoryMarket;
         readonly sessionDate: string;
-    }>
+    }>,
+    references: ChangeReferenceInput = { rows: new Map(), tiers: [] }
 ): Promise<ComputedSources> {
     const outcomes = await mapChunked(
         targets,
         COMPUTE_CONCURRENCY,
-        async ({ symbol, sessionDate }) => {
+        async ({ symbol, market, sessionDate }) => {
+            const bars = await Promise.resolve()
+                .then(() => deps.loadDailyBars(symbol))
+                .then(
+                    loaded => ({ ok: true as const, loaded }),
+                    (error: unknown) => {
+                        console.error(
+                            `[mail-alert] bars load failed for ${symbol}`,
+                            redactDbErrorForLog(error)
+                        );
+                        return { ok: false as const };
+                    }
+                );
+            if (!bars.ok) {
+                return { symbol, outcome: { kind: 'load_error' } as const };
+            }
             try {
                 return {
                     symbol,
-                    outcome: computeOne(
-                        await deps.loadDailyBars(symbol),
-                        sessionDate
-                    ),
+                    outcome: computeOne(bars.loaded, market, sessionDate, {
+                        row: references.rows.get(symbol),
+                        tiers: references.tiers,
+                    }),
                 };
             } catch (error) {
                 console.error(
@@ -257,23 +442,40 @@ export async function loadComputedSources(
             }
         }
     );
+    const ok = outcomes.flatMap(({ symbol, outcome }) =>
+        outcome.kind === 'ok' ? [{ symbol, outcome }] : []
+    );
     return {
         computed: new Map(
-            outcomes.flatMap(
-                ({ symbol, outcome }): [string, MailAlertComputedSymbol][] =>
-                    outcome.kind === 'ok' ? [[symbol, outcome.value]] : []
-            )
+            ok.map(({ symbol, outcome }): [string, MailAlertComputedSymbol] => [
+                symbol,
+                outcome.value,
+            ])
+        ),
+        readings: new Map(
+            ok.map(({ symbol, outcome }): [string, SymbolReading] => [
+                symbol,
+                outcome.reading,
+            ])
         ),
         computedSymbols: targets.length,
         noFreshBar: outcomes.filter(({ outcome }) => outcome.kind === 'stale')
             .length,
         computeErrors: outcomes.filter(
-            ({ outcome }) => outcome.kind === 'error'
+            ({ outcome }) =>
+                outcome.kind === 'error' || outcome.kind === 'load_error'
         ).length,
         notReadySymbols: new Set(
             outcomes
                 .filter(({ outcome }) => outcome.kind !== 'ok')
                 .map(({ symbol }) => symbol)
+        ),
+        barLoadErrors: outcomes.filter(
+            ({ outcome }) => outcome.kind === 'load_error'
+        ).length,
+        referencesUsed: ok.reduce(
+            (sum, { outcome }) => sum + outcome.referencesUsed,
+            0
         ),
     };
 }

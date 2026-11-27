@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
     fearGreedCrypto: vi.fn(),
     isMailAlertLaunched: vi.fn(),
     getAssetInfoStatic: vi.fn(),
+    findLatestShareable: vi.fn(),
+    resolveTierOnly: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -19,6 +21,17 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/mail-alert/api', () => ({
     DrizzleMailAlertSubscriberRepository: vi.fn(),
     DrizzleMailAlertDeliveryRepository: vi.fn(),
+    DrizzlePriceAlertRepository: vi.fn().mockImplementation(function () {
+        return { marker: 'price-alerts' };
+    }),
+}));
+vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
+    DrizzleAnalysisHistoryRepository: vi.fn().mockImplementation(function () {
+        return { findLatestShareable: mocks.findLatestShareable };
+    }),
+}));
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierOnly: mocks.resolveTierOnly,
 }));
 vi.mock('@/entities/signal-history/api', () => ({
     DrizzleSignalHistoryRepository: vi.fn(),
@@ -69,6 +82,7 @@ vi.mock(
 );
 
 import { createMailAlertBatchDeps } from '@/app/api/cron/mail-alert/createMailAlertDeps';
+import { DrizzlePriceAlertRepository } from '@/entities/mail-alert/api';
 import type { KeyedEmailDispatcher } from '@/shared/email/types';
 
 const dispatcher: KeyedEmailDispatcher = {
@@ -90,6 +104,55 @@ describe('createMailAlertBatchDeps', () => {
         expect(deps.launched).toBe(true);
         expect(deps.secret).toBe('the-secret');
         expect(deps.dispatcher).toBe(dispatcher);
+    });
+
+    it('가격대 알림 저장소를 같은 DB 클라이언트로 만들어 싣는다', () => {
+        const deps = createMailAlertBatchDeps('s', dispatcher);
+
+        expect(DrizzlePriceAlertRepository).toHaveBeenCalledWith(mocks.db);
+        expect(deps.priceAlerts).toEqual({ marker: 'price-alerts' });
+    });
+
+    it('가격대·진입 구간 줄의 분석은 맞춤이 아닌 최신 일봉 기술적 분석에서 만든 시각과 본문만 읽는다', async () => {
+        const generatedAt = new Date('2026-11-20T01:00:00Z');
+        mocks.findLatestShareable.mockResolvedValue(
+            new Map([
+                [
+                    'AAPL',
+                    {
+                        symbol: 'AAPL',
+                        generatedAt,
+                        tier: 'member',
+                        result: { marker: 'result' },
+                    },
+                ],
+            ])
+        );
+        const notBefore = new Date('2026-10-28T00:00:00Z');
+        const deps = createMailAlertBatchDeps('s', dispatcher);
+
+        const rows = await deps.sources.loadChangeReferences?.(
+            ['AAPL', 'MSFT'],
+            notBefore
+        );
+
+        expect(mocks.findLatestShareable).toHaveBeenCalledWith({
+            symbols: ['AAPL', 'MSFT'],
+            timeframe: '1Day',
+            tab: 'technical',
+            notBefore,
+        });
+        expect(rows).toEqual(
+            new Map([['AAPL', { generatedAt, result: { marker: 'result' } }]])
+        );
+    });
+
+    it('구독자의 등급은 분석 화면과 같은 resolveTierOnly로 읽는다', async () => {
+        mocks.resolveTierOnly.mockResolvedValue('pro');
+        const deps = createMailAlertBatchDeps('s', dispatcher);
+
+        await expect(deps.resolveTier?.('u-1')).resolves.toBe('pro');
+        expect(mocks.resolveTierOnly).toHaveBeenCalledWith('u-1');
     });
 
     it('비밀이 없으면 null을 그대로 넘긴다(실행이 스스로 멈춘다)', () => {

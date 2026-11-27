@@ -6,6 +6,7 @@ import {
     PRICE_ALERT_MAX_ACTIVE,
     PRICE_ALERT_PROPOSAL_TTL_SECONDS,
     PRICE_ALERT_RATE_LIMIT,
+    PRICE_ALERT_SCALE_GUARD,
     PRICE_ALERT_TTL_DAYS,
     isPriceAlertLaunched,
 } from '../priceAlertConstants';
@@ -33,6 +34,14 @@ describe('priceAlertConstants', () => {
 
     it('직접 말한 가격은 시세의 0.5배에서 2배까지 받는다', () => {
         expect(PRICE_ALERT_LEVEL_BAND).toEqual({ min: 0.5, max: 2 });
+    });
+
+    it('분할 가드는 처음 판정하는 종가가 만들 때 가격의 0.6배에서 1/0.6배(1.67)까지만 받는다', () => {
+        expect(PRICE_ALERT_SCALE_GUARD).toEqual({ min: 0.6, max: 1.67 });
+        expect(PRICE_ALERT_SCALE_GUARD.max).toBeCloseTo(
+            1 / PRICE_ALERT_SCALE_GUARD.min,
+            1
+        );
     });
 
     it('공개 전에는 꺼져 있다', () => {

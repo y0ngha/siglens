@@ -2,6 +2,7 @@ import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MAIL_ALERT_COOKIE_NAME } from '@/entities/mail-alert/lib/mailAlertCookie';
+import type { MailAlertChange } from '@/entities/mail-alert/model';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 
 /**
@@ -71,7 +72,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec2Screens:
             '종목 화면, 공포 탐욕 화면, 신호별 종목 화면, 알림 메일 설정 화면 중 하나',
         sec2Verified: '인증 코드를 입력해 주소를 확인한 뒤에만 저장됩니다',
-        resend: '알림 메일의 경우 실린 종목명과 종목 코드, 신호 이름, 공포 탐욕 점수와 구간, 구독자 식별자가 서명과 함께 담긴 설정 링크와 수신거부 링크',
+        resend: '알림 메일의 경우 실린 종목명과 종목 코드, 신호 이름, 추세 판정의 변화, 종가, 시그렌즈 AI 분석의 지지선과 저항선, 진입 구간과 무효화 기준 가격, 공포 탐욕 점수와 구간, 구독자 식별자가 서명과 함께 담긴 설정 링크와 수신거부 링크',
         upstash:
             '알림 메일 신청의 인증 코드 보관과 인증 메일 요청, 코드 입력, 항목 추가 횟수 제한',
         sec2Limits: '인증 메일 요청, 코드 입력, 항목 추가 횟수를 제한하려고',
@@ -90,7 +91,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
             'one of the stock screen, the Fear & Greed screen, the signal stocks screen, or the alert email settings screen',
         sec2Verified:
             'stored only after the address is confirmed by entering a verification code',
-        resend: 'For alert emails, the names and symbol codes of the stocks included in the email, the signal names, the Fear & Greed score and zone, and a settings link and an unsubscribe link containing the subscriber identifier with a signature',
+        resend: 'For alert emails, the names and symbol codes of the stocks included in the email, the signal names, changes in the trend reading, closing prices, the support and resistance levels, entry zone and invalidation level prices of the SIGLENS AI analysis, the Fear & Greed score and zone, and a settings link and an unsubscribe link containing the subscriber identifier with a signature',
         upstash:
             'the storage of the alert email sign-up verification code with request, entry and item addition rate limiting',
         sec2Limits:
@@ -110,7 +111,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
             '銘柄画面、恐怖強欲指数の画面、シグナル別銘柄の画面、アラートメール設定画面のいずれか',
         sec2Verified:
             '認証コードを入力してアドレスを確認した後にのみ保存されます',
-        resend: 'アラートメールの場合は、メールに載せる銘柄名と銘柄コード、シグナル名、恐怖強欲スコアとゾーン、および購読者識別子が署名とともに含まれる設定リンクと配信停止リンク',
+        resend: 'アラートメールの場合は、メールに載せる銘柄名と銘柄コード、シグナル名、トレンド判定の変化、終値、SIGLENSのAI分析のサポートラインとレジスタンスライン、エントリー帯と無効化の基準の価格、恐怖強欲スコアとゾーン、および購読者識別子が署名とともに含まれる設定リンクと配信停止リンク',
         upstash:
             'アラートメール申し込みの認証コードの保管と、認証メールのリクエスト、コード入力、項目追加の回数制限',
         sec2Limits:
@@ -129,7 +130,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec2Screens:
             '股票页面、恐惧与贪婪页面、信号个股页面、提醒邮件设置页面之一',
         sec2Verified: '确认地址之后才会保存订阅',
-        resend: '提醒邮件会传输邮件中所含的股票名称和股票代码、信号名称、恐惧与贪婪分数及区间,以及附带签名并含订阅者标识符的设置链接和退订链接',
+        resend: '提醒邮件会传输邮件中所含的股票名称和股票代码、信号名称、趋势判断的变化、收盘价、SIGLENS AI 分析的支撑位与阻力位、进场区间与失效标准的价格、恐惧与贪婪分数及区间,以及附带签名并含订阅者标识符的设置链接和退订链接',
         upstash: '提醒邮件订阅验证码的保存及请求、输入、项目添加次数限制',
         sec2Limits: '为限制验证邮件请求、验证码输入和项目添加次数',
         upstashKeyed: '以邮箱地址哈希为键保存的验证码',
@@ -138,6 +139,60 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec8: '提醒邮件可随时通过邮件底部的退订链接、邮件应用的退订按钮、邮件中的设置链接,或登录后的[提醒邮件设置](/email-report/alerts)页面关闭',
     },
 };
+
+/**
+ * 메일의 "달라진 점" 줄이 말하는 내용 종류마다, Resend로 전송되는 항목을 적은 문장이 그 내용을 가리키는 말.
+ * 종류를 늘리면 이 표가 타입 오류를 내므로 방침 문구 없이 새 줄이 나가지 못한다.
+ */
+const CHANGE_KIND_PHRASES: Record<
+    MailAlertChange['kind'],
+    Record<Locale, readonly string[]>
+> = {
+    trend: {
+        ko: ['추세 판정의 변화'],
+        en: ['changes in the trend reading'],
+        ja: ['トレンド判定の変化'],
+        zh: ['趋势判断的变化'],
+    },
+    level: {
+        ko: ['종가', '지지선과 저항선'],
+        en: ['closing prices', 'support and resistance levels'],
+        ja: ['終値', 'サポートラインとレジスタンスライン'],
+        zh: ['收盘价', '支撑位与阻力位'],
+    },
+    plan_zone: {
+        ko: ['종가', '진입 구간'],
+        en: ['closing prices', 'entry zone'],
+        ja: ['終値', 'エントリー帯'],
+        zh: ['收盘价', '进场区间'],
+    },
+    plan_stopped: {
+        ko: ['종가', '무효화 기준 가격'],
+        en: ['closing prices', 'invalidation level prices'],
+        ja: ['終値', '無効化の基準の価格'],
+        zh: ['收盘价', '失效标准的价格'],
+    },
+};
+
+describe.each(LOCALES)(
+    '알림 메일 "달라진 점" 줄의 내용이 Resend 전송 항목에 있다 (%s)',
+    locale => {
+        const clause = lineStartingWith(
+            sectionBetween(readPolicy(locale), 6, 7),
+            '- **Resend'
+        );
+
+        it.each(Object.entries(CHANGE_KIND_PHRASES))(
+            '%s 종류',
+            (_kind, phrases) => {
+                expect(clause).not.toBe('');
+                phrases[locale].forEach(phrase =>
+                    expect(clause).toContain(phrase)
+                );
+            }
+        );
+    }
+);
 
 describe('알림 메일: 코드의 이름이 방침의 고지와 같다', () => {
     it('쿠키 이름은 방침이 적는 이름이다', () => {

@@ -151,16 +151,27 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
             }),
         } as unknown as SiglensDatabase;
 
-        await new DrizzleMailAlertSubscriberRepository(db).findAllForDelivery();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-11-24T22:05:00Z'));
+        try {
+            await new DrizzleMailAlertSubscriberRepository(
+                db
+            ).findAllForDelivery();
+        } finally {
+            vi.useRealTimers();
+        }
 
-        expect(render(onlyCallArg(having)).sql).toBe(
-            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0 or exists (select 1 from "price_alerts" where "price_alerts"."subscriber_id" = "mail_alert_subscribers"."id" and "price_alerts"."status" = \'active\' and "price_alerts"."expires_on" >= (now() at time zone \'Asia/Seoul\')::date)'
+        const { sql, params } = render(onlyCallArg(having));
+        expect(sql).toBe(
+            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0 or exists (select 1 from "price_alerts" where "price_alerts"."subscriber_id" = "mail_alert_subscribers"."id" and "price_alerts"."status" = \'active\' and (("price_alerts"."market" = \'us\' and "price_alerts"."expires_on" >= $1) or ("price_alerts"."market" = \'kr\' and "price_alerts"."expires_on" >= $2)))'
         );
+        // 주지 않으면 지금 시각의 시장별 기대 세션이다.
+        expect(params).toEqual(['2026-11-24', '2026-11-24']);
     });
 });
 
-describe('findAllForDelivery alertDate', () => {
-    it('알림 날짜를 주면 만료 판정에 그 값을 바인딩한다', async () => {
+describe('findAllForDelivery asOf', () => {
+    it('시장별 기대 세션을 주면 시장마다 그 값을 바인딩한다', async () => {
         const orderBy = vi.fn().mockResolvedValue([]);
         const having = vi.fn((_condition: unknown) => ({ orderBy }));
         const db = {
@@ -171,28 +182,44 @@ describe('findAllForDelivery alertDate', () => {
             }),
         } as unknown as SiglensDatabase;
 
-        await new DrizzleMailAlertSubscriberRepository(db).findAllForDelivery(
-            '2026-11-23'
-        );
+        await new DrizzleMailAlertSubscriberRepository(db).findAllForDelivery({
+            us: '2026-11-23',
+            kr: '2026-11-24',
+        });
 
         const { sql, params } = render(onlyCallArg(having));
         expect(sql).toBe(
-            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0 or exists (select 1 from "price_alerts" where "price_alerts"."subscriber_id" = "mail_alert_subscribers"."id" and "price_alerts"."status" = \'active\' and "price_alerts"."expires_on" >= $1)'
+            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0 or exists (select 1 from "price_alerts" where "price_alerts"."subscriber_id" = "mail_alert_subscribers"."id" and "price_alerts"."status" = \'active\' and (("price_alerts"."market" = \'us\' and "price_alerts"."expires_on" >= $1) or ("price_alerts"."market" = \'kr\' and "price_alerts"."expires_on" >= $2)))'
         );
-        expect(params).toEqual(['2026-11-23']);
+        expect(params).toEqual(['2026-11-23', '2026-11-24']);
     });
 });
 
 describe('DrizzleMailAlertDeliveryRepository', () => {
+    /** 트랜잭션 콜백에 `tx`를 그대로 넘기는 DB 대역. */
+    const lockSubscriber = vi.fn().mockResolvedValue([{ id: 'sub-1' }]);
+    const inTransaction = (tx: Record<string, unknown>) =>
+        ({
+            transaction: async (run: (tx: unknown) => Promise<unknown>) =>
+                run({
+                    select: () => ({
+                        from: () => ({
+                            where: () => ({ for: lockSubscriber }),
+                        }),
+                    }),
+                    ...tx,
+                }),
+        }) as unknown as SiglensDatabase;
+
     it('claim: 유니크 충돌로 진 쪽은 null이다', async () => {
         const returning = vi.fn().mockResolvedValue([]);
-        const db = {
+        const db = inTransaction({
             insert: () => ({
                 values: () => ({
                     onConflictDoNothing: () => ({ returning }),
                 }),
             }),
-        } as unknown as SiglensDatabase;
+        });
 
         await expect(
             new DrizzleMailAlertDeliveryRepository(db).claim(
@@ -208,16 +235,14 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
                 returning: vi.fn().mockResolvedValue([{ id: 'del-1' }]),
             }),
         }));
-        const db = {
-            insert: () => ({ values }),
-        } as unknown as SiglensDatabase;
+        const db = inTransaction({ insert: () => ({ values }) });
 
         await expect(
             new DrizzleMailAlertDeliveryRepository(db).claim(
                 'sub-1',
                 '2026-11-24'
             )
-        ).resolves.toBe('del-1');
+        ).resolves.toEqual({ id: 'del-1', firedAlertIds: [] });
         expect(onlyCallArg(values)).toEqual({
             subscriberId: 'sub-1',
             alertDate: '2026-11-24',
@@ -232,9 +257,7 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
                 returning: vi.fn().mockResolvedValue([{ id: 'del-1' }]),
             }),
         }));
-        const db = {
-            insert: () => ({ values }),
-        } as unknown as SiglensDatabase;
+        const db = inTransaction({ insert: () => ({ values }) });
 
         await new DrizzleMailAlertDeliveryRepository(db).claim(
             'sub-1',
@@ -247,6 +270,225 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
             alertDate: '2026-11-24',
             status: 'pending',
             itemKeys: ['a', 'b'],
+        });
+    });
+
+    describe('claim과 함께 알림을 알린 것으로 표시한다', () => {
+        /** `stillActive`: 선점 시점에도 `active`로 남아 UPDATE가 실제로 바꾸는 알림 id. 기본은 전부. */
+        function fakeTransaction(
+            winner: boolean,
+            stillActive: (id: string) => boolean = () => true
+        ) {
+            const pending: string[] = [];
+            const set = vi.fn((_values: unknown) => ({
+                where: vi.fn(() => ({
+                    returning: vi.fn(async () => {
+                        const id = pending.shift() ?? '';
+                        return stillActive(id) ? [{ id }] : [];
+                    }),
+                })),
+            }));
+            const update = vi.fn((_table: unknown) => ({ set }));
+            const tx = {
+                insert: () => ({
+                    values: () => ({
+                        onConflictDoNothing: () => ({
+                            returning: vi
+                                .fn()
+                                .mockResolvedValue(
+                                    winner ? [{ id: 'del-1' }] : []
+                                ),
+                        }),
+                    }),
+                }),
+                update,
+            };
+            return { tx, update, set, pending };
+        }
+
+        const FIRED = [
+            { id: 'alert-1', session: '2026-11-24', close: 179.5 },
+            { id: 'alert-2', session: '2026-11-23', close: 12 },
+        ];
+
+        it('선점이 이기면 알림마다 같은 트랜잭션 안에서 UPDATE한다(세션과 종가를 고정 6자리 문자열로)', async () => {
+            const { tx, update, set, pending } = fakeTransaction(true);
+            pending.push('alert-1', 'alert-2');
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction(tx)
+            ).claim('sub-1', '2026-11-25', ['p:alert-1', 'p:alert-2'], FIRED);
+
+            expect(update).toHaveBeenCalledTimes(2);
+            const written = set.mock.calls.map(
+                ([values]) => values as Record<string, unknown>
+            );
+            expect(written.map(values => values['status'])).toEqual([
+                'fired',
+                'fired',
+            ]);
+            expect(written.map(values => values['firedSession'])).toEqual([
+                '2026-11-24',
+                '2026-11-23',
+            ]);
+            expect(written.map(values => values['firedClose'])).toEqual([
+                '179.500000',
+                '12.000000',
+            ]);
+            expect(render(written[0]?.['firedAt']).sql).toBe('now()');
+        });
+
+        it('실제로 fired로 바뀐 알림 id만 돌려준다(판정 뒤 지워진 알림은 빠진다)', async () => {
+            const { tx, pending } = fakeTransaction(
+                true,
+                id => id !== 'alert-2'
+            );
+            pending.push('alert-1', 'alert-2');
+
+            await expect(
+                new DrizzleMailAlertDeliveryRepository(inTransaction(tx)).claim(
+                    'sub-1',
+                    '2026-11-25',
+                    ['p:alert-1', 'p:alert-2'],
+                    FIRED
+                )
+            ).resolves.toEqual({ id: 'del-1', firedAlertIds: ['alert-1'] });
+        });
+
+        it('claim은 끝낸 알림을 지우지 않는다(삭제는 메일이 나간 뒤 finish가 한다)', async () => {
+            const { tx } = fakeTransaction(true);
+            const del = vi.fn();
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction({ ...tx, delete: del })
+            ).claim('sub-1', '2026-11-25', ['v:x'], []);
+
+            expect(del).not.toHaveBeenCalled();
+        });
+
+        it('선점에서 지면 알림을 건드리지 않는다', async () => {
+            const { tx, update } = fakeTransaction(false);
+
+            await expect(
+                new DrizzleMailAlertDeliveryRepository(inTransaction(tx)).claim(
+                    'sub-1',
+                    '2026-11-25',
+                    ['p:alert-1'],
+                    FIRED
+                )
+            ).resolves.toBeNull();
+
+            expect(update).not.toHaveBeenCalled();
+        });
+
+        it('알림이 없으면 UPDATE를 하지 않는다', async () => {
+            const { tx, update } = fakeTransaction(true);
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction(tx)
+            ).claim('sub-1', '2026-11-25', ['a']);
+
+            expect(update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('finish와 알림 정리', () => {
+        function finishTx(
+            deliverySubscriber: string | null,
+            deliveryWritten = true
+        ) {
+            // 발송 기록 UPDATE는 `.returning()`으로 덮었는지 확인하고, 알림 UPDATE는 `where`를 그대로 기다린다.
+            const returning = vi
+                .fn()
+                .mockResolvedValue(deliveryWritten ? [{ id: 'del-1' }] : []);
+            const updateWhere = vi.fn((_condition: unknown) =>
+                Object.assign(Promise.resolve(undefined), { returning })
+            );
+            const set = vi.fn((_values: unknown) => ({ where: updateWhere }));
+            const update = vi.fn((_table: unknown) => ({ set }));
+            const deleteWhere = vi.fn().mockResolvedValue(undefined);
+            const del = vi.fn((_table: unknown) => ({ where: deleteWhere }));
+            const selectDelivery = vi
+                .fn()
+                .mockResolvedValue(
+                    deliverySubscriber === null
+                        ? []
+                        : [{ subscriberId: deliverySubscriber }]
+                );
+            const tx = {
+                select: () => ({
+                    from: () => ({
+                        where: () =>
+                            Object.assign(selectDelivery(), {
+                                for: lockSubscriber,
+                            }),
+                    }),
+                }),
+                update,
+                delete: del,
+            };
+            return { tx, update, set, del, deleteWhere, updateWhere };
+        }
+
+        it('받아 준 메일이면 끝낸 알림(v:)을 지우고 알린 알림은 건드리지 않는다', async () => {
+            const { tx, update, del } = finishTx('sub-1');
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction(tx)
+            ).finish('del-1', 'sent', ['p:a', 'v:b'], null, false);
+
+            expect(del).toHaveBeenCalledTimes(1);
+            // 발송 기록 UPDATE 하나뿐이다(알림 되살리기 UPDATE는 없다).
+            expect(update).toHaveBeenCalledTimes(1);
+        });
+
+        it('확정적 거절이면 알린 알림(p:)을 되살리고 끝낸 알림은 지우지 않는다', async () => {
+            const { tx, update, set, del } = finishTx('sub-1');
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction(tx)
+            ).finish('del-1', 'failed', ['p:a', 'v:b'], 'rejected', true);
+
+            expect(del).not.toHaveBeenCalled();
+            expect(update).toHaveBeenCalledTimes(2);
+            const rearm = set.mock.calls
+                .map(([values]) => values as Record<string, unknown>)
+                .find(values => values['status'] === 'active');
+            expect(rearm).toMatchObject({
+                status: 'active',
+                firedSession: null,
+                firedClose: null,
+                firedAt: null,
+            });
+        });
+
+        it('기록이 이미 sent면 덮지 않고(DB-11) 알림도 되살리지 않는다(메일은 이미 나갔다)', async () => {
+            const { tx, update, del, updateWhere } = finishTx('sub-1', false);
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction(tx)
+            ).finish('del-1', 'failed', ['p:a', 'v:b'], 'late', true);
+
+            expect(update).toHaveBeenCalledTimes(1);
+            expect(del).not.toHaveBeenCalled();
+            const { sql, params } = render(onlyCallArg(updateWhere));
+            expect(sql).toBe(
+                '("mail_alert_deliveries"."id" = $1 and "mail_alert_deliveries"."status" <> $2)'
+            );
+            expect(params).toEqual(['del-1', 'sent']);
+        });
+
+        it('알림 키가 없는 기록은 구독자를 잠그지도 알림을 만지지도 않는다', async () => {
+            const { tx, update, del } = finishTx('sub-1');
+            lockSubscriber.mockClear();
+
+            await new DrizzleMailAlertDeliveryRepository(
+                inTransaction(tx)
+            ).finish('del-1', 'sent', ['s:us:AAPL:golden_cross'], null);
+
+            expect(lockSubscriber).not.toHaveBeenCalled();
+            expect(del).not.toHaveBeenCalled();
+            expect(update).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -413,7 +655,7 @@ describe('DrizzlePriceAlertRepository', () => {
         expect(transaction).not.toHaveBeenCalled();
     });
 
-    it('listActiveForDelivery: 진행 중이고 만료일이 알림 날짜 이상인 알림을 구독자별로 묶는다', async () => {
+    it('listActiveForDelivery: 진행 중이고 만료 세션이 그 시장의 기대 세션 이상인 알림을 구독자별로 묶는다', async () => {
         const { db, where } = selectDb([
             row,
             { ...row, id: 'a2', proposalId: 'p2' },
@@ -422,15 +664,15 @@ describe('DrizzlePriceAlertRepository', () => {
 
         const byId = await new DrizzlePriceAlertRepository(
             db
-        ).listActiveForDelivery('2026-11-23');
+        ).listActiveForDelivery({ us: '2026-11-23', kr: '2026-11-24' });
 
         expect(byId.get('s1')?.map(a => a.id)).toEqual(['a1', 'a2']);
         expect(byId.get('s2')?.map(a => a.id)).toEqual(['a3']);
         const { sql, params } = render(onlyCallArg(where));
         expect(sql).toBe(
-            '("price_alerts"."status" = $1 and "price_alerts"."expires_on" >= $2)'
+            '"price_alerts"."status" = \'active\' and (("price_alerts"."market" = \'us\' and "price_alerts"."expires_on" >= $1) or ("price_alerts"."market" = \'kr\' and "price_alerts"."expires_on" >= $2))'
         );
-        expect(params).toEqual(['active', '2026-11-23']);
+        expect(params).toEqual(['2026-11-23', '2026-11-24']);
     });
 
     it('pruneExpiredAndFired: 지울 알림을 가진 구독자가 없으면 알림도 구독자도 지우지 않는다', async () => {
@@ -446,7 +688,8 @@ describe('DrizzlePriceAlertRepository', () => {
 
         await expect(
             new DrizzlePriceAlertRepository(db).pruneExpiredAndFired(
-                '2026-11-23'
+                '2026-11-23',
+                { us: '2026-11-23', kr: '2026-11-23' }
             )
         ).resolves.toEqual({ alertsDeleted: 0, subscribersDeleted: 0 });
 

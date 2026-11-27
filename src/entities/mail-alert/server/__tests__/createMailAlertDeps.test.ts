@@ -48,6 +48,9 @@ vi.mock('@/entities/mail-alert/api', () => ({
     DrizzleMailAlertSubscriberRepository: vi.fn(function () {
         return { marker: 'subscribers' };
     }),
+    DrizzlePriceAlertRepository: vi.fn(function () {
+        return { marker: 'price-alerts' };
+    }),
 }));
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 
@@ -71,6 +74,13 @@ describe('createMailAlertDeps', () => {
         expect(deps.signingReady).toBe(true);
         expect(deps.locale).toBe('ko');
         expect(deps.emailTokens).toBe(mocks.emailTokens);
+    });
+
+    it('가격대 알림 저장소를 싣고, 공개 스위치가 꺼져 있는 동안 알림 설정은 닫혀 있다', async () => {
+        const deps = await createMailAlertDeps();
+
+        expect(deps.priceAlerts).toEqual({ marker: 'price-alerts' });
+        expect(deps.priceAlertsEnabled).toBe(false);
     });
 
     it('서명 비밀이 없으면 signingReady가 거짓이고 어떤 링크도 맞지 않는다', async () => {

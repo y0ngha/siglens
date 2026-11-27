@@ -732,7 +732,10 @@ export const priceAlerts = pgTable(
         }).notNull(),
         /** 만든 시점의 마지막 완료 세션 날짜. 이보다 뒤의 종가만 판정한다. */
         startsAfterSession: date('starts_after_session').notNull(),
-        /** 한국 날짜. 이 날짜까지는 살아 있다(만료일 당일은 아직 active). */
+        /**
+         * 만료 세션: 그 시장에서 마지막으로 종가를 판정하는 세션의 날짜(한국 날짜가 아니다). 그 세션을 판정하는 실행까지
+         * 살아 있다 — 시장별 기대 세션(`priceAlertAsOf`) 이상이면 active로 본다.
+         */
         expiresOn: date('expires_on').notNull(),
         status: text('status', { enum: PRICE_ALERT_STATUS_VALUES })
             .notNull()

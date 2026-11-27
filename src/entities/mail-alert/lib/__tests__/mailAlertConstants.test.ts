@@ -1,8 +1,11 @@
 import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
 import {
+    MAIL_ALERT_CHANGE_REFERENCE_MAX_AGE_DAYS,
+    MAIL_ALERT_CHANGE_SIGNAL_TYPES,
     MAIL_ALERT_COOKIE_MAX_AGE_SECONDS,
     MAIL_ALERT_FEAR_GREED_MARKETS,
     MAIL_ALERT_LAUNCHED,
+    MAIL_ALERT_MAX_CHANGES_PER_SYMBOL,
     MAIL_ALERT_MAX_TOPICS,
     MAIL_ALERT_RATE_LIMITS,
     MAIL_ALERT_SEND_HOURS_KST,
@@ -16,6 +19,22 @@ describe('mailAlertConstants', () => {
             SIGNAL_HUBS.map(hub => hub.signalType)
         );
         expect(MAIL_ALERT_SIGNAL_TYPES).toHaveLength(8);
+    });
+
+    it('달라진 점의 신호 유형은 허브 유형에서 MACD 교차 둘만 뺀 여섯 개다', () => {
+        expect([...MAIL_ALERT_CHANGE_SIGNAL_TYPES]).toEqual(
+            MAIL_ALERT_SIGNAL_TYPES.filter(
+                type =>
+                    type !== 'macd_bullish_cross' &&
+                    type !== 'macd_bearish_cross'
+            )
+        );
+        expect(MAIL_ALERT_CHANGE_SIGNAL_TYPES).toHaveLength(6);
+    });
+
+    it('종목당 달라진 점은 세 줄, 분석은 30일 안의 것만 쓴다', () => {
+        expect(MAIL_ALERT_MAX_CHANGES_PER_SYMBOL).toBe(3);
+        expect(MAIL_ALERT_CHANGE_REFERENCE_MAX_AGE_DAYS).toBe(30);
     });
 
     it('공포·탐욕 시장은 미국, 한국, 크립토다', () => {

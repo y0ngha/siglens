@@ -80,6 +80,14 @@ describe.skipIf(!URL)(
             return row?.d ?? '';
         }
 
+        /** 두 시장의 기대 세션을 같은 날짜로 준다(만료 정의는 시장별 비교라 한 날짜로 양쪽을 본다). */
+        const sessions = (date: string) => ({ us: date, kr: date });
+
+        async function pruneAsOfToday() {
+            const today = await kstDate(0);
+            return alerts.pruneExpiredAndFired(today, sessions(today));
+        }
+
         /** 조건이 참이 될 때까지 20ms 간격으로 확인한다. 시간 안에 안 되면 테스트를 실패시킨다. */
         async function waitUntil(
             condition: () => Promise<boolean>,
@@ -279,7 +287,7 @@ describe.skipIf(!URL)(
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-1)}, fired_close = 149, fired_at = now() WHERE subscriber_id = ${id}`;
                 await create(id, {
                     condition: below(140),
-                    expiresOn: await kstDate(-1),
+                    expiresOn: await kstDate(-10),
                 });
 
                 expect(await create(id, { condition: below(150) })).toBe(
@@ -299,7 +307,7 @@ describe.skipIf(!URL)(
                 );
 
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-1)}, fired_close = 99, fired_at = now() WHERE subscriber_id = ${id} AND level = 100`;
-                await client`UPDATE price_alerts SET expires_on = ${await kstDate(-1)} WHERE subscriber_id = ${id} AND level = 101`;
+                await client`UPDATE price_alerts SET expires_on = ${await kstDate(-10)} WHERE subscriber_id = ${id} AND level = 101`;
 
                 expect(await create(id, { condition: below(102) }, 2)).toBe(
                     'created'
@@ -508,6 +516,55 @@ describe.skipIf(!URL)(
             });
             return { userId: user?.id ?? '', id };
         }
+
+        describe('removeSubscriberIfNothingToReceive', () => {
+            async function subscriberExists(id: string): Promise<boolean> {
+                const rows =
+                    await client`SELECT 1 FROM mail_alert_subscribers WHERE id = ${id}`;
+                return rows.length > 0;
+            }
+
+            it('받을 것이 없으면(항목 0, 스위치 꺼짐, 살아 있는 알림 0) 구독자를 지운다', async () => {
+                const id = await subscribe();
+
+                expect(
+                    await alerts.removeSubscriberIfNothingToReceive(id)
+                ).toBe(true);
+                expect(await subscriberExists(id)).toBe(false);
+            });
+
+            it('살아 있는 알림이 남아 있으면 지우지 않는다', async () => {
+                const id = await subscribe();
+                await create(id);
+
+                expect(
+                    await alerts.removeSubscriberIfNothingToReceive(id)
+                ).toBe(false);
+                expect(await subscriberExists(id)).toBe(true);
+            });
+
+            it('항목이 남아 있으면 지우지 않는다', async () => {
+                const id = await subscribe();
+                await subscribers.addTopic(
+                    asGuest(id),
+                    { kind: 'signal', key: 'golden_cross' },
+                    30
+                );
+
+                expect(
+                    await alerts.removeSubscriberIfNothingToReceive(id)
+                ).toBe(false);
+                expect(await subscriberExists(id)).toBe(true);
+            });
+
+            it('없는 구독자는 false다', async () => {
+                expect(
+                    await alerts.removeSubscriberIfNothingToReceive(
+                        randomUUID()
+                    )
+                ).toBe(false);
+            });
+        });
 
         describe('cancel', () => {
             it('자기 알림은 지우고 deleted를 돌려준다(다른 알림이 남으면 구독자도 남는다)', async () => {
@@ -729,14 +786,18 @@ describe.skipIf(!URL)(
                 });
                 await create(second, { condition: below(102) });
 
-                const byAlertDate = await alerts.listActiveForDelivery(today);
+                const byAlertDate = await alerts.listActiveForDelivery(
+                    sessions(today)
+                );
 
                 expect(byAlertDate.get(first)?.map(a => a.condition)).toEqual([
                     { kind: 'close_below', level: 100 },
                 ]);
                 expect(byAlertDate.get(second)).toHaveLength(1);
                 const tomorrow = await kstDate(1);
-                const next = await alerts.listActiveForDelivery(tomorrow);
+                const next = await alerts.listActiveForDelivery(
+                    sessions(tomorrow)
+                );
                 expect(next.get(first)).toBeUndefined();
             });
 
@@ -746,7 +807,7 @@ describe.skipIf(!URL)(
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-1)}, fired_close = 99, fired_at = now() WHERE subscriber_id = ${id}`;
 
                 const byAlertDate = await alerts.listActiveForDelivery(
-                    await kstDate(0)
+                    sessions(await kstDate(0))
                 );
 
                 expect(byAlertDate.get(id)).toBeUndefined();
@@ -773,7 +834,10 @@ describe.skipIf(!URL)(
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-retention)}, fired_close = 1, fired_at = (((now() AT TIME ZONE 'Asia/Seoul')::date - ${retention}::int)::timestamp AT TIME ZONE 'Asia/Seoul') + interval '7 hours' WHERE subscriber_id = ${id} AND level = 103`;
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-retention - 1)}, fired_close = 1, fired_at = (((now() AT TIME ZONE 'Asia/Seoul')::date - ${retention + 1}::int)::timestamp AT TIME ZONE 'Asia/Seoul') + interval '7 hours' WHERE subscriber_id = ${id} AND level = 104`;
 
-                const result = await alerts.pruneExpiredAndFired(today);
+                const result = await alerts.pruneExpiredAndFired(
+                    today,
+                    sessions(today)
+                );
 
                 // 시스템 전체를 정리하므로 다른 테스트가 남긴 만료 행도 센다 — 이 구독자의 결과는 남은 행으로 본다.
                 expect(result.alertsDeleted).toBeGreaterThanOrEqual(2);
@@ -799,9 +863,7 @@ describe.skipIf(!URL)(
                 await expire(id, { condition: below(100) });
                 await expire(id, { condition: below(101) });
 
-                const result = await alerts.pruneExpiredAndFired(
-                    await kstDate(0)
-                );
+                const result = await pruneAsOfToday();
 
                 expect(result.subscribersDeleted).toBeGreaterThanOrEqual(1);
                 expect(await subscribers.findByOwner(asGuest(id))).toBeNull();
@@ -816,7 +878,7 @@ describe.skipIf(!URL)(
                 );
                 await expire(id, { condition: below(100) });
 
-                await alerts.pruneExpiredAndFired(await kstDate(0));
+                await pruneAsOfToday();
 
                 expect((await subscribers.findByOwner(asGuest(id)))?.id).toBe(
                     id
@@ -829,7 +891,7 @@ describe.skipIf(!URL)(
                 await expire(id, { condition: below(100) });
                 await create(id, { condition: below(101) });
 
-                await alerts.pruneExpiredAndFired(await kstDate(0));
+                await pruneAsOfToday();
 
                 expect((await subscribers.findByOwner(asGuest(id)))?.id).toBe(
                     id
@@ -856,7 +918,7 @@ describe.skipIf(!URL)(
                     await tx`DELETE FROM price_alerts WHERE id = ${alertId} AND subscriber_id = ${id}`;
                 });
                 const holderPid = await lockedSignal.promise;
-                const prune = alerts.pruneExpiredAndFired(await kstDate(0));
+                const prune = pruneAsOfToday();
                 // 끝난 시각은 성공·실패 모두에서 기록하고, 실패(40P01)가 처리되지 않은 거부로 남아 단언을
                 // 가리지 않게 두 약속 모두에 처리기를 미리 붙인다.
                 const finishedAt = new Map<string, number>();
@@ -905,7 +967,7 @@ describe.skipIf(!URL)(
                 const other = await subscribe();
                 await expire(other, { condition: below(100) });
 
-                await alerts.pruneExpiredAndFired(await kstDate(0));
+                await pruneAsOfToday();
 
                 expect(
                     (await subscribers.findByOwner(asGuest(fresh)))?.id
@@ -924,7 +986,7 @@ describe.skipIf(!URL)(
                     10
                 );
 
-                await alerts.pruneExpiredAndFired(await kstDate(0));
+                await pruneAsOfToday();
 
                 expect(
                     (await subscribers.findByOwner(asMember(member.userId)))?.id
@@ -1123,7 +1185,7 @@ describe.skipIf(!URL)(
                 const fired = await subscribe();
                 await create(expired, {
                     condition: below(100),
-                    expiresOn: await kstDate(-1),
+                    expiresOn: await kstDate(-10),
                 });
                 await create(fired, { condition: below(100) });
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-1)}, fired_close = 99, fired_at = now() WHERE subscriber_id = ${fired}`;
@@ -1136,14 +1198,16 @@ describe.skipIf(!URL)(
                 expect(ids).not.toContain(fired);
             });
 
-            it('alertDate를 주면 그 날짜 기준으로 만료를 판정한다(만료일 당일은 대상, 다음 날은 아니다)', async () => {
+            it('시장별 기대 세션을 주면 그 기준으로 만료를 판정한다(만료 세션이 기대 세션이면 대상, 기대 세션이 하루 지나면 아니다)', async () => {
                 const id = await subscribe();
                 const today = await kstDate(0);
                 await create(id, { condition: below(100), expiresOn: today });
 
-                const onExpiry = await subscribers.findAllForDelivery(today);
+                const onExpiry = await subscribers.findAllForDelivery(
+                    sessions(today)
+                );
                 const dayAfter = await subscribers.findAllForDelivery(
-                    await kstDate(1)
+                    sessions(await kstDate(1))
                 );
 
                 expect(onExpiry.map(t => t.id)).toContain(id);
@@ -1221,7 +1285,7 @@ describe.skipIf(!URL)(
                 );
                 await create(id, {
                     condition: below(100),
-                    expiresOn: await kstDate(-1),
+                    expiresOn: await kstDate(-10),
                 });
                 await create(id, { condition: below(101) });
                 await client`UPDATE price_alerts SET status = 'fired', fired_session = ${await kstDate(-1)}, fired_close = 99, fired_at = now() WHERE subscriber_id = ${id} AND level = 101`;

@@ -94,7 +94,7 @@ describe('MailAlertButton', () => {
 
         expect(
             await screen.findByRole('dialog', {
-                name: '애플에 새 신호가 잡히면 메일로 알려 드려요',
+                name: '애플의 추세 판정이 바뀌거나 주요 신호가 새로 잡히면 메일로 알려 드려요',
             })
         ).toBeInTheDocument();
         await user.click(await screen.findByRole('button', { name: '닫기' }));
