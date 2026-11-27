@@ -33,9 +33,7 @@ import type {
     ScanFailureOutcome,
     ScanProgressPruneResult,
     ScanSessionRow,
-    SignalEpisodeInsert,
     SignalEpisodeRow,
-    SignalEpisodeKey,
     SignalEpisodeStartedRow,
     SignalLatestEpisodeRow,
     SignalHistoryMarket,
@@ -52,27 +50,6 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 export const SIGNAL_HISTORY_CACHE_TAG = 'signal-history';
 
 export interface SignalHistoryRepository {
-    /**
-     * `market`에서 `symbols`의 에피소드 중 마지막 포착 세션이 `sinceSession` 이상인 것 — 직전 세션
-     * 이후로 이어진(아직 끊기지 않은) 에피소드의 (종목, 신호).
-     */
-    openEpisodeKeys(
-        market: SignalHistoryMarket,
-        symbols: readonly string[],
-        sinceSession: string
-    ): Promise<SignalEpisodeKey[]>;
-    /** 새 에피소드를 연다(같은 키·같은 첫 세션은 무시). 넣은 행 수를 돌려준다. */
-    insertEpisodes(rows: readonly SignalEpisodeInsert[]): Promise<number>;
-    /**
-     * 이어진 에피소드의 마지막 포착 세션을 `sessionDate`로 늘린다. `sinceSession` 이전에 끊긴 에피소드는
-     * 건드리지 않는다. 늘린 행 수를 돌려준다.
-     */
-    extendEpisodes(
-        market: SignalHistoryMarket,
-        keys: readonly SignalEpisodeKey[],
-        sessionDate: string,
-        sinceSession: string
-    ): Promise<number>;
     /** 마지막 포착 세션이 `cutoffDate`보다 이른 에피소드를 지운다. 지운 행 수를 돌려준다. */
     pruneOlderThan(cutoffDate: string): Promise<number>;
     /**
@@ -84,8 +61,10 @@ export interface SignalHistoryRepository {
         sinceSession: string
     ): Promise<SignalHubCount[]>;
     /**
-     * `market`에서 기록된 가장 최근 마지막 포착 세션(`YYYY-MM-DD`). 기록이 하나도 없으면 `null`.
+     * `market`에서 **끝까지** 기록된 가장 최근 세션(`YYYY-MM-DD`) — `signal_scan_sessions`에서 모든 대상이
+     * 정리된(`completed_at`) 세션. 하나도 없으면 `null`.
      * 알림 발송기가 "그 세션이 이미 기록됐는가"를 가리는 영속 표식이다(Redis 표식은 사라질 수 있다).
+     * 종목이 나뉘어 기록되는 날 첫 종목만 끝나도 참이 되는 `max(last_seen_session)`을 쓰지 않는다.
      */
     latestRecordedSession(market: SignalHistoryMarket): Promise<string | null>;
     /**
@@ -298,93 +277,15 @@ function lastSeenUpdateStatement(
 }
 
 /**
- * `signal_events`(신호 에피소드) 저장소. 기록은 `seo-prewarm` 크론의 `recordSignalHistory`가 세션당 한 번
- * 쓴다 — 이어진 에피소드를 찾고(`openEpisodeKeys`), 새로 열거나(`insertEpisodes`) 늘린다(`extendEpisodes`).
- * 모든 쓰기는 같은 날 재실행에 멱등이다. 일시적 DB 오류는 `withRetry`로 재시도한다.
+ * `signal_events`(신호 에피소드)와 기록 진행 표식(`signal_scan_cursors`·`signal_scan_sessions`) 저장소.
+ * 기록은 `seo-prewarm` 크론의 `recordSignalHistory`가 종목마다 `applySymbolScan` 한 번(한 트랜잭션)으로 쓴다.
+ * 쓰기는 같은 입력의 재실행에 멱등이다(삽입은 충돌 무시, 마지막 포착 세션은 늘리기만 한다). 일시적 DB 오류는
+ * `withRetry`로 재시도한다. 읽기(신호 페이지·사이트맵·알림 메일)도 여기서 한다.
  */
 export class DrizzleSignalHistoryRepository
     implements SignalHistoryRepository, SignalScanProgressRepository
 {
     constructor(private readonly db: SiglensDatabase) {}
-
-    async openEpisodeKeys(
-        market: SignalHistoryMarket,
-        symbols: readonly string[],
-        sinceSession: string
-    ): Promise<SignalEpisodeKey[]> {
-        if (symbols.length === 0) return [];
-        return withRetry(
-            () =>
-                this.db
-                    .selectDistinct({
-                        symbol: signalEvents.symbol,
-                        signalType: signalEvents.signalType,
-                    })
-                    .from(signalEvents)
-                    .where(
-                        and(
-                            eq(signalEvents.market, market),
-                            inArray(signalEvents.symbol, [...symbols]),
-                            gte(signalEvents.lastSeenSession, sinceSession)
-                        )
-                    ),
-            DB_TRANSIENT_RETRY
-        );
-    }
-
-    async insertEpisodes(
-        rows: readonly SignalEpisodeInsert[]
-    ): Promise<number> {
-        if (rows.length === 0) return 0;
-        const inserted = await withRetry(
-            () =>
-                this.db
-                    .insert(signalEvents)
-                    .values(
-                        rows.map(row => ({
-                            ...row,
-                            lastSeenSession: row.sessionDate,
-                            computedAt: new Date(row.computedAt),
-                        }))
-                    )
-                    .onConflictDoNothing()
-                    .returning({ symbol: signalEvents.symbol }),
-            DB_TRANSIENT_RETRY
-        );
-        return inserted.length;
-    }
-
-    async extendEpisodes(
-        market: SignalHistoryMarket,
-        keys: readonly SignalEpisodeKey[],
-        sessionDate: string,
-        sinceSession: string
-    ): Promise<number> {
-        if (keys.length === 0) return 0;
-        // (종목, 신호) 쌍 그대로 고른다. 종목 목록 × 신호 목록으로 따로 거르면, 오늘 A에는 X만,
-        // B에는 Y만 잡혔을 때 이어진 A-Y 에피소드까지 늘어난다.
-        const pairs = sql.join(
-            keys.map(key => sql`(${key.symbol}, ${key.signalType})`),
-            sql`, `
-        );
-        const updated = await withRetry(
-            () =>
-                this.db
-                    .update(signalEvents)
-                    .set({ lastSeenSession: sessionDate })
-                    .where(
-                        and(
-                            eq(signalEvents.market, market),
-                            gte(signalEvents.lastSeenSession, sinceSession),
-                            lt(signalEvents.lastSeenSession, sessionDate),
-                            sql`(${signalEvents.symbol}, ${signalEvents.signalType}) in (${pairs})`
-                        )
-                    )
-                    .returning({ symbol: signalEvents.symbol }),
-            DB_TRANSIENT_RETRY
-        );
-        return updated.length;
-    }
 
     async recentCountsByType(
         signalTypes: readonly string[],
@@ -414,19 +315,7 @@ export class DrizzleSignalHistoryRepository
     async latestRecordedSession(
         market: SignalHistoryMarket
     ): Promise<string | null> {
-        const [row] = await withRetry(
-            () =>
-                this.db
-                    .select({
-                        latest: sql<
-                            string | null
-                        >`max(${signalEvents.lastSeenSession})::text`,
-                    })
-                    .from(signalEvents)
-                    .where(eq(signalEvents.market, market)),
-            DB_TRANSIENT_RETRY
-        );
-        return row?.latest ?? null;
+        return this.latestCompletedSession(market);
     }
 
     async findEpisodesStartedOn(
