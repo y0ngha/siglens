@@ -1,9 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import { makeTransaction } from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { InsiderTradeList } from '../../sections/InsiderTradeList';
 import { buildInsiderTable, MAX_INSIDER_ROWS } from '../../utils/insider';
-import { makeTransaction } from '../fixtures/flowsFixtures';
 
 const WINDOW = { days: 90, from: '2026-07-18', to: '2026-10-16' };
 

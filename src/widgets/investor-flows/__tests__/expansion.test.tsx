@@ -5,14 +5,6 @@ import type {
 } from '@y0ngha/siglens-core';
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import type { CollectingArms } from '@/entities/investor-flows/model';
-import { DilutionSection } from '../sections/DilutionSection';
-import { FailsToDeliverBlock } from '../sections/FailsToDeliverBlock';
-import { OptionsPositionsBlock } from '../sections/OptionsPositionsBlock';
-import { ProposedSalesBlock } from '../sections/ProposedSalesBlock';
-import { ShortSection } from '../sections/ShortSection';
-import { SqueezeScoreCard } from '../sections/SqueezeScoreCard';
-import { ThresholdListBadge } from '../sections/ThresholdListBadge';
 import {
     evaluate,
     makeExpandedSnapshot,
@@ -22,7 +14,15 @@ import {
     makeSnapshot,
     makeSqueezeContext,
     makeThresholdList,
-} from './fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import type { CollectingArms } from '@/entities/investor-flows/model';
+import { DilutionSection } from '../sections/DilutionSection';
+import { FailsToDeliverBlock } from '../sections/FailsToDeliverBlock';
+import { OptionsPositionsBlock } from '../sections/OptionsPositionsBlock';
+import { ProposedSalesBlock } from '../sections/ProposedSalesBlock';
+import { ShortSection } from '../sections/ShortSection';
+import { SqueezeScoreCard } from '../sections/SqueezeScoreCard';
+import { ThresholdListBadge } from '../sections/ThresholdListBadge';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

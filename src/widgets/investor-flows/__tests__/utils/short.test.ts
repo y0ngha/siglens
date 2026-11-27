@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+    evaluate,
+    makeShortInterest,
+    makeShortVolume,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
     buildShortInterestRows,
     buildShortInterestView,
     buildShortVolumeSeries,
@@ -8,12 +14,6 @@ import {
     shortVolumeMarker,
     SHORT_VOLUME_CHART_DAYS,
 } from '../../utils/short';
-import {
-    evaluate,
-    makeShortInterest,
-    makeShortVolume,
-    makeSnapshot,
-} from '../fixtures/flowsFixtures';
 
 describe('buildShortInterestRows', () => {
     it('결제일 오름차순에 점마다 유통주식 대비 %를 붙인다', () => {

@@ -1,6 +1,12 @@
 import { render, screen, within } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
+import {
+    evaluate,
+    makeKrMajorHoldingRecord,
+    makeKrSnapshot,
+    makeKrTradingPlanRecord,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
 import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import { InvestorFlowsSummaryView } from '../InvestorFlowsSummaryView';
@@ -9,12 +15,6 @@ import { KrInsiderSection } from '../sections/KrInsiderSection';
 import { KrMajorHoldersSection } from '../sections/KrMajorHoldersSection';
 import { KrTradingPlansSection } from '../sections/KrTradingPlansSection';
 import { MAX_KR_DISCLOSURE_ROWS } from '../utils/krDisclosures';
-import {
-    evaluate,
-    makeKrMajorHoldingRecord,
-    makeKrSnapshot,
-    makeKrTradingPlanRecord,
-} from './fixtures/flowsFixtures';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

@@ -107,6 +107,7 @@ import {
     CONFLUENCE_MIN_BARS,
     CONFLUENCE_TREND_MA_PERIOD,
     evaluateConfluence,
+    LONG_TERM_MA_CROSS,
     PULLBACK_BASE_RATES,
     scoreConfluence,
 } from '@y0ngha/siglens-core';
@@ -122,10 +123,13 @@ import {
 import {
     buildFearGreedHistoryView,
     getBarsIndicatorsTool,
-    MA_CROSS_FAST_PERIOD,
-    MA_CROSS_SLOW_PERIOD,
-    MA50_PERIOD,
 } from '@/features/agent-tools/server/tools/getBarsIndicators';
+
+/**
+ * The fixed SMA period behind `priceVsMa.ma50Pct` (core's
+ * `computeBarChangeStats` computes it from the bars); the key name pins it.
+ */
+const MA50_PERIOD = 50;
 
 const ctx = {
     userId: 'u',
@@ -1684,10 +1688,10 @@ describe('getBarsIndicatorsTool', () => {
                 );
                 // A period change must force a key rename (the key is the contract).
                 expect(
-                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                    `maCross${LONG_TERM_MA_CROSS.fast}_${LONG_TERM_MA_CROSS.slow}`
                 ).toBe('maCross50_200');
                 expect(Object.keys(r.derived)).toContain(
-                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                    `maCross${LONG_TERM_MA_CROSS.fast}_${LONG_TERM_MA_CROSS.slow}`
                 );
             });
 

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { buildAxisEvidence } from '../../utils/axisEvidence';
 import {
     evaluate,
     makeEmptySnapshot,
@@ -9,7 +8,8 @@ import {
     makeKrSnapshot,
     makeLargeHolder,
     makeSnapshot,
-} from '../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { buildAxisEvidence } from '../../utils/axisEvidence';
 
 describe('buildAxisEvidence', () => {
     const card = evaluate(makeSnapshot());

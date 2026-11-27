@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { largeHolderLines } from '../../../utils/axis-evidence/largeHolderEvidence';
 import {
     evaluate,
     makeEmptySnapshot,
     makeKrSnapshot,
     makeSnapshot,
-} from '../../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { largeHolderLines } from '../../../utils/axis-evidence/largeHolderEvidence';
 
 describe('largeHolderLines', () => {
     it('미국은 13D/13G 포지션·신고 건수와 조회 일수를 한 줄로 낸다', () => {

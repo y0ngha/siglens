@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { AsOfNotice } from '../../sections/AsOfNotice';
-import { KrAsOfNotice } from '../../sections/KrAsOfNotice';
 import {
     evaluate,
     makeKrSnapshot,
     makeSnapshot,
-} from '../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { AsOfNotice } from '../../sections/AsOfNotice';
+import { KrAsOfNotice } from '../../sections/KrAsOfNotice';
 
 const NOT_COLLECTING = {
     institutional: false,

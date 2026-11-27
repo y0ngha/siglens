@@ -3,6 +3,17 @@ import userEvent from '@testing-library/user-event';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
+import {
+    evaluate,
+    makeEmptySnapshot,
+    makeExpandedSnapshot,
+    makeKrInsiderRecord,
+    makeKrMajorHoldingRecord,
+    makeKrSnapshot,
+    makeLargeHolder,
+    makeSnapshot,
+    makeTransaction,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import type {
     CollectingArms,
     InvestorFlowsPipelineReadiness,
@@ -17,17 +28,6 @@ import { ScorecardCard } from '../sections/ScorecardCard';
 import { ShortInterestBlock } from '../sections/ShortInterestBlock';
 import { ShortSection } from '../sections/ShortSection';
 import { buildShortInterestView } from '../utils/short';
-import {
-    evaluate,
-    makeEmptySnapshot,
-    makeExpandedSnapshot,
-    makeKrInsiderRecord,
-    makeKrMajorHoldingRecord,
-    makeKrSnapshot,
-    makeLargeHolder,
-    makeSnapshot,
-    makeTransaction,
-} from './fixtures/flowsFixtures';
 
 const READY_READINESS: InvestorFlowsPipelineReadiness = {
     institutional: 'ready',

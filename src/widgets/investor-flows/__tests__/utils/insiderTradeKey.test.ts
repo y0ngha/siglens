@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { makeTransaction } from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { insiderTradeKey } from '../../utils/insiderTradeKey';
-import { makeTransaction } from '../fixtures/flowsFixtures';
 
 describe('insiderTradeKey', () => {
     it('날짜·이름·수량·원문 주소를 이어 붙인다', () => {

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import {
+    makeEmptySnapshot,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
 import { resolveFlowsCollecting } from '../../utils/collecting';
-import { makeEmptySnapshot, makeSnapshot } from '../fixtures/flowsFixtures';
 
 const READY: InvestorFlowsPipelineReadiness = {
     institutional: 'ready',

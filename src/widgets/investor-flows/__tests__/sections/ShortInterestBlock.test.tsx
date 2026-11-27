@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { ShortInterestBlock } from '../../sections/ShortInterestBlock';
-import { buildShortInterestView } from '../../utils/short';
 import {
     evaluate,
     makeShortInterest,
     makeSnapshot,
-} from '../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { ShortInterestBlock } from '../../sections/ShortInterestBlock';
+import { buildShortInterestView } from '../../utils/short';
 
 describe('ShortInterestBlock 추이 그래프', () => {
     it('두 그래프 모두 양 끝 라벨이 MM-DD 형식이다', () => {

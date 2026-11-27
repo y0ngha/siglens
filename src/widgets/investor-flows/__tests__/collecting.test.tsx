@@ -1,6 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
+import {
+    evaluate,
+    makeEmptySnapshot,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import type {
     InvestorFlowsPipelineReadiness,
@@ -15,11 +20,6 @@ import {
     collectingAxes,
     temporarilyUnavailableAxes,
 } from '../utils/collecting';
-import {
-    evaluate,
-    makeEmptySnapshot,
-    makeSnapshot,
-} from './fixtures/flowsFixtures';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

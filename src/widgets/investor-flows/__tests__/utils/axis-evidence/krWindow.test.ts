@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { krNoReportsInWindow } from '../../../utils/axis-evidence/krWindow';
 import {
     evaluate,
     makeEmptySnapshot,
     makeKrInsiderRecord,
     makeKrMajorHoldingRecord,
     makeKrSnapshot,
-} from '../../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { krNoReportsInWindow } from '../../../utils/axis-evidence/krWindow';
 
 describe('krNoReportsInWindow', () => {
     // 기준일(2026-10-16)에서 90일 창보다 오래된 접수일.

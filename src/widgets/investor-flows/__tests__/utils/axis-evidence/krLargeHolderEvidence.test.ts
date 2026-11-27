@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { krLargeHolderLines } from '../../../utils/axis-evidence/krLargeHolderEvidence';
 import {
     evaluate,
     makeKrMajorHoldingRecord,
     makeKrSnapshot,
     makeSnapshot,
-} from '../../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { krLargeHolderLines } from '../../../utils/axis-evidence/krLargeHolderEvidence';
 
 describe('krLargeHolderLines', () => {
     it('보고 건수와 상세 보고 건수 줄을 만든다', () => {

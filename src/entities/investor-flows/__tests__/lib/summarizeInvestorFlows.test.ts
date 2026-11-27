@@ -11,7 +11,7 @@ import {
     makeSqueezeContext,
     makeTransaction,
     evaluate,
-} from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { summarizeInvestorFlows } from '../../lib/summarizeInvestorFlows';
 import { SUMMARY_RATIO_DIGITS } from '../../lib/summary/format';
 import {

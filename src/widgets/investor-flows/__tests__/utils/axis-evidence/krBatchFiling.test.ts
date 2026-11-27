@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+    evaluate,
+    makeKrInsiderRecord,
+    makeKrSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
     batchFilingNote,
     KR_BATCH_FILING_MIN_COUNT,
     KR_BATCH_FILING_MIN_SHARE,
 } from '../../../utils/axis-evidence/krBatchFiling';
 import { buildAxisEvidence } from '../../../utils/axisEvidence';
-import {
-    evaluate,
-    makeKrInsiderRecord,
-    makeKrSnapshot,
-} from '../../fixtures/flowsFixtures';
 
 describe('임원: 하루 일괄 보고 주석', () => {
     const DATE = '2026-07-21';

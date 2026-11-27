@@ -1,5 +1,9 @@
-import type { Bar } from '@y0ngha/siglens-core';
-import { pctVs } from '@/entities/bars/lib/percent';
+import {
+    computeBarRangeStats,
+    type Bar,
+    type BarExtreme,
+} from '@y0ngha/siglens-core';
+import { ratioToPct } from '@/entities/bars/lib/percent';
 
 /**
  * High/low over a window, the bar each was set on, and the last close's
@@ -32,73 +36,49 @@ export interface RangeWindow {
     fromLowClosePct: number | null;
 }
 
-/**
- * The bar holding the extreme of `value` over `window`. Only finite values
- * count; `beats` uses `>=`/`<=` so a LATER bar wins a tie (the date is the most
- * recent touch). One helper serves intraday high/low and the close extremes.
- */
-function extremeBar(
-    window: readonly Bar[],
-    value: (bar: Bar) => number,
-    beats: (candidate: number, best: number) => boolean
-): Bar | null {
-    return window.reduce<Bar | null>((best, b) => {
-        const v = value(b);
-        if (!Number.isFinite(v)) return best;
-        return best === null || beats(v, value(best)) ? b : best;
-    }, null);
+/** One extreme as the tool prints it: the value, its bar's date, and the last close's distance in percent. */
+function extremeView(
+    extreme: BarExtreme | null,
+    formatDate: (unixSeconds: number) => string
+): { value: number | null; date: string | null; fromPct: number | null } {
+    return {
+        value: extreme?.value ?? null,
+        date: extreme === null ? null : formatDate(extreme.time),
+        fromPct: ratioToPct(extreme?.fromLastCloseRatio ?? null),
+    };
 }
 
 /**
  * High/low over `window`, the bar each was set on, and the last close's
- * distance from each. Only finite highs/lows count — a single bad bar
- * (NaN/Infinity from an upstream data glitch) must not poison the whole
- * window's max/min. `>=`/`<=` let a later bar win a tie, so the date is the
- * most recent touch. Shared by `range` (the 252-bar-on-1Day /
- * all-loaded-intraday window) and `ranges` (fixed 20/60-bar windows) so this
- * filtering logic lives once.
+ * distance from each. The extremes are core's `computeBarRangeStats` (only
+ * finite values count, a later bar wins a tie, so the date is the most recent
+ * touch); this formats the bar times with `formatDate` and turns core's raw
+ * ratios into rounded percents. Shared by `range` (the 252-bar-on-1Day /
+ * all-loaded-intraday window) and `ranges` (fixed 20/60-bar windows) so the
+ * projection lives once.
  */
 export function computeRangeWindow(
     window: readonly Bar[],
     lastClose: number | null,
     formatDate: (unixSeconds: number) => string
 ): RangeWindow {
-    const highBar = extremeBar(
-        window,
-        b => b.high,
-        (a, best) => a >= best
-    );
-    const lowBar = extremeBar(
-        window,
-        b => b.low,
-        (a, best) => a <= best
-    );
-    const highCloseBar = extremeBar(
-        window,
-        b => b.close,
-        (a, best) => a >= best
-    );
-    const lowCloseBar = extremeBar(
-        window,
-        b => b.close,
-        (a, best) => a <= best
-    );
-    const high = highBar?.high ?? null;
-    const low = lowBar?.low ?? null;
-    const highClose = highCloseBar?.close ?? null;
-    const lowClose = lowCloseBar?.close ?? null;
+    const stats = computeBarRangeStats(window, lastClose);
+    const high = extremeView(stats.high, formatDate);
+    const low = extremeView(stats.low, formatDate);
+    const highClose = extremeView(stats.highClose, formatDate);
+    const lowClose = extremeView(stats.lowClose, formatDate);
     return {
-        high,
-        highDate: highBar ? formatDate(highBar.time) : null,
-        low,
-        lowDate: lowBar ? formatDate(lowBar.time) : null,
-        fromHighPct: pctVs(lastClose, high),
-        fromLowPct: pctVs(lastClose, low),
-        highClose,
-        highCloseDate: highCloseBar ? formatDate(highCloseBar.time) : null,
-        fromHighClosePct: pctVs(lastClose, highClose),
-        lowClose,
-        lowCloseDate: lowCloseBar ? formatDate(lowCloseBar.time) : null,
-        fromLowClosePct: pctVs(lastClose, lowClose),
+        high: high.value,
+        highDate: high.date,
+        low: low.value,
+        lowDate: low.date,
+        fromHighPct: high.fromPct,
+        fromLowPct: low.fromPct,
+        highClose: highClose.value,
+        highCloseDate: highClose.date,
+        fromHighClosePct: highClose.fromPct,
+        lowClose: lowClose.value,
+        lowCloseDate: lowClose.date,
+        fromLowClosePct: lowClose.fromPct,
     };
 }

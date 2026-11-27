@@ -1,3 +1,10 @@
+import {
+    evaluate,
+    makeExpandedSnapshot,
+    makeKrSnapshot,
+    makeSnapshot,
+    makeSqueezeContext,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { HOLDER_LOOKUP_NOTE } from '@/entities/investor-flows/model';
 import { fakes } from '@/features/agent-tools/server/__tests__/golden/boundary';
 import {
@@ -10,16 +17,9 @@ import {
 } from '@/features/agent-tools/server/__tests__/golden/goldenCase';
 import { noise } from '@/features/agent-tools/server/__tests__/golden/syntheticMarket';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
-import {
-    evaluate,
-    makeExpandedSnapshot,
-    makeKrSnapshot,
-    makeSnapshot,
-    makeSqueezeContext,
-} from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
 
 /**
- * `get_investor_flows` — 수급 점수표는 `widgets/investor-flows` 픽스처(실측 모양의 13F·FINRA·Form 4·DART 스냅샷)를
+ * `get_investor_flows` — 수급 점수표는 `entities/investor-flows/__tests__/fixtures` 픽스처(실측 모양의 13F·FINRA·Form 4·DART 스냅샷)를
  * core `evaluateInvestorFlows`에 돌린 결과다. 공개 API 설정은 비공식 소스(네이버 투자자별 매매, Yahoo 보유 비율)를 뺀다.
  */
 

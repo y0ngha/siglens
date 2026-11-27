@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+    makeHolder,
+    makeQuarter,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
     buildHoldersTrend,
     buildQuarterBars,
     buildSplitComparison,
@@ -11,11 +16,6 @@ import {
     splitDeltaKind,
     MAX_QUARTER_BARS,
 } from '../../utils/institutional';
-import {
-    makeHolder,
-    makeQuarter,
-    makeSnapshot,
-} from '../fixtures/flowsFixtures';
 
 const QUARTERS = makeSnapshot().institutional.quarters;
 

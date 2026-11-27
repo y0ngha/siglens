@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { krInsiderLines } from '../../../utils/axis-evidence/krInsiderEvidence';
 import {
     evaluate,
     makeEmptySnapshot,
     makeKrInsiderRecord,
     makeKrSnapshot,
-} from '../../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { krInsiderLines } from '../../../utils/axis-evidence/krInsiderEvidence';
 
 describe('krInsiderLines', () => {
     it('보고 건수·순 주식 증감·순 비율·거래계획 줄을 만든다', () => {

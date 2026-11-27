@@ -10,17 +10,19 @@ import {
     calculateMA,
     classifyMaStack,
     classifyTrend,
+    computeBarChangeStats,
+    computeCloseStreak,
     CONFLUENCE_TREND_MA_PERIOD,
     detectCandlePatternEntries,
     detectSignals,
     evaluateConfluence,
     evaluatePullback,
-    findMaCrosses,
     pullbackEventCaveat,
     getDetectionBars,
     hasUsablePrices,
     PULLBACK_BASE_RATES,
     rsiZone,
+    scanLongTermMaCrosses,
     scoreConfluence,
     selectLastCandlePatternEntries,
     type AgentBarsTimeframe,
@@ -59,7 +61,7 @@ import {
     TRADING_DAYS,
     yearScoreExtremes,
 } from '@/entities/bars/lib/fearGreedWindow';
-import { pctVs, ratioPct } from '@/entities/bars/lib/percent';
+import { pctVs, ratioToPct } from '@/entities/bars/lib/percent';
 import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import {
     roundIndicators,
@@ -719,13 +721,15 @@ function higherTimeframeView(
  * 연속 하락" questions need no hand counting. `days` counts consecutive closes
  * moving in `direction` (closes 10,9,8 → down, 2; a single down day after an up
  * day → down, 1). `flat` = the last close equals the previous one; `days` is
- * then the run of unchanged closes. `sinceDate` is the date of the first bar of
- * the streak (the first down day for a down streak).
+ * then the run of unchanged closes. `sinceDate` is the date of the first bar
+ * whose close moved in `direction` from the close before it (the first down
+ * day for a down streak; for `flat`, the second bar at the unchanged level).
  *
  * `truncated` is true when the streak runs back to the FIRST loaded bar
- * without a direction change: the real streak may be longer than `days` (and
- * `sinceDate` is only the earliest loaded date), so it must be reported as
- * "at least N days".
+ * without a direction change: the real streak may be longer than `days`, so
+ * it must be reported as "at least N days". `sinceDate` is then the SECOND
+ * loaded bar (where the first measured move happened), never the first loaded
+ * bar, which only supplies the close that move is measured against.
  */
 interface CloseStreakView {
     direction: 'up' | 'down' | 'flat';
@@ -787,30 +791,14 @@ interface MaCrossView {
 }
 
 /**
- * SMA periods and window behind `maCross50_200` — the key name is the
- * contract (pinned by a test: a period change forces a key rename).
- */
-export const MA_CROSS_FAST_PERIOD = 50;
-export const MA_CROSS_SLOW_PERIOD = 200;
-/**
- * A tool-window choice (~1 trading year), unrelated to core's 3-bar
- * `CROSS_LOOKBACK_BARS`, which only bounds "fresh cross" signal detection.
- * The agent asks "when did the last golden/dead cross happen", so the scan
- * must reach back a full year.
- */
-const MA_CROSS_LOOKBACK_BARS = 252;
-
-/**
- * Detection is core's (`findMaCrosses`); this only adapts it to the tool
- * shape. Runs on the full cached series, never the trimmed output `bars`.
+ * The scan (50/200-bar SMAs over the last 252 bars, core's
+ * `LONG_TERM_MA_CROSS`) is core's `scanLongTermMaCrosses`; this only adapts
+ * it to the tool shape. The key name `maCross50_200` is the contract (pinned
+ * by a test against `LONG_TERM_MA_CROSS`: a period change forces a key
+ * rename). Runs on the full cached series, never the trimmed output `bars`.
  */
 function maCross50_200View(bars: readonly Bar[]): MaCrossView[] | null {
-    const scan = findMaCrosses(
-        bars.slice(),
-        MA_CROSS_FAST_PERIOD,
-        MA_CROSS_SLOW_PERIOD,
-        MA_CROSS_LOOKBACK_BARS
-    );
+    const scan = scanLongTermMaCrosses(bars);
     if (!scan.complete) return null;
     return scan.crosses.map(c => ({
         date: isoTimestamp(c.time, '1Day'),
@@ -845,53 +833,44 @@ const RANGES_BARS_BACK: Record<keyof DerivedView['ranges'], number> = {
 };
 
 /**
- * Period behind `priceVsMa.ma50Pct`. The key name is the contract (core's
- * `get_bars_indicators` description documents `ma50Pct`), so this is its own
- * constant rather than `CONFLUENCE_TREND_MA_PERIOD` — that one is a confluence
- * tuning knob, and retuning it must not silently turn `ma50Pct` into some
- * other period. (`higherTimeframeView`'s `priceVsMa50Pct` deliberately DOES
- * use the confluence constant, to match the gate it explains.)
+ * Streak of same-direction closes ending at the last completed daily bar:
+ * core's `computeCloseStreak` (any non-finite close inside the walked run
+ * gives `null` rather than a silently shortened streak), with the first
+ * streak bar's time printed as `sinceDate`. `lastBarInProgress` drops the
+ * forming bar (its "close" is the live price). Daily only: off 1Day the
+ * field is `null` and a `dailyOnlyFields` note explains it.
  */
-export const MA50_PERIOD = 50;
-
-function directionOf(sign: number): CloseStreakView['direction'] {
-    if (sign > 0) return 'up';
-    return sign < 0 ? 'down' : 'flat';
-}
-
-/**
- * Streak of same-direction closes ending at the last completed daily bar.
- * `lastBarInProgress` drops the forming bar (its "close" is the live price).
- * Scans only the loaded bars; any non-finite close inside the walked run makes
- * the result `null` rather than a silently shortened streak.
- */
-function computeCloseStreak(
+function closeStreakView(
     bars: readonly Bar[],
     timeframe: AgentBarsTimeframe,
     lastBarInProgress: boolean
 ): CloseStreakView | null {
     if (timeframe !== '1Day') return null;
-    const completed = lastBarInProgress ? bars.slice(0, -1) : bars;
-    if (completed.length < 2) return null;
-    // moves[j] = direction of the close move INTO bar j + 1 (NaN when either close is non-finite).
-    const moves = completed.slice(1).map((b, j) => {
-        // j < completed.length - 1 이라 completed[j]는 항상 있다.
-        const diff = b.close - completed[j].close;
-        return Number.isFinite(diff) ? Math.sign(diff) : Number.NaN;
+    const streak = computeCloseStreak(bars, {
+        excludeLastBar: lastBarInProgress,
     });
-    const lastMove = moves.at(-1);
-    if (lastMove === undefined || Number.isNaN(lastMove)) return null;
-    // Last move that differs from the final one; -1 = the streak spans every loaded bar.
-    const breakIdx = moves.findLastIndex(m => m !== lastMove);
-    if (breakIdx >= 0 && Number.isNaN(moves[breakIdx])) return null;
-    const sinceBar = completed[breakIdx + 2];
-    if (sinceBar === undefined) return null;
+    if (streak === null) return null;
     return {
-        direction: directionOf(lastMove),
-        days: moves.length - 1 - breakIdx,
-        sinceDate: isoTimestamp(sinceBar.time, timeframe),
-        truncated: breakIdx === -1,
+        direction: streak.direction,
+        days: streak.days,
+        sinceDate: isoTimestamp(streak.sinceTime, timeframe),
+        truncated: streak.truncated,
     };
+}
+
+/**
+ * Prefixes a period-keyed distance map (`{ '20': 0.05 }`) into the
+ * `priceVsMa` keys (`ma20Pct` / `ema20Pct`) and scales each ratio to a
+ * rounded percent. Key order follows the map (ascending periods).
+ */
+function periodPctEntries(
+    prefix: 'ma' | 'ema',
+    ratios: Readonly<Record<string, number | null>>
+): [string, number | null][] {
+    return Object.entries(ratios).map(([period, ratio]) => [
+        `${prefix}${period}Pct`,
+        ratioToPct(ratio),
+    ]);
 }
 
 /**
@@ -909,16 +888,25 @@ function computeDerived(
     timeframe: AgentBarsTimeframe,
     lastBarInProgress: boolean
 ): DerivedView {
-    const lastClose = last(bars.map(b => b.close));
-    const changePct = Object.fromEntries(
-        Object.entries(CHANGE_PCT_BARS_BACK).map(([key, barsBack]) => {
-            const base =
-                bars.length > barsBack
-                    ? (bars[bars.length - 1 - barsBack]?.close ?? null)
-                    : null;
-            return [key, pctVs(lastClose, base)];
-        })
-    ) as DerivedView['changePct'];
+    // A partial week or month holds only part of a period's volume, so its
+    // ratio to 20 full periods would read as a collapse for days; core then
+    // leaves `volumeVsAvg20` null.
+    const partialPeriod = isAggregatedTimeframe(timeframe) && lastBarInProgress;
+    // Core returns every ratio unrounded and applies the null rule; the
+    // percent scale, the significant-digit rounding and the key names
+    // below are this tool's contract.
+    const stats = computeBarChangeStats(bars, indicators, {
+        barsBack: CHANGE_PCT_BARS_BACK,
+        partialPeriod,
+    });
+    const { lastClose, changeRatio } = stats;
+    const changePct: DerivedView['changePct'] = {
+        '1bar': ratioToPct(changeRatio['1bar']),
+        '5bars': ratioToPct(changeRatio['5bars']),
+        '20bars': ratioToPct(changeRatio['20bars']),
+        '60bars': ratioToPct(changeRatio['60bars']),
+        '252bars': ratioToPct(changeRatio['252bars']),
+    };
 
     const formatDate = (unixSeconds: number): string =>
         isoTimestamp(unixSeconds, timeframe);
@@ -938,53 +926,24 @@ function computeDerived(
         ])
     ) as DerivedView['ranges'];
 
-    const prevVolumes = bars.slice(-21, -1).map(b => b.volume);
-    const lastVolume = last(bars.map(b => b.volume));
-    const avgVolume20 =
-        prevVolumes.length === 20 && prevVolumes.every(Number.isFinite)
-            ? prevVolumes.reduce((sum, v) => sum + v, 0) / prevVolumes.length
-            : null;
-    // A partial week or month holds only part of a period's volume, so its
-    // ratio to 20 full periods would read as a collapse for days.
-    const partialPeriod = isAggregatedTimeframe(timeframe) && lastBarInProgress;
     const volumeVsAvg20 =
-        !partialPeriod &&
-        lastVolume !== null &&
-        Number.isFinite(lastVolume) &&
-        avgVolume20 !== null &&
-        avgVolume20 > 0
-            ? roundNumber(lastVolume / avgVolume20)
-            : null;
+        stats.volumeVsAvg20 === null ? null : roundNumber(stats.volumeVsAvg20);
 
     // ATR is a ratio OF price (atr / price), not a percent DIFFERENCE from a
-    // base like the other `...Pct` fields — `pctVs` would compute
-    // `(atr - price) / price` instead.
-    const atrPct = ratioPct(last(indicators.atr), lastClose);
+    // base like the other `...Pct` fields; core's `atrRatio` is that ratio.
+    const atrPct = ratioToPct(stats.atrRatio);
 
-    // `calculateMA` needs a mutable array; `bars` stays `readonly` at the
-    // param boundary so `.slice()` here is a defensive copy, not a weakened
-    // contract.
-    const ma50 = last(calculateMA(bars.slice(), MA50_PERIOD));
     const priceVsMa: Record<string, number | null> = {
-        // Computed directly (not read from `indicators.ma`, which only
-        // carries the caller-configured MA periods and may not include 50)
-        // so a 50-bar MA distance is ALWAYS available — spread first so a
-        // real `indicators.ma['50']`, if 50 IS one of the configured
-        // periods, overwrites this fallback rather than the other way
-        // around.
-        ma50Pct: pctVs(lastClose, ma50),
-        ...Object.fromEntries(
-            Object.entries(indicators.ma).map(([period, series]) => [
-                `ma${period}Pct`,
-                pctVs(lastClose, last(series)),
-            ])
-        ),
-        ...Object.fromEntries(
-            Object.entries(indicators.ema).map(([period, series]) => [
-                `ema${period}Pct`,
-                pctVs(lastClose, last(series)),
-            ])
-        ),
+        // Core computes the 50-bar SMA from `bars` itself (not from
+        // `indicators.ma`, which only carries the caller-configured MA
+        // periods and may not include 50), so a 50-bar MA distance is ALWAYS
+        // available. The key name `ma50Pct` is the contract (core's
+        // `get_bars_indicators` description documents it). Spread first so a
+        // real `indicators.ma['50']`, if 50 IS one of the configured periods,
+        // overwrites this fallback rather than the other way around.
+        ma50Pct: ratioToPct(stats.ma50DistanceRatio),
+        ...Object.fromEntries(periodPctEntries('ma', stats.maDistanceRatio)),
+        ...Object.fromEntries(periodPctEntries('ema', stats.emaDistanceRatio)),
     };
 
     const maStack = classifyMaStack(indicators);
@@ -1000,7 +959,7 @@ function computeDerived(
         priceVsMa,
         maStack,
         maCross50_200: timeframe === '1Day' ? maCross50_200View(bars) : null,
-        closeStreak: computeCloseStreak(bars, timeframe, lastBarInProgress),
+        closeStreak: closeStreakView(bars, timeframe, lastBarInProgress),
     };
 }
 

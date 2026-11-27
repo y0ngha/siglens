@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+    evaluate,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { institutionalLines } from '../../../utils/axis-evidence/institutionalEvidence';
-import { evaluate, makeSnapshot } from '../../fixtures/flowsFixtures';
 
 const scorecard = evaluate(makeSnapshot());
 

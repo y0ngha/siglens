@@ -3,6 +3,7 @@ import {
     pctVs,
     ppDelta,
     ratioPct,
+    ratioToPct,
     roundPct2,
 } from '@/entities/bars/lib/percent';
 
@@ -71,5 +72,19 @@ describe('ratioPct', () => {
     });
     it('null input → null', () => {
         expect(ratioPct(null, 150)).toBeNull();
+    });
+});
+
+describe('ratioToPct', () => {
+    it('scales a ratio to a percent with the pctVs rounding', () => {
+        expect(ratioToPct(0.05)).toBe(5);
+        expect(ratioToPct(-0.12345678)).toBe(-12.3457);
+    });
+    it('prints the same bytes pctVs / ratioPct print for the same inputs', () => {
+        expect(ratioToPct((107.31 - 99.87) / 99.87)).toBe(pctVs(107.31, 99.87));
+        expect(ratioToPct(3.3 / 151.7)).toBe(ratioPct(3.3, 151.7));
+    });
+    it('null passes through', () => {
+        expect(ratioToPct(null)).toBeNull();
     });
 });
