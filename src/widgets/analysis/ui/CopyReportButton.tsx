@@ -51,11 +51,12 @@ export function CopyReportButton({
                 'focus-visible:ring-primary-500 min-h-11 touch-manipulation rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
                 // 진행 중 모양은 `aria-disabled:` 변형이라 controlBorderTokenGuard가
                 // 비활성(WCAG 1.4.11 면제)으로 읽는다. 그래서 예외 목록이 필요 없다.
-                isBusy
-                    ? 'aria-disabled:border-secondary-700 aria-disabled:text-secondary-500 aria-disabled:cursor-not-allowed'
-                    : copyState === 'idle'
-                      ? 'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100'
-                      : RESULT_CLASSES[copyState]
+                isBusy &&
+                    'aria-disabled:border-secondary-700 aria-disabled:text-secondary-500 aria-disabled:cursor-not-allowed',
+                !isBusy &&
+                    copyState === 'idle' &&
+                    'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100',
+                !isBusy && copyState !== 'idle' && RESULT_CLASSES[copyState]
             )}
             title={
                 isBusy ? t('AnalysisPanel.39c545') : t('AnalysisPanel.32f681')

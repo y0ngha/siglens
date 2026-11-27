@@ -194,12 +194,11 @@ export function clockPatterns(hour, minute) {
     const m = Number(minute);
     const h12 = h % 12 === 0 ? 12 : h % 12;
     const words = h < 12 ? AM_WORDS : PM_WORDS;
-    const tail =
-        m === 0
-            ? String.raw`(?!\s*(?:\d+분|반))`
-            : m === 30
-              ? String.raw`\s*(?:30분|반)(?!\d)`
-              : String.raw`\s*0?${m}분`;
+    const specialTails = {
+        0: String.raw`(?!\s*(?:\d+분|반))`,
+        30: String.raw`\s*(?:30분|반)(?!\d)`,
+    };
+    const tail = specialTails[m] ?? String.raw`\s*0?${m}분`;
     const colon = String.raw`:${pad2(m)}(?!\d)`;
     // 24시간 꼴 앞에 오전/오후 같은 말이 붙어 있으면 12시간 꼴로 읽어야 하므로 여기서는 세지 않는다("오후 9시"는 21시).
     const noWord = String.raw`(?<!(?:${AM_WORDS}|${PM_WORDS})\s*)`;
@@ -249,14 +248,14 @@ export function extractClockTimes(text) {
         const base = Number(hourText);
         const pm = word !== undefined && new RegExp(PM_WORDS).test(word);
         const am = word !== undefined && !pm;
-        const hour24 =
-            pm && base < 12 ? base + 12 : am && base === 12 ? 0 : base;
-        const minute =
-            colonMinute !== undefined
-                ? Number(colonMinute)
-                : half !== undefined
-                  ? 30
-                  : Number(siMinute ?? 0);
+        const to24 = () => {
+            if (pm && base < 12) return base + 12;
+            return am && base === 12 ? 0 : base;
+        };
+        const hour24 = to24();
+        const minute = Number(
+            colonMinute ?? (half !== undefined ? 30 : (siMinute ?? 0))
+        );
         return {
             index: match.index,
             text: match[0],
@@ -292,11 +291,8 @@ const ZONE_LEVELS = {
 const zoneOf = (key, value) => {
     if (typeof value !== 'number' || !Number.isFinite(value)) return null;
     const [overbought, oversold] = ZONE_LEVELS[key];
-    return value >= overbought
-        ? 'overbought'
-        : value <= oversold
-          ? 'oversold'
-          : 'neutral';
+    if (value >= overbought) return 'overbought';
+    return value <= oversold ? 'oversold' : 'neutral';
 };
 
 /** bars 도구 결과의 구간표. 저장된 `oscillatorZones`가 있으면 그것, 없으면 원값에서 같은 기준으로 만든다. */
@@ -537,14 +533,19 @@ function weekdayAndKrxBoundary(_case, transcript) {
             ],
             reviews: [],
         };
-    const weekdayFails =
-        note.weekdayEnglish === null
-            ? ['clock: the note has no readable weekday on its local-time line']
-            : mentionsWeekday(transcript.answer, note.weekdayEnglish)
-              ? []
-              : [
-                    `clock: the answer does not say the weekday (${note.weekdayEnglish})`,
-                ];
+    const weekdayProblems = () => {
+        if (note.weekdayEnglish === null) {
+            return [
+                'clock: the note has no readable weekday on its local-time line',
+            ];
+        }
+        return mentionsWeekday(transcript.answer, note.weekdayEnglish)
+            ? []
+            : [
+                  `clock: the answer does not say the weekday (${note.weekdayEnglish})`,
+              ];
+    };
+    const weekdayFails = weekdayProblems();
     if (note.kr === null)
         return {
             fails: [
@@ -601,17 +602,14 @@ function noWrongZoneConversion(_case, transcript) {
                 `clock: the note's user zone is ${note.local?.zone ?? 'unknown'}, so KST conversions are not in the note to compare`,
             ],
         };
+    const allowedFrom = line => {
+        if (line === null || line.hour === null) return [];
+        if (line.user !== null) return [line.user];
+        return line.zone === 'KST' ? [line] : [];
+    };
     const allowed = new Set(
         [
-            ...[note.us, note.kr].flatMap(line =>
-                line === null || line.hour === null
-                    ? []
-                    : line.user !== null
-                      ? [line.user]
-                      : line.zone === 'KST'
-                        ? [line]
-                        : []
-            ),
+            ...[note.us, note.kr].flatMap(line => allowedFrom(line)),
             note.local,
         ].map(c => Number(c.hour) * 60 + Number(c.minute))
     );
@@ -776,15 +774,19 @@ export function extractReactionExtremes(answer) {
 function earningsTally(_case, transcript) {
     // NEW 결과는 도구가 낸 `earningsReactionTally`를 그대로 쓰고, OLD 결과(필드 없음)는 기록된 `earningsReactions`에서 core 함수로
     // 같은 기준값을 계산한다 — 두 변형이 같은 정답으로 판정된다.
-    const tally = parsedRows(transcript, 'get_fundamentals')
-        .map(r =>
+    const tallyOf = r => {
+        if (
             typeof r.earningsReactionTally === 'object' &&
             r.earningsReactionTally !== null
-                ? r.earningsReactionTally
-                : Array.isArray(r.earningsReactions)
-                  ? tallyEarningsReactions(r.earningsReactions)
-                  : undefined
-        )
+        ) {
+            return r.earningsReactionTally;
+        }
+        return Array.isArray(r.earningsReactions)
+            ? tallyEarningsReactions(r.earningsReactions)
+            : undefined;
+    };
+    const tally = parsedRows(transcript, 'get_fundamentals')
+        .map(r => tallyOf(r))
         .find(t => t !== undefined);
     if (tally === undefined)
         return {
@@ -879,12 +881,14 @@ function putCallSide(_case, transcript) {
             String.raw`(?<![\d.])${String(src.ratio).replace('.', String.raw`\.`)}(?![\d]|\.\d)`
         );
         const mentioning = sentences.filter(s => ratioToken.test(s));
+        const opposing = {
+            more_calls: PUT_DOMINATES_RE,
+            more_puts: CALL_DOMINATES_RE,
+        }[src.side];
         const wrong =
-            src.side === 'more_calls'
-                ? mentioning.filter(s => PUT_DOMINATES_RE.test(s))
-                : src.side === 'more_puts'
-                  ? mentioning.filter(s => CALL_DOMINATES_RE.test(s))
-                  : [];
+            opposing === undefined
+                ? []
+                : mentioning.filter(s => opposing.test(s));
         return {
             fails: wrong.map(
                 s =>

@@ -47,7 +47,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // 픽스처 규약: 'free-model'은 free 등급, 'member-model'은 member 등급,
     // 그 외('premium-model' 포함)는 byok 등급으로 본다.
     getModelAccess: (m: string) =>
-        m === 'free-model' ? 'free' : m === 'member-model' ? 'member' : 'byok',
+        ({ 'free-model': 'free', 'member-model': 'member' })[m] ?? 'byok',
     supportsHardOff: () => true,
     resolveReasoningConfig: (
         modes: { off: unknown; on: unknown; default: string },

@@ -47,6 +47,8 @@ const FILES: Readonly<Record<string, string>> = {
         "import { a } from './dep';\nimport { b } from './dep';\nexport const sum = a + b;\n",
     [`${PROD}/importFirst.ts`]:
         "export const early = 1;\nimport { a } from './dep';\nexport const late = a + early;\n",
+    [`${PROD}/nestedTernary.ts`]:
+        'export const pick = (p: boolean, q: boolean) => (p ? 1 : q ? 2 : 3);\n',
     [`${PROD}/explicitAny.ts`]: 'export const loose: any = 1;\n',
     [`${PROD}/nonNull.ts`]:
         'const maybe = (): string | undefined => undefined;\nexport const forced = maybe()!;\n',
@@ -133,6 +135,9 @@ describe('.oxlintrc.json keeps the mechanized rules on', () => {
             ).toContain('import(no-duplicates)');
             expect(codesFor(diagnostics, `${PROD}/importFirst.ts`)).toContain(
                 'import(first)'
+            );
+            expect(codesFor(diagnostics, `${PROD}/nestedTernary.ts`)).toContain(
+                'eslint(no-nested-ternary)'
             );
             expect(codesFor(diagnostics, `${PROD}/explicitAny.ts`)).toContain(
                 'typescript(no-explicit-any)'

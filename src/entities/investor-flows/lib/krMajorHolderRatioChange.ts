@@ -1,4 +1,5 @@
 import type { KrMajorHolderReport } from '@y0ngha/siglens-core';
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { compareIsoDate } from './investorFlowsDates';
 
 /** DART 보유비율 정밀도(소수 둘째 자리). 증감 비교 허용 오차도 이 자리의 절반이다. */
@@ -19,11 +20,6 @@ function receiptOrder(a: KrMajorHolderReport, b: KrMajorHolderReport): number {
         compareIsoDate(a.receiptDate, b.receiptDate) ||
         compareCodeUnits(a.url, b.url)
     );
-}
-
-/** 코드 단위 사전순 비교(-1/0/1). `localeCompare`는 로케일마다 순서가 달라 접수번호 정렬에 쓰지 않는다. */
-function compareCodeUnits(a: string, b: string): number {
-    return Number(a > b) - Number(a < b);
 }
 
 /** core `krMajorHolderAxis`와 같은 보고자 동일성 규칙(trim + 소문자). */

@@ -47,12 +47,11 @@ function tabFor(item: ToolActivityItem): SymbolTab {
 
 function symbolsOf(item: ToolActivityItem): string[] {
     const { symbol, symbols } = item.args;
-    const raw =
-        typeof symbol === 'string'
-            ? [symbol]
-            : Array.isArray(symbols)
-              ? symbols
-              : [];
+    const rawOf = (): unknown[] => {
+        if (typeof symbol === 'string') return [symbol];
+        return Array.isArray(symbols) ? symbols : [];
+    };
+    const raw = rawOf();
     return raw
         .filter((s): s is string => typeof s === 'string')
         .map(s => s.trim().toUpperCase())

@@ -440,14 +440,11 @@ async function runSearch(
                   )
               )
             : null;
-    const braveState: BraveState =
-        brave === null
-            ? braveWanted
-                ? 'refused'
-                : 'skipped'
-            : brave.ok
-              ? 'called'
-              : 'failed';
+    const braveStateOf = (): BraveState => {
+        if (brave === null) return braveWanted ? 'refused' : 'skipped';
+        return brave.ok ? 'called' : 'failed';
+    };
+    const braveState = braveStateOf();
     const baseStats = {
         ...EMPTY_STATS,
         brave: braveState,

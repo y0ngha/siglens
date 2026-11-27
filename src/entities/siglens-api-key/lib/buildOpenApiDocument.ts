@@ -227,11 +227,15 @@ function toolOperation(
     const isFresh = reference.name === FRESH_ANALYSIS_TOOL;
     const group = isFresh ? FRESH_ANALYSIS_ERRORS : TOOL_ERRORS;
     const hasRequired = reference.arguments.some(arg => arg.required);
-    const description = isFresh
-        ? `${reference.description}\n\n${renderFreshAnalysisNotes().join('\n')}`
-        : reference.name === PUBLIC_API_CHART_DATA.tool
-          ? `${reference.description}\n\n${renderChartDataNotes().join('\n')}`
-          : reference.description;
+    const descriptionOf = (): string => {
+        if (isFresh) {
+            return `${reference.description}\n\n${renderFreshAnalysisNotes().join('\n')}`;
+        }
+        return reference.name === PUBLIC_API_CHART_DATA.tool
+            ? `${reference.description}\n\n${renderChartDataNotes().join('\n')}`
+            : reference.description;
+    };
+    const description = descriptionOf();
     const success: OpenApiObject = isFresh
         ? {
               description: FRESH_ANALYSIS_STREAM_DESCRIPTION,

@@ -264,14 +264,17 @@ describe('DB 에러 로그 가드 (SERVER.md#SA-26)', () => {
                         escapes(parent, new Set([...seen, rel]))
                     );
             };
+            const problemsOf = (rel: string): string[] => {
+                if (!graph.files.includes(rel)) return [`${rel}: 파일이 없다`];
+                if (isClient(rel)) {
+                    return [`${rel}: 이미 'use client'다(목록에서 뺀다)`];
+                }
+                return escapes(rel, new Set()).map(
+                    top => `${rel}: 서버 쪽 ${top}까지 닿는다`
+                );
+            };
             const problems = Object.keys(BROWSER_ONLY_FILES).flatMap(rel =>
-                !graph.files.includes(rel)
-                    ? [`${rel}: 파일이 없다`]
-                    : isClient(rel)
-                      ? [`${rel}: 이미 'use client'다(목록에서 뺀다)`]
-                      : escapes(rel, new Set()).map(
-                            top => `${rel}: 서버 쪽 ${top}까지 닿는다`
-                        )
+                problemsOf(rel)
             );
             expect(problems).toEqual([]);
         },

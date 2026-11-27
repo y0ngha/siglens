@@ -40,12 +40,12 @@ vi.mock('@y0ngha/siglens-core', async () => {
 });
 
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
-    sessionSpecFor: vi.fn((profile: string) =>
-        profile === 'crypto'
-            ? MOCK_CRYPTO_SESSION
-            : profile === 'kr-equity'
-              ? MOCK_KR_SESSION
-              : MOCK_EQUITY_SESSION
+    sessionSpecFor: vi.fn(
+        (profile: string) =>
+            ({
+                crypto: MOCK_CRYPTO_SESSION,
+                'kr-equity': MOCK_KR_SESSION,
+            })[profile] ?? MOCK_EQUITY_SESSION
     ),
 }));
 

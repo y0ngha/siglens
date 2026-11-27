@@ -91,13 +91,7 @@ function isNode(value: unknown): value is AstNode {
 export function childrenOf(node: AstNode): AstNode[] {
     return Object.entries(node)
         .filter(([key]) => key !== 'loc' && key !== 'extra')
-        .flatMap(([, value]) =>
-            Array.isArray(value)
-                ? value.filter(isNode)
-                : isNode(value)
-                  ? [value]
-                  : []
-        );
+        .flatMap(([, value]) => [value].flat().filter(isNode));
 }
 
 /** 노드와 모든 하위 노드를 깊이 우선으로 방문한다. 방문자는 조상 목록(가까운 쪽이 마지막)을 받는다. */
@@ -536,6 +530,15 @@ export function findOpaqueDeadLogs(
         .map(({ node }) => `${file}:${lineOf(text, numAt(node, 'start'))}`);
 }
 
+/** `.catch(cb)`면 첫 인자, `.then(_, cb)`면 둘째 인자, 그 밖의 메서드면 `undefined`. */
+function rejectHandlerOf<T>(
+    method: string | undefined,
+    args: readonly T[]
+): T | undefined {
+    if (method === 'catch') return args[0];
+    return method === 'then' ? args[1] : undefined;
+}
+
 /**
  * `fn`이 `call`의 `.catch`/`.then`의 onRejected 인자이고 그 `call`이 목록의 함수 호출에 바로 붙어 있으면 이유,
  * 아니면 `undefined`.
@@ -557,8 +560,7 @@ function reasonForCallback(
         return undefined;
     }
     const prop = str(nodeAt(callee, 'property'), 'name');
-    const onRejected =
-        prop === 'catch' ? args[0] : prop === 'then' ? args[1] : undefined;
+    const onRejected = rejectHandlerOf(prop, args);
     const receiver = unwrap(nodeAt(callee, 'object'));
     return onRejected === fn &&
         receiver?.type === 'CallExpression' &&

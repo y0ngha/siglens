@@ -90,6 +90,10 @@ export function monthlyHistoryRows(
             const high = monthPoints.reduce((a, b) =>
                 b.score > a.score ? b : a
             );
+            const partialOf = (): MonthlyHistoryRow['partial'] => {
+                if (month === lastMonth) return 'end';
+                return month === firstMonth ? 'start' : null;
+            };
             return [
                 {
                     month,
@@ -100,12 +104,7 @@ export function monthlyHistoryRows(
                     },
                     low: { date: low.date, score: low.score },
                     high: { date: high.date, score: high.score },
-                    partial:
-                        month === lastMonth
-                            ? 'end'
-                            : month === firstMonth
-                              ? 'start'
-                              : null,
+                    partial: partialOf(),
                 },
             ];
         })

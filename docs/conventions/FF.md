@@ -113,6 +113,8 @@ const result = new Array(RSI_PERIOD).fill(null);
 
 ### 1-E. Keep ternary operators simple
 
+Enforced by oxlint `no-nested-ternary`.
+
 ```typescript
 // ❌ Nested ternaries are hard to read
 const label = isLoading ? 'Loading...' : isError ? 'Error' : isSuccess ? 'Done' : 'Idle';

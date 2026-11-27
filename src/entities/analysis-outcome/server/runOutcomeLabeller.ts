@@ -575,6 +575,10 @@ async function labelStep(
         { ...ZERO_COUNTS, groupsProcessed: 0, deadlineHit: false }
     );
     const groupsRemaining = Math.max(0, dueTotal - progress.groupsProcessed);
+    const stoppedByOf = (): LabelResult['stoppedBy'] => {
+        if (progress.deadlineHit) return 'deadline';
+        return groupsRemaining > 0 ? 'cap' : 'complete';
+    };
     return {
         labeled: progress.labeled,
         deferred: progress.deferred,
@@ -583,11 +587,7 @@ async function labelStep(
         rowFailures: progress.rowFailures,
         groupsProcessed: progress.groupsProcessed,
         groupsRemaining,
-        stoppedBy: progress.deadlineHit
-            ? 'deadline'
-            : groupsRemaining > 0
-              ? 'cap'
-              : 'complete',
+        stoppedBy: stoppedByOf(),
     };
 }
 

@@ -75,11 +75,8 @@ function toGradesAction(raw: string): GradesAction {
 }
 
 function toEarningsDate(value: RawFmpEarningsReport): string | null {
-    return typeof value.date === 'string'
-        ? value.date
-        : typeof value.earningsDate === 'string'
-          ? value.earningsDate
-          : null;
+    if (typeof value.date === 'string') return value.date;
+    return typeof value.earningsDate === 'string' ? value.earningsDate : null;
 }
 
 /**

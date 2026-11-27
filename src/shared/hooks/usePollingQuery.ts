@@ -83,12 +83,15 @@ function evaluatePoll<T>(
 
     const { dataUpdatedAt, errorUpdatedAt, data, error } = query.state;
     const elapsedMs = Date.now() - tracker.startedAt;
-    const outcome: PollOutcome<T> | null =
-        dataUpdatedAt > tracker.lastDataAt && data !== undefined
-            ? { ok: true, data }
-            : errorUpdatedAt > tracker.lastErrorAt
-              ? { ok: false, error: toError(error) }
-              : null;
+    const outcomeOf = (): PollOutcome<T> | null => {
+        if (dataUpdatedAt > tracker.lastDataAt && data !== undefined) {
+            return { ok: true, data };
+        }
+        return errorUpdatedAt > tracker.lastErrorAt
+            ? { ok: false, error: toError(error) }
+            : null;
+    };
+    const outcome = outcomeOf();
     if (outcome === null) return intervalMs;
 
     const stopped = onSettledRef.current(outcome, elapsedMs) === 'stop';

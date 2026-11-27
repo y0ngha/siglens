@@ -313,12 +313,14 @@ describe('scanSymbol — bootstrap', () => {
 
 describe('scanSymbol — catch up', () => {
     const bars = barsEndingOn(SESSION, 300);
-    const signalsOn = (date: string): readonly SignalType[] =>
-        date >= '2026-11-10' && date <= '2026-11-12'
-            ? ['rsi_oversold']
-            : date === '2026-11-13'
-              ? ['rsi_oversold', 'macd_bullish_cross']
-              : [];
+    const signalsOn = (date: string): readonly SignalType[] => {
+        if (date >= '2026-11-10' && date <= '2026-11-12') {
+            return ['rsi_oversold'];
+        }
+        return date === '2026-11-13'
+            ? ['rsi_oversold', 'macd_bullish_cross']
+            : [];
+    };
 
     it('2세션을 놓친 뒤 따라잡은 결과는 하루씩 두 번 기록한 결과와 같다', async () => {
         const gap: ScanCursor = {

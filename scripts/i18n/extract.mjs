@@ -25,6 +25,7 @@ import {
     readSource,
 } from './lib/scan.mjs';
 import { classify } from './lib/context.mjs';
+import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
 
 const ROOT = resolve(process.argv[1], '../../..');
 const args = process.argv.slice(2);
@@ -588,11 +589,8 @@ for (const relPath of files) {
      * 조용히 무효가 된다(서버 컴포넌트로 바뀌어 훅이 죽는다).
      */
     const lastDirective = ast.program.directives?.at(-1);
-    const importOffset = firstImportNode
-        ? firstImportNode.start
-        : lastDirective
-          ? lastDirective.end + 1
-          : 0;
+    const importOffset =
+        firstImportNode?.start ?? (lastDirective ? lastDirective.end + 1 : 0);
     const importLines = [
         needsImport.hook && "import { useTranslations } from 'next-intl';",
         needsImport.get &&
@@ -868,7 +866,7 @@ if (WRITE) {
 
     // 파일 순회 순서와 무관하게 키 순서를 고정한다 — 위 `routes` 주석 참고.
     const sortedRoutes = Object.fromEntries(
-        Object.entries(routes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        Object.entries(routes).sort(([a], [b]) => compareCodeUnits(a, b))
     );
 
     emitFile(

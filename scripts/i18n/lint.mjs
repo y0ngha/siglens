@@ -21,6 +21,7 @@ import {
     readSource,
 } from './lib/scan.mjs';
 import { classify } from './lib/context.mjs';
+import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
 
 const ROOT = resolve(process.argv[1], '../../..');
 const UPDATE = process.argv.includes('--update');
@@ -82,7 +83,7 @@ if (UPDATE) {
                 // 코드포인트 정렬 — `localeCompare`는 ICU 로케일에 의존해
                 // 환경마다 출력 순서가 갈린다(extract.mjs 주석 참고).
                 Object.entries(counts).sort(([a], [b]) =>
-                    a < b ? -1 : a > b ? 1 : 0
+                    compareCodeUnits(a, b)
                 )
             ),
             null,

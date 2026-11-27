@@ -468,13 +468,14 @@ When a rule produces a warning, fix the root cause in the code rather than suppr
 
 ### Enforced rules
 
-A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn lint`, the pre-commit `oxlint --fix`, or `src/__tests__/guards`. CI reports it; review does not re-raise it. The config or guard carries the reason in a comment.
+A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn lint`, the pre-commit `oxlint --fix`, or `src/__tests__/guards`. CI reports it; review does not re-raise it. The config or guard carries the reason in a comment. Enabling a lint rule adds its row here and a planted violation in `lintRulesEnabled.test.ts` in the same change.
 
 | Rule | Mechanism | Scope | Fix |
 |---|---|---|---|
 | `let` that is never reassigned (CP-4) | oxlint `prefer-const` (autofix) | all code | Make it `const`. |
 | One import statement per module | oxlint `import/no-duplicates` (autofix) | all code | Merge the specifiers into the first import. |
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
+| No nested ternary (`FF.md` 1-E) | oxlint `no-nested-ternary` | all code | Record lookup, or a small early-return helper. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
 | No lint-disable comments | `codeRules.test.ts` rule `lint-disable-directive`, zero tolerance | comments in code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
 | No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support) | Early return, or a local `const` and a named error; for a Map or array lookup, destructure or use `entries()`. |

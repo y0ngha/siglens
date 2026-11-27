@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { getRedisClient } from './redisClient';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
@@ -87,12 +88,6 @@ export function matchHubContentStamp(
 
 function keyFor(surface: string): string {
     return `${KEY_PREFIX}:${surface}`;
-}
-
-/** 코드 단위 순서 비교. `localeCompare`는 로케일에 따라 순서가 달라져 해시가 흔들린다. */
-function compareCodeUnits(a: string, b: string): number {
-    if (a === b) return 0;
-    return a < b ? -1 : 1;
 }
 
 /**
