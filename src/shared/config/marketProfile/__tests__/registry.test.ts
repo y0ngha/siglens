@@ -31,6 +31,7 @@ describe('market profile registry', () => {
                 '1Hour',
                 '4Hour',
                 '1Day',
+                '1Week',
             ]);
             expect(d.defaultTimeframe).toBe('1Day');
             expect(d.priceFormat.precision).toEqual({
@@ -51,7 +52,12 @@ describe('market profile registry', () => {
                 'overall',
                 'position',
             ]);
-            expect(d.allowedTimeframes).toEqual(['5Min', '1Hour', '1Day']);
+            expect(d.allowedTimeframes).toEqual([
+                '5Min',
+                '1Hour',
+                '1Day',
+                '1Week',
+            ]);
             expect(d.priceFormat.precision).toEqual({
                 kind: 'dynamic-by-magnitude',
             });

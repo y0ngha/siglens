@@ -6,6 +6,7 @@ import type {
     LevelCandidate,
     LevelSourceKind,
 } from '@y0ngha/siglens-core';
+import { resolveEffectiveActionLevels } from '@/entities/analysis/lib/effectiveActionLevels';
 import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
 import { computeRangeWindow } from './rangeWindow';
 
@@ -87,7 +88,7 @@ const chartCandidates = (chart: ChartReferenceLevels): LevelCandidate[] => {
 /**
  * Every price a technical analysis prints, plus the chart references when the caller has them (daily analyses
  * only: the "-day" labels describe daily bars, so the caller passes `null` for an intraday analysis).
- * Analysis: key-level supports, resistances and the volume-profile node, both scenarios' targets, the stop loss.
+ * Analysis: key-level supports, resistances and the volume-profile node, both scenarios' targets, the effective stop loss.
  * Invalid prices are dropped later by `buildLevelLadder`; this only collects.
  */
 export function technicalLevelCandidates(
@@ -99,7 +100,11 @@ export function technicalLevelCandidates(
     const targets = [a.priceTargets?.bullish, a.priceTargets?.bearish].flatMap(
         scenario => scenario?.targets ?? []
     );
-    const stopLoss = a.actionRecommendation?.stopLoss;
+    // The effective stop (core's reconciled one first), and none at all when core rejected the model's stop
+    // (`reconciledLevels.stopLossRejected`): the raw `stopLoss` is then a level core refused, not a plan price.
+    const { stopLoss } = resolveEffectiveActionLevels(
+        a.actionRecommendation ?? undefined
+    );
     return [
         ...(keyLevels?.support ?? []).map((l): LevelCandidate => ({
             price: l.price,
@@ -116,7 +121,7 @@ export function technicalLevelCandidates(
             price: t.price,
             kind: 'analysis_target',
         })),
-        ...(typeof stopLoss === 'number'
+        ...(stopLoss !== undefined
             ? [{ price: stopLoss, kind: 'analysis_stop' } as const]
             : []),
         ...(chart === null ? [] : chartCandidates(chart)),

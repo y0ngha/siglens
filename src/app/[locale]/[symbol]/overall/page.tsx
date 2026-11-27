@@ -209,6 +209,7 @@ export default async function OverallPage({ params }: Props) {
                         hasEnrichedNews={hasEnrichedNews}
                         assetClass={assetClass}
                         hasOptions={hasOptions}
+                        marketProfile={marketProfile}
                     />
                 </Suspense>
                 <CrossLinkCards

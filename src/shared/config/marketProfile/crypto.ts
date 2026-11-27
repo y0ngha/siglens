@@ -19,7 +19,7 @@ export const CRYPTO_DESCRIPTOR: MarketProfileDescriptor = {
     // 'position'도 허용 — 크립토 보유종목도 평단/현재가가 해석 가능해 "내 위치"가 의미 있다.
     tabs: ['chart', 'news', 'fear-greed', 'overall', 'position'],
     defaultTimeframe: '1Day',
-    allowedTimeframes: ['5Min', '1Hour', '1Day'],
+    allowedTimeframes: ['5Min', '1Hour', '1Day', '1Week'],
     seo: {
         aboutNodeType: null, // no standard schema.org crypto type → omit about node
     },

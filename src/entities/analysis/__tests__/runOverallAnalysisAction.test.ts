@@ -23,12 +23,11 @@ describe('runOverallAnalysisAction', () => {
     });
 
     describe('timeframe이 siglens TIMEFRAMES 밖일 때', () => {
-        // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (1Week 허용 단언으로 바꾼다).
-        it('화면이 내지 않는 주기(1Week)는 게이트·분석 전에 일반 오류로 거절한다', async () => {
+        it('목록 밖의 값(2Week)은 게이트·분석 전에 일반 오류로 거절한다', async () => {
             const result = await runOverallAnalysisAction(
                 'AAPL',
                 'Apple',
-                '1Week' as never,
+                '2Week' as never,
                 'deepseek-v4-flash' as never,
                 'ko'
             );
@@ -39,6 +38,31 @@ describe('runOverallAnalysisAction', () => {
             });
             expect(resolveTierAndByok).not.toHaveBeenCalled();
             expect(executeOverallAnalysis).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('주봉(1Week) 요청', () => {
+        it('게이트를 거쳐 1Week 그대로 종합 분석에 넘긴다', async () => {
+            vi.mocked(resolveTierAndByok).mockResolvedValueOnce({
+                kind: 'allowed',
+                tier: 'member',
+            } as never);
+            vi.mocked(executeOverallAnalysis).mockResolvedValueOnce({
+                status: 'success',
+            } as never);
+
+            const result = await runOverallAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Week',
+                'deepseek-v4-flash' as never,
+                'ko'
+            );
+
+            expect(result).toEqual({ status: 'success' });
+            expect(executeOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ symbol: 'AAPL', timeframe: '1Week' })
+            );
         });
     });
 });

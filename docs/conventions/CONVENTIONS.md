@@ -988,6 +988,7 @@ otherwise alter what input is accepted or what output is produced "while you are
 case that shows the bug (a test, a real data shape, a reproduction); without one it is speculation that changes accepted
 input or ordering and hides inside a diff reviewers read as a pure move. A change with a demonstrated bug is a behavior
 change: keep it separate from the move or list it in the PR body.
+Removing a temporary block (an alias or wrapper) deletes only the block: restoring files to their pre-block content also drops validation and negative tests added since, so keep them and rewire to the real function.
 
 - ❌ Adding a strict hex regex to a token check, or an `orderBy` tiebreak where the data never produces a tie, in an
   extraction PR.

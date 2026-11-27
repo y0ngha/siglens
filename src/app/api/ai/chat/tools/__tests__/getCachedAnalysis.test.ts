@@ -354,7 +354,8 @@ describe('getCachedAnalysisTool', () => {
             ctx.tier,
             TIER_CONFIG,
             expect.any(String),
-            ctx.locale
+            ctx.locale,
+            { benchmarkSymbol: 'SPY' }
         );
     });
 
@@ -396,6 +397,51 @@ describe('getCachedAnalysisTool', () => {
                 '[AgentTool]',
                 'get_cached_analysis',
                 'quote lookup failed, degrading',
+                { errorName: 'Error', code: undefined }
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
+    });
+
+    it.each([
+        ['us-equity', 'AAPL', 'SPY'],
+        ['kr-equity', '005930.KS', 'KS11'],
+        ['kr-equity', '247540.KQ', 'KQ11'],
+        ['crypto', 'BTC-USD', undefined],
+    ] as const)(
+        'technical peek은 writer와 같은 benchmark 심볼을 넘긴다(%s %s → %s, core 캐시 키 :bm=)',
+        async (marketProfile, symbol, benchmarkSymbol) => {
+            profile.mockResolvedValue(marketProfile);
+            peekAnalysis.mockResolvedValue(null);
+
+            await getCachedAnalysisTool({ symbol, tab: 'technical' }, ctx, rt);
+
+            const call = peekAnalysis.mock.calls.find(c => c[0] === symbol);
+            expect(call?.[9]).toEqual({ benchmarkSymbol });
+        }
+    );
+
+    it('시장 프로필 조회가 던지면 peek을 하지 않고 한 번 로그한 뒤 미스로 접는다(던지지 않는다)', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            profile.mockRejectedValue(new Error('db down'));
+            peekAnalysis.mockResolvedValue(technicalCachedResult);
+
+            const r = (await getCachedAnalysisTool(
+                { symbol: 'AAPL', tab: 'technical' },
+                ctx,
+                rt
+            )) as { found: boolean };
+
+            expect(r.found).toBe(false);
+            expect(peekAnalysis).not.toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[AgentTool]',
+                'get_cached_analysis',
+                'market profile resolution for the peek key failed, degrading',
                 { errorName: 'Error', code: undefined }
             );
         } finally {
@@ -2097,7 +2143,8 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
             guestCtx.tier,
             TIER_CONFIG,
             undefined,
-            guestCtx.locale
+            guestCtx.locale,
+            { benchmarkSymbol: 'SPY' }
         );
     });
 
@@ -2179,7 +2226,8 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
                 }),
             }),
             bucket,
-            ctx.locale
+            ctx.locale,
+            { benchmarkSymbol: 'SPY' }
         );
     });
 

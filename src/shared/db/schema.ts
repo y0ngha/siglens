@@ -1430,6 +1430,7 @@ export const analysisPromptBlobs = pgTable('analysis_prompt_blobs', {
  *
  * 보존 기간을 일부러 나눴다: `result`는 90일 보관한다 — `'1Day'`
  * prior-analysis 윈도우가 21 거래일 ≈ 역법일 30일이라 여유가 필요하다.
+ * 주봉(`'1Week'`) 이전 분석은 이 90일 상한 때문에 약 12~13주치만 남는다(`PRIOR_ANALYSIS_LIMIT` 7건 이상).
  * `prompt_dynamic`은 7일 후 비운다 — 디버깅·오프라인 평가용이라 최신성만
  * 중요하다. prior-analysis 기능은 `result`만 읽으므로 프롬프트 컬럼을
  * 비워도 그 기능에는 영향이 없다.

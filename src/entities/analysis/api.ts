@@ -21,6 +21,7 @@ import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import {
     currencyForSymbol,
     getDescriptor,
@@ -211,6 +212,8 @@ export async function prewarmTechnical(
             currency: descriptor.priceFormat.currency,
             // 방문자 경로와 같은 호가 표 — core 캐시 키에 접히지 않아 어긋나면 틀린 표가 TTL까지 남는다.
             krxTickTable,
+            // 방문자 경로와 같은 비교 지수 — core 캐시 키(`:bm=`)에 접혀, 어긋나면 프리웜 결과를 peek이 못 맞힌다.
+            benchmark: benchmarkFor(marketProfile, symbol),
             tierContext: { userId: null, tier: 'free' },
             reasoning: false,
             providerFallback: PREWARM_PROVIDER_FALLBACK,
