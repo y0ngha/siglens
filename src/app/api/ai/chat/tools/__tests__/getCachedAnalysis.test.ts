@@ -74,10 +74,18 @@ import {
     getCachedAnalysisTool,
     withLevelLadder,
 } from '@/app/api/ai/chat/tools/getCachedAnalysis';
+import { projectTechnicalAnalysis } from '@/app/api/ai/chat/tools/projectTechnicalAnalysis';
+import { SINCE_EARLIER_NOTE } from '@/app/api/ai/chat/tools/sinceEarlier';
 import { CACHED_ANALYSIS_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import {
+    analyzedAfterClose,
+    earlierProjection,
+    rallyBars,
+    tradingDateOf,
+} from './fixtures/sinceEarlier';
 
 const mockSessionSpecFor = vi.mocked(sessionSpecFor);
 const US_EQUITY_SESSION = {
@@ -2370,5 +2378,247 @@ describe('withLevelLadder (evaluation replay enricher)', () => {
         expect(withLevelLadder(noSince, null)).toBe(noSince);
         const noAnalysis = { found: false, sinceAnalysis: { priceNow: 1 } };
         expect(withLevelLadder(noAnalysis, null)).toBe(noAnalysis);
+    });
+});
+
+describe('getCachedAnalysisTool — sinceEarlier', () => {
+    const bars = rallyBars();
+    const earlierAt = analyzedAfterClose(bars, 112);
+    const laterAt = '2026-11-14T10:00:00.000Z';
+    const earlier = {
+        symbol: 'AAPL',
+        generatedAt: earlierAt,
+        analysis: earlierProjection(),
+        seq: 5,
+    };
+    const technical = (analyzedAt: string) => ({
+        result: {
+            summary: '요약',
+            trend: 'bullish',
+            riskLevel: 'low',
+            keyLevels: {},
+            priceTargets: {},
+            analyzedAt,
+        },
+        lockedInfoDepth: [],
+    });
+    const withEarlier = { ...rt, earlierAnalyses: [earlier] };
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+    type Result = { sinceEarlier?: Record<string, unknown> };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // 시계를 고정한다 — 마지막 봉이 형성 중인지, 분석이 낡았는지가 실행 시각에 따라 달라지지 않게.
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-11-14T11:00:00.000Z'));
+        findByUserAndSymbol.mockResolvedValue(null);
+        findBySymbol.mockResolvedValue([]);
+        findRecentForPrompt.mockResolvedValue([]);
+        peekAnalysis.mockResolvedValue(technical(laterAt));
+        peekOverall.mockResolvedValue(null);
+        profile.mockResolvedValue('us-equity');
+        mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
+        getQuote.mockResolvedValue(undefined);
+        getCachedBars.mockResolvedValue({ bars, indicators: { ma: {} } });
+        assetInfo.mockResolvedValue(null);
+    });
+
+    it('이 대화의 이전 분석이 있으면 technical 일봉 결과에 계산된 차이를 싣는다', async () => {
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical' },
+            ctx,
+            withEarlier
+        )) as Result;
+        expect(r.sinceEarlier).toMatchObject({
+            earlierGeneratedAt: earlierAt,
+            fromSessionDate: tradingDateOf(bars, 112),
+            toSessionDate: tradingDateOf(bars, bars.length - 1),
+            comparedLevels: true,
+        });
+        expect(r.sinceEarlier?.changes).toEqual([
+            {
+                kind: 'level_crossed',
+                side: 'resistance',
+                price: 96,
+                direction: 'up',
+                close: 96.6,
+                date: '2026-10-26',
+            },
+            {
+                kind: 'level_crossed',
+                side: 'resistance',
+                price: 105,
+                direction: 'up',
+                close: 105.4,
+                date: '2026-11-05',
+            },
+            { kind: 'trend_changed', from: 'neutral', to: 'bullish' },
+        ]);
+    });
+
+    it('이전 분석이 없거나 다른 종목이면 결과가 이 기능이 없던 때와 바이트 단위로 같다', async () => {
+        const args = { symbol: 'AAPL', tab: 'technical' };
+        const baseline = JSON.stringify(
+            await getCachedAnalysisTool(args, ctx, rt)
+        );
+        expect(baseline).not.toContain('sinceEarlier');
+        for (const earlierAnalyses of [[], [{ ...earlier, symbol: 'MSFT' }]]) {
+            expect(
+                JSON.stringify(
+                    await getCachedAnalysisTool(args, ctx, {
+                        ...rt,
+                        earlierAnalyses,
+                    })
+                )
+            ).toBe(baseline);
+        }
+    });
+
+    it('이전 분석과 같은 세션이면 싣지 않는다', async () => {
+        const last = bars.length - 1;
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical' },
+            ctx,
+            {
+                ...rt,
+                earlierAnalyses: [
+                    { ...earlier, generatedAt: analyzedAfterClose(bars, last) },
+                ],
+            }
+        )) as Result;
+        expect(r.sinceEarlier).toBeUndefined();
+    });
+
+    it('분석 생성 시각을 모르면(analyzedAt 없음) 지금 시각으로 때우지 않고 비교하지 않는다', async () => {
+        peekAnalysis.mockResolvedValue({
+            result: { ...technical(laterAt).result, analyzedAt: undefined },
+            lockedInfoDepth: [],
+        });
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical' },
+            ctx,
+            withEarlier
+        )) as Result;
+        expect(r).toMatchObject({ found: true });
+        expect(r.sinceEarlier).toBeUndefined();
+    });
+
+    it('overall 탭 결과에는 싣지 않는다', async () => {
+        peekOverall.mockResolvedValue({
+            headlineKo: 'h',
+            technicalBulletsKo: [],
+            fundamentalBulletsKo: [],
+            newsBulletsKo: [],
+            optionsBulletsKo: [],
+            integratedConclusionKo: 'c',
+            scenarios: [],
+            riskFactorsKo: [],
+            analyzedAt: laterAt,
+        });
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'overall' },
+            ctx,
+            withEarlier
+        )) as Result;
+        expect(r).toMatchObject({ found: true, tab: 'overall' });
+        expect(r.sinceEarlier).toBeUndefined();
+    });
+
+    it('intraday 타임프레임 결과에는 싣지 않는다', async () => {
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical', timeframe: '1Hour' },
+            ctx,
+            withEarlier
+        )) as Result;
+        expect(r).toMatchObject({ found: true, timeframe: '1Hour' });
+        expect(r.sinceEarlier).toBeUndefined();
+    });
+
+    it('최악의 경우: 분석 투영만으로 상한을 넘어도 블록은 통째로 남고 본문만 줄어든다(fit 전에 합친다)', async () => {
+        const projection = earlierProjection();
+        projection.keyLevels = {
+            support: [{ price: 88, reason: '' }],
+            // 분석일 종가(93.3)보다 위 14개 — 지금 종가(112)가 모두 넘었다.
+            resistance: Array.from({ length: 14 }, (_, i) => ({
+                price: 94 + i,
+                reason: '',
+            })),
+        };
+        const longText = (label: string) =>
+            `${label} 해설이 이어집니다. `.repeat(80);
+        const raw = {
+            summary: '요약 문장입니다. '.repeat(1000),
+            trend: 'bullish',
+            riskLevel: 'low',
+            keyLevels: { support: [100, 95, 90], resistance: [110, 115] },
+            priceTargets: { bullish: 130, bearish: 85 },
+            analyzedAt: laterAt,
+            patternSummaries: Array.from({ length: 5 }, (_, i) => ({
+                id: `p${i}`,
+                patternName: `pattern-${i}`,
+                skillName: 'chart-pattern',
+                detected: true,
+                trend: 'bullish',
+                summary: longText(`패턴${i}`),
+                confidenceWeight: 0.9 - i * 0.1,
+            })),
+            strategyResults: Array.from({ length: 5 }, (_, i) => ({
+                id: `s${i}`,
+                strategyName: `strategy-${i}`,
+                trend: 'bullish',
+                summary: longText(`전략${i}`),
+                confidenceWeight: 0.8 - i * 0.1,
+            })),
+            candlePatterns: Array.from({ length: 5 }, (_, i) => ({
+                id: `c${i}`,
+                patternName: `candle-${i}`,
+                detected: true,
+                trend: 'bullish',
+                summary: longText(`캔들${i}`),
+            })),
+        };
+        // 전제: 블록 없이 분석 투영만으로 이미 상한을 넘는다.
+        expect(
+            JSON.stringify(projectTechnicalAnalysis(raw as never)).length
+        ).toBeGreaterThan(CACHED_ANALYSIS_MAX_CHARS);
+        peekAnalysis.mockResolvedValue({ result: raw, lockedInfoDepth: [] });
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical' },
+            ctx,
+            { ...rt, earlierAnalyses: [{ ...earlier, analysis: projection }] }
+        )) as {
+            sinceEarlier: {
+                changes: { kind: string }[];
+                omittedLevelCrossings?: number;
+                note: string;
+            };
+            analysis: {
+                summary: string;
+                keyLevels: unknown;
+                patterns: unknown[];
+            };
+        };
+        expect(r).not.toHaveProperty('truncated');
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
+        // 블록이 통째로: 가격대 돌파 6 + 추세 1, 나머지 8개는 개수로, 규칙 문장도 그대로.
+        expect(r.sinceEarlier.changes.map(c => c.kind)).toEqual([
+            'level_crossed',
+            'level_crossed',
+            'level_crossed',
+            'level_crossed',
+            'level_crossed',
+            'level_crossed',
+            'trend_changed',
+        ]);
+        expect(r.sinceEarlier.omittedLevelCrossings).toBe(8);
+        expect(r.sinceEarlier.note).toBe(SINCE_EARLIER_NOTE);
+        // 본문은 줄고 구조(keyLevels)는 그대로다.
+        expect(r.analysis.summary.length).toBeLessThan(raw.summary.length);
+        expect(r.analysis.keyLevels).toEqual(raw.keyLevels);
+        expect(r.analysis.patterns.length).toBeGreaterThan(0);
     });
 });

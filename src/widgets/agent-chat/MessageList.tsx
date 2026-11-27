@@ -5,7 +5,7 @@
  * 붙일지 고른다. 스크롤 동작은 `useTranscriptScroll`, 턴 하나의 모양은 `message/*`가 맡는다.
  */
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import {
     buildFeedbackContext,
     buildFeedbackTranscript,
@@ -19,6 +19,7 @@ import { useTranscriptScroll } from './hooks/useTranscriptScroll';
 import { AssistantMessage } from './message/AssistantMessage';
 import { EditMessageForm } from './message/EditMessageForm';
 import { MessageActions } from './message/MessageActions';
+import { SinceEarlierCard } from './message/SinceEarlierCard';
 import { UserMessage } from './message/UserMessage';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
@@ -36,6 +37,14 @@ interface Props {
     readonly conversationId?: string | null;
     /** 비회원 대화는 저장되지 않아 평가에 대화·메시지 id를 싣지 않는다. 기본은 비회원(id를 싣지 않는 쪽). */
     readonly guest?: boolean;
+    /**
+     * 다시 연 저장된 대화에서만 — 이 메시지 바로 아래에 "분석 이후 달라진 점" 카드를 붙인다. 새 턴이 쌓여도 카드는
+     * 열었을 때의 마지막 메시지 아래에 남고, 그 메시지가 사라지면(다시 생성·수정) 함께 사라진다.
+     */
+    readonly sinceEarlier?: {
+        readonly conversationId: string;
+        readonly afterMessageId: string;
+    };
 }
 
 const COPIED_RESET_MS = 1_500;
@@ -54,6 +63,7 @@ export function MessageList({
     localePrefix,
     conversationId = null,
     guest = true,
+    sinceEarlier,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const [editingSeq, setEditingSeq] = useState<number | null>(null);
@@ -69,6 +79,7 @@ export function MessageList({
         showScrollButton,
         handleScroll,
         scrollToBottom,
+        keepAtBottomIfWasThere,
     } = useTranscriptScroll(messages, streaming);
     // 끝난 답변의 링크·표시 이름 — 프레임마다 다시 계산하지 않는다(`useRelatedPages`).
     const { pagesById: relatedPagesById, labels: symbolLabels } =
@@ -199,7 +210,20 @@ export function MessageList({
                     ref={contentRef}
                     className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-4 py-8"
                 >
-                    {messages.map((m, i) => renderTurn(m, i))}
+                    {messages.map((m, i) => (
+                        <Fragment key={m.id}>
+                            {renderTurn(m, i)}
+                            {sinceEarlier?.afterMessageId === m.id ? (
+                                <SinceEarlierCard
+                                    conversationId={sinceEarlier.conversationId}
+                                    labels={symbolLabels}
+                                    onAsk={onSend}
+                                    onReveal={keepAtBottomIfWasThere}
+                                    asking={streaming}
+                                />
+                            ) : null}
+                        </Fragment>
+                    ))}
                     <div ref={endRef} />
                 </div>
             </div>

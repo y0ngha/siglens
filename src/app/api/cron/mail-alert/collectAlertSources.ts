@@ -1,6 +1,4 @@
 import {
-    alertablePlanLevels,
-    anchorBarIndexOf,
     changeReferenceOf,
     findExtremeZoneEntryOn,
     technicalChangesBetween,
@@ -10,14 +8,20 @@ import {
     type SignalType,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { lastDailyBarDate } from '@/entities/bars/lib/sessionBars';
+import {
+    closedAnchorIndexOf,
+    lastDailyBarDate,
+} from '@/entities/bars/lib/sessionBars';
 import { barsUpToDate } from '@/entities/email-report/lib/barsUpToDate';
 import {
     MAIL_ALERT_CHANGE_SIGNAL_TYPES,
     MAIL_ALERT_SIGNAL_TYPES,
 } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { toMailAlertChanges } from '@/entities/mail-alert/lib/mailAlertChanges';
-import { PRICE_ALERT_SCALE_GUARD } from '@/entities/mail-alert/lib/priceAlertConstants';
+import {
+    hasLevels,
+    referenceScaleHolds,
+} from '@/entities/mail-alert/lib/referenceScale';
 import { priceAlertAsOf } from '@/entities/mail-alert/lib/priceAlertExpiry';
 import type {
     MailAlertComputedSymbol,
@@ -250,67 +254,20 @@ type ComputeOutcome =
     | { readonly kind: 'load_error' }
     | { readonly kind: 'error' };
 
-function referencePrices(reference: ChangeReference): number[] {
-    const plan =
-        reference.plan === null ? null : alertablePlanLevels(reference.plan);
-    return [
-        ...reference.supports,
-        ...reference.resistances,
-        ...(plan?.entryZone == null
-            ? []
-            : [plan.entryZone.low, plan.entryZone.high]),
-        ...(plan?.invalidation == null ? [] : [plan.invalidation]),
-    ];
-}
-
-/**
- * 분석의 기준 봉 — 분석 시각에 **이미 마감돼 있던** 마지막 세션의 일봉 인덱스. 일봉은 세션 날짜의 UTC 자정에
- * 찍히므로 분석 시각을 그대로 `anchorBarIndexOf`에 넘기면, 장이 열리기 전(한국 낮)의 미국 종목 분석이 아직 열리지
- * 않은 그날 봉에 붙는다. 그 시각의 마지막 마감 세션 날짜의 끝으로 바꿔 넘긴다. 받은 봉보다 앞서면 `null`.
- */
-function closedAnchorIndexOf(
-    bars: readonly Bar[],
-    market: SignalHistoryMarket,
-    analyzedAt: string
-): number | null {
-    const closedDate = lastClosedSessionDate(
-        sessionSpecForDashboardScope(market),
-        new Date(analyzedAt),
-        0
-    );
-    return anchorBarIndexOf(bars, `${closedDate}T23:59:59.999Z`);
-}
-
-/**
- * 분석의 가격대가 지금 일봉과 같은 가격 척도인지. 봉은 분할이 소급 반영되지만 저장된 분석의 가격은 그렇지 않아
- * (코어 문서의 호출자 몫), 분석 시점에 마감돼 있던 봉(`closedAnchorIndexOf`)의 종가에 견준 가격들의 중앙값이
- * 가격대 알림의 척도 가드(`PRICE_ALERT_SCALE_GUARD`) 밖이면 분할이 있었다고 보고 그 분석을 쓰지 않는다. 시점의
- * 봉을 찾지 못하거나 가격이 하나도 없으면 견줄 근거가 없어 쓰지 않는다.
- */
-function referenceScaleHolds(
+/** 분석 시점에 마감돼 있던 봉(`closedAnchorIndexOf`)의 종가에 견줘 분석의 가격 척도가 맞는지. */
+function scaleHoldsAt(
     reference: ChangeReference,
     bars: readonly Bar[],
     market: SignalHistoryMarket
 ): boolean {
-    const index = closedAnchorIndexOf(bars, market, reference.analyzedAt);
-    const close = index === null ? undefined : bars[index]?.close;
-    if (close === undefined || !(close > 0)) return false;
-    const ratios = referencePrices(reference)
-        .map(price => price / close)
-        .toSorted((a, b) => a - b);
-    const median = ratios[Math.floor(ratios.length / 2)];
-    return (
-        median !== undefined &&
-        median >= PRICE_ALERT_SCALE_GUARD.min &&
-        median <= PRICE_ALERT_SCALE_GUARD.max
+    const index = closedAnchorIndexOf(
+        bars,
+        sessionSpecForDashboardScope(market),
+        reference.analyzedAt
     );
-}
-
-function hasLevels(reference: ChangeReference): boolean {
-    return (
-        reference.supports.length > 0 ||
-        reference.resistances.length > 0 ||
-        reference.plan !== null
+    return referenceScaleHolds(
+        reference,
+        index === null ? undefined : bars[index]?.close
     );
 }
 
@@ -358,7 +315,7 @@ function computeOne(
                       if (
                           reference === null ||
                           !hasLevels(reference) ||
-                          !referenceScaleHolds(reference, upTo, market)
+                          !scaleHoldsAt(reference, upTo, market)
                       ) {
                           return [];
                       }

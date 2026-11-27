@@ -4,6 +4,7 @@ import type {
     ModelId,
     ToolExecutionContext,
 } from '@y0ngha/siglens-core';
+import type { ConversationAnalysis } from '@/entities/chat-conversation/server/conversationAnalyses';
 import type { ChatBlock } from '@/entities/chat-conversation/types';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
@@ -116,6 +117,13 @@ export interface ToolRuntime {
      * (테스트) 비어 있고, 그때는 에이전트 상한 `BARS_RESULT_MAX_CHARS`를 쓴다.
      */
     barsResultMaxChars?: number;
+    /**
+     * 이 대화의 **이전 턴**에 회원이 본 일봉 기술적 분석(종목마다 가장 나중 것, 최근에 본 순).
+     * `get_cached_analysis`·`run_fresh_analysis`의 technical 1Day 결과가 이것과 비교해 `sinceEarlier` 블록을 싣는다.
+     * 8턴 창이 오래된 도구 결과를 `omitted`로 보내므로 모델이 직접 볼 수 없는 숫자를 코드가 대신
+     * 계산해 주는 길이다. 저장된 대화가 없으면(게스트·공개 API) 생략한다.
+     */
+    earlierAnalyses?: readonly ConversationAnalysis[];
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해

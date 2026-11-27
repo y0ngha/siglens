@@ -1,4 +1,8 @@
+import { CHAT_CHANGE_SIGNAL_TYPES } from '@/entities/chat-conversation/lib/chatChangeSignalTypes';
 import { CHROME_CLIENT_PATHS } from '@/shared/i18n/clientNamespaces';
+
+/** 신호 유형 이름 카탈로그(`shared.enumLabel.signalType.<type>`)의 네임스페이스. */
+const SIGNAL_TYPE_LABEL_NAMESPACE = 'shared.enumLabel.signalType';
 
 /**
  * ai 호스트 레이아웃이 `NextIntlClientProvider`로 내려보내는 클라이언트 next-intl 네임스페이스.
@@ -46,4 +50,11 @@ export const AI_CLIENT_PATHS: readonly string[] = [
     'widgets.options.tooltip.putOpenInterest',
     'widgets.investor-flows.flowChart',
     'shared.ui.InfoTooltip',
+    // 다시 연 대화의 "달라진 점" 카드(`SinceEarlierCard`)가 쓰는 공용 추세 이름과, 카드가 푸는 신호(`CHAT_CHANGE_SIGNAL_TYPES`)의
+    // 이름만 — 네임스페이스 통째가 아니라 쓰는 키만 싣는다(측정: 로케일당 약 0.3~0.4KB, ko 355바이트). 신호 목록에서
+    // 만들어, 카드가 푸는 신호가 늘면 이름도 함께 실린다.
+    'shared.enumLabel.trend',
+    ...CHAT_CHANGE_SIGNAL_TYPES.map(
+        type => `${SIGNAL_TYPE_LABEL_NAMESPACE}.${type}`
+    ),
 ];

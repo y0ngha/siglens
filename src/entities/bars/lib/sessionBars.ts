@@ -1,10 +1,13 @@
 import {
+    anchorBarIndexOf,
     EMPTY_INDICATOR_RESULT,
     type Bar,
     type BarsData,
+    type MarketSessionSpec,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 
 /** 세션 날짜 `YYYY-MM-DD`의 일봉 `Bar.time`(그 날 UTC 자정, 초). */
 function sessionBarTimeSeconds(sessionDate: string): number {
@@ -83,4 +86,19 @@ export function lastDailyBarDate(bars: readonly Bar[]): string | null {
  */
 export function lastBarSessionDate(data: BarsData): string | null {
     return lastDailyBarDate(data.bars);
+}
+
+/**
+ * 분석의 기준 봉 — 분석 시각에 **이미 마감돼 있던** 마지막 세션의 일봉 인덱스. 일봉은 세션 날짜의 UTC 자정에
+ * 찍히므로 분석 시각을 그대로 `anchorBarIndexOf`에 넘기면, 장이 열리기 전(한국 낮)의 미국 종목 분석이 아직 열리지
+ * 않은 그날 봉에 붙는다. 그 시각의 마지막 마감 세션 날짜(EOD 버퍼 없이)의 끝으로 바꿔 넘긴다. 받은 봉보다
+ * 앞서면 `null`. 알림 메일의 "달라진 점"과 다시 연 대화의 "분석 이후 달라진 점"이 같은 기준을 쓴다.
+ */
+export function closedAnchorIndexOf(
+    bars: readonly Bar[],
+    session: MarketSessionSpec,
+    analyzedAt: string
+): number | null {
+    const closedDate = lastClosedSessionDate(session, new Date(analyzedAt), 0);
+    return anchorBarIndexOf(bars, `${closedDate}T23:59:59.999Z`);
 }

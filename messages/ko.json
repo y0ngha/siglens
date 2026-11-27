@@ -3983,6 +3983,33 @@
                 "imageAlt": "첨부 이미지 {n}",
                 "imagesLabel": "첨부한 이미지",
                 "openImage": "첨부 이미지 {n} 새 탭에서 열기"
+            },
+            "sinceEarlier": {
+                "announce": "분석 이후 달라진 점을 아래에 보여 드려요",
+                "ask": "달라진 점 물어보기",
+                "askLabel": "{name} 달라진 점 물어보기",
+                "askPrompt": "{name}({symbol}) {date} 분석 이후 달라진 점을 알려 줘",
+                "noneWithLevels": "그 뒤로 추세 판정, 새 신호, 분석 가격대 기준으로 달라진 점은 없어요 ({date} 종가)",
+                "noneWithoutLevels": "그 뒤로 추세 판정과 새 신호 기준으로 달라진 점은 없어요 ({date} 종가)",
+                "partialDays": "신호나 종가를 확인하지 못한 거래일이 {count}일 있어요",
+                "partialTrend": "추세 판정은 데이터가 부족해 비교하지 못했어요",
+                "planAbove": "그 분석의 진입 구간 {low}~{high} 위에서 마감했어요 ({date})",
+                "planBelow": "그 분석의 진입 구간 {low}~{high} 아래에서 마감했어요 ({date})",
+                "planInZone": "그 분석의 진입 구간 {low}~{high} 안에서 마감했어요 ({date})",
+                "planNoSetup": "그 분석의 진입 계획은 {date} 종가 기준으로 더는 성립하지 않아요",
+                "planStopped": "그 분석의 무효화 기준 {stop} 이하에서 마감했어요 ({date})",
+                "price": "{date} 종가 {now}, 분석일 종가 {base}, 변화 {pct}",
+                "resistanceBroken": "그 분석의 저항선 {price} 위에서 마감했어요 ({date}, 종가 {close})",
+                "resistanceLost": "그 분석의 저항선 {price} 아래로 다시 내려와 마감했어요 ({date}, 종가 {close})",
+                "signal": {
+                    "line": "새 신호 {signal} ({date} 일봉)"
+                },
+                "supportBroken": "그 분석의 지지선 {price} 아래에서 마감했어요 ({date}, 종가 {close})",
+                "supportRegained": "그 분석의 지지선 {price} 위로 다시 올라와 마감했어요 ({date}, 종가 {close})",
+                "title": "{name} {date} 분석 이후 달라진 점",
+                "tooOld": "분석한 지 오래돼 비교할 수 없어요. 새로 분석해 보세요.",
+                "trend": "추세 판정이 {from}에서 {to} 상태로 바뀌었어요 ({date} 종가)",
+                "trendBasis": "판정 기준은 {period}일 EMA의 기울기와 종가 위치예요"
             }
         },
         "analysis": {

@@ -6587,6 +6587,33 @@
                 "imageAlt": "添付画像 {n}",
                 "imagesLabel": "添付画像",
                 "openImage": "添付画像 {n}を新しいタブで開く"
+            },
+            "sinceEarlier": {
+                "title": "{name} {date}の分析以降の変化",
+                "price": "{date}の終値 {now}、分析日の終値 {base}、変化 {pct}",
+                "trend": "トレンド判定が{from}から{to}に変わりました（{date}の終値）",
+                "trendBasis": "判定の基準は、{period}日EMAの傾きと終値の位置です",
+                "signal": {
+                    "line": "新しいシグナル {signal}（{date}の日足）"
+                },
+                "supportBroken": "その分析のサポートライン {price} を下回って引けました（{date}、終値 {close}）",
+                "supportRegained": "その分析のサポートライン {price} を再び上回って引けました（{date}、終値 {close}）",
+                "resistanceBroken": "その分析のレジスタンスライン {price} を上回って引けました（{date}、終値 {close}）",
+                "resistanceLost": "その分析のレジスタンスライン {price} を再び下回って引けました（{date}、終値 {close}）",
+                "planInZone": "その分析のエントリーゾーン {low}〜{high} の中で引けました（{date}）",
+                "planAbove": "その分析のエントリーゾーン {low}〜{high} を上回って引けました（{date}）",
+                "planBelow": "その分析のエントリーゾーン {low}〜{high} を下回って引けました（{date}）",
+                "planStopped": "その分析の無効化の基準 {stop} 以下で引けました（{date}）",
+                "planNoSetup": "その分析のエントリー計画は、{date}の終値時点で成り立たなくなりました",
+                "partialTrend": "データが足りず、トレンド判定は比較できませんでした",
+                "partialDays": "シグナルや終値を確認できなかった取引日が{count}日あります",
+                "noneWithLevels": "その後、トレンド判定、新しいシグナル、分析の価格帯に変化はありません（{date}の終値）",
+                "noneWithoutLevels": "その後、トレンド判定と新しいシグナルに変化はありません（{date}の終値）",
+                "tooOld": "分析から時間が経ちすぎて比較できません。新しく分析してみてください。",
+                "ask": "変化を質問する",
+                "askLabel": "{name}の変化を質問する",
+                "askPrompt": "{name}（{symbol}）の{date}の分析以降の変化を教えて",
+                "announce": "分析以降の変化を下に表示しました"
             }
         }
     }
