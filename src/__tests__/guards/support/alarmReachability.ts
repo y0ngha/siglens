@@ -101,7 +101,7 @@ export function childrenOf(node: AstNode): AstNode[] {
 }
 
 /** 노드와 모든 하위 노드를 깊이 우선으로 방문한다. 방문자는 조상 목록(가까운 쪽이 마지막)을 받는다. */
-export function walk(
+function walk(
     node: AstNode,
     visit: (node: AstNode, ancestors: readonly AstNode[]) => void,
     ancestors: readonly AstNode[] = []
@@ -109,6 +109,23 @@ export function walk(
     visit(node, ancestors);
     const next = [...ancestors, node];
     childrenOf(node).forEach(child => walk(child, visit, next));
+}
+
+/** 노드와 모든 하위 노드를 깊이 우선 순서로 모은다. */
+export function descendants(node: AstNode): AstNode[] {
+    return [node, ...childrenOf(node).flatMap(descendants)];
+}
+
+/** `descendants`와 같은 순서로, 각 노드에 조상 목록(가까운 쪽이 마지막)을 붙인다. */
+export function withAncestors(
+    node: AstNode,
+    ancestors: readonly AstNode[] = []
+): { node: AstNode; ancestors: readonly AstNode[] }[] {
+    const next = [...ancestors, node];
+    return [
+        { node, ancestors },
+        ...childrenOf(node).flatMap(child => withAncestors(child, next)),
+    ];
 }
 
 /** 노드의 `key`가 문자열이면 그 값, 아니면 `undefined`. */
@@ -463,27 +480,23 @@ export function findLogSites(
     safe: ReadonlySet<string>
 ): LogSite[] {
     const scope = fileScope(program);
-    const sites: LogSite[] = [];
-    walk(program, (node, ancestors) => {
-        if (!isLogCall(node)) return;
-        const parts = logParts(node, scope.consts);
-        const matched = terms.filter(term => logCanProduce(parts, term));
-        if (matched.length === 0) return;
-        const deadReason = deadReasonOf(node, ancestors, scope, safe);
-        const start = numAt(node, 'start');
-        const end = numAt(node, 'end');
-        matched.forEach(term =>
-            sites.push({
-                file,
-                line: lineOf(text, start),
-                start,
-                end,
-                term,
-                deadReason,
-            })
-        );
-    });
-    return sites;
+    return withAncestors(program)
+        .filter(({ node }) => isLogCall(node))
+        .flatMap(({ node, ancestors }) => {
+            const parts = logParts(node, scope.consts);
+            const deadReason = deadReasonOf(node, ancestors, scope, safe);
+            const start = numAt(node, 'start');
+            return terms
+                .filter(term => logCanProduce(parts, term))
+                .map(term => ({
+                    file,
+                    line: lineOf(text, start),
+                    start,
+                    end: numAt(node, 'end'),
+                    term,
+                    deadReason,
+                }));
+        });
 }
 
 /** `findLogSites` 중 죽은 것(목록의 함수에 바로 붙은 `.catch`/`.then`의 `onRejected` 안). */
@@ -512,15 +525,46 @@ export function findOpaqueDeadLogs(
     safe: ReadonlySet<string>
 ): string[] {
     const scope = fileScope(program);
-    const found: string[] = [];
-    walk(program, (node, ancestors) => {
-        if (!isLogCall(node) || listAt(node, 'arguments').length === 0) return;
-        if (logParts(node, scope.consts)[0] !== '') return;
-        if (deadReasonOf(node, ancestors, scope, safe) !== undefined) {
-            found.push(`${file}:${lineOf(text, numAt(node, 'start'))}`);
-        }
-    });
-    return found;
+    return withAncestors(program)
+        .filter(
+            ({ node, ancestors }) =>
+                isLogCall(node) &&
+                listAt(node, 'arguments').length > 0 &&
+                logParts(node, scope.consts)[0] === '' &&
+                deadReasonOf(node, ancestors, scope, safe) !== undefined
+        )
+        .map(({ node }) => `${file}:${lineOf(text, numAt(node, 'start'))}`);
+}
+
+/**
+ * `fn`이 `call`의 `.catch`/`.then`의 onRejected 인자이고 그 `call`이 목록의 함수 호출에 바로 붙어 있으면 이유,
+ * 아니면 `undefined`.
+ */
+function reasonForCallback(
+    fn: AstNode,
+    call: AstNode,
+    scope: FileScope,
+    safe: ReadonlySet<string>
+): string | undefined {
+    const callee = nodeAt(call, 'callee');
+    const args = listAt(call, 'arguments');
+    if (
+        !isFunctionLike(fn) ||
+        call.type !== 'CallExpression' ||
+        !args.includes(fn) ||
+        callee?.type !== 'MemberExpression'
+    ) {
+        return undefined;
+    }
+    const prop = str(nodeAt(callee, 'property'), 'name');
+    const onRejected =
+        prop === 'catch' ? args[0] : prop === 'then' ? args[1] : undefined;
+    const receiver = unwrap(nodeAt(callee, 'object'));
+    return onRejected === fn &&
+        receiver?.type === 'CallExpression' &&
+        resolvesToSafe(receiver, scope, safe)
+        ? `\`.${prop}(...)\`가 절대 reject하지 않는 함수의 호출에 바로 붙어 있다`
+        : undefined;
 }
 
 /** 로그가 목록의 함수에 바로 붙은 `.catch(cb)`/`.then(_, cb)`의 `cb` 안에 있으면 이유를, 아니면 `undefined`. */
@@ -531,33 +575,9 @@ function deadReasonOf(
     safe: ReadonlySet<string>
 ): string | undefined {
     const chain = [...ancestors, log];
-    for (let i = chain.length - 1; i > 0; i -= 1) {
-        const fn = chain[i];
-        const call = chain[i - 1];
-        if (
-            !isFunctionLike(fn) ||
-            call.type !== 'CallExpression' ||
-            !listAt(call, 'arguments').includes(fn)
-        ) {
-            continue;
-        }
-        const callee = nodeAt(call, 'callee');
-        if (callee?.type !== 'MemberExpression') continue;
-        const prop = str(nodeAt(callee, 'property'), 'name');
-        const onRejected =
-            prop === 'catch'
-                ? listAt(call, 'arguments')[0]
-                : prop === 'then'
-                  ? listAt(call, 'arguments')[1]
-                  : undefined;
-        const receiver = unwrap(nodeAt(callee, 'object'));
-        if (
-            onRejected === fn &&
-            receiver?.type === 'CallExpression' &&
-            resolvesToSafe(receiver, scope, safe)
-        ) {
-            return `\`.${prop}(...)\`가 절대 reject하지 않는 함수의 호출에 바로 붙어 있다`;
-        }
-    }
-    return undefined;
+    // 가장 가까운 콜백부터(로그에서 바깥으로) 첫 이유를 쓴다.
+    return chain
+        .slice(1)
+        .map((fn, i) => reasonForCallback(fn, chain[i], scope, safe))
+        .findLast(reason => reason !== undefined);
 }

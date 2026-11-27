@@ -1,12 +1,13 @@
 import {
     childrenOf,
+    descendants,
     isFunctionLike,
     listAt,
     nodeAt,
     numAt,
     parseSource,
     str,
-    walk,
+    withAncestors,
     type AstNode,
 } from './alarmReachability';
 
@@ -138,12 +139,12 @@ function callLabel(node: AstNode): string | undefined {
 
 /** 함수 노드 전체(매개변수·본문·콜백)의 호출 이름 집합. */
 function callNamesIn(fn: AstNode): string[] {
-    const names = new Set<string>();
-    walk(fn, node => {
-        const label = callLabel(node);
-        if (label !== undefined) names.add(label);
-    });
-    return [...names].sort();
+    return uniqueSorted(descendants(fn).map(callLabel));
+}
+
+/** `undefined`를 버리고 중복을 없애 정렬한다. */
+function uniqueSorted(labels: readonly (string | undefined)[]): string[] {
+    return [...new Set(labels.filter(label => label !== undefined))].sort();
 }
 
 function keyLabel(node: AstNode | undefined): string {
@@ -190,50 +191,39 @@ function memberLabel(node: AstNode | undefined): string {
 
 /** `root` 아래 모든 멤버 접근(연쇄의 중간 단계 포함)의 정규화 텍스트 집합. */
 function memberTextsIn(root: AstNode): string[] {
-    const found = new Set<string>();
-    walk(root, node => {
-        if (
+    return uniqueSorted(
+        descendants(root).map(node =>
             node.type === 'MemberExpression' ||
             node.type === 'OptionalMemberExpression'
-        ) {
-            found.add(memberLabel(node));
-        }
-    });
-    return [...found].sort();
+                ? memberLabel(node)
+                : undefined
+        )
+    );
 }
 
 /** 중첩 함수(콜백) 본문을 제외한, 함수가 즉시 평가하는 호출 이름 집합. */
 function eagerCallNamesIn(fn: AstNode): string[] {
-    const names = new Set<string>();
-    const collect = (node: AstNode): void => {
-        if (node !== fn && isFunctionLike(node)) return;
-        const label = callLabel(node);
-        if (label !== undefined) names.add(label);
-        childrenOf(node).forEach(collect);
-    };
-    collect(fn);
-    return [...names].sort();
+    return uniqueSorted(ownDescendants(fn).map(callLabel));
+}
+
+/** `descendants`에서 중첩 함수(콜백)와 그 안쪽을 뺀 것. `root`가 함수여도 `root`는 포함한다. */
+function ownDescendants(root: AstNode): AstNode[] {
+    return [
+        root,
+        ...childrenOf(root)
+            .filter(child => !isFunctionLike(child))
+            .flatMap(ownDescendants),
+    ];
 }
 
 /** 중첩 함수를 제외하고 `root` 아래의 노드를 모은다. */
 function ownNodes(root: AstNode, type: string): AstNode[] {
-    const found: AstNode[] = [];
-    const visit = (node: AstNode): void => {
-        if (node !== root && isFunctionLike(node)) return;
-        if (node.type === type) found.push(node);
-        childrenOf(node).forEach(visit);
-    };
-    visit(root);
-    return found;
+    return ownDescendants(root).filter(node => node.type === type);
 }
 
 /** `root`와 모든 하위 노드(중첩 함수 포함) 중 `type`인 것. */
 function collect(root: AstNode, type: string): AstNode[] {
-    const found: AstNode[] = [];
-    walk(root, node => {
-        if (node.type === type) found.push(node);
-    });
-    return found;
+    return descendants(root).filter(node => node.type === type);
 }
 
 function contains(root: AstNode, type: string): boolean {
@@ -263,21 +253,18 @@ interface FoundFunction {
 }
 
 function findFunctions(program: AstNode, name: string): FoundFunction[] {
-    const found: FoundFunction[] = [];
-    walk(program, (node, ancestors) => {
-        if (
-            node.type === 'FunctionDeclaration' &&
-            str(nodeAt(node, 'id'), 'name') === name
-        ) {
-            found.push({
-                fn: node,
-                exported:
-                    ancestors[ancestors.length - 1]?.type ===
-                    'ExportNamedDeclaration',
-            });
-        }
-    });
-    return found;
+    return withAncestors(program)
+        .filter(
+            ({ node }) =>
+                node.type === 'FunctionDeclaration' &&
+                str(nodeAt(node, 'id'), 'name') === name
+        )
+        .map(({ node, ancestors }) => ({
+            fn: node,
+            exported:
+                ancestors[ancestors.length - 1]?.type ===
+                'ExportNamedDeclaration',
+        }));
 }
 
 function checkShape(fn: AstNode, body: AstNode, pin: FunctionPin): string[] {
@@ -456,47 +443,37 @@ function checkShape(fn: AstNode, body: AstNode, pin: FunctionPin): string[] {
  *  - `as any`와 비널 단언(`!`): 타입 검사를 우회해 던질 수 있는 읽기를 숨긴다.
  */
 function checkThrowingConstructs(fn: AstNode, pin: FunctionPin): string[] {
-    const problems: string[] = [];
     const params = listAt(fn, 'params');
-    walk(fn, node => {
-        if (node.type === 'ObjectPattern' || node.type === 'ArrayPattern') {
-            const flat =
-                node.type === 'ObjectPattern' &&
-                listAt(node, 'properties').every(
-                    prop =>
-                        prop.type === 'ObjectProperty' &&
-                        nodeAt(prop, 'value')?.type === 'Identifier'
-                );
-            if (!(pin.paramPattern === true && params.includes(node) && flat)) {
-                problems.push('허용되지 않은 구조 분해가 있다');
-            }
-        }
-        if (
-            node.type === 'AwaitExpression' &&
-            nodeAt(node, 'argument')?.type !== 'CallExpression'
-        ) {
-            problems.push('호출이 아닌 것을 `await`한다');
-        }
-        if (
-            node.type === 'TSAsExpression' &&
-            nodeAt(node, 'typeAnnotation')?.type === 'TSAnyKeyword'
-        ) {
-            problems.push('`as any`가 있다');
-        }
-        if (
-            node.type === 'ForOfStatement' ||
+    const isFlatObjectPattern = (node: AstNode): boolean =>
+        node.type === 'ObjectPattern' &&
+        listAt(node, 'properties').every(
+            prop =>
+                prop.type === 'ObjectProperty' &&
+                nodeAt(prop, 'value')?.type === 'Identifier'
+        );
+    const problemsOf = (node: AstNode): (string | false)[] => [
+        (node.type === 'ObjectPattern' || node.type === 'ArrayPattern') &&
+            !(
+                pin.paramPattern === true &&
+                params.includes(node) &&
+                isFlatObjectPattern(node)
+            ) &&
+            '허용되지 않은 구조 분해가 있다',
+        node.type === 'AwaitExpression' &&
+            nodeAt(node, 'argument')?.type !== 'CallExpression' &&
+            '호출이 아닌 것을 `await`한다',
+        node.type === 'TSAsExpression' &&
+            nodeAt(node, 'typeAnnotation')?.type === 'TSAnyKeyword' &&
+            '`as any`가 있다',
+        (node.type === 'ForOfStatement' ||
             node.type === 'ForInStatement' ||
-            node.type === 'YieldExpression'
-        ) {
-            problems.push(
-                '`for...of`·`for...in`·`yield`가 있다(이터레이터가 던질 수 있다)'
-            );
-        }
-        if (node.type === 'TSNonNullExpression') {
-            problems.push('비널 단언(`!`)이 있다');
-        }
-    });
-    return problems;
+            node.type === 'YieldExpression') &&
+            '`for...of`·`for...in`·`yield`가 있다(이터레이터가 던질 수 있다)',
+        node.type === 'TSNonNullExpression' && '비널 단언(`!`)이 있다',
+    ];
+    return descendants(fn)
+        .flatMap(problemsOf)
+        .filter(problem => problem !== false);
 }
 
 /**
