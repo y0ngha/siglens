@@ -1,0 +1,330 @@
+/** Single truncation rule (spec §7): what the model sees is what gets stored. */
+export const TOOL_RESULT_MAX_CHARS = 4_000;
+
+/**
+ * `get_news` ceiling. An 8-10 item request with Korean summaries (~400 chars each) exceeds the 4,000 default, which
+ * would turn the result into the front-cut `{ truncated, preview }` envelope and lose the older items. The tool fits
+ * itself against this cap minus `NEWS_ANNOTATE_HEADROOM_CHARS` (shorter summaries, then fewer items, reported as
+ * `itemsTrimmed`), so the registry never sees an overflow. 8,000 holds ~10 items with summaries plus the
+ * `priceMoves` block (~1,500 chars).
+ */
+export const NEWS_RESULT_MAX_CHARS = 8_000;
+
+/** Chars `get_news` reserves under its cap for what `annotate` may prepend (`symbolCorrectedFrom`), same idea as `BARS_ANNOTATE_HEADROOM_CHARS`. */
+export const NEWS_ANNOTATE_HEADROOM_CHARS = 100;
+
+/**
+ * `get_bars_indicators`' own ceiling. Its `latest` block (~16 indicator groups,
+ * `candlePatterns`, `oscillatorZones` + `oscillatorSummary`) pushes even the
+ * default-sized request past `TOOL_RESULT_MAX_CHARS` before `fitBarsToBudget`
+ * gets to trim a single bar. `server/createToolExecutor.ts`'s `ceilingFor`
+ * must route this tool to this constant — otherwise the registry's generic
+ * `truncateToolResult(..., TOOL_RESULT_MAX_CHARS)` re-cuts the already-fit
+ * result down to 4,000 and collapses it into a front-cut preview blob.
+ *
+ * Basis for 7,000: the default 30-bar 1Day request in the live regular-session
+ * shape (`lastBarInProgress` + `lastCompletedClose`) measures ~6,155 chars with
+ * a typical oscillator tally and ~6,330 with the longest one ("… not
+ * available: CCI" tail, four "just below its overbought line" suffixes). The
+ * tool fits against this cap minus `BARS_ANNOTATE_HEADROOM_CHARS`, i.e. 6,900,
+ * so the worst case keeps ~570 chars — room for ~16 MA crosses (~35 chars each)
+ * before `fitBarsToBudget` starts trimming bars. Re-measure by serializing the
+ * "기본 요청(30봉, 1Day)" result in `getBarsIndicators.test.ts` whenever a
+ * top-level or `derived` field is added; see `DEFAULT_BARS` for the fixture.
+ */
+export const BARS_RESULT_MAX_CHARS = 7_000;
+
+/**
+ * Chars the executor reserves under a `get_bars_indicators` cap for what `annotate` prepends after the tool has fit
+ * itself (`symbolCorrectedFrom: "<symbol>"`, ~40 chars for a single symbol). The tool fits against
+ * `cap - this`, so the annotated result still ends under `cap` and `truncateToolResult` never sees an overflow.
+ */
+export const BARS_ANNOTATE_HEADROOM_CHARS = 100;
+
+/**
+ * `get_market_overview` ceiling. Measured on a representative worst-case
+ * fixture (2026-09-14): a full US signal scan (15 sectors, 10 capped top
+ * signals, long tickers/labels) serializes to ~3,460 chars. It caps its list
+ * by construction (`topSignals`), so this ceiling is headroom against the JSON
+ * envelope, not a rescue for an unbounded list. `get_economy` has its own
+ * ceiling (`ECONOMY_RESULT_MAX_CHARS`).
+ *
+ * `get_congress_trades` fits comfortably under the shared `TOOL_RESULT_MAX_CHARS` default (~2,500) and needs no
+ * ceiling of its own. `get_fundamentals` has `FUNDAMENTALS_RESULT_MAX_CHARS` (below): it measures ~3,385 chars (2026-10-24),
+ * ~3,689 with the Yahoo analyst extras (`consensusAnalysts`/`consensusSource`, `priceTargetSource`/`priceTargetYahoo`,
+ * `targetSourcesDisagree`, and a confirmed `earningsSession` + `earningsCallAt`; `earningsDateAlt` never
+ * co-occurs with the session, so the worst case is the session one) and ~4,016 with `earningsReactionTally`
+ * (~+300 chars with mixed-sign 4-decimal moves), past the 4,000 default.
+ * The 3,385 figure covers with every section filled plus 5
+ * `recentQuarters` rows (each with `form`, `revenueYoYPct` and a full `sec`
+ * as-filed block), 8 `earningsReactions`, the ~170-char `dividends` block
+ * (+ the KR-only `annualReported`) and `indexMemberships` (summed from
+ * 2026-10-24 hand measurements of the fixture in `getFundamentals.test.ts`:
+ * ~2,275 with dividends, +~180 for the per-quarter `form`/`revenueYoYPct`,
+ * +~110 for `indexMemberships`, +~710 for the `sec` blocks — ~140 chars per
+ * quarter, worst case with 12-digit revenue and a 22-char accession — and
+ * +~115 for `annualReported`, which is KR-only while `sec` is US-only, so a real
+ * result carries at most one of the two; the test only asserts
+ * `< FUNDAMENTALS_RESULT_MAX_CHARS` with a margin).
+ *
+ * 한국 종목의 `valuation`은 DART 기준 블록(`epsTtm`·`bps`·`basis`·`nullReason`, 최대 ≈660자 — `basis.note`가 ≈350자)을
+ * 더 싣는다. 모든 섹션 + 5분기 + 8 반응(+ `earningsReactionTally`) + 확정 배당에 `peUntrusted` note까지 붙은 한국 최악
+ * 케이스가 4,053자(2026-11-27)다 (`getFundamentals.test.ts`가 실측값 기준 `< 4,150`으로 고정한다).
+ */
+export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
+
+/**
+ * `get_fundamentals` ceiling. The worst-case fixture (every section filled, 5 quarters with `sec` blocks, 8 reactions
+ * and the `earningsReactionTally` block, ~300 chars of it) measures 4,016 chars with mixed-sign 4-decimal moves —
+ * over the 4,000 default, under which the whole result becomes a front-cut preview blob.
+ *
+ * Result `notes` (`FUNDAMENTALS_RESULT_NOTES`, 185-353 chars each, attached only where a field is null) sit on top
+ * of that. On the fully loaded fixture (8 quarters with `sec` blocks, 8 reactions, Yahoo extras;
+ * `getFundamentals.test.ts` "notes") the two notes a US filer carries most often (`earningsSessionUnknown`,
+ * `secFieldMissing`: every five-quarter window holds a fiscal Q4 row without EPS) measure 4,755, and all five US
+ * notes at once 5,166. The largest result the tool can make (every block present, a latest ex-date with no trailing
+ * figures, no P/E, no memberships, plus both common notes) measures 5,399 (2026-11-21). 6,500 keeps ~1,100 above that.
+ */
+export const FUNDAMENTALS_RESULT_MAX_CHARS = 6_500;
+
+/**
+ * `get_economy` ceiling. Until 2026-10 it shared `AGGREGATE_RESULT_MAX_CHARS`
+ * with a 10-event, 7-day calendar (~3,670 chars). The default call now carries
+ * up to 80 events of the next `ECONOMY_CALENDAR_DEFAULT_DAYS` (`shared/config/economyCalendar.ts`): the
+ * live 70-day calendar block measured ~12,920 chars (2026-10-23, 80 picked of
+ * 646 rows, ~160 per event), plus ~2,100 for 9 indicators, the treasury block
+ * and a two-paragraph Korean briefing — ~15,000 in all. A heavier-than-real
+ * worst case (80 events with ~50-char names and three 9-char numbers each, a
+ * 600-char briefing) measures ~18,940; `getEconomy.test.ts` asserts it stays
+ * under this ceiling, so a full result is never cut into a preview blob. A
+ * ranged call (`from`/`to`) returns the calendar block alone, so a follow-up
+ * lookup in the same turn adds at most ~13,000.
+ */
+export const ECONOMY_RESULT_MAX_CHARS = 20_000;
+
+/**
+ * `get_investor_flows` ceiling. Until 2026-10-16 the tool shared
+ * `AGGREGATE_RESULT_MAX_CHARS` (~5,260 chars worst case). The SEC expansion
+ * added five Form 144 notices, five offering filings, fails to deliver, the
+ * Reg SHO status, the 13F put/call ratio and the squeeze score; the heavier-
+ * than-real worst case (long-named holders, insiders and filers, every list
+ * past its cap, a listed symbol on five exchanges, squeeze data) now measures
+ * ~7,340 chars of full tool output including the envelope (still ~7,340
+ * after adding signal subjects and the squeeze basis note, paid for by one
+ * fewer top holder). Core 2.21 then added required metrics fields that the
+ * tool passes through (Form 144 shares and % of outstanding, the FTD peak
+ * date, short-interest change endpoints, Reg SHO freshness), bringing the
+ * worst case to ~7,560 chars; the ceiling moved 8,000 → 8,500 rather than
+ * dropping the endpoint dates the prompt rules require. The US `ownershipShares` block (Yahoo aggregate,
+ * 2026-11-16) and its source note add ~345 chars: worst case 7,904, ceiling 8,500 → 8,800 to keep the
+ * 600-char margin. The `SUMMARY_MAX_*`
+ * caps in `entities/investor-flows/lib/summary/` keep it ≥600 under this ceiling
+ * (`getInvestorFlows.test.ts` pins it).
+ */
+export const INVESTOR_FLOWS_RESULT_MAX_CHARS = 8_800;
+
+/**
+ * `get_guide` ceiling. The best match carries up to 3,500 raw body characters
+ * (`GUIDE_BODY_MAX_CHARS`); Korean prose with newlines and quotes escapes to
+ * roughly 4,100 once JSON-serialized, plus ~600 for the two runner-up cards and
+ * the envelope. The shared 4,000 default would re-cut an already-fit result
+ * into a front-cut preview blob, so it gets its own ceiling.
+ */
+export const GUIDE_RESULT_MAX_CHARS = 6_000;
+
+/**
+ * `get_macro_quotes` ceiling. Each instrument carries a quote, a futures
+ * `contract`, four calendar changes and a 52-week range (~700 chars). Measured
+ * 2026-11-15 on a real-shape 8-instrument call (the per-call maximum, ~400 daily
+ * rows each, `getMacroQuotes.test.ts`): 5,627 chars; 7,000 leaves ~1,370 of
+ * headroom for longer contract names and digits. The standard 4,000 would re-cut a full call into a
+ * front-cut preview blob.
+ */
+export const MACRO_QUOTES_RESULT_MAX_CHARS = 7_000;
+
+/**
+ * `get_company_filings` ceiling, shared by both calls (counted on the SERIALIZED length). Measured 2026-11-15 on
+ * heavier-than-real worst cases (`getCompanyFilings.test.ts`):
+ * - list: 10 filings, each with 8 items carrying the longest labels, a 200-char headline with quotes and a long
+ *   document URL: 10,241 chars (a realistic list is ~4,000-5,000, but even 1-2 items per filing outgrows the
+ *   shared 4,000 default once ten headlines and URLs are listed);
+ * - read: exactly `AGENT_FILING_TEXT_MAX_CHARS` (12,000) of text with a `"` and a newline every 12 characters
+ *   (+16.7% once JSON-escaped) plus the same heavy item/headline block: 15,167 chars.
+ * 17,000 leaves ~1,830 above the larger. The shared default would re-cut a full read into a front-cut preview
+ * blob. Text that escapes even harder than the fixture is not left to the registry's cut: the tool shortens the
+ * text itself and sets `truncated` (`fitReadResult`).
+ */
+export const COMPANY_FILINGS_RESULT_MAX_CHARS = 17_000;
+
+/**
+ * `get_x_posts` ceiling (counted on the SERIALIZED length). The tool returns up to `AGENT_X_POSTS_MAX` (12) posts
+ * of up to `AGENT_X_POST_TEXT_MAX_CHARS` (600) characters each, plus two account rows — far past the shared 4,000
+ * default, which would re-cut the result into a front-cut preview blob. Measured 2026-11-16 on a heavier-than-real
+ * worst case (`getXPosts.test.ts`: 12 posts of exactly 600 characters with a `"` and a newline every 40 characters,
+ * 15-char handles, 19-digit ids, 7-digit counts, two account rows): 10,294 chars. 11,500 leaves ~1,200 above it.
+ * Text that escapes harder than the fixture is not left to the registry's cut: the tool drops the oldest posts
+ * itself (`fitPosts`).
+ */
+export const X_POSTS_RESULT_MAX_CHARS = 11_500;
+
+/**
+ * `get_index_history_stats` ceiling. The result grows by one `annual` row a year; measured 2026-11-16 on the
+ * longest index (S&P 500, 75 full years from 1951, all US-only blocks present): 6,743 chars of core stats plus a
+ * ~120-char envelope. 9,000 leaves room for ~30 more years and for a future field; the shared 4,000 default
+ * would cut the table into a front-cut preview blob.
+ */
+export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
+
+/**
+ * `get_swing_history` ceiling. Core caps each episode list (`SWING_EPISODES_LISTED_MAX`, 20 declines and 20 rallies), so
+ * the size does not grow with history. Measured 2026-11-17 on core 2.40.0 (open leg with `afterThisAge`/`endsAtClose`)
+ * across 27 symbols (index ETFs, the big seven, theme stocks, defensives, BTCUSD/ETHUSD, KRX) at 10%: 8,048–8,437 chars
+ * of core output, plus a ~200-char envelope with the resolved name.
+ * 11,000 leaves room for wider prices (KRW closes) and a future field.
+ */
+export const SWING_HISTORY_RESULT_MAX_CHARS = 11_000;
+
+/**
+ * `get_price_stats` ceiling. The result grows with subjects (3), date lookups (5 each), notes (a closed set in core, each
+ * naming its subject, so up to ~12 per subject) and correlation pairs (3 pairs of daily and weekly legs). The worst case
+ * pinned in `getPriceStats.test.ts` (three subjects of different markets with 36 years of history, five date lookups
+ * each hitting every status, an unusable row, an in-progress session, a window argument overridden twice and three
+ * cross-market pairs) measures 9,389 chars (2026-11-27): the figures are ~5,000 and the per-subject notes
+ * ~3,600. A typical single-subject call is ~800. 11,000 leaves ~1,600 for a longer name or a note core adds; the shared
+ * 4,000 default would cut the notes and correlation off the end and collapse the result into a front-cut preview blob.
+ */
+export const PRICE_STATS_RESULT_MAX_CHARS = 11_000;
+
+/**
+ * `get_analyst_views` ceiling. Up to 15 firm-level actions plus up to four estimate periods: measured 2026-11-16
+ * on a heavier-than-real case (`getAnalystViews.test.ts`: long firm names and grades, four periods with 5-digit
+ * EPS and 16-digit revenue) at 4,721 chars. 5,500 leaves ~780; the shared 4,000 default would cut the estimates
+ * block off the end.
+ */
+export const ANALYST_VIEWS_RESULT_MAX_CHARS = 5_500;
+
+/**
+ * `web_search` ceiling (counted on the SERIALIZED length). Five results carry a title (clipped to 400 chars), a
+ * snippet (400), a URL (at most 500, longer ones are dropped) and an age; the top two also carry an `excerpt`
+ * of up to 1,800 chars and `publishedAt`. Measured 2026-11-22 on a heavier-than-real worst case
+ * (`webSearch.test.ts`: every text field full to its clip with a `"` and a newline every 12 characters, so
+ * JSON escaping adds ~15%, 480-char URLs, `cached: true`): 11,918 chars. 13,000 leaves ~9% above it; the shared
+ * 4,000 default would cut the second excerpt off into a front-cut preview blob. A realistic result with two
+ * ~1,800-char excerpts is ~6,000-7,000.
+ */
+export const WEB_SEARCH_RESULT_MAX_CHARS = 13_000;
+
+/**
+ * `get_my_watchlist` 결과 상한. `getMyWatchlist.test.ts`가 재는 최악 모양은 종목 상한(`WATCHLIST_MAX_MEMBER` = 50)을 9자 코드,
+ * 이름 상한(`WATCHLIST_TOOL_NAME_MAX_CHARS` = 64자, 더 긴 이름은 잘린다), 네 자리 가격으로 채우고 낡은 시세 상세 5건과 살아 있는
+ * 알림 10건을 붙인 결과로 10,731자다. 11,400자는 그 위에 약 670자를 남긴다(그 테스트가 상한 근처에 있음과 넘지 않음을 함께
+ * 확인한다). 기본 상한(4,000자)에서는 50종목 목록이 앞부분 미리보기로 무너져 종목과 시세가 사라진다.
+ */
+export const WATCHLIST_RESULT_MAX_CHARS = 11_400;
+
+/**
+ * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
+ * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
+ * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK
+ * extension characters carried in news/article text).
+ */
+function safeSliceUtf16(text: string, maxChars: number): string {
+    if (maxChars <= 0) return '';
+    const cut = text.slice(0, maxChars);
+    const lastCode = cut.charCodeAt(cut.length - 1);
+    const isHighSurrogate = lastCode >= 0xd800 && lastCode <= 0xdbff;
+    return isHighSurrogate ? cut.slice(0, -1) : cut;
+}
+
+/**
+ * Largest prefix of `text` whose JSON-ESCAPED length fits `maxEscapedChars`.
+ * Budgeting on raw `.length` under-counts: in JSON a `"` becomes `\"` and a
+ * newline `\n`, so ordinary prose runs ~15% longer once serialized. Callers
+ * that split a byte budget across fields (news bodies) must reserve the
+ * escaped size, otherwise the whole structured payload overflows and the
+ * registry collapses it into a front-cut preview blob.
+ */
+export function fitToEscapedBudget(
+    text: string,
+    maxEscapedChars: number
+): string {
+    if (maxEscapedChars <= 0) return '';
+    let len = Math.min(text.length, maxEscapedChars);
+    const MAX_ITERATIONS = 30;
+    for (let i = 0; i < MAX_ITERATIONS && len > 0; i++) {
+        const slice = safeSliceUtf16(text, len);
+        // `- 2` drops the surrounding quotes JSON.stringify adds.
+        const overflow = JSON.stringify(slice).length - 2 - maxEscapedChars;
+        if (overflow <= 0) return slice;
+        len = Math.max(Math.floor(len / 2), len - overflow);
+    }
+    return '';
+}
+
+/**
+ * Builds `{ truncated: true, preview }` so that RE-serializing the envelope
+ * (core wraps every tool result in `JSON.stringify` before it reaches the
+ * model) still fits `TOOL_RESULT_MAX_CHARS` — not just the raw preview
+ * string. Quote/backslash-heavy `serialized` input (it's already a JSON
+ * string, so it's full of `"`) roughly doubles in size once JSON.stringify
+ * escapes it a second time, so a naive `slice(0, MAX)` preview could produce
+ * an envelope up to ~2x the budget. Shrinks by the measured overflow each
+ * iteration, which converges in a handful of steps because the escape
+ * expansion ratio is bounded (each `"`/`\` adds exactly one extra char).
+ */
+function buildTruncatedEnvelope(
+    serialized: string,
+    maxChars: number
+): {
+    truncated: true;
+    preview: string;
+} {
+    let previewLen = maxChars;
+    const MAX_ITERATIONS = 30;
+    for (let i = 0; i < MAX_ITERATIONS && previewLen > 0; i++) {
+        const preview = safeSliceUtf16(serialized, previewLen);
+        const envelope = { truncated: true as const, preview };
+        const overflow = JSON.stringify(envelope).length - maxChars;
+        if (overflow <= 0) return envelope;
+        // Never let one subtraction jump past 0: `overflow` counts ESCAPED units
+        // while `previewLen` counts raw ones, so a quote-heavy payload could
+        // otherwise leave the model an empty preview. Halving bounds the step.
+        previewLen = Math.max(
+            Math.floor(previewLen / 2),
+            previewLen - Math.max(overflow, 1)
+        );
+    }
+    return { truncated: true, preview: '' };
+}
+
+export function truncateToolResult(
+    value: unknown,
+    maxChars: number = TOOL_RESULT_MAX_CHARS
+): unknown {
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined || serialized.length <= maxChars) return value;
+    return buildTruncatedEnvelope(serialized, maxChars);
+}
+
+/**
+ * `get_cached_analysis` (and `run_fresh_analysis`, same shape) carries a whole analysis plus its plain-language
+ * rewrite. Measured on production snapshots (2026-09-13, before
+ * `patterns`/`candlePatterns`/`strategies` were added to the technical
+ * projection): 3 of 7 popular symbol/tab pairs exceeded 4,000 chars (AAPL
+ * technical ~6,000, AAPL overall 5,431, NVDA overall ~8,300), so the model
+ * got a front-cut preview — the plain rewrite and only ~900 chars of the
+ * actual analysis. Raised 12,000 → 16,000 (2026-09-14) once those three
+ * fields joined the technical projection and pushed realistic payloads
+ * closer to the old ceiling again; its own ceiling keeps both the analysis
+ * and the plain rewrite whole.
+ *
+ * Nothing in core bounds the size of the CURRENT turn: history windowing
+ * applies only to earlier turns, and every step resends the whole growing
+ * message list (up to core's `AGENT_TURN_CAPS` steps / tool calls) — so we
+ * do not raise this further without also reconsidering the per-turn
+ * allowance below. The larger ceiling is paired with a per-turn allowance
+ * (`CACHED_ANALYSIS_TURN_BUDGET_CHARS`): two full analyses per turn, after
+ * which further lookups fall back to the default 4,000 cut.
+ */
+export const CACHED_ANALYSIS_MAX_CHARS = 16_000;
+export const CACHED_ANALYSIS_TURN_BUDGET_CHARS = 2 * CACHED_ANALYSIS_MAX_CHARS;

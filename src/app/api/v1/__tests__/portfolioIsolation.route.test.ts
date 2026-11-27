@@ -29,46 +29,52 @@ vi.mock('@/entities/llm-provider/api/agent/router', () => ({
 vi.mock('@/entities/news-article/server/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
+vi.mock('@/features/agent-tools/server/tools/searchTicker', () => ({
     searchTickerTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getQuote', () => ({ getQuoteTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getBarsIndicators', () => ({
+vi.mock('@/features/agent-tools/server/tools/getQuote', () => ({
+    getQuoteTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getBarsIndicators', () => ({
     getBarsIndicatorsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
+vi.mock('@/features/agent-tools/server/tools/getNews', () => ({
+    getNewsTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getOptionsSummary', () => ({
     getOptionsSummaryTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/freshAnalysis/runFreshAnalysis', () => ({
     runFreshAnalysisTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
+vi.mock('@/features/agent-tools/server/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getFundamentals', () => ({
+vi.mock('@/features/agent-tools/server/tools/getFundamentals', () => ({
     getFundamentalsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMarketOverview', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMarketOverview', () => ({
     getMarketOverviewTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
+vi.mock('@/features/agent-tools/server/tools/getEconomy', () => ({
     getEconomyTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCongressTrades', () => ({
     getCongressTradesTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+vi.mock('@/features/agent-tools/server/tools/getGuide', () => ({
+    getGuideTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getAnalystViews', () => ({
     getAnalystViewsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMacroQuotes', () => ({
     getMacroQuotesTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCompanyFilings', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCompanyFilings', () => ({
     getCompanyFilingsTool: vi.fn(),
 }));
 // 아래는 getMyPortfolioTool(실물)의 의존성.

@@ -1,5 +1,5 @@
 /**
- * 경제 캘린더 창 상수. SiglensAI 도구(`app/api/ai/chat/tools/getEconomy.ts`), `/developers`의 도구 요약
+ * 경제 캘린더 창 상수. SiglensAI 도구(`features/agent-tools/server/tools/getEconomy.ts`), `/developers`의 도구 요약
  * 문구(ICU 인자, `views.developers.tools.summaries.get_economy`, I18N.md#I18-6), FMP 제공자의 분할
  * 조회(`shared/api/fmp/FmpEconomyProvider.ts`의 `splitCalendarRange`)가 같은 값을 읽는다.
  */

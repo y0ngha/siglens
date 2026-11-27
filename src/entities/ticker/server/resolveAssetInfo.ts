@@ -14,8 +14,9 @@ import type { AssetInfo } from '@/shared/lib/types';
  * cosmetic company name / a symbol-mapping hint.
  *
  * Logs only the error's `name` — same privacy rule as `logToolError` in
- * `tools/index.ts` (a `DrizzleQueryError`'s `.message`/`.stack` can embed
- * bound params, e.g. the caller's raw symbol string).
+ * `features/agent-tools/server/createToolExecutor.ts` (a `DrizzleQueryError`'s
+ * `.message`/`.stack` can embed bound params, e.g. the caller's raw symbol
+ * string).
  */
 export async function resolveAssetInfoOrNull(
     symbol: string,

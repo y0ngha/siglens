@@ -6,7 +6,7 @@ const { mockCreateExecutor, mockExecute, mockChartData } = vi.hoisted(() => ({
 vi.mock('@/app/api/v1/getChartData', () => ({
     getChartDataTool: mockChartData,
 }));
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     createToolExecutor: mockCreateExecutor,
     availableToolNames: () => new Set(),
 }));

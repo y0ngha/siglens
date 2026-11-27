@@ -4,8 +4,8 @@ import {
     selectTools,
     type AgentToolSpec,
 } from '@y0ngha/siglens-core';
-import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
+import { availableToolNames } from '@/features/agent-tools/server/createToolExecutor';
 import {
     GET_MY_WATCHLIST_TOOL,
     PROPOSE_PRICE_ALERT_TOOL,

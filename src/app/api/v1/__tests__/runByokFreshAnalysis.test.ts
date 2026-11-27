@@ -212,15 +212,15 @@ vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
 import * as Anthropic from '@anthropic-ai/sdk';
 import { UserApiKeyMissingError, type ModelId } from '@y0ngha/siglens-core';
 import * as OpenAI from 'openai';
-import {
-    __resetFreshSemaphoreForTests,
-    tryAcquireFreshSlot,
-} from '@/app/api/ai/chat/tools/runFreshAnalysis';
 import { prepareRunner } from '@/app/api/v1/freshAnalysisRunner';
 import { isPublicToolStream } from '@/app/api/v1/publicToolOutcome';
 import { runByokFreshAnalysis } from '@/app/api/v1/runByokFreshAnalysis';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { RateLimiterUnavailableError } from '@/entities/siglens-api-key/server/rateLimit';
+import {
+    __resetFreshSemaphoreForTests,
+    tryAcquireFreshSlot,
+} from '@/features/agent-tools/server/freshAnalysis/runFreshAnalysis';
 import { PUBLIC_API_RATE_LIMITS } from '@/shared/config/publicApi';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 import {

@@ -1,63 +1,68 @@
 vi.mock('@/entities/news-article/server/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
+vi.mock('@/features/agent-tools/server/tools/searchTicker', () => ({
     searchTickerTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getQuote', () => ({ getQuoteTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getBarsIndicators', () => ({
+vi.mock('@/features/agent-tools/server/tools/getQuote', () => ({
+    getQuoteTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getBarsIndicators', () => ({
     getBarsIndicatorsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
+vi.mock('@/features/agent-tools/server/tools/getNews', () => ({
+    getNewsTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getOptionsSummary', () => ({
     getOptionsSummaryTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMyPortfolio', () => ({
     getMyPortfolioTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMyWatchlist', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMyWatchlist', () => ({
     getMyWatchlistTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/proposePriceAlert', () => ({
+vi.mock('@/features/agent-tools/server/tools/proposePriceAlert', () => ({
     proposePriceAlertTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/freshAnalysis/runFreshAnalysis', () => ({
     runFreshAnalysisTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
+vi.mock('@/features/agent-tools/server/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getFundamentals', () => ({
+vi.mock('@/features/agent-tools/server/tools/getFundamentals', () => ({
     getFundamentalsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMarketOverview', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMarketOverview', () => ({
     getMarketOverviewTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
+vi.mock('@/features/agent-tools/server/tools/getEconomy', () => ({
     getEconomyTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCongressTrades', () => ({
     getCongressTradesTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getInvestorFlows', () => ({
+vi.mock('@/features/agent-tools/server/tools/getInvestorFlows', () => ({
     getInvestorFlowsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+vi.mock('@/features/agent-tools/server/tools/getGuide', () => ({
+    getGuideTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getAnalystViews', () => ({
     getAnalystViewsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMacroQuotes', () => ({
     getMacroQuotesTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCompanyFilings', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCompanyFilings', () => ({
     getCompanyFilingsTool: vi.fn(),
 }));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
-import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
 import {
     findPublicApiToolSpec,
     isPublicApiOnlyTool,
@@ -70,6 +75,7 @@ import {
 import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicators';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import { renderChartDataNotes } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import { availableToolNames } from '@/features/agent-tools/server/createToolExecutor';
 import {
     PUBLIC_API_CHART_DATA,
     PUBLIC_API_CHART_DATA_MEASURED_SIZES as MEASURED,

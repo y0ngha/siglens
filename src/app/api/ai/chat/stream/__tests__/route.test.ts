@@ -61,7 +61,7 @@ vi.mock('@/app/api/ai/chat/counters', () => ({
     }),
     GUEST_IP_TURNS_PER_DAY: 100,
 }));
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     createToolExecutor: () => {
         if (m.toolExecutorError) throw m.toolExecutorError;
         return vi.fn();

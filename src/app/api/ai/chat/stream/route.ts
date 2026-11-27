@@ -6,6 +6,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { constants } from 'node:http2';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { AGENT_BUSY_LOG } from '@/features/agent-tools/lib/busyLog';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { readGuestId } from '@/shared/api/guestId';
 import { isBot } from '@/shared/api/isBot';
@@ -20,7 +21,6 @@ import {
     readBoundedBody,
 } from '@/shared/lib/readBoundedBody';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
-import { AGENT_BUSY_LOG } from '../busyLog';
 import {
     createGuestIpBackstopCounter,
     GUEST_IP_TURNS_PER_DAY,

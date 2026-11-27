@@ -13,10 +13,6 @@ import {
     createAgentCounters,
 } from '@/app/api/ai/chat/counters';
 import { createFollowUpTextFilter } from '@/app/api/ai/chat/followUps';
-import {
-    availableToolNames,
-    createToolExecutor,
-} from '@/app/api/ai/chat/tools/chatTools';
 import type {
     ChatMessageRecord,
     NewChatMessage,
@@ -27,6 +23,10 @@ import {
     AGENT_MODEL,
     type AgentProviderState,
 } from '@/entities/llm-provider/api/agent/router';
+import {
+    availableToolNames,
+    createToolExecutor,
+} from '@/features/agent-tools/server/createToolExecutor';
 import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';

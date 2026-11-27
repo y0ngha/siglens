@@ -83,7 +83,8 @@ describe('resolveAssetInfoOrNull', () => {
             { errorName: 'DrizzleQueryError' }
         );
         // Never forward the raw message — it can embed bound params (see
-        // `logToolError` in `tools/index.ts` for the same privacy rule).
+        // `logToolError` in `features/agent-tools/server/createToolExecutor.ts`
+        // for the same privacy rule).
         const loggedArgs = warn.mock.calls.find(
             call => call[1] === 'get_quote'
         );

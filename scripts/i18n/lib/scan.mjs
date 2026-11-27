@@ -16,6 +16,8 @@ const HASH_LENGTH = 6;
  *
  * - 테스트: 픽스처 문자열이 카탈로그를 오염시킨다.
  * - `src/app/api`: 서버 로그·에러 코드. 사용자에게 렌더되지 않는다.
+ * - `src/features/agent-tools/`: 에이전트 도구의 실행기·설명·결과 안내문. 화면이 아니라
+ *   모델에게 보내는 텍스트이고, `src/app/api/ai/chat/tools/`에서 옮겨 오기 전과 같은 범위다.
  * - `scripts`, `db`: 운영 스크립트.
  * - `src/app/not-found.tsx`: 루트 레이아웃 바깥에서 자체 문서를 렌더한다.
  *   로케일을 알 수 없는 자리라(어떤 라우트에도 매칭되지 않은 URL) ko·en 병기
@@ -51,7 +53,7 @@ const HASH_LENGTH = 6;
  *   있다.
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/api\/dart\/fakeDartClient\.ts|src\/entities\/investor-flows\/lib\/dartSourceTokens\.ts|src\/entities\/kr-valuation\/lib\/dartSourceTokens\.ts|src\/shared\/config\/guideLinks\.generated\.ts|src\/shared\/config\/guideLive\.ts|\/operator-mail\/)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|src\/features\/agent-tools\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/api\/dart\/fakeDartClient\.ts|src\/entities\/investor-flows\/lib\/dartSourceTokens\.ts|src\/entities\/kr-valuation\/lib\/dartSourceTokens\.ts|src\/shared\/config\/guideLinks\.generated\.ts|src\/shared\/config\/guideLive\.ts|\/operator-mail\/)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {

@@ -11,7 +11,7 @@ vi.mock('@/entities/siglens-api-key/server/rateLimit', async () => {
     >('@/entities/siglens-api-key/server/rateLimit');
     return { ...actual, consumeRateLimit: mockConsume };
 });
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     availableToolNames: () =>
         new Set([
             'search_ticker',
