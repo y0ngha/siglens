@@ -18,7 +18,7 @@ vi.mock('server-only', () => ({}));
  *   docker run -d --name <unique> -e POSTGRES_PASSWORD=x -e POSTGRES_USER=siglens -e POSTGRES_DB=siglens_test \
  *     -p 127.0.0.1:<random-port>:5432 --pull never postgres:17-alpine
  *   TEST_DATABASE_URL=postgres://siglens:x@127.0.0.1:<random-port>/siglens_test yarn test stripExpiredWebSearchBodies.db.test.ts
- * 접속 대상이 로컬이 아니면 거부하고, 임시 스키마에 `0035_agent_chat.sql`·`0057_agent_chat_chart.sql`을 적용하고, 끝나면 스키마를 지운다.
+ * 접속 대상이 로컬이 아니면 거부하고, 임시 스키마에 `0035_agent_chat.sql`부터 `chat_messages`를 바꾼 마이그레이션(0057, 0058, 0068)까지 차례로 적용하고, 끝나면 스키마를 지운다.
  * 행은 실제 쓰기 경로(`appendMessages`)로 넣고 생성 시각만 SQL로 옮긴다.
  */
 const URL = process.env.TEST_DATABASE_URL;
@@ -35,6 +35,7 @@ const migration = (file: string): string[] =>
                     '"public"."chat_conversations"',
                     '"chat_conversations"'
                 )
+                .replaceAll('"public"."chat_messages"', '"chat_messages"')
         );
 
 const searchResult = (label: string) =>
@@ -123,6 +124,8 @@ describe.skipIf(!URL)(
             );
             await runInOrder(migration('0035_agent_chat.sql'));
             await runInOrder(migration('0057_agent_chat_chart.sql'));
+            await runInOrder(migration('0058_agent_chat_images.sql'));
+            await runInOrder(migration('0068_chat_message_turn_at.sql'));
             const [user] = await client<{ id: string }[]>`
                 INSERT INTO users DEFAULT VALUES RETURNING id`;
             const conversation = await repo.create({

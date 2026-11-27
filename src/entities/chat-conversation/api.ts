@@ -605,28 +605,32 @@ export class DrizzleChatConversationRepository {
         updates: ReadonlyArray<{ id: string; content: string }>
     ): Promise<number> {
         if (updates.length === 0) return 0;
-        return this.db.transaction(async tx => {
-            const results = await Promise.all(
-                updates.map(update =>
-                    tx
-                        .update(chatMessages)
-                        .set({ content: update.content })
-                        .where(
-                            and(
-                                eq(chatMessages.id, update.id),
-                                eq(chatMessages.toolName, 'web_search'),
-                                not(
-                                    like(
-                                        chatMessages.content,
-                                        `%"${WEB_SEARCH_BODIES_OMITTED_KEY}":true%`
+        // 트랜잭션은 연결 하나라 UPDATE가 어차피 한 줄로 선다. `Promise.all`로 동시에 띄운 것처럼 보이지 않게
+        // 하나가 끝난 뒤 다음을 보내는 사슬로 쓴다.
+        return this.db.transaction(async tx =>
+            updates.reduce<Promise<number>>(
+                (previous, update) =>
+                    previous.then(async sum => {
+                        const rows = await tx
+                            .update(chatMessages)
+                            .set({ content: update.content })
+                            .where(
+                                and(
+                                    eq(chatMessages.id, update.id),
+                                    eq(chatMessages.toolName, 'web_search'),
+                                    not(
+                                        like(
+                                            chatMessages.content,
+                                            `%"${WEB_SEARCH_BODIES_OMITTED_KEY}":true%`
+                                        )
                                     )
                                 )
                             )
-                        )
-                        .returning({ id: chatMessages.id })
-                )
-            );
-            return results.reduce((sum, rows) => sum + rows.length, 0);
-        });
+                            .returning({ id: chatMessages.id });
+                        return sum + rows.length;
+                    }),
+                Promise.resolve(0)
+            )
+        );
     }
 }
