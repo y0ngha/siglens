@@ -85,8 +85,7 @@ export async function myAction() { ... }
 
 ## import 규칙 (barrel 금지)
 
-`index.ts` barrel은 금지다(`src/__tests__/guards/noBarrelFiles.test.ts`). 소비자는 심볼을 정의한 파일
-(`api.ts`, `lib/<file>.ts`, `hooks/<file>.ts`, `model.ts` 등)에서 직접 import한다(테스트·`vi.mock` 포함).
+barrel 금지는 루트 `CLAUDE.md`가 정한다.
 
 server-only 모듈(`import 'server-only'`, `next/headers`, drizzle/DB client, Node 전용 라이브러리 등)은
 서버 소비자(RSC, route handler, Server Action, 다른 server-only 모듈)만 import한다. client component의
