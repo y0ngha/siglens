@@ -46,10 +46,10 @@ import { recordSignalHistory } from '../recordSignalHistory';
 const NOW = new Date('2026-11-13T21:20:00.000Z');
 const SESSION = '2026-11-13';
 /**
- * 두 종목의 330봉으로 core 신호 판정 전체를 실제로 돌린다. 로컬에선 1초 안팎이지만 CI 러너(병렬 워커)에선
- * 기본 5초를 넘겨 실패했다. 계산 경로 자체가 검증 대상이라 봉 수를 줄이지 않고 상한만 넉넉히 둔다.
+ * 두 종목의 330봉으로 core 신호 판정 전체를 실제로 돌린다. 단독 실행은 1초 안팎(`--reporter=verbose`로 잰다)이지만
+ * 병렬 워커가 붙은 CI 러너에선 기본 5초를 넘을 수 있다. 계산 경로 자체가 검증 대상이라 봉 수는 줄이지 않는다.
  */
-const FULL_SCAN_TIMEOUT_MS = 30_000;
+const HEAVY_COMPUTE_TIMEOUT_MS = 30_000;
 
 /** 오르내림이 있는 종가 — RSI·MACD·볼린저 신호가 실제로 켜졌다 꺼지게 한다. */
 function wavyBars(count: number): Bar[] {
@@ -79,7 +79,7 @@ function wavyBars(count: number): Bar[] {
 describe('recordSignalHistory — 실제 판정·계획으로 처음부터 끝까지', () => {
     it(
         '봉에서 신호를 판정해 종목마다 한 번에 쓰고, 세션을 완료로 찍는다',
-        { timeout: FULL_SCAN_TIMEOUT_MS },
+        { timeout: HEAVY_COMPUTE_TIMEOUT_MS },
         async () => {
             vi.spyOn(console, 'log').mockImplementation(() => {});
             const bars = wavyBars(330);
