@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { krListedBasis } from '@/app/api/ai/chat/tools/krListedBasis';
+import { krListedBasis } from '@/entities/kr-valuation/lib/krListedBasis';
 
 // 삼성중공업 010140: yahoo 시총 14.375조(≈8.54억 주), KRX 상장주식수 8.8억 주, 종가 16,830원.
 const SAMSUNG_HEAVY = {

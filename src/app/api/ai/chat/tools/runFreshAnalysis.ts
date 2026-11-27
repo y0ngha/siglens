@@ -12,12 +12,14 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverall
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import { loadAnalysisChartBlock, peekChartDrawings } from './chartBlock';
@@ -27,12 +29,10 @@ import {
     loadTechnicalAnalysisInputs,
 } from './freshAnalysisInputs';
 import { isMemberCaller, loadPublicAnalysis } from './getCachedAnalysis';
-import { logToolDegrade } from './logToolDegrade';
 import {
     fitTechnicalAnalysis,
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 import { loadSinceEarlier, type SinceEarlier } from './sinceEarlier';
 
 /**

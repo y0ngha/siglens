@@ -1,13 +1,13 @@
 import 'server-only';
 import type { ChatDividendsBlock } from '@/entities/chat-conversation/types';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import {
     getDescriptor,
     isKrEquitySymbol,
 } from '@/shared/config/marketProfile/registry';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { fetchDividendSource, type DividendSource } from '../dividends';
-import { resolveAssetInfoOrNull } from '../resolveAssetInfo';
 import { roundTo } from './round';
 import { noData, type VisualBuildEnv, type VisualOutcome } from './types';
 

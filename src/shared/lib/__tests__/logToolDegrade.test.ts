@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { logToolDegrade } from '@/app/api/ai/chat/tools/logToolDegrade';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 describe('logToolDegrade', () => {
     afterEach(() => {

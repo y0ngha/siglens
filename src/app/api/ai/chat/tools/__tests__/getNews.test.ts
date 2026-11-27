@@ -23,7 +23,7 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
     peekMarketNewsDigestStatic: peekDigest,
 }));
-vi.mock('@/app/api/ai/chat/tools/logToolDegrade', () => ({
+vi.mock('@/shared/lib/logToolDegrade', () => ({
     logToolDegrade: degradeSpy,
 }));
 vi.mock('@/entities/bars/server/barsDataCache', () => ({
@@ -35,7 +35,7 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: async () => null,
 }));
 

@@ -6,8 +6,8 @@ import {
     RECENT_QUARTERS_COUNT,
     recentQuarterRows,
 } from '@/app/api/ai/chat/tools/earningsHistory';
-import { pctVs } from '@/app/api/ai/chat/tools/percent';
-import type { SecQuarter } from '@/app/api/ai/chat/tools/secQuarters';
+import { pctVs } from '@/entities/bars/lib/percent';
+import type { SecQuarter } from '@/entities/earnings-report/lib/secQuarters';
 
 const bar = (date: string, close: number) => ({
     time: Date.parse(`${date}T00:00:00Z`) / 1000,

@@ -30,18 +30,18 @@ import {
     signPriceAlertProposal,
 } from '@/entities/mail-alert/server/priceAlertProposalToken';
 import { readPriceAlertReference } from '@/entities/mail-alert/server/priceAlertReference';
+import { staleKrListingDate } from '@/entities/ticker/lib/freshness';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { PriceAlertRecord } from '@/shared/db/types';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { ToolExecutor } from './chatTools';
-import { staleKrListingDate } from './freshness';
 import { peekTechnicalCacheHit } from './getCachedAnalysis';
-import { logToolDegrade } from './logToolDegrade';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const TOOL = 'propose_price_alert';
 

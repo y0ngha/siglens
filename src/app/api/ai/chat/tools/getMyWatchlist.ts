@@ -6,7 +6,12 @@ import {
     isPriceAlertLive,
     priceAlertAsOf,
 } from '@/entities/mail-alert/lib/priceAlertExpiry';
+import {
+    assessFreshness,
+    type FreshnessView,
+} from '@/entities/ticker/lib/freshness';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
@@ -16,11 +21,9 @@ import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { PriceAlertRecord } from '@/shared/db/types';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import type { ToolExecutor } from './chatTools';
-import { assessFreshness, type FreshnessView } from './freshness';
-import { logToolDegrade } from './logToolDegrade';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const TOOL = 'get_my_watchlist';
 

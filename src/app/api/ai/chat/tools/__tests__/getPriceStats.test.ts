@@ -19,10 +19,10 @@ vi.mock('@/entities/bars/server/loadPriceStatsCloses', () => ({
     loadPriceStatsCloses: loaders.symbol,
     loadIndexPriceStatsCloses: loaders.index,
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', async () => {
+vi.mock('@/entities/ticker/server/resolveAssetInfo', async () => {
     const actual = await vi.importActual<
-        typeof import('@/app/api/ai/chat/tools/resolveAssetInfo')
-    >('@/app/api/ai/chat/tools/resolveAssetInfo');
+        typeof import('@/entities/ticker/server/resolveAssetInfo')
+    >('@/entities/ticker/server/resolveAssetInfo');
     return {
         ...actual,
         // A rejected lookup is a failure (`lookupFailed`); a resolved null is a definite "unknown symbol".

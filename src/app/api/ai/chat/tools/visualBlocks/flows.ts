@@ -7,13 +7,13 @@ import type {
 } from '@/entities/chat-conversation/types';
 import { maskUncollectedSections } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import type { NaverInvestorTrendRow } from '@/shared/api/naver/naverInvestorTrend';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import {
     buildKrInvestorTrend,
     loadKrInvestorTrendRows,
-} from '../krInvestorTrend';
+} from '@/entities/investor-flows/server/krInvestorTrend';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import type { NaverInvestorTrendRow } from '@/shared/api/naver/naverInvestorTrend';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { roundTo } from './round';
 import { noData, type VisualBuildEnv, type VisualOutcome } from './types';
 

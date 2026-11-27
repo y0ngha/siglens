@@ -9,7 +9,7 @@ const m = vi.hoisted(() => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: m.tabAllowed,
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: m.assetOf,
 }));
 vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({

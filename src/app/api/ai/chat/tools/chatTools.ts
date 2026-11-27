@@ -8,6 +8,7 @@ import type { ConversationAnalysis } from '@/entities/chat-conversation/server/c
 import type { ChatBlock } from '@/entities/chat-conversation/types';
 import { isPriceAlertLaunched } from '@/entities/mail-alert/lib/priceAlertConstants';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
+import { correctKrSymbolArgs } from '@/entities/ticker/server/krSymbolCorrection';
 import {
     GET_MY_WATCHLIST_TOOL,
     PROPOSE_PRICE_ALERT_TOOL,
@@ -18,6 +19,7 @@ import { xBearerToken } from '@/shared/api/x/xClient';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { safeErrorFields } from '@/shared/lib/logToolDegrade';
 import { getAnalystViewsTool } from './getAnalystViews';
 import { getBarsIndicatorsTool } from './getBarsIndicators';
 import { getCachedAnalysisTool } from './getCachedAnalysis';
@@ -39,8 +41,6 @@ import { getQuoteTool } from './getQuote';
 import { getSwingHistoryTool } from './getSwingHistory';
 import { getThemeSnapshotTool } from './getThemeSnapshot';
 import { getXPostsTool } from './getXPosts';
-import { correctKrSymbolArgs } from './krSymbolCorrection';
-import { safeErrorFields } from './logToolDegrade';
 import { MEMBER_ONLY_TOOLS } from './memberOnlyTools';
 import { proposePriceAlertTool } from './proposePriceAlert';
 import { runFreshAnalysisTool } from './runFreshAnalysis';

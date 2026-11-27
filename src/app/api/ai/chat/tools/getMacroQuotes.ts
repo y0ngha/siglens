@@ -10,8 +10,8 @@ import {
     getYahooMacroQuotes,
     type YahooMacroQuote,
 } from '@/shared/api/yahoo/yahooMacroSource';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
-import { logToolDegrade } from './logToolDegrade';
 import { macroChanges, macroRange52w } from './macroQuoteMath';
 
 interface InstrumentSpec {

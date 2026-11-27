@@ -24,8 +24,8 @@ import {
     scaleGuardedReference,
 } from '@/entities/mail-alert/lib/referenceScale';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { withTimeout } from '@/shared/lib/withTimeout';
-import { logToolDegrade } from './logToolDegrade';
 
 /**
  * 도구 결과 하나에 싣는 **가격대 돌파** 항목 상한. 가격대는 종목마다 8~12개라 한 번에 많이 넘을 수 있어 자른다.

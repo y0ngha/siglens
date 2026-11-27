@@ -4,7 +4,7 @@ import {
     ppDelta,
     ratioPct,
     roundPct2,
-} from '@/app/api/ai/chat/tools/percent';
+} from '@/entities/bars/lib/percent';
 
 describe('pctVs', () => {
     it('normal: (current-base)/base*100', () => {

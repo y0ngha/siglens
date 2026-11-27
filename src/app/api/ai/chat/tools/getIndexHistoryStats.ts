@@ -6,7 +6,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { loadIndexMonthEnds } from '@/entities/index-history/server/loadIndexMonthEnds';
-import { logToolDegrade } from './logToolDegrade';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 const TOOL = 'get_index_history_stats';
 const SOURCE = 'SIGLENS index history (month-end closes)';

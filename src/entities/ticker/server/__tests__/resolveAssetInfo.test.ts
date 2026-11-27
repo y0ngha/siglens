@@ -6,7 +6,7 @@ import {
     resolveAssetInfoOrNull,
     resolveAssetLookup,
     resolvedInstrumentFields,
-} from '@/app/api/ai/chat/tools/resolveAssetInfo';
+} from '@/entities/ticker/server/resolveAssetInfo';
 
 describe('resolveAssetLookup', () => {
     beforeEach(() => {

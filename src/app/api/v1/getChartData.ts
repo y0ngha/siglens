@@ -4,13 +4,13 @@ import {
     isTimeframeAllowed,
     type ToolExecutionContext,
 } from '@y0ngha/siglens-core';
-import { resolveAssetInfoOrNull } from '@/app/api/ai/chat/tools/resolveAssetInfo';
 import { buildChartData } from '@/entities/bars/lib/buildChartData';
 import { resolveChartDataIndicators } from '@/entities/bars/lib/chartDataIndicators';
 import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
 import { shrinkToLimit } from '@/entities/bars/lib/shrinkToLimit';
 import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isValidTimeframe } from '@/shared/config/market';

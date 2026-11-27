@@ -9,7 +9,7 @@ import {
     correctKrSymbolArgs,
     singleSymbolCorrection,
     symbolListCorrection,
-} from '@/app/api/ai/chat/tools/krSymbolCorrection';
+} from '@/entities/ticker/server/krSymbolCorrection';
 
 const MASTER: Record<string, string> = {
     '253450.KS': '253450.KQ',

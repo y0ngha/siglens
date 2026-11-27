@@ -1,7 +1,7 @@
 import 'server-only';
 import { correctKrSymbolSuffix } from '@/entities/ticker/server/koreanNameStore';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { logToolDegrade } from './logToolDegrade';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 /** 도구 결과에 덧붙는 교정 기록 — 모델이 "다른 심볼로 답했다"는 사실을 보게 한다. */
 export interface KrSymbolCorrectionResult {

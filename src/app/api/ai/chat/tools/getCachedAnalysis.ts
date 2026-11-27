@@ -21,6 +21,7 @@ import {
     DrizzleAnalysisHistoryRepository,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
+import { pctVs } from '@/entities/bars/lib/percent';
 import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import {
     resolveHoldingPositionBucket,
@@ -28,6 +29,7 @@ import {
 } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -36,6 +38,7 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import {
     loadAnalysisChartBlock,
@@ -47,13 +50,10 @@ import {
     technicalLevelCandidates,
     type ChartReferenceLevels,
 } from './levelCandidates';
-import { logToolDegrade } from './logToolDegrade';
-import { pctVs } from './percent';
 import {
     fitTechnicalAnalysis,
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 import { loadSinceEarlier } from './sinceEarlier';
 
 const STALE_AFTER_MS: Record<string, number> = {

@@ -1,6 +1,6 @@
+import { pctVs, roundPct2 } from '@/entities/bars/lib/percent';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { isRecord } from '@/shared/lib/isRecord';
-import { pctVs, roundPct2 } from './percent';
 
 /**
  * Quarterly figures AS FILED, extracted from the SEC XBRL `companyconcept`
@@ -224,6 +224,8 @@ function currentPeriodFacts(facts: readonly SecConceptFact[]): {
 } {
     const quarters = new Map<string, SeriesEntry>();
     const years = new Map<string, SecConceptFact>();
+    // CONVENTIONS.md#CP-6 예외: a reduce would copy a Map per accession group, O(groups × periods).
+    // One pass fills both maps under the latest-filing-per-period rule; a 10-year 10-Q/10-K history has about 50 groups.
     for (const group of groupByAccn(facts).values()) {
         const currentEnd = group.reduce(
             (max, f) => (f.end > max ? f.end : max),
@@ -319,11 +321,12 @@ function buildSeries(
 ): Map<string, SeriesEntry> {
     const { quarters, years } = currentPeriodFacts(facts);
     if (!deriveQ4) return quarters;
-    const merged = new Map(quarters);
-    for (const q4 of deriveFourthQuarters(quarters, years)) {
-        merged.set(q4.end, q4);
-    }
-    return merged;
+    return new Map([
+        ...quarters,
+        ...deriveFourthQuarters(quarters, years).map(
+            q4 => [q4.end, q4] as const
+        ),
+    ]);
 }
 
 function entryNear(

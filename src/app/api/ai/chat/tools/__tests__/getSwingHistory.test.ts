@@ -10,10 +10,10 @@ const { loader, asset, cache } = vi.hoisted(() => ({
 vi.mock('@/entities/bars/server/loadDailyCloseHistory', () => ({
     loadDailyCloseHistory: loader.load,
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', async () => {
+vi.mock('@/entities/ticker/server/resolveAssetInfo', async () => {
     const actual = await vi.importActual<
-        typeof import('@/app/api/ai/chat/tools/resolveAssetInfo')
-    >('@/app/api/ai/chat/tools/resolveAssetInfo');
+        typeof import('@/entities/ticker/server/resolveAssetInfo')
+    >('@/entities/ticker/server/resolveAssetInfo');
     return { ...actual, resolveAssetInfoOrNull: asset.info };
 });
 vi.mock('@/shared/cache/getOrSetCache', () => ({

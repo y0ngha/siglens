@@ -13,7 +13,7 @@ const { getOrSetCache, fmpGet } = vi.hoisted(() => ({
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet }));
 // 지수 편입 목록은 Wikipedia를 읽으므로 이 테스트의 관심사(분기 캐시)와 분리한다.
-vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
+vi.mock('@/entities/index-history/server/indexMembership', () => ({
     loadIndexMemberships: async () => null,
 }));
 vi.mock('@/entities/ticker/api', () => ({
@@ -57,7 +57,7 @@ vi.mock('@/entities/earnings-report/api', () => ({
 vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: async () => ({ bars: [], indicators: {} }),
 }));
-vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({
+vi.mock('@/entities/earnings-report/server/loadSecQuarters', () => ({
     loadSecQuarters: async () => null,
 }));
 vi.mock('@/shared/db/client', () => ({

@@ -5,7 +5,6 @@ import {
     type ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { safeErrorFields } from '@/app/api/ai/chat/tools/logToolDegrade';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import {
@@ -19,6 +18,7 @@ import {
     isLocale,
     type Locale,
 } from '@/shared/i18n/locales';
+import { safeErrorFields } from '@/shared/lib/logToolDegrade';
 import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 import { API_STATUS } from './apiResponse';
 import { getChartDataTool } from './getChartData';

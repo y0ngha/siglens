@@ -119,13 +119,13 @@ import {
     MA50_PERIOD,
 } from '@/app/api/ai/chat/tools/getBarsIndicators';
 import { chartReferenceLevels } from '@/app/api/ai/chat/tools/levelCandidates';
-import { pctVs } from '@/app/api/ai/chat/tools/percent';
 import {
     BARS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
     truncateToolResult,
 } from '@/app/api/ai/chat/tools/truncate';
 import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+import { pctVs } from '@/entities/bars/lib/percent';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import {
     buildFearGreedPeriodComparisonLine,

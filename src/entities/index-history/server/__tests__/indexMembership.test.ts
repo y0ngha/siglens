@@ -16,7 +16,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     INDEX_FAILURE_CACHE_TTL_SECONDS,
     loadIndexMemberships,
-} from '@/app/api/ai/chat/tools/indexMembership';
+} from '@/entities/index-history/server/indexMembership';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const LISTS: Record<string, string[]> = {

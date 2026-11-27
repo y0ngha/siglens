@@ -1,5 +1,5 @@
 import type { Bar } from '@y0ngha/siglens-core';
-import { pctVs } from './percent';
+import { pctVs } from '@/entities/bars/lib/percent';
 
 /**
  * High/low over a window, the bar each was set on, and the last close's

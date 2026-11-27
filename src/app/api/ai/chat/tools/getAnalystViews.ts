@@ -1,16 +1,16 @@
 import 'server-only';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
+import { pctVs } from '@/entities/bars/lib/percent';
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { logToolDegrade } from './logToolDegrade';
-import { pctVs } from './percent';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 /**
  * 모델에 싣는 변경 이력 행 수. core 설명은 "up to 15"이고, 긴 증권사명·등급 문구를 담은 15행과 추정치 4기간을 함께 실은

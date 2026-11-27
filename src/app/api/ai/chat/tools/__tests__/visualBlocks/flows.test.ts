@@ -14,12 +14,15 @@ vi.mock('@/entities/investor-flows/server/getInvestorFlowsScorecard', () => ({
 vi.mock('@/entities/investor-flows/lib/investorFlowsReadiness', () => ({
     maskUncollectedSections: (snapshot: unknown) => snapshot,
 }));
-vi.mock('@/app/api/ai/chat/tools/krInvestorTrend', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/app/api/ai/chat/tools/krInvestorTrend')
-    >()),
-    loadKrInvestorTrendRows: m.krRows,
-}));
+vi.mock(
+    '@/entities/investor-flows/server/krInvestorTrend',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/investor-flows/server/krInvestorTrend')
+        >()),
+        loadKrInvestorTrendRows: m.krRows,
+    })
+);
 
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

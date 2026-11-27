@@ -1,21 +1,21 @@
 import 'server-only';
 import type { MarketQuote } from '@y0ngha/siglens-core';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import {
+    assessFreshness,
+    type FreshnessView,
+    staleKrListingDate,
+} from '@/entities/ticker/lib/freshness';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from '@/entities/ticker/server/resolveAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { MS_PER_SECOND } from '@/shared/config/time';
-import {
-    assessFreshness,
-    type FreshnessView,
-    staleKrListingDate,
-} from './freshness';
-import {
-    resolveAssetInfoOrNull,
-    resolvedInstrumentFields,
-} from './resolveAssetInfo';
 
 const MAX_SYMBOLS = 3;
 

@@ -48,7 +48,7 @@ describe('fetchQuotePriceForAnalysis', () => {
         expect(result).toBeUndefined();
         expect(spy).toHaveBeenCalledWith(
             '[fetchQuotePriceForAnalysis] quote lookup failed, degrading to undefined:',
-            { errorName: 'DrizzleQueryError' }
+            { errorName: 'DrizzleQueryError', code: undefined }
         );
         const loggedArgs = spy.mock.calls.find(
             call =>

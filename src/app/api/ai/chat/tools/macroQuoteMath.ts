@@ -1,7 +1,7 @@
 import { minusCalendarMonths } from '@y0ngha/siglens-core';
+import { pctVs } from '@/entities/bars/lib/percent';
 import type { YahooDailyClose } from '@/shared/api/yahoo/yahooMacroSource';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
-import { pctVs } from './percent';
 
 /** 일봉 기준 변화율 한 칸. `baseDate`는 기준이 된 거래일이다. */
 export interface MacroChange {
