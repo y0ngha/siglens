@@ -96,6 +96,19 @@ export function findSignalHub(slug: string): SignalHub | null {
     return SIGNAL_HUBS.find(hub => hub.slug === slug) ?? null;
 }
 
+/**
+ * 이 가이드 항목이 이 신호 페이지의 설명 문서인가(`SIGNAL_HUBS[].guide`의 역방향 판정 — 가이드 → 신호 페이지
+ * 링크와 과거 기록 표가 같은 술어를 쓴다).
+ */
+export function isHubGuide(
+    hub: SignalHub,
+    entry: { readonly category: string; readonly slug: string }
+): boolean {
+    return (
+        hub.guide.category === entry.category && hub.guide.slug === entry.slug
+    );
+}
+
 /** 색인할 만큼 모였는가 — 메타데이터·구조화데이터·사이트맵이 함께 쓰는 단일 판정. */
 export function isSignalHubIndexable(rowCount: number): boolean {
     return rowCount >= SIGNAL_HUB_MIN_INDEXABLE_ROWS;
