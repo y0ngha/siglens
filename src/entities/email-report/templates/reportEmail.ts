@@ -18,6 +18,62 @@ import { sectionHtml, sectionText } from './sectionCard';
  */
 export const REPORT_EMAIL_MAX_HTML_BYTES = 100_000;
 
+type ReportKind = 'welcome' | 'market' | 'regular';
+type Translate = BuildReportEmailInput['t'];
+type WelcomeInput = NonNullable<BuildReportEmailInput['welcome']>;
+
+/**
+ * 가입 첫 리포트 맨 위 안내: 일정과 동의 일시. 광고성 문구 없이 신청 결과와 발송 일정만 담는다.
+ * 번역 키는 리터럴로 부른다 — 추출기가 `t(변수)`를 못 봐 키를 지운다(`I18N.md`).
+ */
+function buildWelcomeLines(
+    welcome: WelcomeInput,
+    locale: BuildReportEmailInput['locale'],
+    t: Translate
+): string[] {
+    const schedule = formatSchedule(
+        welcome.daysOfWeek,
+        welcome.sendHour,
+        locale
+    );
+    return [
+        t('welcomeIntro', {
+            v0: schedule.days,
+            v1: schedule.time,
+            v2: formatTimeZoneName(welcome.timezone, locale),
+        }),
+        t('welcomeConsentAt', {
+            v0: formatConsentAt(welcome.consentedAt, welcome.timezone, locale),
+        }),
+    ];
+}
+
+/** 메일 종류에 맞는 제목 줄과 본문 제목. 종류는 한 번만 정한다. */
+function buildTitles(
+    kind: ReportKind,
+    t: Translate,
+    brand: string,
+    date: string
+): { subject: string; heading: string } {
+    switch (kind) {
+        case 'welcome':
+            return {
+                subject: t('welcomeSubject', { v0: brand }),
+                heading: t('welcomeHeading'),
+            };
+        case 'market':
+            return {
+                subject: t('marketSubject', { v0: brand, v1: date }),
+                heading: t('marketHeading'),
+            };
+        case 'regular':
+            return {
+                subject: t('subject', { v0: brand, v1: date }),
+                heading: t('heading'),
+            };
+    }
+}
+
 /**
  * 정기 메일 리포트 한 통.
  *
@@ -33,46 +89,31 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         welcome !== undefined &&
         input.sections.length === 0 &&
         input.briefRows.length === 0;
-    // 번역 키는 리터럴로 부른다 — 추출기가 `t(변수)`를 못 봐 키를 지운다(`I18N.md`).
-    const heading =
+    const kind: ReportKind =
         welcome !== undefined
-            ? t('welcomeHeading')
-            : marketBriefing === undefined
-              ? t('heading')
-              : t('marketHeading');
+            ? 'welcome'
+            : marketBriefing !== undefined
+              ? 'market'
+              : 'regular';
+    // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`I18N.md#I18-11`).
+    const brand = brandName(locale);
+    const { subject, heading } = buildTitles(kind, t, brand, date);
+    // 제목 줄과 본문 제목만 kind를 따른다. 인사말 아래 소개 문구, 요약 표 제목, 시장 안내는
+    // 첫 리포트에도 실제 내용(시장 브리핑 여부)을 설명해야 하므로 `marketBriefing`을 따른다.
     const reportIntro =
         marketBriefing === undefined
             ? t('intro', { v0: date })
             : t('marketIntro', { v0: date });
-    // 첫 리포트 맨 위 안내: 일정과 동의 일시. 광고성 문구 없이 신청 결과와 발송 일정만 담는다.
     const welcomeLines =
-        welcome === undefined
-            ? []
-            : (() => {
-                  const schedule = formatSchedule(
-                      welcome.daysOfWeek,
-                      welcome.sendHour,
-                      locale
-                  );
-                  return [
-                      t('welcomeIntro', {
-                          v0: schedule.days,
-                          v1: schedule.time,
-                          v2: formatTimeZoneName(welcome.timezone, locale),
-                      }),
-                      t('welcomeConsentAt', {
-                          v0: formatConsentAt(
-                              welcome.consentedAt,
-                              welcome.timezone,
-                              locale
-                          ),
-                      }),
-                  ];
-              })();
+        welcome === undefined ? [] : buildWelcomeLines(welcome, locale, t);
     const introLines = welcomeEmpty ? [] : [reportIntro];
-    const noDataNote = welcomeEmpty ? t('welcomeNoData') : null;
-    const sampleLink = welcomeEmpty ? t('welcomeSampleLink') : null;
-    const sampleUrl = welcomeEmpty ? welcome.sampleUrl : null;
+    const emptyNote = welcomeEmpty
+        ? {
+              note: t('welcomeNoData'),
+              linkLabel: t('welcomeSampleLink'),
+              url: welcome.sampleUrl,
+          }
+        : null;
     const briefHeading =
         marketBriefing === undefined ? t('sectionBrief') : t('marketSection');
     const disclaimer = t('disclaimer');
@@ -80,8 +121,6 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     const showConfluenceNote =
         input.sections.some(s => s.brief.signals !== null) ||
         input.briefRows.some(r => r.brief.signals !== null);
-    // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`I18N.md#I18-11`).
-    const brand = brandName(locale);
     const reason = t('reason', { v0: brand });
     const marketHint = marketBriefing === undefined ? null : t('marketHint');
     const marketMore = marketBriefing === undefined ? null : t('marketMore');
@@ -93,7 +132,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     <h1 style="font-size:22px;margin:0 0 8px;color:${COLORS.heading};">${escapeHtml(heading)}</h1>
     ${welcomeLines.map((line, i) => `<p style="font-size:14px;line-height:1.6;color:${i === 0 ? COLORS.body : COLORS.muted};margin:0 0 8px;">${escapeHtml(line)}</p>`).join('\n    ')}
     ${introLines.map(line => `<p style="font-size:14px;color:${COLORS.body};margin:0;">${escapeHtml(line)}</p>`).join('\n    ')}
-    ${noDataNote !== null && sampleLink !== null && sampleUrl !== null ? `<p style="font-size:14px;line-height:1.6;color:${COLORS.body};margin:0 0 8px;">${escapeHtml(noDataNote)}</p><p style="font-size:14px;margin:0;"><a href="${escapeHtml(sampleUrl)}" style="color:${COLORS.link};font-weight:600;">${escapeHtml(sampleLink)} →</a></p>` : ''}
+    ${emptyNote !== null ? `<p style="font-size:14px;line-height:1.6;color:${COLORS.body};margin:0 0 8px;">${escapeHtml(emptyNote.note)}</p><p style="font-size:14px;margin:0;"><a href="${escapeHtml(emptyNote.url)}" style="color:${COLORS.link};font-weight:600;">${escapeHtml(emptyNote.linkLabel)} →</a></p>` : ''}
   </div>
   ${input.sections.map(s => sectionHtml(s, t, input.signalLabel, brand)).join('\n')}
   ${briefTableHtml(input.briefRows, locale, t, input.signalLabel, briefHeading)}
@@ -109,8 +148,8 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         heading,
         ...welcomeLines,
         ...introLines,
-        ...(noDataNote !== null && sampleLink !== null && sampleUrl !== null
-            ? [noDataNote, `${sampleLink}: ${sampleUrl}`]
+        ...(emptyNote !== null
+            ? [emptyNote.note, `${emptyNote.linkLabel}: ${emptyNote.url}`]
             : []),
         '',
         ...input.sections.flatMap(s => [
@@ -137,12 +176,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
 
     return {
         to: input.to,
-        subject:
-            welcome !== undefined
-                ? t('welcomeSubject', { v0: brand })
-                : marketBriefing === undefined
-                  ? t('subject', { v0: brand, v1: date })
-                  : t('marketSubject', { v0: brand, v1: date }),
+        subject,
         html,
         text,
         headers: {

@@ -87,6 +87,7 @@ put_filter() {
 put_filter siglens-email-report-run-failed '"[email-report] run failed"' 100
 put_filter siglens-email-report-secret-missing '"[email-report] EMAIL_REPORT_SIGNING_SECRET missing"' 100
 put_filter siglens-email-report-delivery-failed '"[email-report] delivery failed"' 10
+put_filter siglens-email-report-welcome-failed '"[email-report] welcome failed"' 10
 log "metric filters ready (P2Score; alarm is siglens-p2 in 07-alarms.sh)"
 
 log "email-report cron ready — verify with a manual invoke before trusting the schedule:"

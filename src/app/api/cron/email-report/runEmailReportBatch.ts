@@ -101,6 +101,8 @@ export interface EmailReportBatchCounts {
     welcomeSent: number;
     /** 첫 리포트 발송이 실패해 `failed`로 기록한 회원(재시도 창 안이면 다음 실행이 다시 잡는다). */
     welcomeFailed: number;
+    /** 메일은 나갔지만(`welcomeSent`에 포함) `sent` 기록이 실패한 회원. 행은 `sending`으로 남는다. */
+    welcomeFinishFailed: number;
     /** 같은 멱등 키의 요청이 처리 중이라 시도를 쓰지 않고 다음 실행으로 미룬 첫 리포트. */
     welcomeRetryLater: number;
     /** `welcomeSent` 중 실을 종목이 없어 안내와 샘플 링크만 담아 보낸 회원. */
@@ -197,7 +199,8 @@ export function selectDueRecipients(
  *   `sending`으로 처리 중인(겹친 실행이 보내는 중일 수 있다) 회원은 그 회차를 건너뛴다. 행도 선점하지
  *   않아 다음 회차는 평소대로다.
  * - 첫 리포트와 정기 회차는 같은 워커 풀(`runPool`, 동시 처리 수와 마감 `BATCH_DEADLINE_MS` 공유)로 돈다.
- *   마감을 넘기면 남은 항목은 손대지 않고 `deferred`로 센다.
+ *   마감을 넘기면 남은 항목은 손대지 않고 `deferred`로 센다. 선점해 둔 첫 리포트 행은 `onDefer`로
+ *   `retry`로 돌려놓아(시도를 쓰지 않는다) 다음 실행이 바로 잡고 정기 회차의 `sending` 건너뛰기에도 걸리지 않는다.
  */
 export async function runEmailReportBatch(
     deps: EmailReportBatchDeps,
@@ -214,6 +217,7 @@ export async function runEmailReportBatch(
         alreadyClaimed: 0,
         welcomeSent: 0,
         welcomeFailed: 0,
+        welcomeFinishFailed: 0,
         welcomeRetryLater: 0,
         welcomeFallback: 0,
         suppressedByWelcome: 0,
@@ -482,9 +486,36 @@ export async function runEmailReportBatch(
         }
         // `already_accepted`: 같은 키의 첫 요청을 Resend가 이미 받았다(재시도 본문이 달라 거절됐을 뿐).
         // 메일은 나갔으므로 실패가 아니라 보냄으로 기록한다.
-        await deps.welcomes.finish(userId, 'sent', null);
+        // 메일이 나간 뒤에는 기록이 실패해도 실패로 세지 않는다. 행은 `sending`으로 남고, 시도 횟수가
+        // `WELCOME_MAX_ATTEMPTS` 아래인 동안만 30분 뒤 다시 잡힌다(같은 멱등 키라 Resend가
+        // `already_accepted`로 접는다). 마지막 시도였다면 보관 기간이 지나 지워질 때까지 `sending`으로 남는다.
         counts.welcomeSent += 1;
         if (symbols.length === 0) counts.welcomeFallback += 1;
+        await deps.welcomes.finish(userId, 'sent', null).catch(error => {
+            counts.welcomeFinishFailed += 1;
+            console.error(
+                `[email-report] welcome sent but could not record for ${userId}`,
+                redactDbErrorForLog(error)
+            );
+        });
+    }
+
+    /** 마감으로 손대지 못한 첫 리포트 행을 `sending`에서 돌려놓는다(시도를 쓰지 않는다). */
+    async function releaseDeferredWelcomes(
+        items: readonly EmailReportWelcomeRecipient[]
+    ) {
+        await Promise.all(
+            items.map(item =>
+                deps.welcomes
+                    .finish(item.userId, 'retry', 'deadline deferred')
+                    .catch(error =>
+                        console.error(
+                            `[email-report] could not release deferred welcome for ${item.userId}`,
+                            redactDbErrorForLog(error)
+                        )
+                    )
+            )
+        );
     }
 
     /** 첫 리포트 처리 중 던진 오류를 `failed`로 기록한다(시도 횟수가 남아 있으면 다음 실행이 다시 잡는다). */
@@ -510,11 +541,13 @@ export async function runEmailReportBatch(
     /**
      * `items`를 회원 동시성 `RECIPIENT_CONCURRENCY`로 처리한다. 마감을 넘기면 남은 항목은 손대지 않고
      * `counts.deferred`에 더한다. `work`가 던지면 `onError`가 처리한다(루프를 멈추지 않는다).
+     * `onDefer`는 마감으로 손대지 못한 항목을 받아 선점 상태를 풀어 준다(첫 리포트 행을 `retry`로 돌림).
      */
     async function runPool<T>(
         items: readonly T[],
         work: (item: T) => Promise<void>,
-        onError: (item: T, error: unknown) => void | Promise<void>
+        onError: (item: T, error: unknown) => void | Promise<void>,
+        onDefer?: (items: readonly T[]) => Promise<void>
     ) {
         // 한 이터레이터를 워커들이 나눠 쓴다 — `next()`가 항목을 한 번에 하나씩만 내주므로 겹치지 않는다.
         const queue = items[Symbol.iterator]();
@@ -523,7 +556,9 @@ export async function runEmailReportBatch(
             if (step.done === true) return;
             if (clock() - startedAt > BATCH_DEADLINE_MS) {
                 // 남은 항목을 전부 꺼내 버려 다른 워커도 끝나게 한다.
-                counts.deferred += 1 + [...queue].length;
+                const rest = [step.value, ...queue];
+                counts.deferred += rest.length;
+                await onDefer?.(rest);
                 return;
             }
             try {
@@ -542,7 +577,8 @@ export async function runEmailReportBatch(
     }
 
     // 1) 가입 첫 리포트. 정기 회차보다 먼저 돌아 방금 보낸 회원이 아래에서 걸러진다. 선점이 실패해도
-    // 정기 회차는 그대로 돈다. 마감을 넘겨 못 보낸 행은 `sending`으로 남아 30분 뒤 실패처럼 다시 잡힌다.
+    // 정기 회차는 그대로 돈다. 마감을 넘겨 못 보낸 행은 `retry`로 돌려놓아 다음 실행이 바로 잡고,
+    // 정기 회차의 `sending` 건너뛰기에도 걸리지 않는다.
     const welcomeRecipients = await deps.welcomes.claimDue(now).catch(error => {
         console.error(
             '[email-report] welcome claim failed',
@@ -550,7 +586,12 @@ export async function runEmailReportBatch(
         );
         return [];
     });
-    await runPool(welcomeRecipients, processWelcome, recordWelcomeFailure);
+    await runPool(
+        welcomeRecipients,
+        processWelcome,
+        recordWelcomeFailure,
+        releaseDeferredWelcomes
+    );
 
     // 2) 첫 리포트를 최근 받은 회원은 이번 정기 회차를 건너뛴다. 조회가 실패하면 건너뛰기 없이 진행한다 —
     // DB 오류 한 번으로 모든 정기 메일을 막는 것보다 같은 내용이 한 번 더 가는 편이 낫다.

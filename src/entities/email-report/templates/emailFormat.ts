@@ -1,4 +1,4 @@
-import { MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import { WEEKDAYS_MONDAY_FIRST } from '../lib/emailReportConstants';
@@ -44,6 +44,8 @@ const LIST_FORMATS: Record<Locale, Intl.ListFormat> = {
 
 // 2024-01-07은 일요일 — `Date#getDay()`가 n인 날짜를 만들려고 n일을 더한다.
 const SUNDAY_UTC = Date.UTC(2024, 0, 7);
+// 시각 라벨을 만들 기준 날짜(2024-01-01) 자정 UTC — 시간만 더해 `Intl`로 "오전 8:00"을 얻는다.
+const HOUR_LABEL_BASE_UTC = Date.UTC(2024, 0, 1);
 
 /**
  * 수신 일정을 문장에 끼울 조각으로 만든다. `days`는 월요일부터 순서대로 긴 요일 이름을 로케일의
@@ -69,7 +71,7 @@ export function formatSchedule(
         hour: 'numeric',
         minute: '2-digit',
         timeZone: 'UTC',
-    }).format(new Date(Date.UTC(2024, 0, 1, sendHour)));
+    }).format(new Date(HOUR_LABEL_BASE_UTC + sendHour * MS_PER_HOUR));
     return {
         days: LIST_FORMATS[locale].format(names),
         time,

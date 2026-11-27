@@ -824,20 +824,22 @@ describe('runEmailReportBatch: 가입 첫 리포트', () => {
         expect(deps.deliveries.pruneOlderThan).toHaveBeenCalled();
     });
 
-    it('보낸 뒤 기록이 던지면 failed로 바꿔 기록을 시도한다(행이 남아 있으면 다음 실행이 같은 멱등 키로 다시 보낸다)', async () => {
-        const { deps } = makeWelcomeDeps([welcomeRecipient()]);
-        vi.mocked(deps.welcomes.finish)
-            .mockRejectedValueOnce(new Error('write failed'))
-            .mockResolvedValue(undefined);
+    it('메일이 나간 뒤 sent 기록이 던지면 실패가 아니라 보냄으로 세고 기록 실패를 따로 센다', async () => {
+        const { deps, sent } = makeWelcomeDeps([welcomeRecipient()]);
+        vi.mocked(deps.welcomes.finish).mockRejectedValue(
+            new Error('write failed')
+        );
 
         const counts = await runEmailReportBatch(deps, NOW);
 
-        expect(deps.welcomes.finish).toHaveBeenCalledWith(
-            'w-1',
-            'failed',
-            'write failed'
-        );
-        expect(counts.welcomeFailed).toBe(1);
+        expect(sent).toHaveLength(1);
+        expect(deps.welcomes.finish).toHaveBeenCalledTimes(1);
+        expect(deps.welcomes.finish).toHaveBeenCalledWith('w-1', 'sent', null);
+        expect(counts).toMatchObject({
+            welcomeSent: 1,
+            welcomeFailed: 0,
+            welcomeFinishFailed: 1,
+        });
     });
 
     it('보유도 관심종목도 없고 시장 브리핑 종목도 없으면 안내와 샘플 링크만 담아 보낸다', async () => {
@@ -1007,8 +1009,79 @@ describe('runEmailReportBatch: 가입 첫 리포트', () => {
         const counts = await runEmailReportBatch(deps, NOW);
 
         expect(sent).toHaveLength(0);
-        expect(deps.welcomes.finish).not.toHaveBeenCalled();
+        // 손대지 못한 행은 `sending`에 묶어 두지 않고 시도를 쓰지 않은 채 돌려놓는다.
+        expect(deps.welcomes.finish).toHaveBeenCalledTimes(2);
+        expect(deps.welcomes.finish).toHaveBeenCalledWith(
+            'a',
+            'retry',
+            'deadline deferred'
+        );
+        expect(deps.welcomes.finish).toHaveBeenCalledWith(
+            'b',
+            'retry',
+            'deadline deferred'
+        );
         expect(counts.deferred).toBe(2);
+    });
+
+    it('마감이 중간에 지나면 처리한 행은 sent만, 남은 행만 retry로 돌려놓는다', async () => {
+        const clock = vi
+            .fn()
+            .mockReturnValueOnce(0)
+            .mockReturnValueOnce(0)
+            .mockReturnValue(BATCH_DEADLINE_MS + 1);
+        const { deps, sent } = makeWelcomeDeps([
+            welcomeRecipient({ userId: 'a' }),
+            welcomeRecipient({ userId: 'b' }),
+            welcomeRecipient({ userId: 'c' }),
+        ]);
+        const counts = await runEmailReportBatch({ ...deps, clock }, NOW);
+
+        expect(sent.map(email => email.idempotencyKey)).toEqual([
+            'email-report-welcome/a',
+        ]);
+        const calls = vi
+            .mocked(deps.welcomes.finish)
+            .mock.calls.map(([userId, outcome]) => `${userId}:${outcome}`);
+        expect(calls).toHaveLength(3);
+        expect(calls).toEqual(
+            expect.arrayContaining(['a:sent', 'b:retry', 'c:retry'])
+        );
+        expect(counts).toMatchObject({ welcomeSent: 1, deferred: 2 });
+    });
+
+    it('돌려놓는 기록이 던져도 로그만 남기고 배치는 끝까지 돈다', async () => {
+        const clock = vi
+            .fn()
+            .mockReturnValueOnce(0)
+            .mockReturnValue(BATCH_DEADLINE_MS + 1);
+        const { deps } = makeWelcomeDeps(
+            [
+                welcomeRecipient({ userId: 'a' }),
+                welcomeRecipient({ userId: 'b' }),
+            ],
+            { clock }
+        );
+        vi.mocked(deps.welcomes.finish).mockRejectedValue(new Error('db down'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        let logged: unknown[][] = [];
+        let counts: Awaited<ReturnType<typeof runEmailReportBatch>>;
+        try {
+            counts = await runEmailReportBatch(deps, NOW);
+            logged = [...errorSpy.mock.calls];
+        } finally {
+            errorSpy.mockRestore();
+        }
+
+        expect(counts.deferred).toBe(2);
+        expect(
+            logged.filter(args =>
+                String(args[0]).includes('could not release deferred welcome')
+            )
+        ).toHaveLength(2);
+        expect(deps.deliveries.pruneOlderThan).toHaveBeenCalled();
     });
 
     it('첫 리포트 기록도 보관 기간이 지나면 지운다', async () => {
