@@ -11,8 +11,8 @@ import {
     clusterKeyLevels,
     validateKeyLevels,
     extractReconciledActionLines,
-    validateActionPrices,
 } from '@y0ngha/siglens-core';
+import { validateChartActionPrices } from '@/entities/analysis/lib/chartActionPrices';
 
 const EMPTY_CLUSTERED_KEY_LEVELS = {
     support: [] as ClusteredKeyLevel[],
@@ -46,7 +46,7 @@ export function useAnalysisDerivedData(
     }, [validatedKeyLevels, bars]);
 
     const validatedActionPrices = useMemo(
-        () => validateActionPrices(analysis.actionRecommendation),
+        () => validateChartActionPrices(analysis.actionRecommendation),
         [analysis.actionRecommendation]
     );
 
