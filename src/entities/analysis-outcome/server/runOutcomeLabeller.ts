@@ -141,10 +141,6 @@ function chunkOf<T>(items: readonly T[], size: number): T[][] {
     );
 }
 
-/* ------------------------------------------------------------------ */
-/* 1. capture                                                           */
-/* ------------------------------------------------------------------ */
-
 interface CaptureResult {
     captured: number;
     capturedInvalid: number;
@@ -263,10 +259,6 @@ async function captureStep(deps: OutcomeLabellerDeps): Promise<CaptureResult> {
         captureRemaining,
     };
 }
-
-/* ------------------------------------------------------------------ */
-/* 2. label                                                             */
-/* ------------------------------------------------------------------ */
 
 interface RowCounts {
     labeled: number;
@@ -598,10 +590,6 @@ async function labelStep(
               : 'complete',
     };
 }
-
-/* ------------------------------------------------------------------ */
-/* 3. relabel, 4. prune                                                 */
-/* ------------------------------------------------------------------ */
 
 /**
  * 재라벨. 던지는 행을 두 가지로 가른다: 라벨 함수가 던지면(저장된 입력이 깨졌다 — 같은 버전에서는 다시 해도
