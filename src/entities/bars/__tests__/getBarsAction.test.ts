@@ -238,6 +238,15 @@ describe('getBarsAction 함수는', () => {
             expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
         });
 
+        // WP-19: 주봉 UI가 나가면 이 테스트를 1Week 허용 단언으로 바꾼다.
+        it('core가 등급에 열어 둔 1Week라도 화면이 내지 않는 주기는 거부한다', async () => {
+            // 등급과 무관하게 막힌다(tier 해석 전에 거른다).
+            await expect(
+                getBarsAction('AAPL', '1Week' as never)
+            ).rejects.toThrow('Invalid timeframe: 1Week');
+            expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
+        });
+
         it('tier resolution fails closed to free for intraday requests', async () => {
             mockGetCurrentUser.mockRejectedValueOnce(new Error('auth down'));
 

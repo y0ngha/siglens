@@ -1905,6 +1905,8 @@
                 "rsi_bullish_divergence": "RSI 看涨背离",
                 "rsi_overbought": "RSI 超买",
                 "rsi_oversold": "RSI 超卖",
+                "short_ma_bearish_cross": "短期移动平均线下穿",
+                "short_ma_bullish_cross": "短期移动平均线上穿",
                 "squeeze_momentum_bearish": "挤压转为负向",
                 "squeeze_momentum_bullish": "挤压转为正向",
                 "supertrend_bearish_flip": "Supertrend 转向下行",

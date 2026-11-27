@@ -30,8 +30,12 @@ function timeframesBenefit(
     config: TierConfig,
     signedUpTier: Tier
 ): SignupBenefit | null {
+    // 1Week는 core가 회원 등급에 열어 두었지만 화면(차트·분석 탭, 라벨)이 아직 주봉을 내놓지 않는다.
+    // 가입 혜택 문구가 화면에 없는 기능을 약속하지 않도록 뺀다. 주봉 UI가 열릴 때 이 필터를 없앤다.
     const extra = getAllowedTimeframes(signedUpTier, config).filter(
-        timeframe => !isTimeframeAllowed('free', timeframe, config)
+        timeframe =>
+            timeframe !== '1Week' &&
+            !isTimeframeAllowed('free', timeframe, config)
     );
     const [from] = extra;
     const to = extra.at(-1);
