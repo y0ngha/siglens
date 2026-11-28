@@ -120,7 +120,7 @@ export function isImmediateExpiry(durations) {
 
 // set()의 모든 실태그 소스를 union한다.
 //
-// Next 16.2 source 검증(node_modules/next/dist/..., 줄 번호는 16.4.2 기준으로 재확인):
+// Next 16.2 source 검증(node_modules/next/dist/..., 줄 번호는 16.4.2 기준으로 재확인, 16.4.6도 같은 파일):
 //   - FETCH 엔트리: set context(SetIncrementalFetchCacheContext, response-cache/types.d.ts:184)는
 //     `tags`만 갖는다. softTags는 GET context에만 있으나(types.d.ts:167) 멀티인스턴스/방어 목적으로
 //     ctx.softTags도 union한다(없으면 무해). 추가로 CachedFetchValue.tags(types.d.ts:49)가 값 자체에

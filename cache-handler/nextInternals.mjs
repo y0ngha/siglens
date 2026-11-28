@@ -1,4 +1,4 @@
-// Next 16.4.2 IncrementalCache의 판정 규칙에 핸들러가 맞춰야 하는 지점을 한곳에 모은다.
+// Next 16.4.2 IncrementalCache(16.4.6도 같은 파일)의 판정 규칙에 핸들러가 맞춰야 하는 지점을 한곳에 모은다.
 //
 // 단수 `cacheHandler`의 get()은 `{ lastModified, value }`(16.4부터 `cacheControl`도)만 돌려줄 수 있고, "stale인가"는
 // Next의 IncrementalCache.get이 lastModified와 라우트의 cacheControl로 **스스로** 계산한다

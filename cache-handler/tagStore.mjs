@@ -10,7 +10,7 @@
 // ## stale과 expired — 두 종류의 무효화
 //
 // Next 16 기본 FileSystemCache.revalidateTag(tags, durations)를 그대로 따른다
-// (next/dist/server/lib/incremental-cache/file-system-cache.js:71-104, 16.4.2):
+// (next/dist/server/lib/incremental-cache/file-system-cache.js:71-104, 16.4.2·16.4.6):
 //   - durations가 있으면(`revalidateTag(tag, 'max')` → `{ expire: 31536000 }`,
 //     next/dist/server/revalidation-utils.js:121-125) **stale만** 찍는다 → 읽기 쪽은
 //     엔트리를 버리지 않고 stale로 서빙하며 백그라운드 재생성(SWR)한다.
