@@ -131,6 +131,7 @@ async function createSymbolLabeler(
             ...view.firedPriceAlerts.map(alert => alert.symbol),
         ]),
     ];
+    // CONVENTIONS.md#CP-6 예외: 시간 상한에 걸리면 `mapChunked`의 결과 배열을 받을 수 없어, 끝난 종목만 남기려면 바깥 Map에 모아야 한다.
     const collected = new Map<string, string>();
     await withTimeout(
         mapChunked(symbols, NAME_LOOKUP_CHUNK, async symbol => {

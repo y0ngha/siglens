@@ -39,6 +39,7 @@ import type {
 } from '@/entities/mail-alert/model';
 import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import type { Locale } from '@/shared/i18n/locales';
+import type { AssetInfo } from '@/shared/lib/types';
 import { MailAlertsBody } from '../MailAlertsBody';
 
 function alert(id: string, symbol: string, fired = false): PriceAlertView {
@@ -56,7 +57,7 @@ function alert(id: string, symbol: string, fired = false): PriceAlertView {
         firedSession: fired ? '2026-11-20' : null,
         firedClose: fired ? 101 : null,
         firedAt: null,
-    } as PriceAlertView;
+    };
 }
 
 const view: MailAlertManageView = {
@@ -77,7 +78,11 @@ async function renderBody(locale: Locale, v = view) {
     );
 }
 
-const NVIDIA = { name: 'NVIDIA Corporation', koreanName: '엔비디아' };
+function asset(symbol: string, name: string, koreanName: string): AssetInfo {
+    return { symbol, name, koreanName };
+}
+
+const NVIDIA = asset('NVDA', 'NVIDIA Corporation', '엔비디아');
 
 describe('MailAlertsBody 종목 표기', () => {
     let warn: MockInstance<typeof console.warn>;
@@ -93,7 +98,7 @@ describe('MailAlertsBody 종목 표기', () => {
 
     describe('이름을 찾았을 때', () => {
         it('주제, 진행 중 알림, 알린 알림 모두 한글명과 코드로 보이고 종목은 한 번만 조회한다', async () => {
-            vi.mocked(getAssetInfoStatic).mockResolvedValue(NVIDIA as never);
+            vi.mocked(getAssetInfoStatic).mockResolvedValue(NVIDIA);
 
             await renderBody('ko');
 
@@ -113,7 +118,7 @@ describe('MailAlertsBody 종목 표기', () => {
 
     describe('로케일', () => {
         it('en은 영문 법인명을 쓴다', async () => {
-            vi.mocked(getAssetInfoStatic).mockResolvedValue(NVIDIA as never);
+            vi.mocked(getAssetInfoStatic).mockResolvedValue(NVIDIA);
 
             await renderBody('en');
 
@@ -157,13 +162,11 @@ describe('MailAlertsBody 종목 표기', () => {
 
         it('끝나지 않는 조회는 시간 상한 뒤 코드로 떨어지고 끝난 종목의 이름은 지킨다', async () => {
             vi.useFakeTimers();
-            vi.mocked(getAssetInfoStatic).mockImplementation(((s: string) =>
+            vi.mocked(getAssetInfoStatic).mockImplementation((s: string) =>
                 s === 'NVDA'
                     ? new Promise(() => undefined)
-                    : Promise.resolve({
-                          name: 'Samsung',
-                          koreanName: '삼성전자',
-                      })) as never);
+                    : Promise.resolve(asset('005930', 'Samsung', '삼성전자'))
+            );
 
             const rendering = renderBody('ko', {
                 ...view,
@@ -184,12 +187,13 @@ describe('MailAlertsBody 종목 표기', () => {
 
     describe('종목이 여러 개일 때', () => {
         it('각각 한 번씩 조회하고 이름을 섞지 않는다', async () => {
-            vi.mocked(getAssetInfoStatic).mockImplementation(((s: string) =>
+            vi.mocked(getAssetInfoStatic).mockImplementation((s: string) =>
                 Promise.resolve(
                     s === 'NVDA'
-                        ? { name: 'NVIDIA', koreanName: '엔비디아' }
-                        : { name: 'Samsung', koreanName: '삼성전자' }
-                )) as never);
+                        ? asset('NVDA', 'NVIDIA', '엔비디아')
+                        : asset('005930', 'Samsung', '삼성전자')
+                )
+            );
 
             await renderBody('ko', {
                 ...view,
