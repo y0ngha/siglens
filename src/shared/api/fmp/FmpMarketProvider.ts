@@ -1,10 +1,12 @@
-import type {
-    GetBarsOptions,
-    Bar,
-    MarketQuote,
-    ProviderTimeframe,
+import {
+    US_EQUITY_SESSION,
+    type GetBarsOptions,
+    type Bar,
+    type MarketQuote,
+    type ProviderTimeframe,
 } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { keepLiveDailyBar } from '@/shared/api/market/liveDailyBarGuard';
 import { mapOrNull } from '@/shared/api/market/mapOrNull';
 import type {
     ExtendedHoursTrade,
@@ -412,7 +414,15 @@ export class FmpMarketProvider implements SiglensMarketProvider {
                 'FmpMarketProvider',
                 'today-quote',
                 symbol,
-                () => toFmpTodayBar(row)
+                () =>
+                    // 야간 체결(23/5)이 quote 시각을 움직여도 일요일·휴장일·미래 날짜의 봉을 내보내지
+                    // 않는다. 일봉 이력 병합, 시세 스냅샷 캐시, 직접 호출이 모두 이 한 곳을 거친다.
+                    keepLiveDailyBar(
+                        toFmpTodayBar(row),
+                        US_EQUITY_SESSION,
+                        new Date(),
+                        symbol
+                    )
             ),
         };
     }
