@@ -75,6 +75,35 @@ export function shouldShowEnglishName(
 }
 
 /**
+ * 종목 표기의 단일 규칙 — `이름 (코드)`. 이름이 없거나(공백 포함) 코드와 같으면 코드 하나.
+ * 호출자가 원문 심볼(`000660.KS`)도 갖고 있으면 `rawSymbol`을 넘겨 그것과 같은 이름도 접는다.
+ * 메일(`reportSymbolLabel`)과 에이전트 카드가 같은 표기를 쓰도록 여기 하나만 둔다.
+ */
+export function formatSymbolLabel(
+    code: string,
+    name: string | null | undefined,
+    rawSymbol?: string
+): string {
+    const distinct = distinctSymbolName(code, name, rawSymbol);
+    return distinct === null ? code : `${distinct} (${code})`;
+}
+
+/**
+ * {@link formatSymbolLabel}이 이름을 붙이는 조건만 따로 쓴다 — 공백을 걷어낸 이름이 비었거나 코드·원문 심볼과
+ * 같으면 `null`. ICU select처럼 "이름이 있는가"를 따로 넘겨야 하는 호출부가 같은 판정을 쓰게 한다.
+ */
+export function distinctSymbolName(
+    code: string,
+    name: string | null | undefined,
+    rawSymbol?: string
+): string | null {
+    const trimmed = name?.trim() ?? '';
+    return trimmed === '' || trimmed === code || trimmed === rawSymbol
+        ? null
+        : trimmed;
+}
+
+/**
  * 자산의 표준 표시 문자열.
  *
  * `locale`이 기본 로케일이 아니면 **한국어명을 앞세우지 않는다.** 예전에는

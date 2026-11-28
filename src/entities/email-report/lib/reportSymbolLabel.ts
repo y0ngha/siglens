@@ -1,4 +1,4 @@
-import { pickAssetName } from '@/entities/ticker/lib/ticker';
+import { formatSymbolLabel, pickAssetName } from '@/entities/ticker/lib/ticker';
 import type { Locale } from '@/shared/i18n/locales';
 import { displayTicker } from '@/shared/lib/displayTicker';
 import type { ReportSymbolNames } from '../reportModel';
@@ -28,6 +28,6 @@ export function reportSymbolLabel(
     return {
         name,
         code,
-        text: name === code ? code : `${name} (${code})`,
+        text: formatSymbolLabel(code, name),
     };
 }

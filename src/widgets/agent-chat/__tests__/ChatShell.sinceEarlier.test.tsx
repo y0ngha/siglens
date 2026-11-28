@@ -142,7 +142,7 @@ describe('ChatShell — 다시 연 대화의 "달라진 점" 카드', () => {
         fireEvent.click(within(card).getByRole('button'));
         expect(mockStream.send).toHaveBeenCalledTimes(1);
         expect(mockStream.send).toHaveBeenCalledWith(
-            'NVDA(NVDA) 11월 18일 분석 이후 달라진 점을 알려 줘'
+            'NVDA 11월 18일 분석 이후 달라진 점을 알려 줘'
         );
     });
 
