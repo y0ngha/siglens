@@ -1,4 +1,8 @@
 import { render, screen } from '@testing-library/react';
+import {
+    SymbolBottomAdProvider,
+    useSymbolBottomAdSuppressed,
+} from '@/features/ad-slot/model/SymbolBottomAdContext';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 
 vi.mock('next/link', () => ({
@@ -78,5 +82,26 @@ describe('OptionsEmptyState', () => {
         expect(
             container.querySelector('[data-testid="snapshot-slot-stub"]')
         ).toBeNull();
+    });
+});
+
+// 옵션 시장이 없다는 안내 화면은 링크 카드뿐이라 AdSense가 광고를 금지하는 "내용 없는 화면"이다.
+describe('OptionsEmptyState — shared bottom ad', () => {
+    function AdProbe() {
+        return (
+            <p data-testid="bottom-ad">
+                {useSymbolBottomAdSuppressed() ? 'suppressed' : 'open'}
+            </p>
+        );
+    }
+
+    it('suppresses the layout bottom ad', () => {
+        render(
+            <SymbolBottomAdProvider>
+                <OptionsEmptyState symbol="TSLA" />
+                <AdProbe />
+            </SymbolBottomAdProvider>
+        );
+        expect(screen.getByTestId('bottom-ad')).toHaveTextContent('suppressed');
     });
 });

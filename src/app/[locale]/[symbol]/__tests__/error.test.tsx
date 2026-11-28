@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
+import {
+    SymbolBottomAdProvider,
+    useSymbolBottomAdSuppressed,
+} from '@/features/ad-slot/model/SymbolBottomAdContext';
 import SymbolError from '../error';
 
 describe('SymbolError ([symbol] subtree error boundary)', () => {
@@ -42,6 +46,29 @@ describe('SymbolError ([symbol] subtree error boundary)', () => {
             '[SymbolRoute] render error:',
             error
         );
+        errorSpy.mockRestore();
+    });
+
+    // 오류 경계는 `[symbol]` 레이아웃 안쪽이라 레이아웃의 공통 하단 광고가 오류 화면 아래 남는다.
+    // AdSense는 오류 화면의 광고를 금지한다.
+    it('suppresses the layout bottom ad', () => {
+        function AdProbe() {
+            return (
+                <p data-testid="bottom-ad">
+                    {useSymbolBottomAdSuppressed() ? 'suppressed' : 'open'}
+                </p>
+            );
+        }
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        render(
+            <SymbolBottomAdProvider>
+                <SymbolError error={error} reset={vi.fn()} />
+                <AdProbe />
+            </SymbolBottomAdProvider>
+        );
+        expect(screen.getByTestId('bottom-ad')).toHaveTextContent('suppressed');
         errorSpy.mockRestore();
     });
 });

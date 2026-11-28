@@ -73,7 +73,6 @@ export function ChartSharePanel({
                 analysis={result}
                 keyLevels={toShareKeyLevels(result.keyLevels)}
                 timeframe={SHARE_ANALYSIS_TIMEFRAME}
-                isFreeUser={false}
                 plain={plain}
             />
         </div>

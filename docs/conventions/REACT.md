@@ -339,7 +339,7 @@ const onMove = (e: PointerEvent) => place(e.clientX - e.currentTarget.getBoundin
 
 #### Other props and state rules
 
-- **Pass gating props explicitly.** A component that consumes a tier-gating prop (`isFreeUser` …) receives it from every call site; relying on a permissive default leaks free-tier surfaces (ads) to paid users.
+- **Pass gating props explicitly.** A component that consumes a tier-gating prop (`isFreeTier` …) receives it from every call site; relying on a permissive default leaks free-tier surfaces to paid users.
 - **Declared callback props must be invoked.** A callback prop that nothing calls is a latent bug; an unused prop is dead and is removed (and not passed through intermediate components — see `FF.md` 4-D).
 - **Derive URLs from current local state, not initial props.** During an RSC pending transition the initial prop is stale: `updateUrl(activeTimeframe)`, not `updateUrl(initialTimeframe)`.
 - **A `useState` lazy initializer runs once.** If the value must follow later prop changes, adjust during render (the previous-value comparison) or reset with a `key` — never "sync" it in an effect (see `REACT.md#EF-1`).

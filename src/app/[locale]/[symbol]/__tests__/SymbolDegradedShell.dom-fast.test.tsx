@@ -1,5 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { SymbolDegradedShell } from '@/app/[locale]/[symbol]/SymbolDegradedShell';
+import {
+    SymbolBottomAdProvider,
+    useSymbolBottomAdSuppressed,
+} from '@/features/ad-slot/model/SymbolBottomAdContext';
 
 describe('SymbolDegradedShell', () => {
     beforeEach(() => {
@@ -36,5 +40,35 @@ describe('SymbolDegradedShell', () => {
 
     it('marks the current tab in the cross links', () => {
         expect(screen.getByText('지금 보는 페이지예요')).toBeInTheDocument();
+    });
+});
+
+describe('SymbolDegradedShell — shared bottom ad', () => {
+    function AdProbe() {
+        return (
+            <p data-testid="bottom-ad">
+                {useSymbolBottomAdSuppressed() ? 'suppressed' : 'open'}
+            </p>
+        );
+    }
+
+    // 장애 안내 화면은 내용이 없어 AdSense가 광고를 금지한다.
+    it('suppresses the layout bottom ad', () => {
+        render(
+            <SymbolBottomAdProvider>
+                <SymbolDegradedShell
+                    heading="AAPL Financials"
+                    noticeTitle="Temporarily unavailable"
+                    noticeBody="Try again shortly."
+                    symbol="AAPL"
+                    current="financials"
+                    marketProfile="us-equity"
+                >
+                    {null}
+                </SymbolDegradedShell>
+                <AdProbe />
+            </SymbolBottomAdProvider>
+        );
+        expect(screen.getByTestId('bottom-ad')).toHaveTextContent('suppressed');
     });
 });

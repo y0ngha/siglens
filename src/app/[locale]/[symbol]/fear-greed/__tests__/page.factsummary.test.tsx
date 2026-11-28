@@ -152,6 +152,14 @@ vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
         />
     ),
 }));
+vi.mock('@/features/ad-slot/model/SymbolBottomAdContext', () => ({
+    SuppressSymbolBottomAd: () => <div data-testid="suppress-bottom-ad" />,
+}));
+vi.mock('@/features/ad-slot/ui/AdSlot', () => ({
+    AdSlot: ({ placement }: { placement: string }) => (
+        <div data-testid="ad-slot" data-placement={placement} />
+    ),
+}));
 vi.mock('@/widgets/fear-greed/FearGreedPageError', () => ({
     FearGreedPageError: () => null,
 }));
@@ -326,6 +334,69 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         const gauge = screen.getByTestId('fear-greed-gauge');
         expect(gauge).toHaveAttribute('data-hide-self-norm', 'true');
         expect(gauge).toHaveAttribute('data-hide-sample-footer', 'true');
+    });
+
+    it('광고는 게이지 다음, 요인 요약 앞에 둔다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        const ad = screen.getByTestId('ad-slot');
+        expect(ad).toHaveAttribute('data-placement', 'fear-greed');
+        const gauge = screen.getByTestId('fear-greed-gauge');
+        const summary = screen
+            .getByText(/AAPL 공포 탐욕 지수 요약/)
+            .closest('section') as Element;
+        expect(
+            gauge.compareDocumentPosition(ad) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            ad.compareDocumentPosition(summary) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('점수가 있으면 공통 하단 광고를 끄지 않는다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(screen.queryByTestId('suppress-bottom-ad')).toBeNull();
+    });
+
+    it('점수가 없으면 광고를 넣지 않고 공통 하단 광고도 끈다', async () => {
+        mockComputeFearGreedIndex.mockReturnValue(null);
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(screen.queryByTestId('ad-slot')).toBeNull();
+        expect(screen.getByTestId('suppress-bottom-ad')).toBeInTheDocument();
+    });
+
+    it('봉 조회가 실패하면 광고를 넣지 않고 공통 하단 광고도 끈다', async () => {
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP 429'));
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(screen.queryByTestId('ad-slot')).toBeNull();
+        expect(screen.getByTestId('suppress-bottom-ad')).toBeInTheDocument();
     });
 
     it('Worst: bars 빈 배열이면 factor summary가 없고 페이지는 정상 resolve된다', async () => {

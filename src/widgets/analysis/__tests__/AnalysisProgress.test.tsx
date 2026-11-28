@@ -9,9 +9,6 @@ vi.mock('../hooks/useAnalysisProgress', () => ({
     ANALYSIS_PHASE_COUNT: 6,
     ANALYSIS_TIP_COUNT: 8,
 }));
-vi.mock('../AdBanner', () => ({
-    AdBanner: () => <div data-testid="ad-banner" />,
-}));
 
 import { render, screen } from '@testing-library/react';
 import { AnalysisProgress } from '../AnalysisProgress';
@@ -78,9 +75,12 @@ describe('AnalysisProgress', () => {
         expect(status).toHaveAttribute('aria-label', 'AI 분석 진행 중');
     });
 
-    it('renders the ad banner', () => {
-        render(<AnalysisProgress phaseIndex={0} tipIndex={0} {...COUNTS} />);
+    // 로딩 화면은 AdSense가 광고를 금지하는 "내용 없는 화면"이다. 광고 자리를 다시 넣지 않는다.
+    it('renders no ad unit while the analysis is loading', () => {
+        const { container } = render(
+            <AnalysisProgress phaseIndex={0} tipIndex={0} {...COUNTS} />
+        );
 
-        expect(screen.getByTestId('ad-banner')).toBeInTheDocument();
+        expect(container.querySelector('ins, aside')).toBeNull();
     });
 });

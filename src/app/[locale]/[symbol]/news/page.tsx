@@ -18,6 +18,8 @@ import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { SuppressSymbolBottomAd } from '@/features/ad-slot/model/SymbolBottomAdContext';
+import { AdSlot } from '@/features/ad-slot/ui/AdSlot';
 import { SymbolRouteParams } from '@/shared/config/market';
 import {
     getDescriptor,
@@ -259,6 +261,13 @@ export default async function NewsPage({ params }: Props) {
                         />
                     </Suspense>
                 </NewsAiSummaryErrorBoundary>
+                {/* 광고 — AI 요약을 읽고 목록으로 내려가는 길목. 목록 안(기사 사이)은 링크 사이라 실수 클릭
+                    위험이 커서 쓰지 않는다. 받은 기사가 없는 화면에는 넣지 않고 레이아웃 공통 하단 광고도 끈다. */}
+                {newsItems.length > 0 ? (
+                    <AdSlot placement="news" />
+                ) : (
+                    <SuppressSymbolBottomAd />
+                )}
 
                 {/*
                  * `NewsList`는 지속 폴링 오류를 다시 던진다 — 바운더리가 없으면 `[symbol]/error.tsx`까지

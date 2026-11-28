@@ -11,6 +11,7 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { PositionCta } from './PositionCta';
+import { WithoutBottomAd } from './WithoutBottomAd';
 
 // Code-split: PositionTabMemberContent pulls in useSymbolHolding (the holdings
 // query) plus the building/geometry/card code, which only a present, hydrated
@@ -23,7 +24,16 @@ const PositionTabMemberContent = dynamic(
         import('./PositionTabMemberContent').then(
             m => m.PositionTabMemberContent
         ),
-    { ssr: false }
+    {
+        ssr: false,
+        // 청크를 받는 동안에도 하단 광고를 끈 채로 둔다 — 비어 있으면 억제가 잠깐 풀려 광고가 요청됐다가
+        // 회원 본문이 마운트되며 다시 억제돼 버려진다(`WithoutBottomAd`).
+        loading: () => (
+            <WithoutBottomAd>
+                <PositionAuthSkeleton />
+            </WithoutBottomAd>
+        ),
+    }
 );
 
 interface PositionTabContentProps {
@@ -71,18 +81,25 @@ export function PositionTabContent({
     const isHydrated = useHydrated();
     const { data: user, isLoading } = useCurrentUser();
 
-    if (!isHydrated) return null;
-    if (isLoading) return <PositionAuthSkeleton />;
+    if (!isHydrated) return <WithoutBottomAd>{null}</WithoutBottomAd>;
+    if (isLoading)
+        return (
+            <WithoutBottomAd>
+                <PositionAuthSkeleton />
+            </WithoutBottomAd>
+        );
 
     if (!user) {
         return (
-            <PositionCta
-                symbol={symbol}
-                low52w={low52w}
-                high52w={high52w}
-                lastClose={lastClose}
-                volumeByBand={volumeByBand}
-            />
+            <WithoutBottomAd>
+                <PositionCta
+                    symbol={symbol}
+                    low52w={low52w}
+                    high52w={high52w}
+                    lastClose={lastClose}
+                    volumeByBand={volumeByBand}
+                />
+            </WithoutBottomAd>
         );
     }
 

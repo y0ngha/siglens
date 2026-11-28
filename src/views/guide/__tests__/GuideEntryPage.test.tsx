@@ -8,6 +8,11 @@ vi.mock('../demos/registry', () => ({
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => <div data-testid="symbol-search-panel" />,
 }));
+vi.mock('@/features/ad-slot/ui/AdSlot', () => ({
+    AdSlot: ({ placement }: { placement: string }) => (
+        <div data-testid="ad-slot" data-placement={placement} />
+    ),
+}));
 vi.mock('../ui/GuideDemoChart', () => ({
     GuideDemoChart: ({
         title,
@@ -259,6 +264,11 @@ describe('GuideEntryPage', () => {
         expect(screen.queryByTestId('demo-chart')).toBeNull();
     });
 
+    it('본문이 나뉘지 않는 글에는 광고를 넣지 않는다', async () => {
+        await renderEntry();
+        expect(screen.queryByTestId('ad-slot')).toBeNull();
+    });
+
     it('본문은 서버에서 진짜 h2와 표로 그린다', async () => {
         await renderEntry();
 
@@ -393,6 +403,27 @@ describe('GuideEntryPage', () => {
             expect(anchor).toBeGreaterThan(-1);
             expect(live).toBe(anchor + 1);
             expect(next).toBe(live + 1);
+        });
+
+        it('본문이 앞뒤로 나뉘면 앞부분 다음, 실시간 종목 예시 앞에 광고를 둔다', async () => {
+            await renderEntry(HOWTO, 'ko', HOWTO_CATALOG, LIVE);
+
+            const ad = screen.getByTestId('ad-slot');
+            expect(ad).toHaveAttribute('data-placement', 'guide');
+            const anchorHeading = screen.getByRole('heading', {
+                name: '시그렌즈에서 확인하는 법',
+            });
+            const liveHeading = screen.getByRole('heading', {
+                name: g.liveHeading,
+            });
+            expect(
+                anchorHeading.compareDocumentPosition(ad) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            expect(
+                ad.compareDocumentPosition(liveHeading) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
         });
 
         it('분할된 본문에서도 차례의 모든 #id가 정확히 한 요소로 풀린다', async () => {

@@ -2,6 +2,10 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
+import {
+    SymbolBottomAdProvider,
+    useSymbolBottomAdSuppressed,
+} from '@/features/ad-slot/model/SymbolBottomAdContext';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { PositionTabContent } from '../ui/PositionTabContent';
@@ -244,5 +248,51 @@ describe('PositionTabContent', () => {
         expect(
             within(tooltip).getByText('$100~$120, 거주율 10%')
         ).toBeInTheDocument();
+    });
+});
+
+describe('PositionTabContent — shared bottom ad', () => {
+    function AdProbe() {
+        return (
+            <p data-testid="bottom-ad">
+                {useSymbolBottomAdSuppressed() ? 'suppressed' : 'open'}
+            </p>
+        );
+    }
+
+    function renderWithProbe() {
+        render(
+            <SymbolBottomAdProvider>
+                <PositionTabContent
+                    symbol="AAPL"
+                    low52w={100}
+                    high52w={200}
+                    lastClose={180}
+                />
+                <AdProbe />
+            </SymbolBottomAdProvider>
+        );
+        return screen.getByTestId('bottom-ad');
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockUseHydrated.mockReturnValue(true);
+    });
+
+    it('suppresses the ad before hydration', () => {
+        mockUseHydrated.mockReturnValue(false);
+        setCurrentUser(null);
+        expect(renderWithProbe()).toHaveTextContent('suppressed');
+    });
+
+    it('suppresses the ad while the login check is in flight', () => {
+        setCurrentUser(undefined, true);
+        expect(renderWithProbe()).toHaveTextContent('suppressed');
+    });
+
+    it('suppresses the ad for guests, who only see the CTA', () => {
+        setCurrentUser(null);
+        expect(renderWithProbe()).toHaveTextContent('suppressed');
     });
 });

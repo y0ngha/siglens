@@ -159,6 +159,7 @@ import { Suspense } from 'react';
 import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
 import SymbolLayout from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
+import { SymbolBottomAd } from '@/features/ad-slot/ui/SymbolBottomAd';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
@@ -179,6 +180,22 @@ const CHIP_SNAPSHOT = {
  * 렌더 시점 스파이로는 prop을 볼 수 없고, 반환된 JSX에서 직접 꺼내야 한다.
  * 구조는 `<HydrationBoundary><SymbolLayoutHeader …/></HydrationBoundary>`.
  */
+/**
+ * 레이아웃 트리에서 형제 배열(jail, 관련 종목 칩, 하단 광고, 비콘, FAB)을 찾는다. 루트부터 자식이 하나인
+ * 래퍼(`RouteMessages`, 프로바이더들)를 따라 내려가 처음 나오는 배열을 돌려준다 — 프로바이더가 한 겹
+ * 늘어도 테스트가 깊이를 다시 세지 않게.
+ */
+function layoutSiblings(tree: unknown): unknown[] {
+    let node: unknown = tree;
+    for (let depth = 0; depth < 6; depth += 1) {
+        const children = (node as { props?: { children?: unknown } } | null)
+            ?.props?.children;
+        if (Array.isArray(children)) return children;
+        node = children;
+    }
+    throw new Error('layout siblings array not found');
+}
+
 function headerPropsOf(tree: unknown): Record<string, unknown> {
     const boundary = tree as { props?: { children?: { props?: unknown } } };
     return (boundary.props?.children?.props ?? {}) as Record<string, unknown>;
@@ -410,15 +427,9 @@ describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () 
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        // 루트는 `RouteMessages`(라우트별 클라이언트 메시지)이고 그 자식이
-        // `SymbolLayoutProviders`다. 형제 배열은 프로바이더 안쪽에 있다.
-        const providers = (tree as { props?: { children?: unknown } }).props
-            ?.children;
-        const siblings = (providers as { props?: { children?: unknown } })
-            ?.props?.children;
-        if (!Array.isArray(siblings)) {
-            throw new Error('providers children is not an array');
-        }
+        // 루트는 `RouteMessages`(라우트별 클라이언트 메시지)이고 그 안에 프로바이더들이 한 겹씩
+        // 감싼다. 형제 배열은 가장 안쪽 프로바이더 안에 있다.
+        const siblings = layoutSiblings(tree);
 
         const types = siblings.map(
             child => (child as { type?: unknown } | null)?.type
@@ -433,18 +444,27 @@ describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () 
         expect(chipIndex).toBeGreaterThan(jailIndex);
     });
 
+    it('공통 하단 광고는 관련 종목 칩 뒤(푸터 앞)에 둔다', async () => {
+        const tree = await SymbolLayout({
+            children: null,
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        const types = layoutSiblings(tree).map(
+            child => (child as { type?: unknown } | null)?.type
+        );
+
+        // 다른 탭 카드(탭 본문 끝)와 종목 칩 사이에 끼우면 링크 묶음 사이라 실수 클릭을 부른다.
+        expect(types.indexOf(SymbolBottomAd)).toBeGreaterThan(
+            types.indexOf(RelatedSymbols)
+        );
+    });
+
     it('정규(대문자) 심볼로 조회수 비콘을 마운트한다', async () => {
         const tree = await SymbolLayout({
             children: null,
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
-        const providers = (tree as { props?: { children?: unknown } }).props
-            ?.children;
-        const siblings = (providers as { props?: { children?: unknown } })
-            ?.props?.children;
-        if (!Array.isArray(siblings)) {
-            throw new Error('providers children is not an array');
-        }
+        const siblings = layoutSiblings(tree);
         const ping = siblings.find(
             child =>
                 (child as { type?: unknown } | null)?.type === SymbolViewPing
@@ -475,14 +495,7 @@ describe('SymbolLayout — AskAiFab 배선 (인라인, Suspense 없음)', () => 
             children: null,
             params: Promise.resolve({ locale, symbol: 'aapl' }),
         });
-        const providers = (tree as { props?: { children?: unknown } }).props
-            ?.children;
-        const siblings = (providers as { props?: { children?: unknown } })
-            ?.props?.children;
-        if (!Array.isArray(siblings)) {
-            throw new Error('providers children is not an array');
-        }
-        return siblings;
+        return layoutSiblings(tree);
     }
 
     it('AskAiFab에 해석된 종목명과 로케일 접두 경로를 넘긴다', async () => {

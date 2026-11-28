@@ -132,6 +132,8 @@ import NewsPage from '@/app/[locale]/[symbol]/news/page';
 import { getNewsList } from '@/entities/news-article/api';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { SuppressSymbolBottomAd } from '@/features/ad-slot/model/SymbolBottomAdContext';
+import { AdSlot } from '@/features/ad-slot/ui/AdSlot';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { ORGANIZATION_JSON_LD_ID } from '@/shared/lib/seo';
 import type { NewsDisplayItem } from '@/shared/lib/types';
@@ -262,6 +264,37 @@ describe('NewsPage — NewsFactsSummary SSR props', () => {
         } finally {
             errorSpy.mockRestore();
         }
+    });
+});
+
+describe('NewsPage — ad slot', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+    });
+
+    it('places the news ad when the server fetched articles', async () => {
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, AdSlot)?.props).toMatchObject({
+            placement: 'news',
+        });
+        expect(findElementByType(tree, SuppressSymbolBottomAd)).toBeNull();
+    });
+
+    it('leaves the ad out and turns off the layout bottom ad when there are no articles', async () => {
+        mockGetNewsList.mockResolvedValue([]);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, AdSlot)).toBeNull();
+        expect(findElementByType(tree, SuppressSymbolBottomAd)).not.toBeNull();
     });
 });
 

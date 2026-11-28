@@ -58,7 +58,6 @@ describe('ChartSharePanel', () => {
                     analysis: fakeResult,
                     keyLevels: toShareKeyLevels(rawKeyLevels),
                     timeframe: '1Day',
-                    isFreeUser: false,
                     symbol: 'AAPL',
                 })
             )

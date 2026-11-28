@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { SuppressSymbolBottomAd } from '@/features/ad-slot/model/SymbolBottomAdContext';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -40,6 +41,8 @@ export function OptionsEmptyState({
     const tCard = useTranslations('shared.crossLink');
     return (
         <main className="mx-auto w-full max-w-5xl px-4 py-16">
+            {/* 옵션 시장이 없는 안내 화면이라 레이아웃 공통 하단 광고를 끈다(내용 없는 화면의 광고 금지). */}
+            <SuppressSymbolBottomAd />
             <div className={cn(SURFACE_CARD, 'p-8 text-center')}>
                 <h1 className="text-xl font-bold tracking-tight text-balance text-secondary-50 sm:text-2xl">
                     {symbol} {t('OptionsEmptyState.68a411')}

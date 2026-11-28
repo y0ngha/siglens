@@ -50,20 +50,41 @@ describe('adsense', () => {
 
     describe('ADSENSE_SLOTS', () => {
         it('returns env values when slot env vars are set', async () => {
-            process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS = 'slot-progress-1';
-            process.env.NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM =
-                'slot-panel-bottom-1';
+            process.env.NEXT_PUBLIC_ADSENSE_SLOT_SYMBOL_BOTTOM = 'slot-bottom';
+            process.env.NEXT_PUBLIC_ADSENSE_SLOT_FEAR_GREED = 'slot-fg';
+            process.env.NEXT_PUBLIC_ADSENSE_SLOT_NEWS = 'slot-news';
+            process.env.NEXT_PUBLIC_ADSENSE_SLOT_GUIDE = 'slot-guide';
             const { ADSENSE_SLOTS } = await import('@/shared/lib/adsense');
-            expect(ADSENSE_SLOTS.PROGRESS).toBe('slot-progress-1');
-            expect(ADSENSE_SLOTS.PANEL_BOTTOM).toBe('slot-panel-bottom-1');
+            expect(ADSENSE_SLOTS).toEqual({
+                SYMBOL_BOTTOM: 'slot-bottom',
+                FEAR_GREED: 'slot-fg',
+                NEWS: 'slot-news',
+                GUIDE: 'slot-guide',
+            });
         });
 
         it('defaults to empty strings when slot env vars are not set', async () => {
-            delete process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS;
-            delete process.env.NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM;
+            delete process.env.NEXT_PUBLIC_ADSENSE_SLOT_SYMBOL_BOTTOM;
+            delete process.env.NEXT_PUBLIC_ADSENSE_SLOT_FEAR_GREED;
+            delete process.env.NEXT_PUBLIC_ADSENSE_SLOT_NEWS;
+            delete process.env.NEXT_PUBLIC_ADSENSE_SLOT_GUIDE;
             const { ADSENSE_SLOTS } = await import('@/shared/lib/adsense');
-            expect(ADSENSE_SLOTS.PROGRESS).toBe('');
-            expect(ADSENSE_SLOTS.PANEL_BOTTOM).toBe('');
+            expect(ADSENSE_SLOTS).toEqual({
+                SYMBOL_BOTTOM: '',
+                FEAR_GREED: '',
+                NEWS: '',
+                GUIDE: '',
+            });
+        });
+    });
+
+    describe('ADSENSE_SCRIPT_SRC', () => {
+        it('carries the publisher id as the client parameter', async () => {
+            process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID = 'ca-pub-123';
+            const { ADSENSE_SCRIPT_SRC } = await import('@/shared/lib/adsense');
+            expect(ADSENSE_SCRIPT_SRC).toBe(
+                'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-123'
+            );
         });
     });
 });

@@ -101,7 +101,6 @@
         "views.symbol.relatedGroup",
         "views.symbol.snapshot.prose",
         "views.symbol.technicalFacts",
-        "widgets.analysis.adBanner",
         "widgets.analysis.duration",
         "widgets.analysis.expertReport",
         "widgets.analysis.panel",
@@ -172,7 +171,8 @@
         "shared.lib.skillStats.count",
         "app.api.stream",
         "shared.api",
-        "shared.lib.byokGate"
+        "shared.lib.byokGate",
+        "features.ad-slot"
     ],
     "routeWide": {
         "views.symbol.technicalFacts": ["[symbol]/(page)"],

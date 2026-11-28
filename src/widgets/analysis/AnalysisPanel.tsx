@@ -18,7 +18,6 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import { AdBanner } from './AdBanner';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisToast } from './AnalysisToast';
 import { GuideEntryLink } from './GuideEntryLink';
@@ -78,9 +77,6 @@ interface AnalysisPanelProps {
     cooldownNotice?: CooldownNotice | null;
     actionPricesVisible?: boolean;
     onActionPricesVisibilityChange?: (isVisible: boolean) => void;
-    /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
-     *  인증 시스템 도입 전까지 기본값은 true (모든 사용자를 Free로 처리). */
-    isFreeUser?: boolean;
     /**
      * 잠긴 상세 조각. 원본 값은 이 컴포넌트에 전달되지 않는다.
      * SSR·hydration 이전에도(initialLockedInfoDepth 경유) 채워질 수 있고,
@@ -165,7 +161,6 @@ export function AnalysisPanel({
     cooldownNotice = null,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
-    isFreeUser = true,
     lockedInfoDepth = [],
     indicatorCount = 0,
     skillCount = 0,
@@ -272,7 +267,6 @@ export function AnalysisPanel({
                     <AnalysisProgress
                         phaseIndex={progressPhaseIndex}
                         tipIndex={progressTipIndex}
-                        isFreeUser={isFreeUser}
                         indicatorCount={indicatorCount}
                         skillCount={skillCount}
                     />
@@ -331,13 +325,6 @@ export function AnalysisPanel({
                         onIntent={onReanalyzeIntent}
                     />
                 </div>
-            )}
-
-            {!showProgress && (
-                <AdBanner
-                    isFreeUser={isFreeUser}
-                    slot="analysis-panel-bottom"
-                />
             )}
         </div>
     );

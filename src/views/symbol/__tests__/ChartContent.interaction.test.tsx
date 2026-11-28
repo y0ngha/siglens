@@ -85,11 +85,7 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
-    // isFreeUser는 광고 게이팅 prop이다. Pro tier에서 false가 실제로 전달되는지
-    // 검증할 수 있도록 data 속성으로 노출한다.
-    AnalysisPanel: ({ isFreeUser }: { isFreeUser?: boolean }) => (
-        <div data-testid="analysis-panel" data-free-user={String(isFreeUser)} />
-    ),
+    AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
 vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     // 서사 없는 첫 분석의 로딩 인디케이터. ChartContent는 이 컴포넌트를
@@ -97,11 +93,9 @@ vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     AnalysisProgress: ({
         phaseIndex,
         tipIndex,
-        isFreeUser,
     }: {
         phaseIndex: number;
         tipIndex: number;
-        isFreeUser?: boolean;
     }) => (
         <div
             data-testid="analysis-progress"
@@ -109,7 +103,6 @@ vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
             aria-label="AI 분석 진행 중"
             data-phase={phaseIndex}
             data-tip={tipIndex}
-            data-free-user={String(isFreeUser)}
         />
     ),
 }));
@@ -148,18 +141,6 @@ function analysisReturn(
 // isFallbackAnalysis가 false를 반환해 ChartContent가 AnalysisPanel을 렌더한다.
 const NARRATIVE_ANALYSIS = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승 추세' };
 
-function setTier(tier: 'free' | 'pro'): void {
-    symbolModelMock.mockReturnValue({
-        modelId: 'gemini-3.6-flash',
-        isHydrated: true,
-        reasoning: false,
-        isReasoningHydrated: true,
-        tier,
-        isTierHydrated: true,
-        openSignupNudgeAs: vi.fn(),
-    });
-}
-
 const props = {
     symbol: 'AAPL',
     companyName: 'Apple',
@@ -192,7 +173,7 @@ describe('ChartContent', () => {
             handleProgressFinished: vi.fn(),
         });
         analysisMock.mockReturnValue(analysisReturn());
-        // 기본값: free tier(하이드레이션 완료). isFreeUser = tier !== 'pro'가 true다.
+        // 기본값: free tier(하이드레이션 완료).
         symbolModelMock.mockReturnValue({
             modelId: 'gemini-3.6-flash',
             isHydrated: true,
@@ -430,61 +411,6 @@ describe('ChartContent', () => {
             // (mobileContent는 콜백으로만 전달되고 DOM에 렌더되지 않으므로 1회.)
             expect(screen.getAllByText(/기술적 지표 요약/)).toHaveLength(1);
             expect(screen.queryByText('AI 분석 중…')).toBeNull();
-        });
-    });
-
-    // isFreeUser는 광고 게이팅 prop이다. 기본값 true에 의존하면 Pro 사용자에게
-    // 광고가 샌다. ChartContent가 tier로
-    // 계산한 값이 AnalysisProgress·AnalysisPanel 양쪽에 정확히 전달되는지 검증한다.
-    describe('광고 게이팅(isFreeUser) 전달', () => {
-        it('free tier면 AnalysisProgress에 isFreeUser=true를 전달한다', () => {
-            setTier('free');
-            displayMock.mockReturnValue({
-                displayAnalyzing: true,
-                handleProgressFinished: vi.fn(),
-            });
-            renderChart();
-            expect(screen.getByTestId('analysis-progress')).toHaveAttribute(
-                'data-free-user',
-                'true'
-            );
-        });
-
-        it('pro tier면 AnalysisProgress에 isFreeUser=false를 전달한다', () => {
-            setTier('pro');
-            displayMock.mockReturnValue({
-                displayAnalyzing: true,
-                handleProgressFinished: vi.fn(),
-            });
-            renderChart();
-            expect(screen.getByTestId('analysis-progress')).toHaveAttribute(
-                'data-free-user',
-                'false'
-            );
-        });
-
-        it('free tier면 AnalysisPanel에 isFreeUser=true를 전달한다', () => {
-            setTier('free');
-            analysisMock.mockReturnValue(
-                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
-            );
-            renderChart();
-            expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
-                'data-free-user',
-                'true'
-            );
-        });
-
-        it('pro tier면 AnalysisPanel에 isFreeUser=false를 전달한다', () => {
-            setTier('pro');
-            analysisMock.mockReturnValue(
-                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
-            );
-            renderChart();
-            expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
-                'data-free-user',
-                'false'
-            );
         });
     });
 

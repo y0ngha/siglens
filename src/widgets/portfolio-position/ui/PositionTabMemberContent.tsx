@@ -12,6 +12,7 @@ import { computePosition } from '../utils/positionGeometry';
 import { PositionBuilding } from './PositionBuilding';
 import { PositionCard } from './PositionCard';
 import { PositionCta } from './PositionCta';
+import { WithoutBottomAd } from './WithoutBottomAd';
 
 interface PositionTabMemberContentProps {
     symbol: string;
@@ -77,23 +78,34 @@ export function PositionTabMemberContent({
 }: PositionTabMemberContentProps) {
     const { holding, isLoading, isError } = useSymbolHolding(symbol);
 
-    if (isLoading) return <PositionSkeleton />;
+    if (isLoading)
+        return (
+            <WithoutBottomAd>
+                <PositionSkeleton />
+            </WithoutBottomAd>
+        );
 
     // 보유 없음(정상) + 조회 실패(degrade) 모두 CTA로 수렴 — 어느 쪽도 렌더를 깨지 않는다.
     if (isError || holding === null) {
         return (
-            <PositionCta
-                symbol={symbol}
-                low52w={low52w}
-                high52w={high52w}
-                lastClose={lastClose}
-                volumeByBand={volumeByBand}
-            />
+            <WithoutBottomAd>
+                <PositionCta
+                    symbol={symbol}
+                    low52w={low52w}
+                    high52w={high52w}
+                    lastClose={lastClose}
+                    volumeByBand={volumeByBand}
+                />
+            </WithoutBottomAd>
         );
     }
 
     if (low52w === null || high52w === null || lastClose === null) {
-        return <DataInsufficientNote />;
+        return (
+            <WithoutBottomAd>
+                <DataInsufficientNote />
+            </WithoutBottomAd>
+        );
     }
 
     const avg = Number(holding.averagePrice);
@@ -105,7 +117,11 @@ export function PositionTabMemberContent({
     });
 
     if (model === null) {
-        return <DataInsufficientNote />;
+        return (
+            <WithoutBottomAd>
+                <DataInsufficientNote />
+            </WithoutBottomAd>
+        );
     }
 
     return (
