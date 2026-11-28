@@ -3997,6 +3997,7 @@
                 "planBelow": "그 분석의 진입 구간 {low}~{high} 아래에서 마감했어요 ({date})",
                 "planInZone": "그 분석의 진입 구간 {low}~{high} 안에서 마감했어요 ({date})",
                 "planNoSetup": "그 분석의 진입 계획은 {date} 종가 기준으로 더는 성립하지 않아요",
+                "planStopRecovered": "그 분석의 무효화 기준 {stop} 이하에서 마감했다가 ({date}, 종가 {close}) 지금은 다시 위에 있어요",
                 "planStopped": "그 분석의 무효화 기준 {stop} 이하에서 마감했어요 ({date})",
                 "price": "{date} 종가 {now}, 분석일 종가 {base}, 변화 {pct}",
                 "resistanceBroken": "그 분석의 저항선 {price} 위에서 마감했어요 ({date}, 종가 {close})",

@@ -30,7 +30,9 @@ import { withTimeout } from '@/shared/lib/withTimeout';
 
 /**
  * 도구 결과 하나에 싣는 **가격대 돌파** 항목 상한. 가격대는 종목마다 8~12개라 한 번에 많이 넘을 수 있어 자른다.
- * 추세(최대 1)·계획 위치(최대 1)는 개수가 작아 자르지 않는다. 신호는 허브 8종이지만 한 종류가 기간 안에 여러 번
+ * 가장 나중에 건넌 것부터 싣는다(출력은 시간순) — 지금 상황에 가까운 돌파를 남기고, 이전 분석의 손절·진입 구간
+ * 경계는 별도 항목(`plan_level_crossed`)이라 이 상한에 들지 않는다.
+ * 추세(최대 1)·계획 위치(최대 1)·계획 경계(최대 3)는 개수가 작아 자르지 않는다. 신호는 허브 8종이지만 한 종류가 기간 안에 여러 번
  * 시작할 수 있어(항목 수 ≠ 종류 수) 종류마다 가장 나중 시작 하나만 싣는다 — 최대 8개, 나머지는 `omittedSignals`.
  */
 export const SINCE_EARLIER_MAX_LEVEL_CROSSINGS = 6;
@@ -47,9 +49,10 @@ export const SINCE_EARLIER_NOTE =
     'Computed: what changed between the analysis shown earlier in this conversation and now. ' +
     'State these facts and numbers as given; do not infer others. ' +
     'It compares daily closes from fromSessionDate to toSessionDate, not the live price. ' +
-    'trend_changed and plan_position_changed are read at those two closes only; level_crossed and signal_started carry their own dates. ' +
+    'trend_changed and plan_position_changed are read at those two closes only; level_crossed, plan_level_crossed and signal_started carry their own dates. ' +
     `Signals cover only ${CHAT_CHANGE_SIGNAL_TYPES.join(', ')}. ` +
-    'level_crossed is a close past the level on that date; compare closeNow, and if it is back on the other side, say it closed past then and is back now. ' +
+    'level_crossed is the first close past the level; pastNow says whether the latest close is still past it. ' +
+    "plan_level_crossed is the same for the earlier plan's stop and entry-zone edges (pastNow false: closed past, then came back); no stop item does not mean the stop held. " +
     'planNow and levelsBroken use the current price, planCheck the analysis-time price; none says whether an earlier level held. ' +
     'Each signal type is listed once, at its newest start; omittedSignals counts earlier starts that are not listed. ' +
     'omittedLevelCrossings counts further level crossings that are not listed. ' +
@@ -71,6 +74,17 @@ export type SinceEarlierChange =
           direction: 'down' | 'up';
           close: number;
           date: string;
+          /** 지금(마지막 종가)도 건넌 쪽에 있는가. `false`면 건넜다가 돌아왔다. */
+          pastNow: boolean;
+      }
+    | {
+          kind: 'plan_level_crossed';
+          level: 'stop' | 'entry_low' | 'entry_high';
+          price: number;
+          direction: 'down' | 'up';
+          close: number;
+          date: string;
+          pastNow: boolean;
       }
     | {
           kind: 'plan_position_changed';
@@ -130,6 +144,17 @@ function toChange(
                 direction: change.direction,
                 close: change.close,
                 date: tradingDate(change.time),
+                pastNow: change.pastNow,
+            };
+        case 'plan_level_crossed':
+            return {
+                kind: 'plan_level_crossed',
+                level: change.level,
+                price: change.price,
+                direction: change.direction,
+                close: change.close,
+                date: tradingDate(change.time),
+                pastNow: change.pastNow,
             };
         case 'plan_position_changed': {
             const levels =
@@ -209,8 +234,9 @@ export function buildSinceEarlier({
     const crossings = result.changes.filter(
         change => change.kind === 'level_crossed'
     );
+    // core는 돌파를 시각순으로 주므로 끝에서 자르면 가장 나중 것이 남고, 아래 flatMap이 원래 순서(시간순)를 지킨다.
     const keptCrossings = new Set<TechnicalChange>(
-        crossings.slice(0, SINCE_EARLIER_MAX_LEVEL_CROSSINGS)
+        crossings.slice(-SINCE_EARLIER_MAX_LEVEL_CROSSINGS)
     );
     const changes = result.changes.flatMap((change): SinceEarlierChange[] => {
         if (change.kind === 'signal_started')

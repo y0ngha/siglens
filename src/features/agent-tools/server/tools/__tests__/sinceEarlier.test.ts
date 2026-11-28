@@ -204,6 +204,89 @@ describe('buildSinceEarlier', () => {
         ]);
     });
 
+    it('가격대 돌파가 상한을 넘으면 가장 나중 것 6개를 시간순으로 싣는다', () => {
+        const projection = earlierProjection();
+        projection.keyLevels = {
+            support: [],
+            resistance: Array.from({ length: 9 }, (_, i) => ({
+                price: 94 + i,
+                reason: '',
+            })),
+        };
+        const reference = referenceFor(projection);
+        const result = technicalChangesBetween(bars, {
+            fromIndex: BASELINE,
+            reference,
+            signalTypes: CHAT_CHANGE_SIGNAL_TYPES,
+        });
+        if (!result.ok) throw new Error('fixture must be comparable');
+        const all = result.changes.filter(c => c.kind === 'level_crossed');
+        expect(all).toHaveLength(9);
+        const block = build(reference);
+        const kept = (block?.changes ?? []).filter(
+            (c): c is Extract<SinceEarlierChange, { kind: 'level_crossed' }> =>
+                c.kind === 'level_crossed'
+        );
+        expect(kept.map(c => c.price)).toEqual(
+            all.slice(-SINCE_EARLIER_MAX_LEVEL_CROSSINGS).map(c => c.price)
+        );
+        const dates = kept.map(c => c.date);
+        expect(dates).toEqual(dates.toSorted());
+        expect(block?.omittedLevelCrossings).toBe(
+            9 - SINCE_EARLIER_MAX_LEVEL_CROSSINGS
+        );
+        expect(kept.every(c => c.pastNow)).toBe(true);
+    });
+
+    it('이전 계획의 무효화 기준 아래로 마감했다가 돌아오면 pastNow false로 싣고, free 등급에는 싣지 않는다', () => {
+        const projection = earlierProjection();
+        projection.actionRecommendation = {
+            ...(projection.actionRecommendation as object),
+            entryPrices: [97, 98],
+            stopLoss: 95,
+            takeProfitPrices: [112],
+        };
+        const from = 20;
+        const referenceAt = (
+            source: Record<string, unknown>,
+            tier: 'free' | 'member'
+        ): ChangeReference => {
+            const reference = changeReferenceOf(
+                source,
+                { tier },
+                { analyzedAt: analyzedAfterClose(bars, from) }
+            );
+            if (reference === null) throw new Error('fixture must be readable');
+            return reference;
+        };
+        const options = {
+            earlierGeneratedAt: analyzedAfterClose(bars, from),
+            session: US_EQUITY_SESSION,
+            bars,
+        };
+        const member = buildSinceEarlier({
+            ...options,
+            reference: referenceAt(projection, 'member'),
+        });
+        const stop = member?.changes.find(
+            c => c.kind === 'plan_level_crossed' && c.level === 'stop'
+        );
+        expect(stop).toMatchObject({
+            kind: 'plan_level_crossed',
+            level: 'stop',
+            price: 95,
+            direction: 'down',
+            pastNow: false,
+        });
+        const free = buildSinceEarlier({
+            ...options,
+            reference: referenceAt(projection, 'free'),
+        });
+        expect(free?.changes.some(c => c.kind === 'plan_level_crossed')).toBe(
+            false
+        );
+    });
+
     it('신호는 허브 8종만, 종류·방향·날짜를 core가 읽은 그대로 싣는다(다른 종류는 없다)', () => {
         const from = 108;
         const block = buildSinceEarlier({
@@ -307,8 +390,13 @@ describe('buildSinceEarlier', () => {
         expect(SINCE_EARLIER_NOTE).toContain('omittedLevelCrossings');
         expect(SINCE_EARLIER_NOTE).toContain('two closes only');
         expect(SINCE_EARLIER_NOTE).toContain('omittedSignals');
-        expect(SINCE_EARLIER_NOTE).toContain('compare closeNow');
-        expect(SINCE_EARLIER_NOTE).toContain('is back now');
+        expect(SINCE_EARLIER_NOTE).toContain(
+            'pastNow says whether the latest close'
+        );
+        expect(SINCE_EARLIER_NOTE).toContain('plan_level_crossed');
+        expect(SINCE_EARLIER_NOTE).toContain(
+            'no stop item does not mean the stop held'
+        );
         expect(SINCE_EARLIER_NOTE).toContain(
             'none says whether an earlier level held'
         );
@@ -368,7 +456,7 @@ describe('buildSinceEarlier', () => {
 });
 
 describe('블록 크기', () => {
-    it('가장 긴 모양(계획 1 + 가격대 돌파 6 + 추세 1 + 신호 8, 소수 4자리 가격)이어도 3,000자 안이다', () => {
+    it('가장 긴 모양(계획 1 + 계획 경계 3 + 가격대 돌파 6 + 추세 1 + 신호 8, 소수 4자리 가격)이어도 3,900자 안이다', () => {
         const plan: SinceEarlierChange = {
             kind: 'plan_position_changed',
             from: 'below_zone',
@@ -385,6 +473,16 @@ describe('블록 크기', () => {
             direction: 'up',
             close: 1234.5678,
             date: '2026-11-13',
+            pastNow: false,
+        };
+        const planLevel: SinceEarlierChange = {
+            kind: 'plan_level_crossed',
+            level: 'entry_high',
+            price: 1244.5678,
+            direction: 'down',
+            close: 1234.5678,
+            date: '2026-11-13',
+            pastNow: false,
         };
         const signal: SinceEarlierChange = {
             kind: 'signal_started',
@@ -400,6 +498,9 @@ describe('블록 크기', () => {
             closeNow: 1234.5678,
             changes: [
                 plan,
+                planLevel,
+                planLevel,
+                planLevel,
                 ...Array.from(
                     { length: SINCE_EARLIER_MAX_LEVEL_CROSSINGS },
                     () => level
@@ -413,8 +514,8 @@ describe('블록 크기', () => {
             comparedLevels: true,
             note: SINCE_EARLIER_NOTE,
         };
-        // CACHED_ANALYSIS_MAX_CHARS(16,000)의 약 20% — 넘으면 분석 본문이 그만큼 더 줄어든다. 가장 긴 모양의 실측은 3,156자(note 두 문장이 늘리기 전 상한 3,000).
-        expect(JSON.stringify(worst).length).toBeLessThan(3_200);
+        // CACHED_ANALYSIS_MAX_CHARS(16,000)의 약 20% — 넘으면 분석 본문이 그만큼 더 줄어든다. 가장 긴 모양의 실측은 3,821자(계획 경계 3개·돌파마다 pastNow·note 두 문장이 늘기 전에는 3,156자, 상한 3,200). 상한은 실측 위 가장 작은 100 단위다.
+        expect(JSON.stringify(worst).length).toBeLessThan(3_900);
     });
 });
 

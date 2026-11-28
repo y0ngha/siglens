@@ -36,7 +36,7 @@ import { WEB_SEARCH_SPEC } from './webSearch';
  * 그 문구를 하나라도 바꾸면 올린다. core는 도구와 무관한 프레임의 버전(`AGENT_PROMPT_VERSION`)만 기록하므로,
  * 어느 도구 문구로 답했는지는 `[Agent]` 로그의 이 값으로 가른다.
  */
-export const AGENT_TOOLSET_VERSION = '2026-11-28.4';
+export const AGENT_TOOLSET_VERSION = '2026-11-28.5';
 
 /**
  * 도구 목록. 공급자는 이 순서로 도구를 받는다(순서도 프롬프트 접두사 캐시의 바이트다). core 내장 모음의 순서에

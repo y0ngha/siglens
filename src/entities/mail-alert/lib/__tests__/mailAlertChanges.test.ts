@@ -34,6 +34,16 @@ const crossed: TechnicalChange = {
     direction: 'down',
     time: 1,
     close: 178,
+    pastNow: true,
+};
+const planLevel: TechnicalChange = {
+    kind: 'plan_level_crossed',
+    level: 'stop',
+    price: 170,
+    direction: 'down',
+    time: 1,
+    close: 168,
+    pastNow: false,
 };
 const signal: TechnicalChange = {
     kind: 'signal_started',
@@ -76,6 +86,7 @@ describe('toMailAlertChanges', () => {
 
     it('신호는 여기서 다루지 않는다(신호 줄은 기존 항목이 정본이다)', () => {
         expect(toMailAlertChanges([signal], reference())).toEqual([]);
+        expect(toMailAlertChanges([planLevel], reference())).toEqual([]);
     });
 
     it('코어의 순서를 그대로 지킨다', () => {

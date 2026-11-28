@@ -266,6 +266,14 @@ export type ChatChangeItem =
           date: string;
       }
     | { kind: 'plan_stopped'; stop: number; date: string }
+    | {
+          kind: 'plan_stop_recovered';
+          stop: number;
+          /** 무효화 기준 아래로 처음 마감한 거래일. */
+          date: string;
+          /** 그날의 종가. */
+          close: number;
+      }
     | { kind: 'plan_no_setup'; date: string };
 
 export interface ChatSymbolChangesBase {

@@ -6605,6 +6605,7 @@
                 "planAbove": "その分析のエントリーゾーン {low}〜{high} を上回って引けました（{date}）",
                 "planBelow": "その分析のエントリーゾーン {low}〜{high} を下回って引けました（{date}）",
                 "planStopped": "その分析の無効化の基準 {stop} 以下で引けました（{date}）",
+                "planStopRecovered": "その分析の無効化の基準 {stop} 以下で引けた後（{date}、終値 {close}）、今は再び上にあります",
                 "planNoSetup": "その分析のエントリー計画は、{date}の終値時点で成り立たなくなりました",
                 "partialTrend": "データが足りず、トレンド判定は比較できませんでした",
                 "partialDays": "シグナルや終値を確認できなかった取引日が{count}日あります",

@@ -71,6 +71,22 @@ function toItems(
                         date,
                     },
                 ];
+            case 'plan_level_crossed':
+                // 위로 건넌 경우(분석 시점에 이미 기준 이하였다)는 "돌아왔다"가 아니라서 줄로 만들지 않는다.
+                // 무효화 기준 아래로 마감했다가 지금은 돌아온 경우만 줄로 만든다. 지금도 아래면 계획 위치 변화
+                // (`plan_stopped`)가 이미 말하고, 진입 구간 경계의 돌파는 위치 줄(구간 안·위·아래)이 갈음한다.
+                return change.level === 'stop' &&
+                    change.direction === 'down' &&
+                    !change.pastNow
+                    ? [
+                          {
+                              kind: 'plan_stop_recovered',
+                              stop: change.price,
+                              date,
+                              close: change.close,
+                          },
+                      ]
+                    : [];
             case 'plan_position_changed': {
                 if (change.to === 'no_setup') {
                     return change.reason === 'stopped' &&
