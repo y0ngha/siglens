@@ -198,6 +198,7 @@ const nextConfig: NextConfig = {
     // 16.4.2(2026-10-23)는 `next/dist/client`가 바뀌었지만 요청을 만드는 부분 — `createFetch`
     // (fetch-server-response.js), `set-cache-busting-search-param.js`, `app-router-headers.js` —
     // 과 base-server의 `validateRSCRequestHeaders` 분기는 16.3.8과 같음을 소스로 확인했다.
+    // 16.4.6(2026-11-29)도 위 세 파일이 16.4.2와 같고, base-server 변경은 dev 서버 HMR뿐이다.
     // 브라우저 실측은 이 컨테이너에서 못 했으므로 배포 뒤 같은 방법으로 다시 잴 것.
     // 16.4에서 새로 기본 ON인 `strictRouteMatching`·`explicitParallelRouteChildren`은 parallel
     // route(`@slot`)가 없어 영향이 없고, `turbopackSharedRuntime`(공용 runtime.js + HTML 인라인
