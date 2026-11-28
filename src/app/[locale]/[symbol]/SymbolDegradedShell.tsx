@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
+import { SuppressSymbolBottomAd } from '@/features/ad-slot/model/SymbolBottomAdContext';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
@@ -20,6 +21,8 @@ interface SymbolDegradedShellProps extends Pick<
  * 심볼 탭의 degrade 화면 공통 뼈대: h1 하나 → 스냅샷 프로즈 → 일시 장애 안내 →
  * 다른 탭 링크. 데이터 제공자가 복구되는 동안에도 크롤 가능한 본문과 탐색 경로를
  * 남긴다(noindex soft-200은 각 라우트의 `generateMetadata`가 책임진다).
+ *
+ * 장애 안내 화면이라 레이아웃 공통 하단 광고를 끈다 — AdSense는 내용 없는 화면의 광고를 금지한다.
  */
 export function SymbolDegradedShell({
     heading,
@@ -32,6 +35,7 @@ export function SymbolDegradedShell({
 }: SymbolDegradedShellProps) {
     return (
         <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+            <SuppressSymbolBottomAd />
             <SymbolPageHeading>{heading}</SymbolPageHeading>
             {children}
             <section className={cn(SURFACE_CARD, 'px-5 py-8 text-center')}>

@@ -523,18 +523,32 @@ export const ENV_REGISTRY = [
         note: 'AdSense publisher id, inlined into the client bundle.',
     },
     {
-        name: 'NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM',
+        name: 'NEXT_PUBLIC_ADSENSE_SLOT_FEAR_GREED',
         requirement: 'optional',
         sources: ['build-arg'],
         readBy: ['siglens'],
-        note: 'AdSense slot id for the panel bottom unit.',
+        note: 'AdSense slot id for the symbol fear-greed tab unit (empty hides it).',
     },
     {
-        name: 'NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS',
+        name: 'NEXT_PUBLIC_ADSENSE_SLOT_GUIDE',
         requirement: 'optional',
         sources: ['build-arg'],
         readBy: ['siglens'],
-        note: 'AdSense slot id for the analysis progress unit.',
+        note: 'AdSense slot id for the guide article unit (empty hides it).',
+    },
+    {
+        name: 'NEXT_PUBLIC_ADSENSE_SLOT_NEWS',
+        requirement: 'optional',
+        sources: ['build-arg'],
+        readBy: ['siglens'],
+        note: 'AdSense slot id for the symbol news tab unit (empty hides it).',
+    },
+    {
+        name: 'NEXT_PUBLIC_ADSENSE_SLOT_SYMBOL_BOTTOM',
+        requirement: 'optional',
+        sources: ['build-arg'],
+        readBy: ['siglens'],
+        note: 'AdSense slot id for the unit shared by all symbol tabs (empty hides it).',
     },
     {
         // 코드 기본값(https://ai.siglens.io)을 쓰고 Dockerfile·deploy.yml은 값을 넘기지 않는다.

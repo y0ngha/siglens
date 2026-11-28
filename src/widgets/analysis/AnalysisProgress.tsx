@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { AdBanner } from './AdBanner';
 import { ANALYSIS_PHASE_COUNT } from './hooks/useAnalysisProgress';
 
 /**
@@ -20,8 +19,6 @@ import { ANALYSIS_PHASE_COUNT } from './hooks/useAnalysisProgress';
 interface AnalysisProgressProps {
     phaseIndex: number;
     tipIndex: number;
-    /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다. */
-    isFreeUser?: boolean;
     /**
      * 진행 문구가 말하는 보조지표 수 — `countSkillFiles().indicators`.
      * 예전에는 상수(30·60)였고 실제 스킬 수와 어긋났다.
@@ -34,7 +31,6 @@ interface AnalysisProgressProps {
 export function AnalysisProgress({
     phaseIndex,
     tipIndex,
-    isFreeUser = true,
     indicatorCount,
     skillCount,
 }: AnalysisProgressProps) {
@@ -103,9 +99,6 @@ export function AnalysisProgress({
                 <SkeletonLine widthClass="w-10/12" delayMs={150} />
                 <SkeletonLine widthClass="w-7/12" delayMs={300} />
             </div>
-
-            {/* 분석 대기 중 광고 — 사용자가 결과를 기다리는 동안 자연스럽게 노출 */}
-            <AdBanner isFreeUser={isFreeUser} slot="analysis-progress" />
         </div>
     );
 }

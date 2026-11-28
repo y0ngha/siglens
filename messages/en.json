@@ -897,6 +897,9 @@
                 "b5b216": "Processing account deletion…"
             }
         },
+        "ad-slot": {
+            "label": "Advertisement"
+        },
         "analysis-nudge": {
             "AnalysisSignupNudgeModal": {
                 "486011": "Sign up to enable ''{v0}'' and receive more detailed analysis reports.",
@@ -3867,10 +3870,6 @@
                 "currentPriceNote": "This value re-runs the same stop loss and targets against the <strong>current price</strong>, so the two differ once the price has already moved.",
                 "d6bde3": "Cannot compute",
                 "fc05d0": "Check against current price"
-            },
-            "adBanner": {
-                "analyzing": "The AI is running a detailed analysis… Ad revenue funds better AI models and server costs.",
-                "done": "Was this analysis useful? Using the affiliate links below helps keep SIGLENS running."
             },
             "baseRate": {
                 "levelLine": "After price touched a level, it held {held}% of the time. A price at the same distance on another date held {placebo}% ({symbols} symbols, daily bars {from} to {to}, {n, number} touches).",

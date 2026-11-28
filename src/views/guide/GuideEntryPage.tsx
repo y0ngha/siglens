@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import type { GuideEntry } from '@/entities/guide/types';
+import { AdSlot } from '@/features/ad-slot/ui/AdSlot';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
@@ -113,6 +114,10 @@ export async function GuideEntryPage({
                     <div className="mt-10">
                         <GuideMarkdown markdown={body.before} />
                     </div>
+                    {/* 광고 — 본문 앞부분을 읽은 뒤, 실시간 종목 예시 앞. 본문이 앞뒤로 나뉘는 글에만 넣는다.
+                        실시간 종목 블록은 제목(h2)과 설명으로 시작해 광고가 종목 칩에 바로 붙지 않는다. FAQ
+                        뒤는 관련 가이드 카드·이전/다음 링크와 붙어 있어 쓰지 않는다. */}
+                    {body.after === null ? null : <AdSlot placement="guide" />}
                     {liveSymbols === null ? null : (
                         <GuideLiveSymbols
                             locale={locale}

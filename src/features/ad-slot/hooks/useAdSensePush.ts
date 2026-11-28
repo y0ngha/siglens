@@ -26,18 +26,13 @@ export function useAdSensePush(
         if (!container) return;
 
         const observer = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                if (entry.contentRect.width > 0) {
-                    try {
-                        (window.adsbygoogle = window.adsbygoogle ?? []).push(
-                            {}
-                        );
-                        isPushedRef.current = true;
-                        observer.disconnect();
-                    } catch (e) {
-                        console.error('AdSense push error:', e);
-                    }
-                }
+            if (!entries.some(entry => entry.contentRect.width > 0)) return;
+            try {
+                (window.adsbygoogle = window.adsbygoogle ?? []).push({});
+                isPushedRef.current = true;
+                observer.disconnect();
+            } catch (e) {
+                console.error('AdSense push error:', e);
             }
         });
 

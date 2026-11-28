@@ -24,7 +24,6 @@ import {
     resolvePrerenderLocales,
     type Locale,
 } from '@/shared/i18n/locales';
-import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { brandName, brandTitle } from '@/shared/lib/brandName';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
@@ -226,14 +225,6 @@ export default async function RootLayout({
                 >
                     {children}
                 </SiteChrome>
-                {ADSENSE_ENABLED && (
-                    <Script
-                        async
-                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
-                        crossOrigin="anonymous"
-                        strategy="lazyOnload"
-                    />
-                )}
                 {/* Cloudflare Web Analytics — 쿠키리스 트래픽 측정(UV/PV + 페이지별
                     조회수). beacon이 history API로 SPA 라우팅을 자동 추적하므로 추가
                     설정이 필요 없다. afterInteractive로 빠른 이탈 방문자까지 집계해

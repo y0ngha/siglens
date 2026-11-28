@@ -6,6 +6,8 @@ import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvabl
 import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { pickAssetName } from '@/entities/ticker/lib/ticker';
+import { SymbolBottomAdProvider } from '@/features/ad-slot/model/SymbolBottomAdContext';
+import { SymbolBottomAd } from '@/features/ad-slot/ui/SymbolBottomAd';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { localePath } from '@/shared/i18n/locales';
@@ -23,7 +25,7 @@ interface SymbolLayoutProps {
 
 /**
  * `/[symbol]/*` 9개 탭이 공유하는 셸 — 심볼 존재 판정, 크롬(헤더·탭), 탭 pending 골격, 관련 종목 칩,
- * 조회수 비콘, `ai.siglens.io` 플로팅 링크.
+ * 공통 하단 광고, 조회수 비콘, `ai.siglens.io` 플로팅 링크.
  *
  * **심볼 존재 판정은 이 레이아웃 최상단에서 한다.** 존재하지 않는 심볼이 페이지 렌더(AI·봉 조회)까지
  * 가기 전에 `getAssetInfoResilient` 한 번으로 끊긴다. 그래서 의도적으로 blocking이다 — `children`을
@@ -60,17 +62,20 @@ export default async function SymbolLayout({
         // 싣는다(`RouteMessages` JSDoc).
         <RouteMessages route="[symbol]" locale={locale}>
             <SymbolLayoutProviders>
-                <SymbolLayoutJail>
-                    <SymbolLayoutChrome
-                        assetInfo={assetInfo}
-                        degraded={degraded}
-                        params={params}
-                    />
-                    <SymbolTabPendingSlot fallback={<SymbolTabSkeleton />}>
-                        {children}
-                    </SymbolTabPendingSlot>
-                </SymbolLayoutJail>
-                {/* 관련 종목 칩 — **jail 밖**이라 페이지 일반 스크롤로 닿는다(푸터 바로 위). 차트 탭의
+                {/* 탭 화면(오류·성능 저하 안내·보유 없는 '내 위치')이 하단 광고를 끌 수 있게 탭 본문과
+                    광고를 같은 Provider 아래에 둔다(`SymbolBottomAdContext` JSDoc). */}
+                <SymbolBottomAdProvider>
+                    <SymbolLayoutJail>
+                        <SymbolLayoutChrome
+                            assetInfo={assetInfo}
+                            degraded={degraded}
+                            params={params}
+                        />
+                        <SymbolTabPendingSlot fallback={<SymbolTabSkeleton />}>
+                            {children}
+                        </SymbolTabPendingSlot>
+                    </SymbolLayoutJail>
+                    {/* 관련 종목 칩 — **jail 밖**이라 페이지 일반 스크롤로 닿는다(푸터 바로 위). 차트 탭의
                     `<main>` 안이면 AI 패널 스크롤러 쪽에 깔려 사람은 끝내 닿지 못한다. jail 높이 계산은
                     건드리지 않는다 — 형제로 붙을 뿐이라 차트 세로폭은 그대로다.
 
@@ -79,17 +84,25 @@ export default async function SymbolLayout({
                     Suspense로 감싸지 않는다 — 경계 뒤 콘텐츠는 raw HTML 끝쪽으로 스트리밍돼 JS를 실행하지
                     않는 크롤러(Naver Yeti·Daumoa)에게 내부링크가 푸터 뒤로 밀린다. 한국어 검색이 주
                     유입이고 내부링크가 이 컴포넌트의 존재 이유다. */}
-                <RelatedSymbols symbol={ticker} />
-                {/* 조회수 비콘 — notFound() 판정 뒤라 실재 종목만 집계된다. 레이아웃은 같은 종목의 탭
+                    <RelatedSymbols symbol={ticker} />
+                    {/* 9개 탭 공통 하단 광고 — 관련 종목 칩 **뒤**(푸터 앞). 다른 탭 카드와 칩 사이에 끼우면
+                    링크 묶음 사이라 실수 클릭을 부른다. 첫 화면 아래라 지연 로딩한다. */}
+                    <SymbolBottomAd />
+                    {/* 조회수 비콘 — notFound() 판정 뒤라 실재 종목만 집계된다. 레이아웃은 같은 종목의 탭
                     이동에서 유지되므로 탭마다 재전송하지 않는다. */}
-                <SymbolViewPing symbol={ticker} />
-                {/* `ai.siglens.io`로 보내는 플로팅 링크(위치·z-index는 `AskAiFab` JSDoc). 패널 없이 새 탭으로
+                    <SymbolViewPing symbol={ticker} />
+                    {/* `ai.siglens.io`로 보내는 플로팅 링크(위치·z-index는 `AskAiFab` JSDoc). 패널 없이 새 탭으로
                     이동하는 순수 서버 렌더 링크라, 위에서 확정한 `assetInfo`·`locale`로 인라인 렌더한다 —
                     경계 뒤에 두면 링크가 raw HTML 끝의 숨김 청크로 밀린다. */}
-                <AskAiFab
-                    name={pickAssetName(assetInfo, assetInfo.symbol, locale)}
-                    localePrefix={localePath(locale, '/')}
-                />
+                    <AskAiFab
+                        name={pickAssetName(
+                            assetInfo,
+                            assetInfo.symbol,
+                            locale
+                        )}
+                        localePrefix={localePath(locale, '/')}
+                    />
+                </SymbolBottomAdProvider>
             </SymbolLayoutProviders>
         </RouteMessages>
     );

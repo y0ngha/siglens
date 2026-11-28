@@ -1,5 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
+import {
+    SymbolBottomAdProvider,
+    useSymbolBottomAdSuppressed,
+} from '@/features/ad-slot/model/SymbolBottomAdContext';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import { PositionTabMemberContent } from '../ui/PositionTabMemberContent';
 
@@ -161,5 +165,57 @@ describe('PositionTabMemberContent', () => {
         expect(
             screen.getByTestId('position-data-insufficient')
         ).toBeInTheDocument();
+    });
+});
+
+/**
+ * '내 위치' 탭은 보유 카드가 그려질 때만 레이아웃 공통 하단 광고를 허용한다. 나머지 화면(로딩, 보유 없음
+ * 안내, 데이터 부족)은 템플릿 문장뿐이라 AdSense가 광고를 금지하는 "내용 없는 화면"이다.
+ */
+describe('PositionTabMemberContent — shared bottom ad', () => {
+    function AdProbe() {
+        return (
+            <p data-testid="bottom-ad">
+                {useSymbolBottomAdSuppressed() ? 'suppressed' : 'open'}
+            </p>
+        );
+    }
+
+    function renderWithProbe(lastClose: number | null = 180) {
+        render(
+            <SymbolBottomAdProvider>
+                <PositionTabMemberContent
+                    symbol="AAPL"
+                    low52w={100}
+                    high52w={200}
+                    lastClose={lastClose}
+                />
+                <AdProbe />
+            </SymbolBottomAdProvider>
+        );
+        return screen.getByTestId('bottom-ad');
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('keeps the ad when the holding card renders', () => {
+        setHolding({ holding: AAPL_HOLDING });
+        expect(renderWithProbe()).toHaveTextContent('open');
+    });
+
+    it.each([
+        ['loading', { isLoading: true }],
+        ['no holding', { holding: null }],
+        ['lookup error', { holding: null, isError: true }],
+    ] as const)('suppresses the ad while %s', (_, overrides) => {
+        setHolding(overrides);
+        expect(renderWithProbe()).toHaveTextContent('suppressed');
+    });
+
+    it('suppresses the ad when the price range is missing', () => {
+        setHolding({ holding: AAPL_HOLDING });
+        expect(renderWithProbe(null)).toHaveTextContent('suppressed');
     });
 });

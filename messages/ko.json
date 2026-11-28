@@ -897,6 +897,9 @@
                 "b5b216": "탈퇴 처리 중…"
             }
         },
+        "ad-slot": {
+            "label": "광고"
+        },
         "ai-feedback": {
             "AiFeedbackButtons": {
                 "down": "도움이 안 됐어요",
@@ -4084,10 +4087,6 @@
             },
             "RecordEntryLink": {
                 "entry": "분석 기록과 측정 방법"
-            },
-            "adBanner": {
-                "analyzing": "AI가 정밀 분석 중입니다… 광고 수익은 더 나은 AI 모델 도입과 서버 유지비에 쓰입니다.",
-                "done": "분석 결과가 도움이 되셨나요? 하단 제휴 링크를 이용해 주시면 시그렌즈 서비스를 이어가는 데 큰 힘이 됩니다."
             },
             "baseRate": {
                 "levelLine": "가격대에 닿은 뒤 지켜진 비율은 {held}%였어요. 같은 거리의 다른 날 가격은 {placebo}%였어요. ({symbols}종목의 {from}~{to}년 일봉에서 {n, number}번 닿은 기준)",

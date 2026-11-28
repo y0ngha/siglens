@@ -67,9 +67,6 @@ vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
 vi.mock('@/widgets/analysis/AnalysisToast', () => ({
     AnalysisToast: () => null,
 }));
-vi.mock('@/widgets/analysis/AdBanner', () => ({
-    AdBanner: () => null,
-}));
 vi.mock('@/widgets/analysis/StaleAnalysisBanner', () => ({
     StaleAnalysisBanner: () => null,
 }));

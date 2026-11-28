@@ -24,6 +24,8 @@ import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCa
 import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { SuppressSymbolBottomAd } from '@/features/ad-slot/model/SymbolBottomAdContext';
+import { AdSlot } from '@/features/ad-slot/ui/AdSlot';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { SymbolRouteParams } from '@/shared/config/market';
@@ -305,6 +307,15 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
+                {/* 광고 — 점수를 다 본 뒤(게이지·차트 블록 다음)에 둔다. 진입이 가장 많은 탭이라 첫 화면 끝
+                    근처의 보이는 자리를 쓰되, 점수 앞을 막지 않는다. 서버가 점수 입력을 확보한 화면에만
+                    넣고, 봉 조회 실패·점수 없음 화면은 내용이 없어 레이아웃 공통 하단 광고도 끈다(AdSense 금지). */}
+                {quantizedFgBars !== null &&
+                hasFearGreedScore(quantizedFgBars) ? (
+                    <AdSlot placement="fear-greed" />
+                ) : (
+                    <SuppressSymbolBottomAd />
+                )}
                 {/* 서버 계산 factor 요약 — 위 게이지(FearGreedPage)는 점수·그룹 막대만
                     그린다. 여기서 이미 로드된 5년 일봉(`symbolFearGreedInputs`)으로 factor
                     수치와 근거 문장을 SSR HTML에 풀어 쓴다(결정적, AI/pre-warm 무관).

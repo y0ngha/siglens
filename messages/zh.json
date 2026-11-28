@@ -897,6 +897,9 @@
                 "b5b216": "正在处理注销…"
             }
         },
+        "ad-slot": {
+            "label": "广告"
+        },
         "analysis-nudge": {
             "AnalysisSignupNudgeModal": {
                 "486011": "注册会员即可开启“{v0}”，获取更详细的分析报告。",
@@ -3867,10 +3870,6 @@
                 "currentPriceNote": "此处数值是把相同的止损与目标价放到<strong>当前价</strong>上重新计算的，因此价格已经变动时两者会不同。",
                 "d6bde3": "无法计算",
                 "fc05d0": "按当前价复核"
-            },
-            "adBanner": {
-                "analyzing": "AI 正在进行精细分析… 广告收入将用于引入更好的 AI 模型与服务器维护。",
-                "done": "这份分析有帮助吗？通过下方联盟链接的操作能帮助 SIGLENS 持续运营。"
             },
             "baseRate": {
                 "levelLine": "价格触及该价位后守住的比例为{held}%，同样距离的其他日期价格为{placebo}%（{symbols}只股票{from}~{to}年日线，触及{n, number}次）。",

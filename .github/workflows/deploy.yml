@@ -197,8 +197,10 @@ jobs:
                       --secret id=FMP_API_KEY,env=FMP_API_KEY \
                       --build-arg NEXT_PUBLIC_SITE_URL=https://siglens.io \
                       --build-arg NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=ca-pub-6121223912694381 \
-                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=2260139933 \
-                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=5816241560 \
+                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_SYMBOL_BOTTOM=5816241560 \
+                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_FEAR_GREED=2260139933 \
+                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_NEWS= \
+                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_GUIDE= \
                       --build-arg NEXT_PUBLIC_ADSENSE_ENABLED=false \
                       `# GIT_SHA carries the release version (IMAGE_TAG), not a commit SHA. It is baked as buildId and used as the per-release S3 page-cache prefix (siglens-isr/<GIT_SHA>/pages/...); the data cache uses DATA_CACHE_VERSION instead (cache-handler/config.mjs).` \
                       --build-arg PRERENDER_LOCALES=${{ vars.PRERENDER_LOCALES }} \

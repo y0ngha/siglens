@@ -7,7 +7,6 @@ vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
     claimMeterShown,
 }));
 vi.mock('../AnalysisToast', () => ({ AnalysisToast: () => null }));
-vi.mock('../AdBanner', () => ({ AdBanner: () => null }));
 vi.mock('../StaleAnalysisBanner', () => ({ StaleAnalysisBanner: () => null }));
 
 // @vitest-environment jsdom
