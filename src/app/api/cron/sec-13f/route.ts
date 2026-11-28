@@ -4,6 +4,7 @@ import {
     hasSecFilingsBacklog,
     runSecIndexIngest,
 } from '@/entities/investor-flows/server/runSecIndexIngest';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     handleLeasedCron,
     SEC_13F_LEGACY_LEASE_NAME,
@@ -33,7 +34,7 @@ import { createSec13fDeps } from './createDeps';
  * 스케줄은 2시간마다라 락 TTL이 길어도 겹치지 않는다. 락은 `sec-ftd`와 **공유**한다(`SEC_CRON_LEASE_NAME`) — 동시에 한 SEC
  * cron만 돌아 인스턴스 합계 SEC 속도가 게이트 하나(~4.5건/초)를 넘지 않는다.
  */
-const SEC_13F_DEADLINE_MS = 10 * 60 * 1000;
+const SEC_13F_DEADLINE_MS = 10 * MS_PER_MINUTE;
 const SEC_13F_LEASE_TTL_SECONDS = 35 * 60;
 
 /**

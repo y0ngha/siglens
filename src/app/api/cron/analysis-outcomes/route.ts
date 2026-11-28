@@ -1,4 +1,5 @@
 import { runOutcomeLabeller } from '@/entities/analysis-outcome/server/runOutcomeLabeller';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { handleLeasedCron } from '../leasedCron';
 import { createAnalysisOutcomesDeps } from './createDeps';
 
@@ -6,7 +7,7 @@ import { createAnalysisOutcomesDeps } from './createDeps';
  * 마감 8분. 락 TTL 12분 = 마감 + 청크 하나(그룹당 로드 타임아웃 20초 + 행 쓰기) + DB만 쓰는 capture·relabel·prune 여유
  * (`__tests__/route.test.ts`가 상수에서 이 부등식을 유도해 고정한다).
  */
-const ANALYSIS_OUTCOMES_DEADLINE_MS = 8 * 60 * 1000;
+const ANALYSIS_OUTCOMES_DEADLINE_MS = 8 * MS_PER_MINUTE;
 const ANALYSIS_OUTCOMES_LEASE_TTL_SECONDS = 12 * 60;
 
 /**

@@ -19,6 +19,7 @@ vi.mock('@/entities/auth/server/getCurrentUser', () => ({
 import type { MockedFunction } from 'vitest';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /** Cookie jar by name: `{ siglens_session: 'x' }`. Unlisted names are absent. */
 const jar = (values: Record<string, string>) =>
@@ -131,7 +132,7 @@ describe('currentUserAction', () => {
             expect(hintWrite()).toEqual({
                 name: 'siglens_signed_in',
                 value: '1',
-                maxAge: 60 * 60 * 24 * 30,
+                maxAge: 30 * SECONDS_PER_DAY,
                 path: '/',
                 domain: 'siglens.io',
                 sameSite: 'lax',

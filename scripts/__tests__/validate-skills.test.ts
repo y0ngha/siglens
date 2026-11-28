@@ -1,4 +1,5 @@
 import { COMPUTED_CARD_KINDS } from '@y0ngha/siglens-core';
+import { glob } from 'glob';
 import matter from 'gray-matter';
 import {
     mkdtempSync,
@@ -10,7 +11,12 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { parseSkillFile, validateSkillData } from '../validate-skills';
+import {
+    DIGEST_DEFINITIONAL_PERCENT_PHRASES,
+    findDigestEvidenceErrors,
+    parseSkillFile,
+    validateSkillData,
+} from '../validate-skills';
 
 describe('validateSkillData — display.chart.color', () => {
     const base = { gating: { tier: 'always_on' } };
@@ -667,5 +673,86 @@ describe('skills/ computed_card tags', () => {
         ];
         const errors = files.flatMap(file => parseSkillFile(file).errors);
         expect(errors).toEqual([]);
+    });
+});
+
+describe('findDigestEvidenceErrors — Bulkowski is literature, not a SIGLENS measurement', () => {
+    const withDigest = (digest: string): string =>
+        `---\ngating: {tier: gated}\n---\nbody 82% (Bulkowski)\n\n<!-- PROMPT_DIGEST:START -->\n${digest}\n<!-- PROMPT_DIGEST:END -->\n`;
+
+    it.each([
+        [
+            'a measured attribution',
+            'Measured (Bulkowski, US stocks): reversed.',
+        ],
+        ['about as often as not', 'It broke up about as often as not.'],
+        ['a coin flip', 'Direction is a Coin flip here.'],
+        [
+            'a percentage citing Bulkowski',
+            "Bulkowski's 82% is for a half-height target.",
+        ],
+        [
+            'a percentage citing the site',
+            'thepatternsite.com/cup.html: 61 % met target.',
+        ],
+        ['a decimal percentage', 'Bulkowski: failure 4.5% only.'],
+    ])('rejects %s', (_name, line) => {
+        expect(findDigestEvidenceErrors(withDigest(line))).toHaveLength(1);
+    });
+
+    it.each([
+        [
+            'the standard disclaimer',
+            "Bulkowski's study (never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): most broke up.",
+        ],
+        [
+            'a defining pole threshold',
+            '- Pole: ≥+90% from pole base to pole top (Bulkowski: ≥90% in ≤2 months).',
+        ],
+        [
+            'the conservative target name',
+            "keyPrices (보수 목표가(50%)). Bulkowski's target result is for a half-height target.",
+        ],
+        [
+            'a percentage on a line without Bulkowski',
+            'Pause gives back ≤25% of the pole.',
+        ],
+        ['words only', 'Bulkowski: most met target, failures rare.'],
+    ])('accepts %s', (_name, line) => {
+        expect(findDigestEvidenceErrors(withDigest(line))).toEqual([]);
+    });
+
+    it('checks only the digest, not the body', () => {
+        expect(
+            findDigestEvidenceErrors(
+                '---\na: 1\n---\nBulkowski: 82% met target, a coin flip.\n'
+            )
+        ).toEqual([]);
+    });
+
+    it('names the digest line of each hit', () => {
+        expect(
+            findDigestEvidenceErrors(
+                withDigest('fine\nBulkowski: 61% met target.')
+            )
+        ).toEqual([
+            'digest line 2: a percentage on a line citing Bulkowski — state his result in words. A defining threshold goes in DIGEST_DEFINITIONAL_PERCENT_PHRASES.',
+        ]);
+    });
+
+    it('every allowlisted phrase still occurs in a real digest (no stale exemption)', async () => {
+        const files = await glob('skills/**/*.md', {
+            ignore: ['skills/CLAUDE.md'],
+        });
+        const digests = files
+            .map(file => readFileSync(file, 'utf8'))
+            .map(text => text.split('<!-- PROMPT_DIGEST:START -->')[1] ?? '')
+            .join('\n');
+        expect(files.length).toBeGreaterThan(50);
+        expect(
+            DIGEST_DEFINITIONAL_PERCENT_PHRASES.filter(
+                phrase => !digests.includes(phrase)
+            )
+        ).toEqual([]);
     });
 });

@@ -1,5 +1,9 @@
 import 'server-only';
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import {
+    SECONDS_PER_HALF_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { getRedisClient } from './redisClient';
 
@@ -42,7 +46,8 @@ export const SEED_TTL_SECONDS = SECONDS_PER_HALF_DAY;
  * 그 정의부만 보고 줄이면 여기 불변식이 조용히 깨진다 — 페이지가 다시 빈 채로 색인되는,
  * 이 기능이 고치려던 증상 그대로다. 그 회귀를 테스트가 잡도록 상한을 상수로 남긴다.
  */
-export const HUB_SEED_MAX_CRON_GAP_SECONDS = 10 * 60 * 60 + 35 * 60;
+export const HUB_SEED_MAX_CRON_GAP_SECONDS =
+    10 * SECONDS_PER_HOUR + 35 * SECONDS_PER_MINUTE;
 
 const KEY_PREFIX = 'hub-ssr-seed';
 

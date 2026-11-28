@@ -1,4 +1,4 @@
-import type { UserTier } from '@y0ngha/siglens-core';
+import type { Tier } from '@y0ngha/siglens-core';
 import type {
     AuthValidationErrorCode,
     AuthValidationErrorField,
@@ -15,7 +15,7 @@ export interface AuthUserRecord {
     /** Optional avatar image URL; null when not provided at registration. */
     avatarUrl: string | null;
     /** Subscription tier assigned to the user. */
-    tier: UserTier;
+    tier: Tier;
     /** Whether the email address has been verified by the user. */
     emailVerified: boolean;
     /** Timestamp when the account was created. */

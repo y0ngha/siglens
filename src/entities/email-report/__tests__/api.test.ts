@@ -13,6 +13,7 @@ import {
     DrizzleEmailReportWelcomeRepository,
 } from '@/entities/email-report/api';
 import { WELCOME_WINDOW_MS } from '@/entities/email-report/lib/emailReportConstants';
+import { MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 import {
     emailReportDeliveries,
     emailReportSubscriptions,
@@ -551,7 +552,7 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
             expect.arrayContaining([
                 'signup_email',
                 'signup_oauth',
-                new Date(NOW.getTime() - 23 * 60 * 60 * 1000).toISOString(),
+                new Date(NOW.getTime() - 23 * MS_PER_HOUR).toISOString(),
                 'member',
                 'pro',
             ])
@@ -572,7 +573,7 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
                 'sending',
                 3,
                 'failed',
-                new Date(NOW.getTime() - 30 * 60 * 1000).toISOString(),
+                new Date(NOW.getTime() - 30 * MS_PER_MINUTE).toISOString(),
                 'u-1',
                 'u-2',
             ])
@@ -590,7 +591,7 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
          * (`consentedAt + WELCOME_WINDOW_MS` 직전)과 첫 발송의 간격은 창보다 짧다. 창은 키 유효 기간보다
          * 1시간 짧아, DB·앱·Resend 시계가 조금 어긋나도 모든 재시도가 같은 키로 접힌다.
          */
-        const HOUR_MS = 60 * 60 * 1000;
+        const HOUR_MS = MS_PER_HOUR;
         const RESEND_IDEMPOTENCY_KEY_TTL_MS = 24 * HOUR_MS;
         const CONSENTED_AT = new Date('2026-11-21T00:30:00.000Z');
 

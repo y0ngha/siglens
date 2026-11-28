@@ -17,7 +17,7 @@ import { ruleDocPaths } from './support/ruleDocs';
  * 저장소 루트에서, 경로가 붙은 것(`src/app/CLAUDE.md`)은 저장소 루트 기준으로 푼다.
  *
  * 폐기한 ID는 규칙 문서 머리말의 `Retired IDs: TE-32, TE-35` 한 줄에 적는다. 폐기된 ID는 앵커가 다시
- * 생기면 안 되고(재사용 금지), 어디서도 인용되면 안 되며, 그 파일이 쓰는 접두사여야 하고, 두 번 적히면
+ * 생기면 안 되고(재사용 금지), 어디서도 인용되면 안 되며(`FILE#ID`든 `(TE-32)` 같은 맨 ID든), 그 파일이 쓰는 접두사여야 하고, 두 번 적히면
  * 안 된다. 다음 ID는 앵커와 폐기 목록을 합친 최댓값 + 1이지만, 번호 자체는 이 가드가 검사하지 않고
  * 리뷰에서 본다(기존 앵커가 폐기 번호보다 낮은 것은 정상이라 문서만으로는 판정할 수 없다).
  *
@@ -79,6 +79,8 @@ const LEGACY_DOC_PATTERN = /MISTAKES/;
 /** 규칙 파일당 `Retired IDs: A-1, B-2` 줄(여러 줄이어도 모두 합친다). */
 const RETIRED_LINE_PATTERN = /^Retired IDs: (.+)$/gm;
 const RULE_ID_PATTERN = /^[A-Z][A-Z0-9]*-\d+$/;
+/** 한 줄이 폐기 선언인가(`RETIRED_LINE_PATTERN`은 `g` 플래그라 `test`가 위치를 기억해 쓰지 않는다). */
+const RETIRED_DECLARATION_LINE = /^Retired IDs: /;
 
 interface Reference {
     readonly source: string;
@@ -219,6 +221,34 @@ function findRetiredCitations(
     });
 }
 
+/**
+ * 파일명 없이 맨 ID로 적은 폐기 ID(`(CS-24)`, `TS-4 참고`). 맨 ID는 `FILE#ID`가 아니라 위 검사가 못 보는데, 읽는
+ * 사람은 똑같이 사라진 규칙을 찾아 나선다. `#` 바로 뒤(`FILE#ID`, 위에서 따로 보고)와 `Retired IDs:` 선언 줄은 뺀다.
+ * ID 앞뒤가 단어 문자·`-`면 다른 토큰의 일부(`XTS-4`, `TS-41`)라 세지 않는다.
+ */
+function findBareRetiredMentions(
+    texts: readonly RuleDoc[],
+    retired: readonly string[]
+): string[] {
+    if (retired.length === 0) return [];
+    const pattern = new RegExp(
+        `(?<![\\w#-])(${retired.join('|')})(?![\\w-])`,
+        'g'
+    );
+    return texts.flatMap(({ relative, text }) =>
+        text
+            .split('\n')
+            .flatMap((line, index) =>
+                RETIRED_DECLARATION_LINE.test(line)
+                    ? []
+                    : [...line.matchAll(pattern)].map(
+                          match =>
+                              `${relative}:${index + 1}: 폐기된 ${match[1] ?? ''}를 맨 ID로 언급했다`
+                      )
+            )
+    );
+}
+
 function retiredIdsIn(docPath: string): string[] {
     return parseRetiredIds(readFileSync(docPath, 'utf8'));
 }
@@ -323,6 +353,39 @@ describe('rule reference guard', () => {
                 extractReferences(relative, text)
             );
             expect(findRetiredCitations(references, retiredIdsIn)).toEqual([]);
+        });
+
+        it(
+            '폐기된 ID를 맨 ID로 언급한 곳이 없다',
+            { timeout: SCAN_TIMEOUT_MS },
+            () => {
+                const retired = liveDocs.flatMap(({ text }) =>
+                    parseRetiredIds(text)
+                );
+                expect(retired.length).toBeGreaterThan(0);
+                expect(findBareRetiredMentions(texts, retired)).toEqual([]);
+            }
+        );
+
+        it('맨 폐기 ID를 찾고, 선언 줄·FILE#ID·다른 토큰은 건너뛴다', () => {
+            const docs: RuleDoc[] = [
+                {
+                    relative: 'a.ts',
+                    text: [
+                        '// 예전 규칙(XX-4)을 따른다',
+                        'XX-4 참고',
+                        'Retired IDs: XX-4',
+                        'see CONVENTIONS.md#XX-4',
+                        'YXX-4, XX-41, XX-4-b, XX-40',
+                        'XX-5 is live',
+                    ].join('\n'),
+                },
+            ];
+            expect(findBareRetiredMentions(docs, ['XX-4'])).toEqual([
+                'a.ts:1: 폐기된 XX-4를 맨 ID로 언급했다',
+                'a.ts:2: 폐기된 XX-4를 맨 ID로 언급했다',
+            ]);
+            expect(findBareRetiredMentions(docs, [])).toEqual([]);
         });
 
         const planted = (retired: string, body = ''): RuleDoc => ({

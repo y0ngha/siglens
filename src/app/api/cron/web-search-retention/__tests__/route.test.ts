@@ -26,6 +26,7 @@ vi.mock(
 
 import { PATCH } from '@/app/api/cron/web-search-retention/route';
 import { stripExpiredWebSearchBodies } from '@/entities/chat-conversation/server/stripExpiredWebSearchBodies';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { defined } from '@/shared/test-utils/defined';
@@ -129,7 +130,7 @@ describe('PATCH /api/cron/web-search-retention', () => {
             await defined(afterTasks[0])();
 
             expect(isDeadlineReached()).toBe(false);
-            vi.advanceTimersByTime(3 * 60 * 1000 - 1);
+            vi.advanceTimersByTime(3 * MS_PER_MINUTE - 1);
             expect(isDeadlineReached()).toBe(false);
             vi.advanceTimersByTime(1);
             expect(isDeadlineReached()).toBe(true);

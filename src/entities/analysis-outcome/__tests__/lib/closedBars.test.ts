@@ -6,7 +6,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
+import {
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 import { closedBars } from '../../lib/closedBars';
 import {
     INTRADAY_SETTLE_MINUTES,
@@ -150,8 +154,8 @@ describe('closedBars (intraday)', () => {
         ['5Min', 5 * 60],
         ['15Min', 15 * 60],
         ['30Min', 30 * 60],
-        ['1Hour', 60 * 60],
-        ['4Hour', 4 * 60 * 60],
+        ['1Hour', SECONDS_PER_HOUR],
+        ['4Hour', 4 * SECONDS_PER_HOUR],
     ];
 
     it.each(cases)(

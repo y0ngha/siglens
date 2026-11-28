@@ -44,13 +44,16 @@ import matter from 'gray-matter';
  *   - a `usage_roles` value missing/invalid on an indicator_guide skill or
  *     present on any other type,
  *   - a `display.chart.color` that is not a 6-digit hex,
- *   - an `overlay_kind` on a non-strategy skill or with an unknown value.
+ *   - an `overlay_kind` on a non-strategy skill or with an unknown value,
+ *   - a digest that quotes Bulkowski as a SIGLENS measurement or as a
+ *     percentage, or calls a direction a coin flip (`findDigestEvidenceErrors`).
  *
  * Run via `yarn validate:skills`; wired into CI.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractDigestSection } from './skills-digest';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(SCRIPT_DIR, '..');
@@ -608,6 +611,58 @@ function validateGating(gating: unknown, type: unknown): string[] {
     return [];
 }
 
+/**
+ * Bulkowski's figures are literature (US stocks), not SIGLENS measurements, and the digest is the only skill text the
+ * prompt sees: a percentage there gets quoted to the user as if SIGLENS had measured it, and "coin flip" / "about as
+ * often as not" reads as a measured 50%. The digest states his results in words only.
+ *
+ * A line that cites Bulkowski or thepatternsite may still carry a percentage that is part of a definition, not one
+ * of his results. Those phrases are listed exactly; anything else with a `%` on such a line fails.
+ */
+export const DIGEST_DEFINITIONAL_PERCENT_PHRASES: readonly string[] = [
+    // The standard disclaimer itself: it forbids restating a figure "as a ratio such as 50%".
+    'a ratio such as 50% or 반반',
+    // High tight flag pole: the pattern's defining minimum rise.
+    '≥+90% from pole base',
+    '≥90% in ≤2 months',
+    // The app's conservative target (half the pattern height), named in the geometry instructions.
+    '보수 목표가(50%)',
+];
+
+const DIGEST_FORBIDDEN_PHRASES: readonly (readonly [string, RegExp])[] = [
+    ['Measured (Bulkowski', /Measured \(Bulkowski/],
+    ['about as often as not', /about as often as not/i],
+    ['coin flip', /coin flip/i],
+];
+const BULKOWSKI_CITATION = /Bulkowski|thepatternsite/i;
+const PERCENT = /\d(?:[\d.,]*)\s?%/;
+
+/** Digest lines that present Bulkowski's study as a measurement or a percentage. A file without a digest has none. */
+export function findDigestEvidenceErrors(content: string): string[] {
+    const section = extractDigestSection(content);
+    if (section.kind !== 'ok') return [];
+    return section.digestText.split('\n').flatMap((line, index) => {
+        const where = `digest line ${index + 1}`;
+        const forbidden = DIGEST_FORBIDDEN_PHRASES.filter(([, pattern]) =>
+            pattern.test(line)
+        ).map(
+            ([phrase]) =>
+                `${where}: "${phrase}" — describe Bulkowski's study in words (literature, not a SIGLENS measurement); say "no reliable direction" instead of a coin flip.`
+        );
+        const definitionsRemoved = DIGEST_DEFINITIONAL_PERCENT_PHRASES.reduce(
+            (text, phrase) => text.replaceAll(phrase, ''),
+            line
+        );
+        const percent =
+            BULKOWSKI_CITATION.test(line) && PERCENT.test(definitionsRemoved)
+                ? [
+                      `${where}: a percentage on a line citing Bulkowski — state his result in words. A defining threshold goes in DIGEST_DEFINITIONAL_PERCENT_PHRASES.`,
+                  ]
+                : [];
+        return [...forbidden, ...percent];
+    });
+}
+
 /** `_core/` docs and the SMC full guide are reference text: core builds no card for them. */
 const isReferenceDoc = (rel: string, data: Record<string, unknown>): boolean =>
     rel.split('/').includes('_core') || data.smc_full_guide === true;
@@ -627,9 +682,10 @@ export const parseSkillFile = (file: string): FileResult => {
     const rel = relative(REPO_ROOT, file);
     const withFile = (message: string): SkillError => ({ file: rel, message });
 
+    const content = readFileSync(file, 'utf-8');
     let data: Record<string, unknown>;
     try {
-        const parsed = matter(readFileSync(file, 'utf-8'));
+        const parsed = matter(content);
         if (!isRecord(parsed.data)) {
             return {
                 hasGating: false,
@@ -647,9 +703,12 @@ export const parseSkillFile = (file: string): FileResult => {
 
     return {
         hasGating: 'gating' in data,
-        errors: validateSkillData(data, {
-            requireOnIndicatorGuide: !isReferenceDoc(rel, data),
-        }).map(withFile),
+        errors: [
+            ...validateSkillData(data, {
+                requireOnIndicatorGuide: !isReferenceDoc(rel, data),
+            }),
+            ...findDigestEvidenceErrors(content),
+        ].map(withFile),
     };
 };
 

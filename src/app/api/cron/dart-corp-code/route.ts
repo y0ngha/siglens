@@ -1,4 +1,5 @@
 import { runDartCorpCodeIngest } from '@/entities/investor-flows/server/ingestDartCorpCode';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { DART_CRON_LEASE_NAME, handleLeasedCron } from '../leasedCron';
 import { createDartCorpCodeDeps } from './createDeps';
 
@@ -7,7 +8,7 @@ import { createDartCorpCodeDeps } from './createDeps';
  * ≈ 3분(시도 2회 × (zip 요청 60초 + 할당량 가드의 Redis 명령 3개 × 10초) + 백오프 ≤ 2초) + 압축 해제·파싱·upsert 여유 2분
  * ≈ 5분 < 락 TTL 10분. 숫자는 `route.test.ts`가 실제 상수로 다시 계산한다.
  */
-const DART_CORP_CODE_DEADLINE_MS = 60 * 1000;
+const DART_CORP_CODE_DEADLINE_MS = MS_PER_MINUTE;
 const DART_CORP_CODE_LEASE_TTL_SECONDS = 10 * 60;
 
 /**

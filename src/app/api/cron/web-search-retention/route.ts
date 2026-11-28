@@ -1,6 +1,7 @@
 import { constants } from 'node:http2';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { stripExpiredWebSearchBodies } from '@/entities/chat-conversation/server/stripExpiredWebSearchBodies';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
@@ -13,7 +14,7 @@ const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
  * 새 배치를 시작하지 않는 wall-clock 마감(SERVER.md#CC-7). 배치 하나는 SELECT 1회 + 한 트랜잭션 UPDATE(100행)라 수 초
  * 안이고, 마감은 그 배치 앞에서만 본다. 배치 수 상한(`WEB_SEARCH_RETENTION_MAX_BATCHES`)이 먼저 닿지 않으면 이 마감이 끊는다.
  */
-const WEB_SEARCH_RETENTION_DEADLINE_MS = 3 * 60 * 1000;
+const WEB_SEARCH_RETENTION_DEADLINE_MS = 3 * MS_PER_MINUTE;
 
 /**
  * 웹 검색 결과 보존 기간 cron(`PATCH /api/cron/web-search-retention`) — EventBridge가 매일 18:10 UTC(03:10 KST)에 부른다.

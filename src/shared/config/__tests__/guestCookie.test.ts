@@ -7,6 +7,7 @@ import {
     signGuestId,
     verifyGuestCookie,
 } from '@/shared/config/guestCookie';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const SECRET = 'a'.repeat(32);
 const VALID_UUID = '11111111-1111-1111-1111-111111111111';
@@ -49,7 +50,7 @@ describe('guestIdCookieOptions', () => {
     });
 
     it('maxAge는 1년(초)', () => {
-        expect(GUEST_ID_MAX_AGE_SECONDS).toBe(60 * 60 * 24 * 365);
+        expect(GUEST_ID_MAX_AGE_SECONDS).toBe(365 * SECONDS_PER_DAY);
     });
 });
 

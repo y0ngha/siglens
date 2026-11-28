@@ -19,10 +19,10 @@ import {
     quantizeBarsDataToLastClosed,
 } from '@/entities/bars/lib/quantizeBars';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockOpen = vi.mocked(isRegularSessionOpen);
 const now = new Date('2026-06-05T18:00:00Z');
-const SECONDS_PER_DAY = 86_400;
 const secOf = (isoDate: string) => Date.parse(`${isoDate}T00:00:00Z`) / 1000;
 const TODAY_SEC = secOf('2026-06-05');
 

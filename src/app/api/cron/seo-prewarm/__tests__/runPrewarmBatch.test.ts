@@ -183,6 +183,7 @@ import {
     shouldDeferPrewarmWhileOpen as shouldDeferPrewarmWhileOpenReal,
 } from '@/entities/seo-snapshot/lib/freshness';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
+import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 import { runHubPrewarm } from '../hubs';
 import {
     runPrewarmBatch,
@@ -195,7 +196,7 @@ const mockRunHubPrewarm = vi.mocked(runHubPrewarm);
 
 const FIXED_NOW = new Date('2026-07-25T13:00:00.000Z');
 const BOUNDARY = lastCompletedEtCloseWithBuffer(FIXED_NOW);
-const STALE_DATE = new Date(BOUNDARY.getTime() - 24 * 60 * 60 * 1000);
+const STALE_DATE = new Date(BOUNDARY.getTime() - MS_PER_DAY);
 const BATCH_DEADLINE_MS = 600_000;
 
 function universe(...symbols: PrewarmSymbol[]): void {
@@ -901,7 +902,7 @@ describe('runPrewarmBatch', () => {
             makeStatefulRotationCursor(0)
         );
 
-        const TICK_MS = 5 * 60 * 1000;
+        const TICK_MS = 5 * MS_PER_MINUTE;
         // tick 1 — 정상 시각. offset=0 → S0~S11.
         await runPrewarmBatch(makeFrozenClock(0));
         mockPrewarmTechnical.mockClear();
@@ -1014,7 +1015,7 @@ describe('runPrewarmBatch', () => {
         }
 
         function nightTicks(nightStartIso: string): Date[] {
-            const HALF_HOUR = 30 * 60 * 1000;
+            const HALF_HOUR = 30 * MS_PER_MINUTE;
             const start = new Date(nightStartIso).getTime();
             const ticks: Date[] = [];
             // early region: 20:30~23:30 UTC(7틱) — KR 개장 전, 전 유니버스가 후보.
@@ -1836,7 +1837,7 @@ describe('runPrewarmBatch', () => {
      * 한 번에 고정한다.
      */
     it('숫자 age가 있는 offender 2개: 47h는 문턱 밖으로 제외, 100h가 50h보다 먼저(worst-first), 단위는 h(분 아님)', async () => {
-        const HOUR_MS = 60 * 60 * 1000;
+        const HOUR_MS = MS_PER_HOUR;
         universe(
             { symbol: 'SYM47H', tabs: ['technical'] }, // 48h 문턱 미만 — starved 목록에서 제외돼야 한다.
             { symbol: 'SYM50H', tabs: ['technical'] },
@@ -1898,7 +1899,7 @@ describe('runPrewarmBatch', () => {
      * never야말로 이 워치를 만든 사고(KR 대장주 미도달)의 모양이다.
      */
     it('never와 숫자 age가 섞이면 never가 항상 앞에 온다', async () => {
-        const HOUR_MS = 60 * 60 * 1000;
+        const HOUR_MS = MS_PER_HOUR;
         universe(
             { symbol: 'SYM500H', tabs: ['technical'] },
             { symbol: 'NEVERX', tabs: ['technical'] }
@@ -1941,7 +1942,7 @@ describe('runPrewarmBatch', () => {
      * 만들어도 통과할 수 있다 — 비대칭 비교자는 이 버그가 실제로 배포되는 전형적 모양이다.
      */
     it('never 여러 개와 숫자 age가 섞여도 never가 전부 앞, 숫자는 오래된 순', async () => {
-        const HOUR_MS = 60 * 60 * 1000;
+        const HOUR_MS = MS_PER_HOUR;
         universe(
             { symbol: 'SYM100H', tabs: ['technical'] },
             { symbol: 'NEVER_A', tabs: ['technical'] },
@@ -1993,7 +1994,7 @@ describe('runPrewarmBatch', () => {
      * 기존 픽스처는 심볼당 날짜 있는 탭이 하나뿐이라 이 비교가 참이 된 적이 없다.
      */
     it('여러 탭 중 가장 오래된 탭의 age로 판정한다', async () => {
-        const HOUR_MS = 60 * 60 * 1000;
+        const HOUR_MS = MS_PER_HOUR;
         universe({ symbol: 'TWOTAB', tabs: ['technical', 'overall'] });
         mockFindGeneratedAtMap.mockResolvedValue(
             new Map([
@@ -2038,7 +2039,7 @@ describe('runPrewarmBatch', () => {
             new Map([
                 [
                     key('PARTIALNEVER', 'overall'),
-                    new Date(FIXED_NOW.getTime() - 5 * 60 * 60 * 1000),
+                    new Date(FIXED_NOW.getTime() - 5 * MS_PER_HOUR),
                 ],
             ])
         );

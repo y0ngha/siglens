@@ -1,7 +1,9 @@
+import { MS_PER_DAY } from '@/shared/config/time';
+
 /** 리포트 대상(보유∪관심) 밖 종목을 몇 번 분석하면 "관심종목에 담아 메일로 받기"를 권하는지(누적). */
 export const SYMBOL_NUDGE_MIN_ANALYSES = 3;
 /** 종목 넛지끼리의 최소 간격. 누적 횟수는 한 번 넘기면 계속 넘으므로 상한이 필요하다. */
-export const SYMBOL_NUDGE_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+export const SYMBOL_NUDGE_COOLDOWN_MS = 7 * MS_PER_DAY;
 
 /** 회원 한 명의 넛지 기록(localStorage, 회원 id별). */
 export interface MemberNudgeRecord {

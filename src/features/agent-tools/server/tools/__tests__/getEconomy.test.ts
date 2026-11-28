@@ -35,6 +35,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ECONOMY_RESULT_MAX_CHARS } from '@/features/agent-tools/lib/truncate';
 import { getEconomyTool } from '@/features/agent-tools/server/tools/getEconomy';
 import { ECONOMY_CALENDAR_DEFAULT_DAYS } from '@/shared/config/economyCalendar';
+import { HOURS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 
 const ctx = {
     userId: 'u',
@@ -46,7 +47,7 @@ const rt = {
     analysisModel: 'deepseek-v4.1-flash' as const,
     ensureSymbolData: async (): Promise<void> => {},
 };
-const HOUR_MS = 60 * 60 * 1000;
+const HOUR_MS = MS_PER_HOUR;
 
 function calendarEvent(
     hoursAhead: number,
@@ -118,7 +119,11 @@ describe('getEconomyTool', () => {
         const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
         snapshot.mockRejectedValue(new Error('db down'));
         calendarRange.mockResolvedValue([
-            calendarEvent(5 * 24, 'Fed Interest Rate Decision', 'High'),
+            calendarEvent(
+                5 * HOURS_PER_DAY,
+                'Fed Interest Rate Decision',
+                'High'
+            ),
         ]);
         const r = (await getEconomyTool({}, ctx, rt)) as {
             available: boolean;
@@ -144,9 +149,13 @@ describe('getEconomyTool', () => {
             ],
         });
         calendarRange.mockResolvedValue([
-            calendarEvent(3 * 24, 'CPI YoY', 'High'),
+            calendarEvent(3 * HOURS_PER_DAY, 'CPI YoY', 'High'),
             // 예전 7일 창(그 전엔 스냅샷 14일 창) 밖 — 다음 FOMC가 그만큼 남으면 일정이 사라졌다.
-            calendarEvent(45 * 24, 'Fed Interest Rate Decision', 'High'),
+            calendarEvent(
+                45 * HOURS_PER_DAY,
+                'Fed Interest Rate Decision',
+                'High'
+            ),
             calendarEvent(-2, 'Past release', 'Low'),
         ]);
         briefing.mockResolvedValue({
@@ -193,7 +202,11 @@ describe('getEconomyTool', () => {
             ...Array.from({ length: 100 }, (_, i) =>
                 calendarEvent(1 + i, `CFTC position ${i}`, 'Low')
             ),
-            calendarEvent(5 * 24, 'Fed Interest Rate Decision', 'High'),
+            calendarEvent(
+                5 * HOURS_PER_DAY,
+                'Fed Interest Rate Decision',
+                'High'
+            ),
         ]);
         briefing.mockResolvedValue(null);
         const r = (await getEconomyTool({}, ctx, rt)) as {
@@ -293,7 +306,7 @@ describe('getEconomyTool', () => {
             ...EMPTY_SNAPSHOT,
             calendar: [
                 calendarEvent(-3, 'Already released', 'High'),
-                calendarEvent(2 * 24, 'CPI YoY', 'High'),
+                calendarEvent(2 * HOURS_PER_DAY, 'CPI YoY', 'High'),
             ],
         });
         calendarRange.mockRejectedValue(new Error('fmp 429'));
@@ -323,8 +336,12 @@ describe('getEconomyTool', () => {
     describe('기간 조회(from/to)', () => {
         it('지정 기간만 읽고, 지난 발표도 남기며, 캘린더만 돌려준다', async () => {
             calendarRange.mockResolvedValue([
-                calendarEvent(-10 * 24, 'CPI YoY', 'High'),
-                calendarEvent(60 * 24, 'Fed Interest Rate Decision', 'High'),
+                calendarEvent(-10 * HOURS_PER_DAY, 'CPI YoY', 'High'),
+                calendarEvent(
+                    60 * HOURS_PER_DAY,
+                    'Fed Interest Rate Decision',
+                    'High'
+                ),
             ]);
             const r = (await getEconomyTool(
                 { from: '2026-09-01', to: '2026-11-27' },
@@ -453,7 +470,7 @@ describe('getEconomyTool', () => {
                     previous: null,
                     unit: '%',
                 },
-                calendarEvent(24, 'CPI YoY', 'High'),
+                calendarEvent(HOURS_PER_DAY, 'CPI YoY', 'High'),
             ]);
             const r = (await getEconomyTool(
                 { from: '2026-09-13', to: '2026-09-20' },
@@ -483,7 +500,11 @@ describe('getEconomyTool', () => {
         it('한국 지표 카드와 한국 일정을 돌려주고, 미국 스냅샷·국채·브리핑은 읽지 않는다', async () => {
             krCards.mockResolvedValue([baseRateCard]);
             calendarRange.mockResolvedValue([
-                calendarEvent(20 * 24, 'Interest Rate Decision', 'High'),
+                calendarEvent(
+                    20 * HOURS_PER_DAY,
+                    'Interest Rate Decision',
+                    'High'
+                ),
             ]);
             const r = (await getEconomyTool(
                 { country: 'kr' },
@@ -525,7 +546,11 @@ describe('getEconomyTool', () => {
 
         it('한국 기간 조회는 그 기간의 한국 일정만 돌려준다', async () => {
             calendarRange.mockResolvedValue([
-                calendarEvent(40 * 24, 'Interest Rate Decision', 'High'),
+                calendarEvent(
+                    40 * HOURS_PER_DAY,
+                    'Interest Rate Decision',
+                    'High'
+                ),
             ]);
             const r = (await getEconomyTool(
                 { country: 'kr', from: '2026-10-01', to: '2026-11-30' },
@@ -557,7 +582,11 @@ describe('getEconomyTool', () => {
             calendarRange.mockRejectedValue(new Error('fmp down'));
             krDb.mockResolvedValue([
                 {
-                    ...calendarEvent(3 * 24, 'Interest Rate Decision', 'High'),
+                    ...calendarEvent(
+                        3 * HOURS_PER_DAY,
+                        'Interest Rate Decision',
+                        'High'
+                    ),
                     sentiment: null,
                     summaryKo: '요약',
                     interpretationKo: null,
@@ -580,7 +609,11 @@ describe('getEconomyTool', () => {
 
         it('지표 카드가 비면 indicatorsUnavailable을 붙인다 — "한국 금리 데이터 없음"으로 읽히지 않게', async () => {
             calendarRange.mockResolvedValue([
-                calendarEvent(20 * 24, 'Interest Rate Decision', 'High'),
+                calendarEvent(
+                    20 * HOURS_PER_DAY,
+                    'Interest Rate Decision',
+                    'High'
+                ),
             ]);
             const r = (await getEconomyTool({ country: 'kr' }, ctx, rt)) as {
                 available: boolean;

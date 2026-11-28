@@ -78,6 +78,7 @@ import {
 import { SINCE_EARLIER_NOTE } from '@/features/agent-tools/server/tools/sinceEarlier';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import {
     analyzedAfterClose,
@@ -523,7 +524,7 @@ describe('getCachedAnalysisTool', () => {
     it('technical snapshot: redis miss여도 봉 기준 staleness를 쓴다(나이 규칙 아님)', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-09-19T12:00:00.000Z'));
-        const generatedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 2 days — beyond the 24h age rule, within 7d hard cap
+        const generatedAt = new Date(Date.now() - 2 * MS_PER_DAY); // 2 days — beyond the 24h age rule, within 7d hard cap
         findBySymbol.mockResolvedValue([
             {
                 tab: 'technical',
@@ -572,7 +573,7 @@ describe('getCachedAnalysisTool', () => {
         // `STALE_AFTER_MS` has no 'news' entry → falls back to the 7-day
         // `DEFAULT_STALE_MS`, unlike technical/overall's 24h rule. 8 days
         // old confirms the age-only (not bar-based) path is still in effect.
-        const generatedAt = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+        const generatedAt = new Date(Date.now() - 8 * MS_PER_DAY);
         findBySymbol.mockResolvedValue([
             {
                 tab: 'news',
@@ -739,7 +740,7 @@ describe('getCachedAnalysisTool', () => {
     it('history: 봉 기준 staleness를 쓴다(나이 규칙 아님)', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-09-19T12:00:00.000Z'));
-        const generatedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 2 days — beyond 24h age rule, within 7d hard cap
+        const generatedAt = new Date(Date.now() - 2 * MS_PER_DAY); // 2 days — beyond 24h age rule, within 7d hard cap
         findRecentForPrompt.mockResolvedValue([
             { generatedAt, trend: 'bullish', riskLevel: 'low' },
         ]);
@@ -875,9 +876,7 @@ describe('getCachedAnalysisTool', () => {
         it('7일 하드 캡(명시적 경계 테스트): 새 봉이 없어도 age가 7일을 넘으면 stale', async () => {
             const now = new Date('2026-09-19T00:00:00.000Z');
             vi.setSystemTime(now);
-            const generatedAt = new Date(
-                now.getTime() - 8 * 24 * 60 * 60 * 1000
-            ); // > 7-day cap
+            const generatedAt = new Date(now.getTime() - 8 * MS_PER_DAY); // > 7-day cap
             // Resolved via quote so `sinceAnalysis`'s own (unrelated) bars
             // fallback never fires — isolates the staleness assertion below.
             getQuote.mockResolvedValue({ price: 100 });
@@ -905,9 +904,7 @@ describe('getCachedAnalysisTool', () => {
             try {
                 const now = new Date('2026-09-19T00:00:00.000Z');
                 vi.setSystemTime(now);
-                const generatedAt = new Date(
-                    now.getTime() - 2 * 24 * 60 * 60 * 1000
-                ); // 2 days — beyond the 24h age rule, within the 7-day cap
+                const generatedAt = new Date(now.getTime() - 2 * MS_PER_DAY); // 2 days — beyond the 24h age rule, within the 7-day cap
                 peekAnalysis.mockResolvedValue({
                     result: {
                         ...technicalCachedResult.result,
@@ -942,9 +939,7 @@ describe('getCachedAnalysisTool', () => {
         it("timeframe '1Day': 봉이 빈 배열이면 나이 기반 규칙으로 폴백한다", async () => {
             const now = new Date('2026-09-19T00:00:00.000Z');
             vi.setSystemTime(now);
-            const generatedAt = new Date(
-                now.getTime() - 2 * 24 * 60 * 60 * 1000
-            ); // 2 days — beyond 24h age rule, within the 7-day cap
+            const generatedAt = new Date(now.getTime() - 2 * MS_PER_DAY); // 2 days — beyond 24h age rule, within the 7-day cap
             peekAnalysis.mockResolvedValue({
                 result: {
                     ...technicalCachedResult.result,
@@ -1820,7 +1815,7 @@ describe('getCachedAnalysisTool — 회원 호출자 (공개 분석으로 대체
 });
 
 describe('getCachedAnalysisTool — overall이 새 생성으로 이어질 때 신선한 technical로 대체', () => {
-    const HOUR_MS = 60 * 60 * 1000;
+    const HOUR_MS = MS_PER_HOUR;
     const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
     // 봉이 빈 배열이면 `isStaleByBars`가 나이 규칙(technical/overall 1일)으로 떨어진다 — 1시간 전 = 신선, 3일 전 = 낡음.
     const technicalAt = (analyzedAt: string) => ({
@@ -2052,7 +2047,7 @@ describe('getCachedAnalysisTool — overall이 새 생성으로 이어질 때 �
 });
 
 describe('getCachedAnalysisTool — 차트 블록', () => {
-    const HOUR_MS = 60 * 60 * 1000;
+    const HOUR_MS = MS_PER_HOUR;
     const DAY_S = 86_400;
     const bars = Array.from({ length: 5 }, (_, i) => ({
         time: i * DAY_S,

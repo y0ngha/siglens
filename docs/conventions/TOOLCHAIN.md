@@ -408,10 +408,9 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 
 #### TC-41 — 규칙 기준선은 줄이기만 한다
 
-`src/__tests__/guards/codeRules.baseline.json`은 `ratchet` 규칙의 파일별 위반 수를 얼려 둔 기준선이고, 늘거나 새 파일에 생기면 `codeRules.test.ts`가 실패한다. `yarn rules:ratchet --tighten`을 주기적으로 돌려 줄이고, 이름을 바꾸거나 지운 파일은 `--move <옛> <새>`로(`--tighten`보다 먼저) 항목을 옮긴다. 값이 같거나 작다는 이유만으로 사라진 항목과 새 항목을 짝짓지 않는다. 값을 올리거나 규칙 키를 더하는 것은 JSON을 손으로 고치는 일이고 사용자 승인을 PR 본문에 적어야 한다. 줄 번호가 아니라 파일별 개수만 쓴다(`TESTING.md#TE-44`).
+`src/__tests__/guards/codeRules.baseline.json`(파일별 위반 수)보다 늘거나 새 파일에 생기면 `codeRules.test.ts`가 실패한다. `yarn rules:ratchet --tighten`으로 주기적으로 줄이고, 옮기거나 지운 파일은 그보다 먼저 `--move <옛> <새>`로 옮긴다. 값이 같거나 작다는 이유만으로 사라진 항목과 새 항목을 짝짓지 않는다. 값을 올리거나 규칙 키를 더하는 손 편집은 사용자 승인을 PR 본문에 적는다(`--against origin/master`가 올라간 값과 git `-M`이 짝짓지 못한 새 키를 나열한다). 줄 번호가 아니라 파일별 개수만 쓴다(`TESTING.md#TE-44`).
 
-- ❌ 새 테스트의 `mock.calls[0]`이 가드에 걸리자 기준선의 숫자를 올려 통과시킨다.
-- ✅ `mock.calls.find(...)`나 `toHaveBeenCalledWith`로 고친다. `yarn rules:ratchet --against origin/master`가 올라간 값과, git 이름 변경(`-M`)으로 짝지어지지 않은 새 키를 나열한다.
+- ❌ 새 `mock.calls[0]`이 걸리자 기준선 숫자를 올린다. ✅ `mock.calls.find(...)`로 고친다.
 
 <a id="TC-42"></a>
 

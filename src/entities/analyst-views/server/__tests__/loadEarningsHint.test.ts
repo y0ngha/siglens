@@ -24,6 +24,7 @@ import {
     EARNINGS_HINT_BUDGET_MS,
     loadEarningsHintBounded,
 } from '@/entities/analyst-views/server/loadEarningsHint';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const HINT: AnalystEarningsHint = {
     date: '2026-11-19',
@@ -51,7 +52,7 @@ describe('loadEarningsHintBounded', () => {
         expect(keys).toEqual(['fundamental-facts:earnings-hint', 'NVDA']);
         expect(symbol).toBe('NVDA');
         expect(tags).toEqual([]);
-        expect(ttl).toBe(12 * 60 * 60);
+        expect(ttl).toBe(12 * SECONDS_PER_HOUR);
     });
 
     it('한국 종목과 E2E에서는 부르지 않는다', async () => {

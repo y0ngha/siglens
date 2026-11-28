@@ -21,7 +21,7 @@ import {
     DEVELOPERS_PATH,
     DEVELOPERS_UPDATED_AT,
 } from '@/shared/config/publicApi';
-import { MS_PER_HOUR } from '@/shared/config/time';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     ABOUT_UPDATED_AT,
@@ -424,7 +424,7 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
     it.each([
         ['창 정각', WINDOW_MS, false],
         ['창에서 1초 모자람', WINDOW_MS - 1000, true],
-        ['7일(옛 14일 기준이면 포함되던 구간)', 7 * 24 * 60 * 60 * 1000, false],
+        ['7일(옛 14일 기준이면 포함되던 구간)', 7 * MS_PER_DAY, false],
     ])('%s 지난 카테고리 포함 여부=%s', (_label, ageMs, included) => {
         const entries = buildStaticEntries(NOW, {
             newsLatestPublishedAt: {

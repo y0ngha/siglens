@@ -26,6 +26,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: mockGetRedis }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     DART_DAILY_CALL_BUDGET,
     DART_QUOTA_BREAKER_KEY,
@@ -114,7 +115,7 @@ describe('dartQuotaGuard', () => {
         it('counts to the next 00:00 KST', () => {
             expect(
                 secondsUntilNextKstMidnight(new Date('2026-10-16T14:00:00Z'))
-            ).toBe(60 * 60); // 23:00 KST
+            ).toBe(SECONDS_PER_HOUR); // 23:00 KST
         });
 
         it('never returns less than a minute', () => {

@@ -57,7 +57,7 @@ import {
     PRUNE_BATCH_SIZE,
     RESULT_RETENTION_DAYS,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { defined } from '@/shared/test-utils/defined';
@@ -389,8 +389,8 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         vi.clearAllMocks();
         analysisHistoryQuerySpy.mockReturnValue({
             limit: 7,
-            sinceMs: 60 * 60 * 1000, // 1h — arbitrary, only used to assert propagation
-            generatedBeforeMs: NOW.getTime() - 5 * 60 * 1000, // arbitrary bucket start
+            sinceMs: MS_PER_HOUR, // 1h — arbitrary, only used to assert propagation
+            generatedBeforeMs: NOW.getTime() - 5 * MS_PER_MINUTE, // arbitrary bucket start
         });
     });
 
@@ -429,7 +429,7 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
 
         expect(gteSpy).toHaveBeenCalledWith(
             analysisHistory.generatedAt,
-            new Date(NOW.getTime() - 60 * 60 * 1000)
+            new Date(NOW.getTime() - MS_PER_HOUR)
         );
 
         // limit() received core's `limit` value, not a hand-picked constant.
@@ -460,10 +460,10 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         const { db, spies } = makeSelectDb([]);
         const repository = new DrizzleAnalysisHistoryRepository(db);
         const session = { tag: 'kr-session' } as never;
-        const SESSION_BOUNDARY_MS = NOW.getTime() - 3 * 60 * 60 * 1000;
+        const SESSION_BOUNDARY_MS = NOW.getTime() - 3 * MS_PER_HOUR;
         analysisHistoryQuerySpy.mockReturnValueOnce({
             limit: 4,
-            sinceMs: 60 * 60 * 1000,
+            sinceMs: MS_PER_HOUR,
             generatedBeforeMs: SESSION_BOUNDARY_MS,
         });
 
@@ -502,7 +502,7 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
 
         expect(ltSpy).toHaveBeenCalledWith(
             analysisHistory.generatedAt,
-            new Date(NOW.getTime() - 5 * 60 * 1000)
+            new Date(NOW.getTime() - 5 * MS_PER_MINUTE)
         );
     });
 

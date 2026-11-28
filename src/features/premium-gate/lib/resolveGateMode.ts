@@ -5,7 +5,7 @@
  * 결과를 클라이언트 모달 종류(`GateMode`)로 옮기는 어댑터일 뿐이며, 서버의
  * `resolveTierAndByok`(`shared/lib/byokGate.ts`)와 같은 순서로 판정한다.
  */
-import type { LlmProvider, ModelAccess, UserTier } from '@y0ngha/siglens-core';
+import type { LlmProvider, ModelAccess, Tier } from '@y0ngha/siglens-core';
 import type { GateMode } from '@/shared/lib/types';
 
 /** 게이트가 걸릴 수 있는 등급. free는 누구에게나 열려 있어 판정 대상이 아니다. */
@@ -18,7 +18,7 @@ export interface ResolveGateModeInput {
     /** 고른 모델을 호출하는 프로바이더. */
     provider: LlmProvider;
     /** 로그인한 회원, 또는 비회원/아직 모름이면 `null`·`undefined`. */
-    user: { tier: UserTier } | null | undefined;
+    user: { tier: Tier } | null | undefined;
     /** 회원이 API 키를 등록해 둔 프로바이더 목록. */
     registeredProviders: readonly LlmProvider[];
 }

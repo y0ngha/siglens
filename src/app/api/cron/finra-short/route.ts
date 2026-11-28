@@ -1,9 +1,10 @@
 import { runFinraIngest } from '@/entities/investor-flows/server/ingestFinra';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { handleLeasedCron } from '../leasedCron';
 import { createFinraShortDeps } from './createDeps';
 
 /** 마감 8분 + 마지막 파일(≤60초 타임아웃 × 재시도) 여유 → 락 TTL 12분. */
-const FINRA_SHORT_DEADLINE_MS = 8 * 60 * 1000;
+const FINRA_SHORT_DEADLINE_MS = 8 * MS_PER_MINUTE;
 const FINRA_SHORT_LEASE_TTL_SECONDS = 12 * 60;
 
 /**

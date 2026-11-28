@@ -1,4 +1,5 @@
 import { runFtdIngest } from '@/entities/investor-flows/server/ingestFtd';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { handleLeasedCron, SEC_CRON_LEASE_NAME } from '../leasedCron';
 import { createSecFtdDeps } from './createDeps';
 
@@ -7,7 +8,7 @@ import { createSecFtdDeps } from './createDeps';
  * 목록 페이지도 같다) + DB(파일 하나 ≈ 수만 행 upsert + 정리) 여유 2분 ≈ 8.25분 < 락 TTL 10분. 실행당 파일은 많아야 4개
  * (`INVESTOR_FLOWS_FTD_MAX_FILES_PER_RUN`)라 보통 1분 안에 끝난다. 숫자는 `route.test.ts`가 실제 상수로 다시 계산한다.
  */
-const SEC_FTD_DEADLINE_MS = 5 * 60 * 1000;
+const SEC_FTD_DEADLINE_MS = 5 * MS_PER_MINUTE;
 const SEC_FTD_LEASE_TTL_SECONDS = 10 * 60;
 
 /**

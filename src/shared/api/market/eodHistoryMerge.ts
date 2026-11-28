@@ -1,4 +1,5 @@
 import type { Bar } from '@y0ngha/siglens-core';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 
 /**
@@ -33,7 +34,7 @@ export interface EodHistoryEntry {
  * 전체를 받아 하루 안에 치유됐다. 7일이면 종목당 주 1회만 전체를 받아 증분 절감의 ~6/7을
  * 유지하고, 업스트림 소급 정정이 남는 최악의 기간은 하루에서 일주일이 된다.
  */
-export const EOD_HISTORY_FULL_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+export const EOD_HISTORY_FULL_REFRESH_MS = 7 * MS_PER_DAY;
 
 /**
  * 겹치는 봉을 비교할 때 부동소수 잡음을 흡수하는 상대 허용오차. 분할 조정은 가격을

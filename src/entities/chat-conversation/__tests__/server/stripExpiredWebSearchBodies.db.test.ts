@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { MS_PER_DAY } from '@/shared/config/time';
 import * as schema from '@/shared/db/schema';
 import { defined } from '@/shared/test-utils/defined';
 import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
@@ -23,7 +24,7 @@ vi.mock('server-only', () => ({}));
  */
 const URL = process.env.TEST_DATABASE_URL;
 const SCHEMA = `web_search_retention_test_${process.pid}`;
-const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = MS_PER_DAY;
 
 const migration = (file: string): string[] =>
     readFileSync(path.join(process.cwd(), 'drizzle', file), 'utf8')

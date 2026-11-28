@@ -26,10 +26,9 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 
 import type { Bar, MarketDataProvider } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getBarsAction } from '../actions/getBarsAction';
 import { __resetBarsMemoryForTests } from '../server/barsDataCache';
-
-const SECONDS_PER_DAY = 86_400;
 
 /** 2026-06-01(월)부터 평일 `count`개 — UTC 자정 일봉(FMP·yahoo 일봉 규약). */
 function weekdayBars(count: number): Bar[] {

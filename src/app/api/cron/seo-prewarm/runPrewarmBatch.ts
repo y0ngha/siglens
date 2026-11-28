@@ -18,6 +18,7 @@ import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { refreshFundamentalStamps } from './fundamentalStamps';
@@ -240,7 +241,7 @@ function boundaryFor(
 // (원인 사례: KR 5종목이 POPULAR_TICKERS의 KR 블록 head라는 이유만으로 몇 달간
 // 한 번도 선택되지 못했다 — findStarvedSymbols 참고). 여유를 위해 24h(하루
 // 단위 마감 주기)의 두 배로 잡는다.
-const STARVATION_AGE_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48h
+const STARVATION_AGE_THRESHOLD_MS = 48 * MS_PER_HOUR; // 48h
 const STARVATION_LOG_LIMIT = 5;
 
 /** runPrewarmBatch/pollUntilSettled가 시간을 읽고 기다리는 방식을 추상화한다
@@ -324,7 +325,7 @@ interface StarvedSymbol {
  * 얼마나 지났는가**로 잰다 — 7일 절벽(`SNAPSHOT_MAX_AGE_MS`)까지 약 3일 남은 시점에 첫 보고가 나간다.
  * 활성 심볼은 종전 규칙(마지막 생성 이후 48시간)을 그대로 쓴다.
  */
-const QUIET_DUE_GRACE_MS = 24 * 60 * 60 * 1000; // 24h
+const QUIET_DUE_GRACE_MS = MS_PER_DAY; // 24h
 
 function isStarvedAge(
     symbol: string,
@@ -450,7 +451,7 @@ function logStarvationWatch(
               // 불변식이 깨지는 날 `SYM(never: )`처럼 꼬리만 남은 로그가
               // 운영자에게 가지 않게 하기 때문이다.
               `${s.symbol}(never${s.missingTabs.length > 0 ? `: ${s.missingTabs.join('|')}` : ''})`
-            : `${s.symbol}(${Math.floor(s.ageMs / (60 * 60 * 1000))}h)`
+            : `${s.symbol}(${Math.floor(s.ageMs / MS_PER_HOUR)}h)`
     );
     console.warn(
         `[seo-prewarm] starvation watch: ${starved.length} symbol(s) stale > 48h — worst: ${worst.join(', ')}`

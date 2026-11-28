@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 import * as schema from '@/shared/db/schema';
 import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import { DrizzleEmailReportWelcomeRepository } from '../api';
@@ -313,8 +314,8 @@ describe.skipIf(!URL)(
                 WHERE user_id = ${stale}`;
 
             const welcomed = await repo.findWelcomed(
-                new Date(Date.now() - 12 * 60 * 60 * 1000),
-                new Date(Date.now() - 30 * 60 * 1000)
+                new Date(Date.now() - 12 * MS_PER_HOUR),
+                new Date(Date.now() - 30 * MS_PER_MINUTE)
             );
 
             expect(welcomed.has(recent)).toBe(true);
@@ -389,7 +390,7 @@ describe.skipIf(!URL)(
             const userId = await createMember();
 
             const claimed = await repo.claimDue(
-                new Date(Date.now() + 2 * 60 * 60 * 1000)
+                new Date(Date.now() + 2 * MS_PER_HOUR)
             );
 
             expect(claimed.find(r => r.userId === userId)?.attempts).toBe(1);
@@ -405,7 +406,7 @@ describe.skipIf(!URL)(
                 WHERE user_id = ${oldId}`;
 
             const deleted = await repo.pruneOlderThan(
-                new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+                new Date(Date.now() - 90 * MS_PER_DAY)
             );
 
             expect(deleted).toBeGreaterThanOrEqual(1);

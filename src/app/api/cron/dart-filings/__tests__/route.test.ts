@@ -17,6 +17,7 @@ import {
 } from '@/shared/api/dart/dartClient';
 import { DART_QUOTA_GUARD_MAX_REDIS_COMMANDS } from '@/shared/api/dart/dartQuotaGuard';
 import { REDIS_LONG_COMMAND_TIMEOUT_MS } from '@/shared/cache/redisClient';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { DART_CRON_LEASE_NAME } from '../../leasedCron';
 import { PATCH } from '../route';
 
@@ -70,7 +71,7 @@ describe('PATCH /api/cron/dart-filings', () => {
             name: 'dart-filings',
             leaseName: DART_CRON_LEASE_NAME,
             leaseTtlSeconds: 30 * 60,
-            deadlineMs: 18 * 60 * 1000,
+            deadlineMs: 18 * MS_PER_MINUTE,
         });
     });
 

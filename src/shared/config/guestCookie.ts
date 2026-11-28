@@ -1,3 +1,5 @@
+import { SECONDS_PER_YEAR } from './time';
+
 /**
  * First-party anonymous visitor id cookie (`siglens_guest`) config shared by
  * `shared/api/guestId.ts` (server-only cookie read/write) and `proxy.ts`
@@ -12,7 +14,7 @@
  * mint its own `siglens_guest=<any uuid>` cookie and spend a guest's quota
  * without ever loading a page.
  */
-export const GUEST_ID_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+export const GUEST_ID_MAX_AGE_SECONDS = SECONDS_PER_YEAR;
 
 const UUID_RE =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
