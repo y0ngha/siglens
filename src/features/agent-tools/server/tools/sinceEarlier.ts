@@ -17,6 +17,7 @@ import {
 import { closedAnchorIndexOf } from '@/entities/bars/lib/sessionBars';
 import { tradingDate } from '@/entities/chat-conversation/lib/buildSymbolChanges';
 import { CHAT_CHANGE_SIGNAL_TYPES } from '@/entities/chat-conversation/lib/chatChangeSignalTypes';
+import { toStoredMinuteMs } from '@/entities/chat-conversation/lib/storedToolInstant';
 import { loadClosedDailyBars } from '@/entities/chat-conversation/server/closedDailyBars';
 import type { ConversationAnalysis } from '@/entities/chat-conversation/server/conversationAnalyses';
 import {
@@ -297,8 +298,10 @@ export async function loadSinceEarlier({
     const earlier = earlierAnalyses.find(a => a.symbol === symbol);
     if (earlier === undefined || typeof resultGeneratedAt !== 'string')
         return undefined;
-    const earlierMs = Date.parse(earlier.generatedAt);
-    const resultMs = Date.parse(resultGeneratedAt);
+    // 저장된 이전 시각은 core가 지역화한 분 단위 문자열에서 되돌린 값이라 초가 0이다 — 이 결과의 시각도 분으로 내려야
+    // 같은 분석을 다시 받았을 때 "더 나중"으로 읽히지 않는다.
+    const earlierMs = toStoredMinuteMs(earlier.generatedAt);
+    const resultMs = toStoredMinuteMs(resultGeneratedAt);
     // 같은 분석을 다시 받았거나 더 오래된 것이면 "달라진 점"이 없다.
     if (!(earlierMs < resultMs)) return undefined;
     try {

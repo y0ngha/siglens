@@ -4262,7 +4262,8 @@
                 "meanReturnLabel": "1取引あたりの平均収益率",
                 "meanReturnSub": "同じ銘柄を期間中のどの日から始めても同じ日数だけ持った場合の平均（{v3}）と比べると、1取引あたりの差は平均{v0}（95%範囲 {v1}～{v2}）",
                 "meanHoldingLabel": "平均保有期間",
-                "tradingDays": "{v0}営業日"
+                "tradingDays": "{v0}営業日",
+                "period": "{v0}～{v1}"
             },
             "comparison": {
                 "heading": "保有戦略との比較",

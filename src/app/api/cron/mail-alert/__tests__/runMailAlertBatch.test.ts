@@ -2618,10 +2618,10 @@ describe('runMailAlertBatch', () => {
                 expect(guestText).not.toContain('지지선');
                 expect(guestText).not.toContain('진입 구간');
                 expect(memberText).toContain(
-                    '지지선 US$110.00 위로 올라와 마감했어요.'
+                    '지지선 $110.00 위로 올라와 마감했어요.'
                 );
                 expect(memberText).toContain(
-                    '진입 구간 US$111.00~US$113.00 안에서 마감했어요.'
+                    '진입 구간 $111.00~$113.00 안에서 마감했어요.'
                 );
                 expect(memberText).toContain(
                     '기준: 11월 21일 AI 분석의 진입 구간'

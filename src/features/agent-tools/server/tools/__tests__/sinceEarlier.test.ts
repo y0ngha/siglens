@@ -471,6 +471,16 @@ describe('loadSinceEarlier', () => {
         ['결과의 생성 시각을 모름', { resultGeneratedAt: null }],
         ['같은 분석을 다시 받음', { resultGeneratedAt: earlierAt }],
         ['이전 분석이 더 늦음', { resultGeneratedAt: '2026-10-01T00:00:00Z' }],
+        [
+            // 저장된 이전 시각은 지역화된 분 단위 문자열에서 되돌린 값(초 0)이다 — 같은 분의 같은 분석은 "나중"이 아니다.
+            '분 단위로 저장된 같은 분석을 다시 받음',
+            {
+                earlierAnalyses: [
+                    { ...earlier, generatedAt: '2026-11-14T10:00:00.000Z' },
+                ],
+                resultGeneratedAt: '2026-11-14T10:00:37.512Z',
+            },
+        ],
     ])('%s → 봉을 읽지 않고 블록도 없다', async (_label, over) => {
         expect(await loadSinceEarlier({ ...input, ...over })).toBeUndefined();
         expect(getCachedBars).not.toHaveBeenCalled();

@@ -187,12 +187,12 @@ describe('알림 메일 설정 페이지', () => {
                 priceAlerts: [
                     {
                         id: 'alert-1',
-                        label: 'AAPL 종가가 US$180.00 이하로 내려가면 메일로 알려 드려요.',
+                        label: 'AAPL 종가가 $180.00 이하로 내려가면 메일로 알려 드려요.',
                         lines: [
                             { key: 'basis', text: '대화에서 정한 가격이에요.' },
                             {
                                 key: 'created',
-                                text: '만든 날 11월 20일, 그때 가격 US$190.50',
+                                text: '만든 날 11월 20일, 그때 가격 $190.50',
                             },
                             {
                                 key: 'expires',
@@ -202,7 +202,7 @@ describe('알림 메일 설정 페이지', () => {
                     },
                     {
                         id: 'alert-2',
-                        label: 'AAPL 종가가 US$200.00 이상으로 올라가면 메일로 알려 드려요.',
+                        label: 'AAPL 종가가 $200.00 이상으로 올라가면 메일로 알려 드려요.',
                         lines: [
                             {
                                 key: 'basis',
@@ -284,7 +284,7 @@ describe('알림 메일 설정 페이지', () => {
                 firedPriceAlerts: [
                     {
                         id: 'fired-1',
-                        text: 'NVDA 종가가 11월 20일에 조건을 충족해 알림이 끝났어요. (종가 US$120.00)',
+                        text: 'NVDA 종가가 11월 20일에 조건을 충족해 알림이 끝났어요. (종가 $120.00)',
                     },
                 ],
             });

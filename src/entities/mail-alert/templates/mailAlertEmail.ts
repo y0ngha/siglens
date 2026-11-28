@@ -10,7 +10,7 @@ import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
+import { formatAlertPrice } from '../lib/formatAlertPrice';
 import {
     buildMailAlertFearGreedUrl,
     buildMailAlertHubUrl,
@@ -123,8 +123,7 @@ function changeLines(
     const { t, locale } = input;
     const { change } = item;
     const date = formatDate(item.sessionDate, locale);
-    const price = (value: number) =>
-        formatCurrencyForSymbol(value, item.symbol, locale);
+    const price = (value: number) => formatAlertPrice(value, item.market);
     const analysisDate = (analyzedAt: string) =>
         formatDate(kstDateKey(new Date(analyzedAt)), locale);
     switch (change.kind) {
@@ -291,8 +290,7 @@ function priceAlertSentence(
     input: BuildMailAlertEmailInput
 ): string {
     const { t, locale } = input;
-    const price = (value: number) =>
-        formatCurrencyForSymbol(value, item.symbol, locale);
+    const price = (value: number) => formatAlertPrice(value, item.market);
     const common = {
         v0: symbolText(item.symbol, input),
         v1: formatDate(item.firedSession, locale),
@@ -362,11 +360,7 @@ function priceAlertRow(
             ...priceAlertBasis(item, input),
             t('priceAlertCreated', {
                 v0: formatDate(kstDateKey(item.createdAt), locale),
-                v1: formatCurrencyForSymbol(
-                    item.referenceClose,
-                    item.symbol,
-                    locale
-                ),
+                v1: formatAlertPrice(item.referenceClose, item.market),
             }),
         ],
     };

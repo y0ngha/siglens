@@ -10,7 +10,10 @@ interface BacktestHeroProps {
 
 export function BacktestHero({ stats }: BacktestHeroProps) {
     const t = useTranslations('widgets.backtesting.hero');
-    const period = `${formatPeriodMonth(stats.periodStart)} – ${formatPeriodMonth(stats.periodEnd)}`;
+    const period = t('period', {
+        v0: formatPeriodMonth(stats.periodStart),
+        v1: formatPeriodMonth(stats.periodEnd),
+    });
 
     return (
         <header className="border-b border-secondary-700 py-10 text-center">

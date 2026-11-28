@@ -4262,7 +4262,8 @@
                 "meanReturnLabel": "每笔平均收益率",
                 "meanReturnSub": "与同一标的在期间内任意一天起持有相同天数的平均（{v3}）相比，每笔平均差异为 {v0}（95% 区间 {v1}~{v2}）",
                 "meanHoldingLabel": "平均持有时间",
-                "tradingDays": "{v0} 个交易日"
+                "tradingDays": "{v0} 个交易日",
+                "period": "{v0}~{v1}"
             },
             "comparison": {
                 "heading": "与持有策略对比",

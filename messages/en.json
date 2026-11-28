@@ -4262,7 +4262,8 @@
                 "meanReturnLabel": "Mean return per trade",
                 "meanReturnSub": "Compared with the average of holding the same ticker for the same number of days from any start day in the period ({v3}), the difference per trade averaged {v0} (95% range {v1} to {v2})",
                 "meanHoldingLabel": "Mean holding period",
-                "tradingDays": "{v0} trading days"
+                "tradingDays": "{v0} trading days",
+                "period": "{v0} to {v1}"
             },
             "comparison": {
                 "heading": "Compared with holding",

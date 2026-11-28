@@ -1,3 +1,4 @@
+import { parseStoredToolInstant } from '../lib/storedToolInstant';
 import type { ChatMessageRecord } from '../model';
 
 /** 한 대화에서 카드가 비교 기준으로 삼는 종목 수의 상한 — 최근에 본 순이다. 에이전트의 `sinceEarlier`에는 걸지 않는다. */
@@ -6,7 +7,10 @@ export const CONVERSATION_CHANGES_MAX_SYMBOLS = 3;
 /** 대화에 남은 일봉 기술적 분석 한 건 — 그 회원이 본 모양 그대로(`analysis`)와 만든 시각. */
 export interface ConversationAnalysis {
     symbol: string;
-    /** 도구 결과의 `generatedAt`(ISO). */
+    /**
+     * 도구 결과의 `generatedAt`을 ISO 순간으로 되돌린 값. 저장된 결과는 core가 회원 시간대로 지역화한 분 단위 문자열이라
+     * (`parseStoredToolInstant`) 초 이하가 0이다 — 비교는 분 단위로 한다.
+     */
     generatedAt: string;
     /** 도구 결과의 `analysis` 투영 — `changeReferenceOf(…, 'as_shown')`의 입력이다. */
     analysis: Record<string, unknown>;
@@ -45,8 +49,8 @@ function parseJsonObject(content: string): Record<string, unknown> | null {
  *
  * 도구 결과에는 종목이 없다 — 그 호출의 인자(앞선 assistant 행의 `toolCalls`)에서 `tool_call_id`로 짝지어 읽는다.
  * 비교 기준이 될 수 있는 것은 `found: true`, `tab: 'technical'`, `timeframe: '1Day'`(일봉만), 읽을 수 있는
- * `generatedAt`, 객체 `analysis`가 모두 있는 결과뿐이다. 길이 상한에 잘린 결과(`{ truncated, preview }`)는
- * `found`가 없어 여기서 걸러진다.
+ * `generatedAt`(ISO 또는 core가 지역화한 `2026-11-28 15:44 KST` 모양), 객체 `analysis`가 모두 있는 결과뿐이다.
+ * 길이 상한에 잘린 결과(`{ truncated, preview }`)는 `found`가 없어 여기서 걸러진다.
  *
  * 종목마다 가장 나중 것 하나만 남기고, 가장 최근에 본 종목부터 돌려준다. 종목 수 상한은 쓰는 쪽이 정한다 — 카드는
  * {@link CONVERSATION_CHANGES_MAX_SYMBOLS}개로 자르고, 에이전트(`sinceEarlier`)는 이번 턴에 부른 종목 하나만 찾으므로
@@ -89,14 +93,13 @@ export function extractConversationAnalyses(
             result['timeframe'] !== '1Day'
         )
             continue;
-        const generatedAt = result['generatedAt'];
+        const storedAt = result['generatedAt'];
+        const generatedAt =
+            typeof storedAt === 'string'
+                ? parseStoredToolInstant(storedAt)
+                : null;
         const analysis = result['analysis'];
-        if (
-            typeof generatedAt !== 'string' ||
-            Number.isNaN(Date.parse(generatedAt)) ||
-            !isRecord(analysis)
-        )
-            continue;
+        if (generatedAt === null || !isRecord(analysis)) continue;
         const previous = latestBySymbol.get(symbol);
         if (previous === undefined || row.seq > previous.seq)
             latestBySymbol.set(symbol, {
