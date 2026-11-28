@@ -49,7 +49,8 @@ export const SINCE_EARLIER_NOTE =
     'It compares daily closes from fromSessionDate to toSessionDate, not the live price. ' +
     'trend_changed and plan_position_changed are read at those two closes only; level_crossed and signal_started carry their own dates. ' +
     `Signals cover only ${CHAT_CHANGE_SIGNAL_TYPES.join(', ')}. ` +
-    'level_crossed is the first close past the level; compare closeNow for where price is now. ' +
+    'level_crossed is a close past the level on that date; compare closeNow, and if it is back on the other side, say it closed past then and is back now. ' +
+    'planNow and levelsBroken use the current price, planCheck the analysis-time price; none says whether an earlier level held. ' +
     'Each signal type is listed once, at its newest start; omittedSignals counts earlier starts that are not listed. ' +
     'omittedLevelCrossings counts further level crossings that are not listed. ' +
     'An empty changes list means "no change in these items" only when notMeasured is absent; ' +
