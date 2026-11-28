@@ -274,6 +274,12 @@ function ChangesBody({
                     stop: money(item.stop),
                     date: date(item.date),
                 });
+            case 'plan_stop_recovered':
+                return t('sinceEarlier.planStopRecovered', {
+                    stop: money(item.stop),
+                    close: money(item.close),
+                    date: date(item.date),
+                });
             case 'plan_no_setup':
                 return t('sinceEarlier.planNoSetup', { date: date(item.date) });
         }

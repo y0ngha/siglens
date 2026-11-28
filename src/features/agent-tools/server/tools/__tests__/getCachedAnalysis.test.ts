@@ -2439,6 +2439,7 @@ describe('getCachedAnalysisTool — sinceEarlier', () => {
                 direction: 'up',
                 close: 96.6,
                 date: '2026-10-26',
+                pastNow: true,
             },
             {
                 kind: 'level_crossed',
@@ -2447,6 +2448,7 @@ describe('getCachedAnalysisTool — sinceEarlier', () => {
                 direction: 'up',
                 close: 105.4,
                 date: '2026-11-05',
+                pastNow: true,
             },
             { kind: 'trend_changed', from: 'neutral', to: 'bullish' },
         ]);

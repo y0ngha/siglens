@@ -6605,6 +6605,7 @@
                 "planAbove": "收盘高于该分析的入场区间 {low}~{high}（{date}）",
                 "planBelow": "收盘低于该分析的入场区间 {low}~{high}（{date}）",
                 "planStopped": "收盘在该分析的失效标准 {stop} 或以下（{date}）",
+                "planStopRecovered": "收盘在该分析的失效标准 {stop} 或以下（{date}，收盘价 {close}），目前已重新回到其上方",
                 "planNoSetup": "按{date}收盘价，该分析的入场计划已不再成立",
                 "partialTrend": "数据不足，无法比较趋势判定",
                 "partialDays": "有 {count} 个交易日无法确认信号或收盘价",

@@ -6605,6 +6605,7 @@
                 "planAbove": "Closed above the entry zone {low} to {high} from that analysis ({date})",
                 "planBelow": "Closed below the entry zone {low} to {high} from that analysis ({date})",
                 "planStopped": "Closed at or below the invalidation level {stop} from that analysis ({date})",
+                "planStopRecovered": "Closed at or below the invalidation level {stop} from that analysis ({date}, close {close}), then came back above it",
                 "planNoSetup": "The entry plan from that analysis no longer holds on the {date} close",
                 "partialTrend": "The trend reading could not be compared because of too little data",
                 "partialDays": "{count, plural, one {# trading day} other {# trading days}} could not be checked for signals or closes",

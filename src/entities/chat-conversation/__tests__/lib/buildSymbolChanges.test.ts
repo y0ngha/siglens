@@ -260,6 +260,56 @@ describe('buildSymbolChanges', () => {
             );
         });
 
+        it('무효화 기준 아래로 마감했다가 돌아오면 plan_stop_recovered 줄을 만든다', () => {
+            const analyzedAt = analyzedAtBar(59);
+            const result = buildSymbolChanges({
+                ...base,
+                analyzedAt,
+                reference: shown(PLAN_ANALYSIS, analyzedAt),
+                bars: barsFrom([...flat(60), 95, 89, 100]),
+            });
+            const items = result?.status === 'changes' ? result.items : [];
+            expect(items.filter(i => i.kind === 'plan_stop_recovered')).toEqual(
+                [
+                    {
+                        kind: 'plan_stop_recovered',
+                        stop: 90,
+                        date: dateOfBar(61),
+                        close: 89,
+                    },
+                ]
+            );
+            expect(items.some(i => i.kind === 'plan_stopped')).toBe(false);
+        });
+
+        it('분석 시점에 이미 무효화 기준 이하였다가 위로 올라선 경우는 plan_stop_recovered를 만들지 않는다', () => {
+            const analyzedAt = analyzedAtBar(59);
+            const result = buildSymbolChanges({
+                ...base,
+                analyzedAt,
+                reference: shown(PLAN_ANALYSIS, analyzedAt),
+                bars: barsFrom([...flat(60, 85), 95]),
+            });
+            expect(
+                result?.status === 'changes' &&
+                    result.items.some(i => i.kind === 'plan_stop_recovered')
+            ).toBe(false);
+        });
+
+        it('지금도 기준 아래면 plan_stopped만 말하고 plan_stop_recovered는 없다', () => {
+            const analyzedAt = analyzedAtBar(59);
+            const result = buildSymbolChanges({
+                ...base,
+                analyzedAt,
+                reference: shown(PLAN_ANALYSIS, analyzedAt),
+                bars: barsFrom([...flat(60), 95, 89]),
+            });
+            expect(
+                result?.status === 'changes' &&
+                    result.items.some(i => i.kind === 'plan_stop_recovered')
+            ).toBe(false);
+        });
+
         it('추세 판정이 바뀌면 마지막 종가의 날짜로 trend 줄을 만든다', () => {
             const analyzedAt = analyzedAtBar(59);
             const rising = Array.from(

@@ -40,6 +40,10 @@ export function toMailAlertChanges(
                 return planChangeOf(change, reference);
             case 'signal_started':
                 return [];
+            // 메일은 하루(직전 종가→오늘 종가)만 비교하고 계획 변화는 위치(`plan_position_changed`)로 이미 말한다.
+            // 계획 경계의 첫 돌파 시각·되돌림(`pastNow`)은 여러 날을 보는 대화 쪽 읽기라 메일 줄로 만들지 않는다.
+            case 'plan_level_crossed':
+                return [];
         }
     });
 }

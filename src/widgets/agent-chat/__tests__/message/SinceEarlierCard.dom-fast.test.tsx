@@ -250,6 +250,26 @@ describe('SinceEarlierCard', () => {
             ).toBeInTheDocument();
         });
 
+        it('무효화 기준 아래로 마감했다가 돌아온 계획은 지금은 다시 위에 있다고 말한다', async () => {
+            renderCard([
+                changes({
+                    items: [
+                        {
+                            kind: 'plan_stop_recovered',
+                            stop: 126.98,
+                            close: 125.53,
+                            date: '2026-11-20',
+                        },
+                    ],
+                }),
+            ]);
+            expect(
+                await screen.findByText(
+                    '그 분석의 무효화 기준 $126.98 이하에서 마감했다가 (11월 20일, 종가 $125.53) 지금은 다시 위에 있어요'
+                )
+            ).toBeInTheDocument();
+        });
+
         it('신호는 이름과 일봉 날짜를 말한다', async () => {
             renderCard([
                 changes({
