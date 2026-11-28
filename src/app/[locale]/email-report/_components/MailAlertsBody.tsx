@@ -1,13 +1,17 @@
 import type { SignalType } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
+import { reportSymbolLabel } from '@/entities/email-report/lib/reportSymbolLabel';
+import type { ReportSymbolNames } from '@/entities/email-report/reportModel';
 import { formatDate } from '@/entities/email-report/templates/emailFormat';
 import { formatAlertPrice } from '@/entities/mail-alert/lib/formatAlertPrice';
 import type {
     MailAlertLinkAuth,
+    MailAlertManageView,
     MailAlertTopic,
     PriceAlertView,
 } from '@/entities/mail-alert/model';
 import type { MailAlertManageLoad } from '@/entities/mail-alert/server/mailAlertFlows';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import {
     MailAlertManage,
     type MailAlertManageTopic,
@@ -17,9 +21,11 @@ import type {
     MailAlertManagePriceAlert,
     MailAlertManagePriceAlertLine,
 } from '@/features/mail-alert/ui/MailAlertPriceAlerts';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
-import { displayTicker } from '@/shared/lib/displayTicker';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { mapChunked } from '@/shared/lib/mapChunked';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface MailAlertsBodyProps {
@@ -28,6 +34,18 @@ interface MailAlertsBodyProps {
     /** 날짜·가격을 쓰는 로케일(페이지가 경로에서 정한다). */
     readonly locale: Locale;
 }
+
+/** 이름 조회를 한 번에 띄우는 최대 개수(종목 페이지와 같은 데이터 캐시를 읽는다). */
+const NAME_LOOKUP_CHUNK = 8;
+
+/**
+ * 이름 조회 전체에 거는 시간 상한. 이름은 보조 정보라 느린 캐시·DB 때문에 설정 화면이 같이 느려지면 안 된다.
+ * 상한을 넘기면 아직 못 받은 종목은 코드로 그린다(조회는 취소되지 않고 뒤에서 끝나며, 실패는 `fetchNames`가 삼킨다).
+ */
+const NAME_LOOKUP_TIMEOUT_MS = 1500;
+
+/** 종목 코드를 화면 표기(`이름 (코드)`)로 바꾼다. 이름이 없으면 코드 하나. */
+type SymbolLabeler = (symbol: string) => string;
 
 const LINK =
     'font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
@@ -62,10 +80,11 @@ export async function MailAlertsBody({
     if (load.status === 'empty') {
         return <p className="text-sm text-secondary-400">{t('empty')}</p>;
     }
+    const labelSymbol = await createSymbolLabeler(load.view, locale);
     const [topics, priceAlerts, firedPriceAlerts] = await Promise.all([
-        labelTopics(load.view.topics),
-        labelPriceAlerts(load.view.priceAlerts, locale),
-        labelFiredPriceAlerts(load.view.firedPriceAlerts, locale),
+        labelTopics(load.view.topics, labelSymbol),
+        labelPriceAlerts(load.view.priceAlerts, locale, labelSymbol),
+        labelFiredPriceAlerts(load.view.firedPriceAlerts, locale, labelSymbol),
     ]);
     return (
         <MailAlertManage
@@ -79,9 +98,61 @@ export async function MailAlertsBody({
     );
 }
 
+/** 이름 조회 실패는 이름만 비운다 — 코드로 떨어질 뿐 화면은 그려진다(메일 크론과 같은 규칙). */
+async function fetchNames(symbol: string): Promise<ReportSymbolNames | null> {
+    try {
+        const info = await getAssetInfoStatic(symbol);
+        return info === null
+            ? null
+            : { name: info.name, koreanName: info.koreanName };
+    } catch (error) {
+        console.warn(
+            `[mail-alerts] asset name unavailable for ${symbol}`,
+            redactDbErrorForLog(error)
+        );
+        return null;
+    }
+}
+
+/**
+ * 화면에 나올 종목마다 이름을 한 번씩만 조회해(병렬, 상한 있음) 메일과 같은 표기를 돌려주는 함수를 만든다.
+ * 이름 카탈로그는 서버에서만 쓰고 클라이언트 목록에는 완성된 문장만 넘긴다.
+ */
+async function createSymbolLabeler(
+    view: MailAlertManageView,
+    locale: Locale
+): Promise<SymbolLabeler> {
+    const symbols = [
+        ...new Set([
+            ...view.topics.flatMap(topic =>
+                topic.kind === 'symbol' ? [topic.symbol] : []
+            ),
+            ...view.priceAlerts.map(alert => alert.symbol),
+            ...view.firedPriceAlerts.map(alert => alert.symbol),
+        ]),
+    ];
+    const collected = new Map<string, string>();
+    await withTimeout(
+        mapChunked(symbols, NAME_LOOKUP_CHUNK, async symbol => {
+            const names = await fetchNames(symbol);
+            collected.set(
+                symbol,
+                reportSymbolLabel(symbol, names, locale).text
+            );
+        }),
+        NAME_LOOKUP_TIMEOUT_MS,
+        undefined
+    );
+    // 시간 안에 끝난 것만 쓴다. 늦게 끝나는 조회가 렌더 도중 표기를 바꾸지 않게 그 시점의 복사본을 쥔다.
+    const labels = new Map(collected);
+    return symbol =>
+        labels.get(symbol) ?? reportSymbolLabel(symbol, null, locale).text;
+}
+
 /** 신호 이름은 `shared.enumLabel`의 신호 유형 라벨(신호별 종목 화면과 같은 이름)이다. */
 async function labelTopics(
-    topics: readonly MailAlertTopic[]
+    topics: readonly MailAlertTopic[],
+    labelSymbol: SymbolLabeler
 ): Promise<MailAlertManageTopic[]> {
     const [t, tAlert, tLabel] = await Promise.all([
         getTranslations('app.email-report.alerts'),
@@ -99,7 +170,7 @@ async function labelTopics(
         switch (topic.kind) {
             case 'symbol':
                 return t('topicSymbol', {
-                    symbol: displayTicker(topic.symbol),
+                    symbol: labelSymbol(topic.symbol),
                 });
             case 'signal':
                 return t('topicSignal', {
@@ -118,7 +189,8 @@ async function labelTopics(
  */
 async function labelPriceAlerts(
     alerts: readonly PriceAlertView[],
-    locale: Locale
+    locale: Locale,
+    labelSymbol: SymbolLabeler
 ): Promise<MailAlertManagePriceAlert[]> {
     if (alerts.length === 0) return [];
     const t = await getTranslations('app.email-report.alerts');
@@ -126,7 +198,7 @@ async function labelPriceAlerts(
         formatAlertPrice(value, alert.market);
     const conditionText = (alert: PriceAlertView): string => {
         const { condition } = alert;
-        const symbol = displayTicker(alert.symbol);
+        const symbol = labelSymbol(alert.symbol);
         switch (condition.kind) {
             case 'enter_zone':
                 return t('priceAlertEnterZone', {
@@ -193,7 +265,8 @@ async function labelPriceAlerts(
  */
 async function labelFiredPriceAlerts(
     alerts: readonly PriceAlertView[],
-    locale: Locale
+    locale: Locale,
+    labelSymbol: SymbolLabeler
 ): Promise<MailAlertManageFiredAlert[]> {
     if (alerts.length === 0) return [];
     const t = await getTranslations('app.email-report.alerts');
@@ -204,7 +277,7 @@ async function labelFiredPriceAlerts(
                   {
                       id: alert.id,
                       text: t('priceAlertFired', {
-                          symbol: displayTicker(alert.symbol),
+                          symbol: labelSymbol(alert.symbol),
                           closeDate: formatDate(alert.firedSession, locale),
                           close: formatAlertPrice(
                               alert.firedClose,
