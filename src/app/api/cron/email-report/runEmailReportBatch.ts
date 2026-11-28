@@ -27,6 +27,7 @@ import type {
     SignalLabelResolver,
     SkillLabelResolver,
 } from '@/entities/email-report/templates/reportEmailTypes';
+import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
 import {
     redactDbErrorForLog,
     redactedErrorMessage,
@@ -45,14 +46,14 @@ import { mapChunked } from '@/shared/lib/mapChunked';
 import type { SymbolDrawings } from './loadSymbolDrawings';
 
 /** 발송 기록 보관 기간 — 그보다 오래된 행은 매 실행 끝에 지운다. */
-export const DELIVERY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+export const DELIVERY_RETENTION_MS = 90 * MS_PER_DAY;
 /** 동시에 처리하는 회원 수. Resend 초당 한도와 FMP·DB 부하 사이의 타협. */
 export const RECIPIENT_CONCURRENCY = 4;
 /**
  * 새 회원 처리를 시작하는 마감. cron이 매시 돌므로 다음 실행과 겹치기 전에 멈춘다 —
  * 마감 뒤에 남은 회원은 선점하지 않으므로 기록도 없이 그날을 건너뛴다(로그로 남긴다).
  */
-export const BATCH_DEADLINE_MS = 45 * 60 * 1000;
+export const BATCH_DEADLINE_MS = 45 * MS_PER_MINUTE;
 /**
  * 한 회원의 요약 데이터(일봉과 종목 이름 조회)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
  * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 요약(일봉·이름) 경로의 동시 종목 수 최악은 그 곱(20)이다.

@@ -1,5 +1,6 @@
 import { runCikSymbolMapSync } from '@/entities/investor-flows/server/syncCikSymbolMap';
 import { runCusipMapSync } from '@/entities/investor-flows/server/syncCusipMap';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { handleLeasedCron } from '../leasedCron';
 import { createCikSymbolMapDeps, createCusipMapDeps } from './createDeps';
 
@@ -9,7 +10,7 @@ import { createCikSymbolMapDeps, createCusipMapDeps } from './createDeps';
  * 락 TTL 15분 = 마감 + 페이싱 대기 한 번(≤1.5초) + 마지막 청크(재시도 없이 시도 1회, timeout 10초) + 주간 CIK 맵 갱신
  * (`company_tickers.json` 요청 최악 75초 + 맵 교체 트랜잭션) 여유(SERVER.md#CC-7, `route.test.ts`가 실제 상수로 검증).
  */
-const CUSIP_MAP_DEADLINE_MS = 10 * 60 * 1000;
+const CUSIP_MAP_DEADLINE_MS = 10 * MS_PER_MINUTE;
 const CUSIP_MAP_LEASE_TTL_SECONDS = 15 * 60;
 
 /**

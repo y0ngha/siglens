@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const chart = vi.fn();
 const quote = vi.fn();
@@ -76,7 +77,6 @@ describe('YahooMarketProvider', () => {
             });
 
             expect(bars).toHaveLength(3);
-            const SECONDS_PER_DAY = 86_400;
             expect(bars.map(b => b.time % SECONDS_PER_DAY)).toEqual([0, 0, 0]);
         });
 

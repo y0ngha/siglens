@@ -8,6 +8,7 @@ import {
     snapshotCloseBoundaryFor,
 } from '@/entities/seo-snapshot/lib/freshness';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { TAB_SEAMS } from './harvest';
 import {
@@ -61,7 +62,7 @@ export const OVERALL_WARM_MAX_STARTS_PER_UTC_DAY = 24;
  * 포기한 호출의 대기 항목이 살아 있는 최대 시간. 프리웜 창 사이 가장 긴 공백(7.5시간)에 여유를 더한
  * 12시간 — 항목은 시작 시각 기준으로 이때 버려진다(영원히 남지 않는다).
  */
-export const OVERALL_WARM_PENDING_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+export const OVERALL_WARM_PENDING_MAX_AGE_MS = 12 * MS_PER_HOUR;
 
 /** 캐시 확인이 계속 "아직 없음"이면 이 횟수에서 항목을 버린다(tick당 한 번 확인). */
 export const OVERALL_WARM_PENDING_MAX_CHECKS = 12;

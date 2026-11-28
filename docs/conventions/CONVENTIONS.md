@@ -372,7 +372,7 @@ Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an u
 Extract every magic number and constant value to a module-level constant, and let function names stay true when the constant changes.
 
 - String literals (event names, storage keys, magic strings) shared across files are one exported constant.
-- Time math uses the shared constants (`MS_PER_HOUR`, `MS_PER_SECOND`, KST offset …) from `shared/config` or `@y0ngha/siglens-core`, not `hours * 60 * 60 * 1000`.
+- Time math uses the shared constants (`shared/config/time`, KST offset, core), not `hours * 60 * 60 * 1000` (guarded).
 - **Drift trap:** once a constant exists in a file, every literal use of the same value in that file (JSX text, error messages, JSDoc, tests) references it. A tests file converted halfway keeps the old literal and passes for the wrong reason.
 - A rounding factor and its `toFixed` digits are one constant, not two literals.
 - A fallback or a displayed maximum (`/ 100`) imports the constant the logic uses; it never re-declares the value in a sibling module or in JSX text.
@@ -443,36 +443,40 @@ also name the defining file: `vi.mock` intercepts by module path, so a different
 
 ## Lint and guard rules
 
-Never use `eslint-disable`, `eslint-disable-next-line`, or `oxlint-disable` comments — not in production code and not in test helpers (guarded, see the table).
-When a rule produces a warning, fix the root cause in the code rather than suppressing the rule (restructure deps, use `useEffectEvent` or a ref for stable references; see `REACT.md#EF-1` / `#EF-2`).
+No `eslint-disable*`/`oxlint-disable` comments, in production code or test helpers (guarded, see the table).
+Fix a warning's root cause in the code instead of suppressing the rule (restructure deps, use `useEffectEvent` or a ref for stable references; `REACT.md#EF-1`/`#EF-2`).
 
 ### Enforced rules
 
-A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn lint`, the pre-commit `oxlint --fix`, or `src/__tests__/guards`. CI reports it; review does not re-raise it. The config or guard carries the reason in a comment. Enabling a lint rule adds its row here and a planted violation in `lintRulesEnabled.test.ts` in the same change.
+A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn lint`, the pre-commit `oxlint --fix`, or `src/__tests__/guards`. CI reports it; review does not re-raise it. "rule `x`" is a `codeRules.test.ts` rule. The config or guard carries the reason in a comment. Enabling a lint rule adds its row here and a planted violation in `lintRulesEnabled.test.ts` in the same change.
 
 | Rule | Mechanism | Scope | Fix |
 |---|---|---|---|
 | `let` that is never reassigned (CP-4) | oxlint `prefer-const` (autofix) | all code | Make it `const`. |
 | One import statement per module | oxlint `import/no-duplicates` (autofix) | all code | Merge the specifiers into the first import. |
-| Import order: packages, then `@/`·`@e2e/` aliases, then relative | oxfmt `sortImports` (`yarn format`, `yarn format:check`) | all code; a side-effect import keeps its slot while others sort around it, so put `server-only`/CSS first | Run `yarn format`. |
+| Import order: packages, then `@/`·`@e2e/` aliases, then relative | oxfmt `sortImports` (`yarn format`, `yarn format:check`) | all code; a side-effect import keeps its slot, so put CSS first | Run `yarn format`. |
+| `import 'server-only'`/`'client-only'` is the first import | rule `boundary-marker-first`, zero tolerance | all code | Move it above every import. |
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
 | No nested ternary (`FF.md` 1-E) | oxlint `no-nested-ternary` | all code | Record lookup, or a small early-return helper. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
-| No lint-disable comments | `codeRules.test.ts` rule `lint-disable-directive`, zero tolerance | comments in code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
+| No lint-disable comments | `codeRules.test.ts` rule `lint-disable-directive`, zero tolerance | comments in code under `SCAN_ROOTS` and root configs; two allowlisted files with a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
 | No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support) | Early return, or a local `const` and a named error; for a Map or array lookup, destructure or use `entries()`. |
-| No new non-null assertion in tests (TS-1) | `codeRules.test.ts` rule `non-null-assertion`, per-file baseline (`TOOLCHAIN.md#TC-41`) | test files and e2e | Bind the value and narrow it, or use `defined(value, 'what')` from `src/shared/test-utils/defined.ts`. |
-| No assertion by mock call index (TE-27) | `codeRules.test.ts` rule `mock-call-index`, per-file baseline | test files and e2e | `mock.calls.find(...)` by a discriminating argument, or `toHaveBeenCalledWith`. |
-| No `let x = a;` + `if` that only assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-if`, zero tolerance | all code | `const x = c ? b : a;` or a small named function. |
-| No `let x;` + `try` that assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-try`, per-file baseline | all code | `const x = await load().catch(() => null)` or a small named function. |
-| No `push`/`Map.set`/`Set.add` accumulation in a loop (CP-6) | `codeRules.test.ts` rule `accumulator-in-loop`, zero tolerance | production code in `src/shared/lib/**` and `src/entities/*/lib/**` | `map`/`flatMap`/`reduce`, or `// CONVENTIONS.md#CP-6 예외: <cost>` above the function, loop or accumulator. |
+| No new non-null assertion in tests (TS-1) | rule `non-null-assertion`, per-file baseline (`TOOLCHAIN.md#TC-41`) | test files and e2e | Bind the value and narrow it, or use `defined(value, 'what')` from `src/shared/test-utils/defined.ts`. |
+| No assertion by mock call index (TE-27) | rule `mock-call-index`, per-file baseline | test files and e2e | `mock.calls.find(...)` by a discriminating argument, or `toHaveBeenCalledWith`. |
+| No `let x = a;` + `if` that only assigns `x` (CP-4) | rule `let-then-if`, zero tolerance | all code | `const x = c ? b : a;` or a small named function. |
+| No `let x;` + `try` that assigns `x` (CP-4) | rule `let-then-try`, per-file baseline | all code | `const x = await load().catch(() => null)` or a small named function. |
+| No `push`/`Map.set`/`Set.add` accumulation in a loop (CP-6) | rule `accumulator-in-loop`, zero tolerance | production code in `src/shared/lib/**` and `src/entities/*/lib/**` | `map`/`flatMap`/`reduce`, or `// CONVENTIONS.md#CP-6 예외: <cost>` above the function, loop or accumulator. |
 | No `push` in a `map`/`filter`/`reduce`/`flatMap` callback or `useMemo` factory (CP-6) | rule `push-in-functional-callback`, zero tolerance | production code | Return the values from the callback. |
 | No `??=`, `||=`, `&&=` in components and hooks (EF-4) | rule `logical-assignment-in-react`, zero tolerance | production `.tsx` and `use*.ts` | Write the check and the assignment out. |
 | No citation of local-only docs (CM-9) | rule `local-doc-citation`, zero tolerance | comments and strings of code, and `.sh`/`.css`/`.yml` text, under the scan roots; strings in test files are fixtures and skipped | State the fact inline. |
-| No issue/PR number `#123`+ in a comment (CM-11) | `codeRules.test.ts` rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418` in a React/hydration comment, hex colours with a letter and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
-| No partial assertion on rendered SQL (TE-53) | rule `sql-substring-assertion`, zero tolerance | tests: `toContain`/`toMatch`/`toHaveLength`/`toBeTruthy`/`not.toBe('')`/`stringContaining`/`.includes()`/`.length` on `renderSql().sql`, `captured[n].sql`, aliases, joins, splits; absence checks need `// sql-absence: <reason>` (logged), snapshots are full pins; not seen: other-file helpers, `Array.from`/`reduce` lists, array destructuring | `toBe` the full rendered SQL. |
-| Test imports stay contiguous (TE-1) | `codeRules.test.ts` rule `imports-contiguous`, zero tolerance | test files and e2e | `vi.mock`/`vi.unmock`/`vi.hoisted` above all imports; `vi.doMock`, `vi.stubEnv`, `const x = vi.fn()` and other statements below the last import. |
+| No issue/PR number `#123`+ in a comment (CM-11) | rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418` in a React/hydration comment, hex colours with a letter and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
+| No partial assertion on rendered SQL (TE-53) | rule `sql-substring-assertion`, zero tolerance | tests: any partial matcher, `.includes()` or `.length` on rendered SQL (`renderSql().sql`, `captured[n].sql`, aliases, joins, splits); absence checks need `// sql-absence: <reason>` (logged), snapshots are full pins; not seen: other-file helpers, `Array.from`/`reduce` lists, array destructuring | `toBe` the full rendered SQL. |
+| Test imports stay contiguous (TE-1) | rule `imports-contiguous`, zero tolerance | test files and e2e | `vi.mock`/`vi.unmock`/`vi.hoisted` above all imports; `vi.doMock`, `vi.stubEnv`, `const x = vi.fn()` and other statements below the last import. |
 | No `//` or block comment between a JSDoc and its declaration (CM-4) | rule `jsdoc-detached-by-comment`, zero tolerance | all code; directive comments (`oxlint-disable`, `eslint-disable`, `@ts-expect-error`, `@ts-ignore`, `react-doctor-disable`) are skipped, a JSDoc followed by a non-declaration (file header before `vi.mock`/`import`) is skipped; not seen: a helper or blank line between, declarations without a leading keyword (`foo() {}`, properties) | Move the comment above the `/**` or into the JSDoc. |
-| The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
+| Time units come from `shared/config/time.ts` (NC-1) | rule `time-unit-literal`, zero tolerance | `.ts(x)` but `time.ts`: a re-declared unit, a `*` chain with two of 60/24/1000/3600/86400; not seen: one factor (`5 * 60`), `86_400_000`, `.mjs`; segment config (AP-1) is skipped | `10 * MS_PER_MINUTE`; add a missing unit to `time.ts`. |
+| No `server-only` in `entities/*/lib` (EN-1) | rule `server-only-in-entity-lib`, zero tolerance | production `entities/*/lib/**` but `SERVER_ONLY_LIB_EXCEPTIONS` (EN-1 pipelines, legacy `tokenUtils.ts`) | Drop it, or move the code to `server/`/`api.ts`. |
+| No import of a `@deprecated` core export | rule `deprecated-core-import`, zero tolerance | core imports and re-exports, per the installed `.d.ts` JSDoc; not seen: `import * as`, `import()`, `vi.importActual`, a local re-export | Use the replacement the JSDoc names. |
+| The rules above stay switched on | `lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
 

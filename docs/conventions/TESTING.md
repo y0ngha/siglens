@@ -137,7 +137,7 @@ const mockFmpBarsResponse = [{ date: '2026-05-25', open: 100, high: 101, low: 99
 
 #### TE-1 — Imports stay contiguous
 
-Machine-checked (`CONVENTIONS.md` "Enforced rules"). `vi.mock`, `vi.unmock` and `vi.hoisted` go above all imports (Vitest hoists them); any other statement goes below the last import.
+Machine-checked (`CONVENTIONS.md` "Enforced rules", `imports-contiguous`). `vi.mock`/`vi.unmock`/`vi.hoisted` go above (Vitest hoists them).
 
 <a id="TE-2"></a>
 
@@ -186,7 +186,7 @@ When a function starts passing a new argument or dependency to a mocked collabor
 
 #### TE-27 — Never assert by call index
 
-Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. Guard: `mock-call-index`.
+Do not assert by position (guard `mock-call-index`): `clearMocks` is off, so calls from earlier tests and late async calls can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`.
 
 Assert what was written (the key and TTL), not just how many times the collaborator was called.
 
@@ -452,7 +452,7 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header. A rename that silences a new guard is a matcher gap to close, not a fix.
 
-`coreClientExports.test.ts` fails when client-bundle code imports a core value missing from the browser entry (`dist/index.client.js`), with no baseline. A bundle-reachability guard walks value edges only (type-only imports are erased); fix a latent violation's cause instead of baselining it.
+`coreClientExports.test.ts` fails, unbaselined, on client code importing a core value missing from `dist/index.client.js`; it walks value edges only (type imports are erased). Fix a latent violation's cause instead of baselining it.
 
 <a id="TE-64"></a>
 

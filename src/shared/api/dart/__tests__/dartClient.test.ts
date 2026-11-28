@@ -39,6 +39,7 @@ vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: mockGetRedis }));
 
 import { strToU8, zipSync } from 'fflate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     __resetDartClientForTests,
     DART_LIST_PAGE_COUNT,
@@ -365,7 +366,7 @@ describe('dartClient', () => {
             await fetchExecutiveStock('00126380');
             const key = dartDailyCallCounterKey(TODAY_KST);
             expect(redisState.store.get(key)).toBe('2');
-            expect(redisState.ttl.get(key)).toBe(2 * 24 * 60 * 60);
+            expect(redisState.ttl.get(key)).toBe(2 * SECONDS_PER_DAY);
         });
 
         it('uses the KST date, not the UTC date, right after KST midnight', async () => {
@@ -428,7 +429,7 @@ describe('dartClient', () => {
             );
             // 10:00 KST → next midnight is 14 hours away.
             expect(redisState.ttl.get(DART_QUOTA_BREAKER_KEY)).toBe(
-                14 * 60 * 60
+                14 * SECONDS_PER_HOUR
             );
             await expect(
                 fetchExecutiveStock('00126380')

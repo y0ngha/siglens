@@ -48,7 +48,7 @@ entities 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않�
   위젯 모듈로 간다. 도메인 규칙과 화면 어휘를 섞으면 entity가 UI 변경마다 흔들린다.
 - ❌ `entities/notice/lib/noticeStorage.ts`(`localStorage.getItem`) ✅ `widgets/notice-popup/utils/noticeStorage.ts`
 - **허용된 예외:** 저장소를 인자로 주입받아 부수효과를 호출자가 통제하는 파이프라인 단계(예:
-  `lib/analyzeNewsCards.ts`, `lib/ingestNewsForSymbol.ts`)는 `lib/`에 둘 수 있다. 이 경우 파일 JSDoc에 왜 예외인지
+  `lib/analyzeNewsCards.ts`, `lib/ingestNewsForSymbol.ts`)는 `lib/`에 둘 수 있다. 파일 JSDoc에 예외 사유
   (인접 파이프라인 단계, 주입된 저장소, 호출자 공유)를 적는다. 새 예외를 만들지 말고 기존 지역 예외 패턴에 맞춘다.
   DB·FMP·캐시 무효화 같은 I/O 의존성은 `lib/` 안에서 만들지 않고 app 레이어에서 구성해 인자로 주입한다.
 

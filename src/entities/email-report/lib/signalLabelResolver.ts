@@ -1,4 +1,3 @@
-import 'server-only';
 import type { SignalLabelResolver } from '../templates/reportEmailTypes';
 
 /** `shared.enumLabel` 네임스페이스 번역자에서 필요한 두 동작 — next-intl `t`와 `t.has`. */

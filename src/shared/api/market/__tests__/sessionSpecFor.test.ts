@@ -5,6 +5,7 @@ import {
     isRegularSessionOpen,
 } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import {
     sessionSpecFor,
@@ -95,10 +96,10 @@ describe('KR_EQUITY_SESSION.closeMinuteFor', () => {
     it('지평선 밖 날짜는 정상 개장으로 폴백하고 console.warn을 남긴다', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const dayAfterHorizon = new Date(
-            Date.parse(`${KR_CALENDAR_HORIZON}T00:00:00Z`) + 24 * 60 * 60 * 1000
+            Date.parse(`${KR_CALENDAR_HORIZON}T00:00:00Z`) + MS_PER_DAY
         );
         const noonBeyondHorizon = new Date(
-            dayAfterHorizon.getTime() + 2 * 60 * 60 * 1000
+            dayAfterHorizon.getTime() + 2 * MS_PER_HOUR
         );
         expect(closeMinuteFor(noonBeyondHorizon)).toBe(930);
         expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -113,8 +114,7 @@ describe('KR_EQUITY_SESSION.closeMinuteFor', () => {
     it('같은 날짜를 여러 번 물어도 경고는 한 번만 남긴다', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const beyond = new Date(
-            Date.parse(`${KR_CALENDAR_HORIZON}T00:00:00Z`) +
-                3 * 24 * 60 * 60 * 1000
+            Date.parse(`${KR_CALENDAR_HORIZON}T00:00:00Z`) + 3 * MS_PER_DAY
         );
 
         for (let i = 0; i < 12; i += 1) closeMinuteFor(beyond);
@@ -125,7 +125,7 @@ describe('KR_EQUITY_SESSION.closeMinuteFor', () => {
     it('지평선 밖 날짜가 다르면 각각 한 번씩 남긴다', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const base = Date.parse(`${KR_CALENDAR_HORIZON}T00:00:00Z`);
-        const dayMs = 24 * 60 * 60 * 1000;
+        const dayMs = MS_PER_DAY;
 
         closeMinuteFor(new Date(base + 5 * dayMs));
         closeMinuteFor(new Date(base + 5 * dayMs));
@@ -187,7 +187,7 @@ describe('KR_EQUITY_SESSION 특수 거래일', () => {
      */
     it('지평선 해의 연초 첫 거래일과 수능일이 표에 있다', () => {
         const year = Number(KR_CALENDAR_HORIZON.slice(0, 4));
-        const dayMs = 24 * 60 * 60 * 1000;
+        const dayMs = MS_PER_DAY;
         const kinds: string[] = [];
         for (
             let t = Date.UTC(year, 0, 1, 3);
@@ -220,8 +220,7 @@ describe('KR_EQUITY_SESSION 특수 거래일', () => {
     it('지평선 밖 날짜는 09:00 개장으로 폴백하고, 개장·마감 조회를 합쳐 경고는 한 번', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const beyond = new Date(
-            Date.parse(`${KR_CALENDAR_HORIZON}T03:00:00Z`) +
-                4 * 24 * 60 * 60 * 1000
+            Date.parse(`${KR_CALENDAR_HORIZON}T03:00:00Z`) + 4 * MS_PER_DAY
         );
         expect(openMinuteFor(beyond)).toBe(540);
         expect(closeMinuteFor(beyond)).toBe(930);

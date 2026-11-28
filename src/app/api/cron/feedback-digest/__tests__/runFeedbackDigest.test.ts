@@ -1,8 +1,9 @@
 import { runFeedbackDigest } from '@/app/api/cron/feedback-digest/runFeedbackDigest';
 import type { FeedbackDigestRow } from '@/entities/feedback/lib/types';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 const NOW = new Date('2026-11-09T00:05:00Z');
-const DAY = 24 * 60 * 60 * 1000;
+const DAY = MS_PER_DAY;
 
 const row: FeedbackDigestRow = {
     surface: 'siglens',

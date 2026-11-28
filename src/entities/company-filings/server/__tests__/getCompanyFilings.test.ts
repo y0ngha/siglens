@@ -81,6 +81,7 @@ import {
     listCompanyFilings,
     readCompanyFiling,
 } from '@/entities/company-filings/server/getCompanyFilings';
+import { MS_PER_DAY, SECONDS_PER_DAY } from '@/shared/config/time';
 const { SecBodyTimeoutError, SecSlotTimeoutError } = secErrors;
 
 const FOLDER = 'https://www.sec.gov/Archives/edgar/data/1824920';
@@ -817,7 +818,7 @@ describe('결정적 실패는 제목 없는 메타로 캐시된다', () => {
                 cache.writes.find(
                     w => w.key === `sec:filing-meta:v2:${accessionOf(0)}`
                 )?.ttl
-            ).toBe(30 * 24 * 60 * 60);
+            ).toBe(30 * SECONDS_PER_DAY);
             const calls = secCallCount();
             const again = await listCompanyFilings('IONQ');
             if (again.status !== 'ok') throw new Error('expected ok');
@@ -870,7 +871,7 @@ describe('접수 직후 공시의 "없음"은 일시 사유다 (FILING_PUBLICATI
     });
 
     it('기간이 지난 404는 headline null 메타를 30일 캐시하고 pending이 아니다', async () => {
-        const result = await listAt(EDGE + 24 * 60 * 60 * 1000);
+        const result = await listAt(EDGE + MS_PER_DAY);
         expect(result.headlinesPending).toBe(false);
         expect(cache.store.has(`sec:filing-meta:v2:${accessionOf(0)}`)).toBe(
             true

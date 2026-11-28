@@ -1,6 +1,6 @@
 import { parse } from '@babel/parser';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -1563,6 +1563,331 @@ export function sqlAbsenceExemptionsOf(
           );
 }
 
+// ------------------------------------------------------------- NC-1 time units
+
+/** 시간 단위 상수의 단일 출처(CONVENTIONS.md#NC-1). 이 파일만 단위를 숫자로 정의한다. */
+export const TIME_CONSTANTS_FILE = 'src/shared/config/time.ts';
+
+/** `TIME_CONSTANTS_FILE`이 내보내는 단위 상수. 다른 파일이 같은 이름을 다시 선언하면 두 값이 갈린다. */
+export const TIME_UNIT_CONSTANTS: ReadonlySet<string> = new Set([
+    'SECONDS_PER_MINUTE',
+    'MINUTES_PER_HOUR',
+    'SECONDS_PER_HOUR',
+    'HOURS_PER_DAY',
+    'SECONDS_PER_DAY',
+    'SECONDS_PER_YEAR',
+    'MS_PER_SECOND',
+    'MS_PER_MINUTE',
+    'MS_PER_HOUR',
+    'MS_PER_DAY',
+    'SECONDS_PER_HALF_DAY',
+    'SECONDS_PER_QUARTER_DAY',
+]);
+
+/**
+ * 시간 단위 환산 인수. 곱셈 사슬에 이 중 둘 이상이 숫자로 있으면(`24 * 60 * 60 * 1000`, `60 * 1000`) 단위를
+ * 손으로 환산한 것이다. `1000`만 둘(`1000 * 1000`)이면 시간이 아닐 수 있어 세지 않는다. 인수가 하나뿐인
+ * `5 * 60`(5분인지 5시간의 분인지 모른다)과 미리 곱한 `86_400_000`은 판정할 수 없어 보지 않는다.
+ */
+const TIME_UNIT_FACTORS: ReadonlySet<number> = new Set([
+    60, 24, 1000, 3600, 86400,
+]);
+const MS_FACTOR = 1000;
+
+/**
+ * Next.js route segment config. `src/app/CLAUDE.md#AP-1`이 정적 리터럴(`// 1h` 주석)을 강제하므로 상수로 바꾸면
+ * 설정이 조용히 무시된다. 그 값 안의 곱셈은 이 규칙이 세지 않는다(식 자체는 AP-1 위반이다).
+ */
+const ROUTE_SEGMENT_CONFIG: ReadonlySet<string> = new Set([
+    'revalidate',
+    'dynamic',
+    'dynamicParams',
+    'fetchCache',
+    'runtime',
+    'preferredRegion',
+    'maxDuration',
+]);
+
+function isProduct(node: AstNode | null): node is AstNode {
+    return (
+        node !== null &&
+        node.type === 'BinaryExpression' &&
+        node.operator === '*'
+    );
+}
+
+/** 곱셈 사슬(`a * b * c`)의 인수들. 안쪽 곱셈 노드는 `inner`에 적어 사슬 뿌리만 세게 한다. */
+function productFactors(root: AstNode, inner: Set<AstNode>): AstNode[] {
+    return [child(root, 'left'), child(root, 'right')].flatMap(side => {
+        if (side === null) return [];
+        if (!isProduct(side)) return [side];
+        inner.add(side);
+        return productFactors(side, inner);
+    });
+}
+
+function timeUnitFactorCount(factors: readonly AstNode[]): number {
+    const units = factors.flatMap(factor =>
+        factor.type === 'NumericLiteral' &&
+        typeof factor.value === 'number' &&
+        TIME_UNIT_FACTORS.has(factor.value)
+            ? [factor.value]
+            : []
+    );
+    return units.length >= 2 && units.some(value => value !== MS_FACTOR)
+        ? 1
+        : 0;
+}
+
+/** `export const revalidate = …` 같은 segment config 값 안의 노드. */
+function segmentConfigNodes(program: AstNode | null): readonly AstNode[] {
+    if (program === null) return [];
+    return children(program, 'body')
+        .filter(statement => statement.type === 'ExportNamedDeclaration')
+        .flatMap(statement => {
+            const declaration = child(statement, 'declaration');
+            return declaration?.type === 'VariableDeclaration'
+                ? children(declaration, 'declarations')
+                : [];
+        })
+        .flatMap(declarator => {
+            const name = nameOf(child(declarator, 'id'));
+            const init = child(declarator, 'init');
+            return name !== null &&
+                ROUTE_SEGMENT_CONFIG.has(name) &&
+                init !== null
+                ? walk(init)
+                : [];
+        });
+}
+
+/** NC-1 위반 줄: 단위 상수의 재선언과 숫자로 환산한 곱셈 사슬(사슬마다 한 번). */
+export function findTimeUnitLiteralLines(ctx: FileContext): readonly number[] {
+    if (ctx.ast === null) return [];
+    // segment config 값의 곱셈은 처음부터 "안쪽"으로 적어 세지 않는다. `walk`보다 먼저 불러야 파일 순회 캐시가 유지된다.
+    const inner = new Set<AstNode>(
+        segmentConfigNodes(child(ctx.ast, 'program'))
+    );
+    const nodes = walk(ctx.ast);
+    // 뿌리부터 돌므로(`walk`) 바깥 사슬이 안쪽 곱셈을 `inner`에 먼저 적는다.
+    const products = nodes.filter(isProduct).flatMap(node => {
+        if (inner.has(node)) return [];
+        return timeUnitFactorCount(productFactors(node, inner)) > 0
+            ? [node]
+            : [];
+    });
+    const redeclared = nodes.filter(node => {
+        const name =
+            node.type === 'VariableDeclarator'
+                ? nameOf(child(node, 'id'))
+                : null;
+        return name !== null && TIME_UNIT_CONSTANTS.has(name);
+    });
+    return [...products, ...redeclared]
+        .map(node => lineAt(ctx.text, node.start ?? 0))
+        .toSorted((a, b) => a - b);
+}
+
+export function timeUnitLiteralLinesOf(
+    file: string,
+    text: string
+): readonly number[] {
+    const ctx = parsedContext(file, text);
+    return ctx === null ? [] : findTimeUnitLiteralLines(ctx);
+}
+
+// ------------------------------------------------- side-effect import markers
+
+const BOUNDARY_MARKERS: ReadonlySet<string> = new Set([
+    'server-only',
+    'client-only',
+]);
+
+function importSource(node: AstNode): string | null {
+    const source = child(node, 'source');
+    return source !== null && typeof source.value === 'string'
+        ? source.value
+        : null;
+}
+
+/** 가져오는 이름 없이 모듈만 실행하는 `import 'x'`. */
+function isSideEffectImport(node: AstNode, source: string): boolean {
+    return (
+        node.type === 'ImportDeclaration' &&
+        importSource(node) === source &&
+        children(node, 'specifiers').length === 0
+    );
+}
+
+/**
+ * `import 'server-only'`/`'client-only'`가 첫 import가 아니면 1. oxfmt는 부수효과 import를 제자리에 두고 나머지만
+ * 정렬하므로, 표식이 다른 import 아래로 밀리면 그대로 남는다. 표식은 파일이 어느 쪽 번들에 속하는지 선언하는
+ * 첫 줄이라 맨 위에 둔다.
+ */
+function countMisplacedBoundaryMarker(ctx: FileContext): number {
+    const program = ctx.ast === null ? null : child(ctx.ast, 'program');
+    if (program === null) return 0;
+    const imports = children(program, 'body').filter(
+        statement => statement.type === 'ImportDeclaration'
+    );
+    return imports.filter(
+        (statement, index) =>
+            index > 0 &&
+            [...BOUNDARY_MARKERS].some(marker =>
+                isSideEffectImport(statement, marker)
+            )
+    ).length;
+}
+
+const ENTITY_LIB_DIR = /^src\/entities\/[^/]+\/lib\//;
+
+/**
+ * `src/entities/CLAUDE.md#EN-1`의 "허용된 예외": 저장소를 인자로 받는 파이프라인 단계라 `lib/`에 있어도 서버 전용이다.
+ * 문서가 이 파일들을 이름으로 적고, 가드 테스트가 문서와 이 목록이 같은지 본다.
+ */
+export const EN1_INJECTED_PIPELINE_FILES: readonly string[] = [
+    'src/entities/news-article/lib/analyzeNewsCards.ts',
+    'src/entities/news-article/lib/ingestNewsForSymbol.ts',
+];
+
+/**
+ * `lib/`에 있어도 `server-only`를 다는 파일. EN-1 파이프라인 단계 외에 `auth/lib/tokenUtils.ts`가 있다:
+ * `node:crypto` 난수로 토큰을 만들어 순수하지 않고, 표식이 클라이언트 번들에 `node:crypto` 폴리필이 조용히
+ * 섞이는 것을 막는다. EN-1의 순수 원칙에서 벗어난 기존 예외이고, CONVENTIONS.md "Enforced rules" 표가 이름으로 적는다.
+ */
+export const SERVER_ONLY_LIB_EXCEPTIONS: readonly string[] = [
+    ...EN1_INJECTED_PIPELINE_FILES,
+    'src/entities/auth/lib/tokenUtils.ts',
+];
+
+function countServerOnlyImports(ctx: FileContext): number {
+    const program = ctx.ast === null ? null : child(ctx.ast, 'program');
+    if (program === null) return 0;
+    return children(program, 'body').filter(statement =>
+        isSideEffectImport(statement, 'server-only')
+    ).length;
+}
+
+// ------------------------------------------------ deprecated core exports
+
+const CORE_PACKAGE = '@y0ngha/siglens-core';
+const CORE_DIST = path.resolve(
+    __dirname,
+    '../../../../node_modules/@y0ngha/siglens-core/dist'
+);
+const DEPRECATED_TAG = /(?:^|\s)@deprecated\b/;
+const BACKTICK_SPAN = /`[^`]*`/g;
+
+function declaredNames(declaration: AstNode): readonly string[] {
+    if (declaration.type === 'VariableDeclaration') {
+        return children(declaration, 'declarations').flatMap(declarator => {
+            const name = nameOf(child(declarator, 'id'));
+            return name === null ? [] : [name];
+        });
+    }
+    const name = nameOf(child(declaration, 'id'));
+    return name === null ? [] : [name];
+}
+
+/** JSDoc 본문에 `@deprecated` 태그가 있는가. 백틱 안의 `` `@deprecated` ``(다른 필드를 설명하는 문장)는 태그가 아니다. */
+export function hasDeprecatedTag(jsdoc: string): boolean {
+    return DEPRECATED_TAG.test(jsdoc.replace(BACKTICK_SPAN, ''));
+}
+
+/**
+ * `.d.ts` 본문에서 JSDoc에 `@deprecated` 태그가 붙은 최상위 export 이름. 인터페이스 필드의 `@deprecated`는
+ * import로 걸리지 않으니 보지 않는다.
+ */
+export function deprecatedExportsOf(dtsText: string): readonly string[] {
+    const result = parse(dtsText, {
+        sourceType: 'module',
+        plugins: [['typescript', { dts: true }]],
+    });
+    return result.program.body.flatMap(statement => {
+        if (
+            statement.type !== 'ExportNamedDeclaration' ||
+            statement.declaration === null ||
+            statement.declaration === undefined
+        ) {
+            return [];
+        }
+        const jsdoc = (statement.leadingComments ?? []).at(-1);
+        const deprecated =
+            jsdoc !== undefined &&
+            jsdoc.type === 'CommentBlock' &&
+            hasDeprecatedTag(jsdoc.value);
+        // babel 선언 노드는 구조적으로 AstNode와 같다.
+        return deprecated
+            ? declaredNames(statement.declaration as unknown as AstNode)
+            : [];
+    });
+}
+
+function listDts(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) return listDts(full);
+        return entry.name.endsWith('.d.ts') ? [full] : [];
+    });
+}
+
+export interface DeprecatedCoreExports {
+    /** 읽은 `.d.ts` 경로. 비면 설치 경로가 깨진 것이다. */
+    readonly files: readonly string[];
+    readonly names: ReadonlySet<string>;
+}
+
+const deprecatedCache: { value?: DeprecatedCoreExports } = {};
+
+/** 설치된 core의 `dist/**\/*.d.ts`에서 `@deprecated` export를 모은다(한 번만 읽는다). */
+export function loadDeprecatedCoreExports(): DeprecatedCoreExports {
+    if (deprecatedCache.value !== undefined) return deprecatedCache.value;
+    const files = existsSync(CORE_DIST) ? listDts(CORE_DIST) : [];
+    const value = {
+        files,
+        names: new Set(
+            files.flatMap(file =>
+                deprecatedExportsOf(readFileSync(file, 'utf8'))
+            )
+        ),
+    };
+    deprecatedCache.value = value;
+    return value;
+}
+
+const SPECIFIER_SOURCE_KEY: Readonly<Record<string, string>> = {
+    ImportSpecifier: 'imported',
+    ExportSpecifier: 'local',
+};
+
+/** 지정자가 core에서 가리키는 이름: `import { X as Y }`·`export { X as Y } from`의 `X`. */
+function coreNameOf(specifier: AstNode): string | null {
+    const key = SPECIFIER_SOURCE_KEY[specifier.type];
+    const node = key === undefined ? null : child(specifier, key);
+    return node === null ? null : (nameOf(node) ?? stringValueOf(node));
+}
+
+/** core에서 가져오거나 다시 내보내는 이름 중 `deprecated`에 든 것의 수. */
+export function countDeprecatedCoreImports(
+    ctx: FileContext,
+    deprecated: ReadonlySet<string>
+): number {
+    const program = ctx.ast === null ? null : child(ctx.ast, 'program');
+    if (program === null) return 0;
+    return children(program, 'body')
+        .filter(
+            statement =>
+                (statement.type === 'ImportDeclaration' ||
+                    statement.type === 'ExportNamedDeclaration') &&
+                importSource(statement) === CORE_PACKAGE
+        )
+        .flatMap(statement => children(statement, 'specifiers'))
+        .filter(specifier => {
+            const name = coreNameOf(specifier);
+            return name !== null && deprecated.has(name);
+        }).length;
+}
+
 function nextLoopDepth(
     node: AstNode,
     isFunction: boolean,
@@ -1684,6 +2009,45 @@ export const CODE_RULES: readonly CodeRule[] = [
         fix: 'Fix the reported problem instead of suppressing it. Only the files in ALLOWED_LINT_DISABLE_FILES may disable, with a "--" reason.',
         appliesTo: file => isCodeFile(file),
         countFile: countLintDisables,
+    },
+    {
+        key: 'time-unit-literal',
+        docRef: 'CONVENTIONS.md#NC-1',
+        mode: 'zero',
+        fix: 'Import the unit from src/shared/config/time.ts (`10 * MS_PER_MINUTE`, `7 * MS_PER_DAY`) instead of re-declaring it or multiplying 60/24/1000 by hand; add a missing unit there. Route segment config (`export const revalidate`, …) stays a plain literal with a `// 1h` comment (src/app/CLAUDE.md#AP-1) and is not counted.',
+        appliesTo: file =>
+            /\.tsx?$/.test(file) &&
+            isCodeFile(file) &&
+            file !== TIME_CONSTANTS_FILE,
+        countFile: ctx => findTimeUnitLiteralLines(ctx).length,
+    },
+    {
+        key: 'boundary-marker-first',
+        docRef: 'CONVENTIONS.md (Lint and guard rules)',
+        mode: 'zero',
+        fix: "Move `import 'server-only'` / `import 'client-only'` above every other import; the formatter keeps a side-effect import where it is.",
+        appliesTo: file => isCodeFile(file),
+        countFile: countMisplacedBoundaryMarker,
+    },
+    {
+        key: 'server-only-in-entity-lib',
+        docRef: 'src/entities/CLAUDE.md#EN-1',
+        mode: 'zero',
+        fix: "entities/*/lib holds pure functions: drop `import 'server-only'` from a pure module, or move the server code to the slice's server/ or api.ts.",
+        appliesTo: file =>
+            ENTITY_LIB_DIR.test(file) &&
+            !isTestFile(file) &&
+            !SERVER_ONLY_LIB_EXCEPTIONS.includes(file),
+        countFile: countServerOnlyImports,
+    },
+    {
+        key: 'deprecated-core-import',
+        docRef: 'CONVENTIONS.md (Lint and guard rules)',
+        mode: 'zero',
+        fix: 'Import the replacement named in the @deprecated JSDoc of the installed @y0ngha/siglens-core instead.',
+        appliesTo: file => isCodeFile(file),
+        countFile: ctx =>
+            countDeprecatedCoreImports(ctx, loadDeprecatedCoreExports().names),
     },
 ];
 

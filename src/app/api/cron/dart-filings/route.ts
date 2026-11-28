@@ -1,4 +1,5 @@
 import { runDartFilingsIngest } from '@/entities/investor-flows/server/ingestDartFilings';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { DART_CRON_LEASE_NAME, handleLeasedCron } from '../leasedCron';
 import { createDartFilingsDeps } from './createDeps';
 
@@ -7,7 +8,7 @@ import { createDartFilingsDeps } from './createDeps';
  * Redis 명령 3개 × 10초) + 백오프 ≤ 2초씩) + DB 여유 3분(대기열·거래계획 upsert, 상태 저장, 2년 정리) ≈ 25.1분 < 락 TTL 30분.
  * 보통은 호출 상한(실행당 1,500건, 속도 게이트 100ms)에 먼저 닿는다. 숫자는 `route.test.ts`가 실제 상수로 다시 계산한다.
  */
-const DART_FILINGS_DEADLINE_MS = 18 * 60 * 1000;
+const DART_FILINGS_DEADLINE_MS = 18 * MS_PER_MINUTE;
 const DART_FILINGS_LEASE_TTL_SECONDS = 30 * 60;
 
 /**

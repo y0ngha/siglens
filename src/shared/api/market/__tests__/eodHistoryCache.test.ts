@@ -1,7 +1,11 @@
 import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryLru } from '@/shared/cache/memoryLru';
-import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
+import {
+    MS_PER_HOUR,
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+} from '@/shared/config/time';
 import { getEodHistory } from '../eodHistoryCache';
 import type { EodHistoryEntry, EodServeContext } from '../eodHistoryMerge';
 import type { HistoryMemory } from '../historyCache';
@@ -48,7 +52,7 @@ const CTX: EodServeContext = {
     lastClosedThreshold: secondsOf('2026-10-15'),
     fetchFrom: '2026-10-01',
     nowMs: NOW_MS,
-    cooldownMs: 4 * 60 * 60 * MS_PER_SECOND,
+    cooldownMs: 4 * MS_PER_HOUR,
 };
 const OPTIONS: GetBarsOptions = { symbol: 'aapl', timeframe: '1Day' };
 

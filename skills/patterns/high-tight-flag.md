@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [high_tight_flag]
-token_cost: 600
+token_cost: 607
 digest_hash: "0c3e3a06"
-digest_text_hash: "9d341de6"
+digest_text_hash: "1989a96f"
 ---
 
 ## Detection Criteria
@@ -91,7 +91,7 @@ When this pattern is detected, include the following in the analysis response:
 - Throwback toward the pole top after breakout is common, not failure by itself.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the pole top (a confirmed swing high), extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (the lowest confirmed swing low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's 82% is for a half-height target.
+`geometry` = { breakoutLevel: the pole top (a confirmed swing high), extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (the lowest confirmed swing low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's target result is for a half-height target, not the full one.
 
 ### Output
 - keyPrices: pole base, pole top, flag low.

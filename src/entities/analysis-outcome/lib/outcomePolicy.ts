@@ -1,5 +1,7 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
 import {
+    HOURS_PER_DAY,
+    MINUTES_PER_HOUR,
     MS_PER_DAY,
     MS_PER_HOUR,
     MS_PER_MINUTE,
@@ -113,7 +115,7 @@ export const BAR_MINUTES: Readonly<Record<OutcomeTimeframe, number>> = {
     '30Min': 30,
     '1Hour': 60,
     '4Hour': 240,
-    '1Day': 24 * 60,
+    '1Day': HOURS_PER_DAY * MINUTES_PER_HOUR,
 };
 
 export function isTimeframe(value: string): value is OutcomeTimeframe {

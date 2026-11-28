@@ -1,6 +1,5 @@
 import type { Bar } from '@y0ngha/siglens-core';
-
-const MS_PER_SECOND = 1000;
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 /**
  * `date`(UTC `YYYY-MM-DD`) 이하인 봉만 남긴다. `count`는 남은 앞쪽 봉 수 — 지표 배열을

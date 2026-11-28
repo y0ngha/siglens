@@ -195,6 +195,8 @@ skill) flags a missing digest, malformed markers, a stale `digest_hash`, `digest
   and numeric evidence match the implementation, the prompt injection and the cited design doc or measurement; a
   cited measurement states its scope (pooled/daily, n, period) and comes from a source the consumed core release
   exports. When quoting a sentence core prints, copy its qualifiers verbatim or defer to the block; never paraphrase.
+  A digest gives Bulkowski's results in words only: no `%` on a Bulkowski line, no "Measured (Bulkowski", "about as
+  often as not" or "coin flip" (`validate:skills`).
   When a rule, category or gating changes, update the body, the digest and the index grouping together.
   After a body edit, re-author the digest by hand (see PROMPT_DIGEST markers); `skills:digest-update` refuses a body change whose digest text is unchanged.
 - Examples match the condition they illustrate: a "support holds, enter long" example must not use a price below the

@@ -15,6 +15,7 @@ vi.mock('../../api', () => ({
 }));
 
 import type { CacheProvider } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     persistOrCacheProvisional,
     readFromDatabase,
@@ -104,7 +105,7 @@ describe('persistOrCacheProvisional', () => {
         expect(set).toHaveBeenCalledWith(
             expect.stringContaining('AAPL'),
             info,
-            12 * 60 * 60
+            12 * SECONDS_PER_HOUR
         );
     });
 

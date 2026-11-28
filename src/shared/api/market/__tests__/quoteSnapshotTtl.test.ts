@@ -5,10 +5,11 @@ import {
     isUsableSnapshot,
     quoteSnapshotTtlSeconds,
 } from '@/shared/api/market/quoteSnapshotTtl';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 describe('quoteSnapshotTtlSeconds', () => {
     it('장외 TTL(다음 개장까지, 주말엔 최대 24시간)을 상한으로 자른다', () => {
-        expect(quoteSnapshotTtlSeconds(24 * 3600)).toBe(
+        expect(quoteSnapshotTtlSeconds(SECONDS_PER_DAY)).toBe(
             QUOTE_SNAPSHOT_MAX_TTL_SECONDS
         );
     });

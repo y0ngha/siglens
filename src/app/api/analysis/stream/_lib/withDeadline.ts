@@ -1,3 +1,4 @@
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 
 /**
@@ -23,7 +24,7 @@ import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
  *
  * 요청별이 아니라 단일 공유 값이다. 모든 분석 호출이 같은 모델 등급 상한을 쓰므로 괜찮다.
  */
-export const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
+export const STREAM_DEADLINE_MS = 10 * MS_PER_MINUTE;
 
 /**
  * `run(signal)`을 고정 마감과 경주시킨다. 마감을 넘기면 localized 메시지로 reject해

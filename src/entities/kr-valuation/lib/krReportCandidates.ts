@@ -1,3 +1,4 @@
+import { MS_PER_DAY } from '@/shared/config/time';
 import type { KrReportCode } from '../model';
 
 /**
@@ -21,7 +22,6 @@ export interface KrReportCandidate {
 
 /** 마감 며칠 전부터 후보로 올리는가. 마감 직전 2주에 대부분의 회사가 낸다. */
 const WINDOW_OPENS_DAYS_BEFORE_DEADLINE = 21;
-const MS_PER_DAY = 86_400_000;
 
 /** `deadlineYearOffset`: 사업보고서는 결산 다음 해 3월 말이 마감이다. */
 const PERIODS: readonly {

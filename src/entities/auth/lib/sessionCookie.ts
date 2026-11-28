@@ -1,9 +1,10 @@
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import type { AuthSessionRecord, SessionRepository } from '@/shared/db/types';
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 
 /** 세션 수명(초) 기본값 — 30일. DB 행의 `expiresAt`과 쿠키 `maxAge`가 모두 이 값에서 나온다. */
-export const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
+export const DEFAULT_SESSION_TTL_SECONDS = 30 * SECONDS_PER_DAY;
 
 /** 세션 쿠키 `Path` 기본값 — 사이트 전체에 실린다. */
 export const DEFAULT_AUTH_COOKIE_PATH = '/';

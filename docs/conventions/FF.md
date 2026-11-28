@@ -113,21 +113,7 @@ const result = new Array(RSI_PERIOD).fill(null);
 
 ### 1-E. Keep ternary operators simple
 
-Enforced by oxlint `no-nested-ternary`.
-
-```typescript
-// ❌ Nested ternaries are hard to read
-const label = isLoading ? 'Loading...' : isError ? 'Error' : isSuccess ? 'Done' : 'Idle';
-
-// ✅ Replace with early return or object map
-const statusLabel: Record<Status, string> = {
-    loading: 'Loading...',
-    error: 'Error',
-    success: 'Done',
-    idle: 'Idle',
-};
-const label = statusLabel[status];
-```
+Enforced by oxlint `no-nested-ternary`; use an early return or a `Record` lookup (`statusLabel[status]`).
 
 ### 1-F. Write range conditions left to right
 

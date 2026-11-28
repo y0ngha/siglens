@@ -1,4 +1,5 @@
 import { searchNaverNews } from '@/shared/api/naver/naverSearch';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { NaverMarketNewsClient } from '../api/naverMarketNewsClient';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 
@@ -18,13 +19,11 @@ function article(title: string, url: string, daysAgo = 0) {
         originallink: url,
         link: `https://n.news.naver.com/${url}`,
         description: `${title} 요약`,
-        pubDate: new Date(
-            Date.now() - daysAgo * 24 * 60 * 60 * 1000
-        ).toUTCString(),
+        pubDate: new Date(Date.now() - daysAgo * MS_PER_DAY).toUTCString(),
     };
 }
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * MS_PER_DAY;
 
 describe('NaverMarketNewsClient', () => {
     beforeEach(() => {

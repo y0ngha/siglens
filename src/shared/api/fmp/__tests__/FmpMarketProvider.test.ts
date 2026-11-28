@@ -5,7 +5,7 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { MS_PER_SECOND } from '@/shared/config/time';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockFmpGet = fmpGet as unknown as ReturnType<typeof vi.fn>;
 
@@ -168,7 +168,6 @@ describe('FmpMarketProvider', () => {
             });
 
             expect(bars.length).toBeGreaterThan(3);
-            const SECONDS_PER_DAY = 86_400;
             expect(bars.map(b => b.time % SECONDS_PER_DAY)).toEqual(
                 bars.map(() => 0)
             );

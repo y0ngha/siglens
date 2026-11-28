@@ -1,3 +1,4 @@
+import { MS_PER_DAY } from '@/shared/config/time';
 import {
     FUNDAMENTAL_FACT_THRESHOLDS as T,
     FUNDAMENTAL_INDEX_MIN_FACTS,
@@ -5,8 +6,6 @@ import {
     type FundamentalFactsEarningsRow,
     type FundamentalFactsInput,
 } from '../model';
-
-const MS_PER_DAY = 86_400_000;
 
 /** `YYYY-MM-DD` 두 날짜 사이의 일수(b − a). 형식이 틀리면 `null`. */
 function daysBetween(a: string, b: string): number | null {

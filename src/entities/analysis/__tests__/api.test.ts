@@ -116,7 +116,7 @@ vi.mock('@/entities/news-article/lib/newsLookback', async importOriginal => ({
     ...(await importOriginal<
         typeof import('@/entities/news-article/lib/newsLookback')
     >()),
-    NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
+    NEWS_ANALYSIS_LOOKBACK_MS: 30 * MS_PER_DAY,
 }));
 vi.mock(
     '@/entities/news-article/lib/buildAnalysisNewsItems',
@@ -231,6 +231,7 @@ import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesPro
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {
     prewarmTechnical,

@@ -1,4 +1,5 @@
 import { runRegShoIngest } from '@/entities/investor-flows/server/ingestRegSho';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { handleLeasedCron } from '../leasedCron';
 import { createRegShoDeps } from './createDeps';
 
@@ -6,7 +7,7 @@ import { createRegShoDeps } from './createDeps';
  * 마감 4분 + 진행 중 목록 하나 최악 ≈ 62초(요청 30초 × 2회 + 백오프 ≤ 2초) + DB 여유 30초 ≈ 5.5분 < 락 TTL 7분(SERVER.md#CC-7,
  * `route.test.ts`가 실제 상수로 검증). 목록은 수 KB짜리 파일이라 평소에는 백필(5개 시장 × ~42거래일)도 1~2분이면 끝난다.
  */
-const REG_SHO_DEADLINE_MS = 4 * 60 * 1000;
+const REG_SHO_DEADLINE_MS = 4 * MS_PER_MINUTE;
 const REG_SHO_LEASE_TTL_SECONDS = 7 * 60;
 
 /**

@@ -50,6 +50,7 @@ import {
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { hashHubBody } from '@/shared/cache/hubContentStamp';
 import { RSS_FEED_PATH } from '@/shared/config/rssFeed';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import nextConfig from '../../../../../next.config';
 
@@ -362,8 +363,8 @@ describe('GET /api/rss', () => {
                 // 로더가 성공했을 때 키가 없는 카테고리는 제외된다 — 실려야 하는
                 // stock은 최근 기사 시각을 명시한다.
                 newsLatestPublishedAt: {
-                    forex: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-                    stock: new Date(now.getTime() - 60 * 60 * 1000),
+                    forex: new Date(now.getTime() - 30 * MS_PER_DAY),
+                    stock: new Date(now.getTime() - MS_PER_HOUR),
                 },
             })
         );

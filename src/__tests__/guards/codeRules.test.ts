@@ -4,16 +4,26 @@ import { describe, expect, it } from 'vitest';
 import {
     ALLOWED_LINT_DISABLE_FILES,
     CODE_RULES,
+    EN1_INJECTED_PIPELINE_FILES,
+    SERVER_ONLY_LIB_EXCEPTIONS,
     MIN_SCANNED_FILES,
+    TIME_CONSTANTS_FILE,
+    TIME_UNIT_CONSTANTS,
     checkScanFloor,
+    countDeprecatedCoreImports,
+    deprecatedExportsOf,
+    hasDeprecatedTag,
     detachedJsdocLinesOf,
     isTestFile,
     issueRefLinesOf,
+    loadDeprecatedCoreExports,
     scanRepo,
     scanSources,
     sqlAbsenceExemptionsOf,
     sqlSubstringLinesOf,
+    timeUnitLiteralLinesOf,
     type CodeRule,
+    type FileContext,
     type RuleCounts,
 } from './support/codeRules';
 import {
@@ -107,10 +117,22 @@ describe('code rules: live repository', () => {
                             `${file}:${line} asserts only part of a rendered SQL string`
                     )
                 );
+            const timeUnitLines = comparison.regressions
+                .filter(({ rule }) => rule.key === 'time-unit-literal')
+                .flatMap(({ file }) =>
+                    timeUnitLiteralLinesOf(
+                        file,
+                        readFileSync(path.join(ROOT, file), 'utf8')
+                    ).map(
+                        line =>
+                            `${file}:${line} spells a time unit by hand (NC-1)`
+                    )
+                );
             expect([
                 ...describeComparison(comparison),
                 ...issueRefLines,
                 ...sqlLines,
+                ...timeUnitLines,
             ]).toEqual([]);
         },
         SCAN_TIMEOUT_MS
@@ -1542,6 +1564,320 @@ describe('code rules: planted predicates', () => {
                     `${allowed} directive needs a "--" reason`
                 ).toBe(0);
             });
+        });
+    });
+
+    describe('time-unit-literal', () => {
+        it.each([
+            ['ms per day by hand', 'const a = 24 * 60 * 60 * 1000;', 1],
+            ['minutes in ms', 'const a = 10 * 60 * 1000;', 1],
+            ['one minute in ms', 'const a = 60 * 1000;', 1],
+            ['an hour in seconds', 'const a = 60 * 60;', 1],
+            ['a variable times units', 'const a = days * 24 * 60 * 60;', 1],
+            ['a parenthesised chain', 'const a = x / (60 * 60 * 1000);', 1],
+            [
+                'two chains in one sum',
+                'const a = 10 * 60 * 60 + 35 * 60 * 60;',
+                2,
+            ],
+            ['a numeric separator', 'const a = 10 * 60 * 1_000;', 1],
+            ['a re-declared unit', 'const MS_PER_DAY = 86_400_000;', 1],
+            ['a re-declared let', 'let SECONDS_PER_DAY = 86400;', 1],
+            [
+                'route segment config (AP-1 literal)',
+                'export const revalidate = 60 * 60;',
+                0,
+            ],
+            [
+                'maxDuration segment config',
+                'export const maxDuration = 5 * 60 * 1000;',
+                0,
+            ],
+            ['a non-segment export', 'export const TTL = 60 * 60;', 1],
+            ['an unexported revalidate', 'const revalidate = 60 * 60;', 1],
+            ['the shared unit', 'const a = 10 * MS_PER_MINUTE;', 0],
+            ['a single unit factor', 'const a = 5 * 60;', 0],
+            ['not a time unit', 'const a = 1000 * 1000;', 0],
+            [
+                'a constant the shared file lacks',
+                'const MS_PER_YEAR = 365.25 * MS_PER_DAY;',
+                0,
+            ],
+            [
+                'an import of the unit',
+                "import { MS_PER_DAY } from '@/shared/config/time';",
+                0,
+            ],
+            ['text in a string', "const s = '24 * 60 * 60';", 0],
+        ])('%s -> %i', (_name, text, expected) => {
+            expect(countOf('time-unit-literal', PROD_PATH, text)).toBe(
+                expected
+            );
+        });
+
+        it('counts tests too, skips the shared constants file and plain JS', () => {
+            const text = 'const a = 60 * 60 * 1000;';
+            expect(countOf('time-unit-literal', TEST_PATH, text)).toBe(1);
+            expect(
+                countOf('time-unit-literal', TIME_CONSTANTS_FILE, text)
+            ).toBe(0);
+            expect(
+                countOf('time-unit-literal', 'cache-handler/x.mjs', text)
+            ).toBe(0);
+        });
+
+        it('reports the line of each hit', () => {
+            expect(
+                timeUnitLiteralLinesOf(
+                    PROD_PATH,
+                    'const a = 1;\nconst b = 60 * 1000;\nconst MS_PER_HOUR = 3_600_000;\n'
+                )
+            ).toEqual([2, 3]);
+        });
+
+        it('lists exactly the unit constants the shared file exports', () => {
+            const exported = [
+                ...readFileSync(
+                    path.join(ROOT, TIME_CONSTANTS_FILE),
+                    'utf8'
+                ).matchAll(/^export const ([A-Z_]+_PER_[A-Z_]+) =/gm),
+            ].map(match => match[1]);
+            expect(exported.toSorted()).toEqual(
+                [...TIME_UNIT_CONSTANTS].toSorted()
+            );
+        });
+    });
+
+    describe('boundary-marker-first', () => {
+        it.each([
+            [
+                'server-only first',
+                "import 'server-only';\nimport { a } from 'b';\n",
+                0,
+            ],
+            [
+                'client-only first',
+                "import 'client-only';\nimport { a } from 'b';\n",
+                0,
+            ],
+            [
+                'after a directive',
+                "'use server';\nimport 'server-only';\nimport { a } from 'b';\n",
+                0,
+            ],
+            [
+                'server-only second',
+                "import { a } from 'b';\nimport 'server-only';\n",
+                1,
+            ],
+            [
+                'client-only after a type import',
+                "import type { A } from 'b';\nimport 'client-only';\n",
+                1,
+            ],
+            [
+                'a named import of the package',
+                "import { a } from 'b';\nimport { x } from 'server-only';\n",
+                0,
+            ],
+            [
+                'another side-effect import first',
+                "import './globals.css';\nimport 'server-only';\n",
+                1,
+            ],
+            ['only the marker', "import 'server-only';\n", 0],
+            [
+                'a string in a test',
+                "const s = \"import { a } from 'b';\\nimport 'server-only';\";",
+                0,
+            ],
+        ])('%s -> %i', (_name, text, expected) => {
+            expect(countOf('boundary-marker-first', PROD_PATH, text)).toBe(
+                expected
+            );
+        });
+    });
+
+    describe('server-only-in-entity-lib', () => {
+        const LIB = 'src/entities/x/lib/pure.ts';
+        it.each([
+            ['an entity lib module', LIB, "import 'server-only';\n", 1],
+            [
+                'a nested lib module',
+                'src/entities/x/lib/sub/pure.ts',
+                "import 'server-only';\n",
+                1,
+            ],
+            [
+                'an entity server module',
+                'src/entities/x/server/io.ts',
+                "import 'server-only';\n",
+                0,
+            ],
+            [
+                'an entity api',
+                'src/entities/x/api.ts',
+                "import 'server-only';\n",
+                0,
+            ],
+            [
+                'a shared lib module',
+                'src/shared/lib/pure.ts',
+                "import 'server-only';\n",
+                0,
+            ],
+            [
+                'a lib test',
+                'src/entities/x/lib/__tests__/pure.test.ts',
+                "import 'server-only';\n",
+                0,
+            ],
+            [
+                'a lib module without the marker',
+                LIB,
+                "import { a } from 'b';\n",
+                0,
+            ],
+        ])('%s -> %i', (_name, file, text, expected) => {
+            expect(countOf('server-only-in-entity-lib', file, text)).toBe(
+                expected
+            );
+        });
+
+        it('skips each listed exception, and every exception still carries the marker', () => {
+            SERVER_ONLY_LIB_EXCEPTIONS.forEach(file => {
+                const text = readFileSync(path.join(ROOT, file), 'utf8');
+                expect(text, `${file} no longer needs an exception`).toContain(
+                    "import 'server-only';"
+                );
+                expect(countOf('server-only-in-entity-lib', file, text)).toBe(
+                    0
+                );
+            });
+            expect(SERVER_ONLY_LIB_EXCEPTIONS).toContain(
+                'src/entities/auth/lib/tokenUtils.ts'
+            );
+        });
+
+        it('skips the EN-1 injected-repository pipeline files the doc names', () => {
+            const en1 = readFileSync(
+                path.join(ROOT, 'src/entities/CLAUDE.md'),
+                'utf8'
+            );
+            EN1_INJECTED_PIPELINE_FILES.forEach(file => {
+                expect(en1, `${file} must be named in EN-1`).toContain(
+                    `lib/${path.basename(file)}`
+                );
+                expect(
+                    countOf(
+                        'server-only-in-entity-lib',
+                        file,
+                        "import 'server-only';\n"
+                    )
+                ).toBe(0);
+            });
+        });
+    });
+
+    describe('deprecated-core-import', () => {
+        const DTS = [
+            '/** @deprecated Use {@link Tier}. */',
+            'export type UserTier = Tier;',
+            '/** @internal @deprecated `f(locale)`을 쓴다. */',
+            'export declare const OLD_PROMPT: string;',
+            '/** Mentions the `@deprecated` alias of another field. */',
+            'export declare function current(): void;',
+            '/**',
+            ' * Long description.',
+            ' * @deprecated Gone next major.',
+            ' */',
+            'export declare function oldFn(): void;',
+            'export interface Holder {',
+            '    /** @deprecated a field, not an import */',
+            '    field: string;',
+            '}',
+            'export declare const a: number, b: number;',
+        ].join('\n');
+
+        it('reads @deprecated tags of top-level exports from a .d.ts', () => {
+            expect(deprecatedExportsOf(DTS)).toEqual([
+                'UserTier',
+                'OLD_PROMPT',
+                'oldFn',
+            ]);
+        });
+
+        const deprecated = new Set(['UserTier', 'oldFn']);
+        const base = CODE_RULES.find(
+            rule => rule.key === 'deprecated-core-import'
+        );
+        // 설치된 core가 무엇을 폐기했든 같은 결과가 나오게, 폐기 목록만 바꾼 규칙으로 스캔한다.
+        const planted: readonly CodeRule[] =
+            base === undefined
+                ? []
+                : [
+                      {
+                          ...base,
+                          countFile: (ctx: FileContext) =>
+                              countDeprecatedCoreImports(ctx, deprecated),
+                      },
+                  ];
+
+        it.each([
+            [
+                'a type import',
+                "import type { UserTier } from '@y0ngha/siglens-core';",
+                1,
+            ],
+            [
+                'an aliased import',
+                "import { oldFn as legacy, current } from '@y0ngha/siglens-core';",
+                1,
+            ],
+            [
+                'a re-export',
+                "export { UserTier } from '@y0ngha/siglens-core';",
+                1,
+            ],
+            [
+                'two in one import',
+                "import { type UserTier, oldFn } from '@y0ngha/siglens-core';",
+                2,
+            ],
+            [
+                'a current symbol',
+                "import { current } from '@y0ngha/siglens-core';",
+                0,
+            ],
+            ['another package', "import { oldFn } from 'other';", 0],
+            ['a local of the same name', 'const oldFn = () => 1;', 0],
+        ])('%s -> %i', (_name, text, expected) => {
+            expect(planted).toHaveLength(1);
+            expect(
+                scanSources([{ path: PROD_PATH, text }], planted).counts[
+                    'deprecated-core-import'
+                ]?.[PROD_PATH] ?? 0
+            ).toBe(expected);
+        });
+
+        it('finds every @deprecated top-level export in the installed core (not vacuous)', () => {
+            const { files, names } = loadDeprecatedCoreExports();
+            expect(files.length).toBeGreaterThan(10);
+            // AST와 무관하게 텍스트로 센다: JSDoc 바로 뒤의 `export` 한 줄.
+            const EXPORT_AFTER_JSDOC =
+                /\/\*\*((?:(?!\*\/)[\s\S])*)\*\/\s*\nexport (?:declare )?(?:const|let|function|type|interface|class|abstract class|enum) (\w+)/g;
+            const byText = new Set(
+                files.flatMap(file =>
+                    [...readFileSync(file, 'utf8').matchAll(EXPORT_AFTER_JSDOC)]
+                        .filter(match => hasDeprecatedTag(match[1] ?? ''))
+                        .map(match => match[2] ?? '')
+                )
+            );
+            expect([...names].toSorted()).toEqual([...byText].toSorted());
+            const anyTag = files.some(file =>
+                readFileSync(file, 'utf8').includes('@deprecated')
+            );
+            expect(names.size > 0).toBe(anyTag);
         });
     });
 

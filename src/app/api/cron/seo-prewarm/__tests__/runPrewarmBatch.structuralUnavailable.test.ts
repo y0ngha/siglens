@@ -145,6 +145,7 @@ vi.mock('@/entities/options-chain/api', () => ({
 }));
 
 import { lastCompletedEtCloseWithBuffer } from '@/entities/seo-snapshot/lib/freshness';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { runPrewarmBatch } from '../runPrewarmBatch';
 
 const FIXED_NOW = new Date('2026-07-25T13:00:00.000Z');
@@ -225,7 +226,7 @@ describe('구조적 불가 탭이 심볼을 영구 stale로 만들지 않는다'
     it('확정된 탭 때문에 거짓 never 경보를 내지 않는다', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         // technical은 오래전 생성(=stale이지만 never는 아님), congress는 행 없음.
-        const LONG_AGO = new Date(FIXED_NOW.getTime() - 72 * 60 * 60 * 1000);
+        const LONG_AGO = new Date(FIXED_NOW.getTime() - 72 * MS_PER_HOUR);
         mockFindGeneratedAtMap.mockResolvedValue(
             new Map([['ALAB:technical', LONG_AGO]])
         );

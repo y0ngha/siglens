@@ -37,6 +37,7 @@ import type {
     MailAlertSignalLabelResolver,
 } from '@/entities/mail-alert/templates/mailAlertEmailTypes';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     redactDbErrorForLog,
     redactedErrorMessage,
@@ -74,7 +75,7 @@ import {
  * 한 번의 실행이 새 구독자 처리를 시작할 수 있는 시간. 시간당 cron의 다음 실행(08시 최종 슬롯은 한 시간 뒤)과
  * 겹치기 전에 멈춘다. 마감 뒤 남은 구독자는 선점하지 않으므로 기록 없이 그날을 건너뛴다(로그로 남긴다).
  */
-export const MAIL_ALERT_DEADLINE_MS = 20 * 60 * 1000;
+export const MAIL_ALERT_DEADLINE_MS = 20 * MS_PER_MINUTE;
 
 /** 동시에 처리하는 구독자 수. 발송 속도는 공유 `ThrottledEmailDispatcher`가 따로 묶는다. */
 export const MAIL_ALERT_WORKERS = 4;

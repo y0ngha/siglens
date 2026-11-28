@@ -21,6 +21,7 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { CRYPTO_DESCRIPTOR } from '@/shared/config/marketProfile/crypto';
 import { KR_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/krEquity';
 import { US_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/usEquity';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_OPERATOR, METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
 import {
     HEADING_SECTION,
@@ -421,7 +422,7 @@ describe('MethodologyPage', () => {
 
         it('has a newest entry dated the same KST day as METHODOLOGY_UPDATED_AT', () => {
             const kstDay = new Date(
-                METHODOLOGY_UPDATED_AT.getTime() + 9 * 60 * 60 * 1000
+                METHODOLOGY_UPDATED_AT.getTime() + 9 * MS_PER_HOUR
             )
                 .toISOString()
                 .slice(0, 10);
