@@ -1,6 +1,7 @@
 import type { SignalType } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import { formatDate } from '@/entities/email-report/templates/emailFormat';
+import { formatAlertPrice } from '@/entities/mail-alert/lib/formatAlertPrice';
 import type {
     MailAlertLinkAuth,
     MailAlertTopic,
@@ -19,7 +20,6 @@ import type {
 import type { Locale } from '@/shared/i18n/locales';
 import { displayTicker } from '@/shared/lib/displayTicker';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface MailAlertsBodyProps {
@@ -113,8 +113,8 @@ async function labelTopics(
 }
 
 /**
- * 진행 중인 알림 한 건은 조건 한 문장과 설명 줄(기준, 만든 날과 그때 가격, 유지 기간)이다. 가격은 종목의 통화로,
- * 날짜는 로케일로 쓴다. 분석 기준 알림인데 분석 시각이 없으면 기준 줄은 날짜를 지어내지 않고 뺀다.
+ * 진행 중인 알림 한 건은 조건 한 문장과 설명 줄(기준, 만든 날과 그때 가격, 유지 기간)이다. 가격은 대화의 알림 카드와
+ * 같은 서식(`formatAlertPrice`, 시장 프로필의 통화)으로, 날짜는 로케일로 쓴다. 분석 기준 알림인데 분석 시각이 없으면 기준 줄은 날짜를 지어내지 않고 뺀다.
  */
 async function labelPriceAlerts(
     alerts: readonly PriceAlertView[],
@@ -123,7 +123,7 @@ async function labelPriceAlerts(
     if (alerts.length === 0) return [];
     const t = await getTranslations('app.email-report.alerts');
     const price = (alert: PriceAlertView, value: number) =>
-        formatCurrencyForSymbol(value, alert.symbol, locale);
+        formatAlertPrice(value, alert.market);
     const conditionText = (alert: PriceAlertView): string => {
         const { condition } = alert;
         const symbol = displayTicker(alert.symbol);
@@ -206,10 +206,9 @@ async function labelFiredPriceAlerts(
                       text: t('priceAlertFired', {
                           symbol: displayTicker(alert.symbol),
                           closeDate: formatDate(alert.firedSession, locale),
-                          close: formatCurrencyForSymbol(
+                          close: formatAlertPrice(
                               alert.firedClose,
-                              alert.symbol,
-                              locale
+                              alert.market
                           ),
                       }),
                   },

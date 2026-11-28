@@ -78,6 +78,18 @@ describe('extractConversationAnalyses', () => {
         ]);
     });
 
+    it('core가 회원 시간대로 바꿔 저장한 generatedAt(`… KST`)을 ISO로 되돌려 읽는다', () => {
+        const rows = pair(1, 'c1', 'NVDA', technical('2026-11-28 15:44 KST'));
+        expect(extractConversationAnalyses(rows)).toEqual([
+            {
+                symbol: 'NVDA',
+                generatedAt: '2026-11-28T06:44:00.000Z',
+                analysis: { trend: 'bullish' },
+                seq: 2,
+            },
+        ]);
+    });
+
     it('run_fresh_analysis 결과도 읽는다', () => {
         const rows = pair(
             1,

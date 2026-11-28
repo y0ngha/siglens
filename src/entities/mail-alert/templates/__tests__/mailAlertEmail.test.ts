@@ -627,7 +627,7 @@ describe('가격대 알림 섹션', () => {
         );
 
         expect(message.text).toContain(
-            'AAPL의 11월 24일 종가가 알림 가격 US$180.00 이하로 내려갔어요. (종가 US$179.50)'
+            'AAPL의 11월 24일 종가가 알림 가격 $180.00 이하로 내려갔어요. (종가 $179.50)'
         );
         expect(message.html).toContain(`${SITE}/AAPL?utm_source=email`);
         expect(message.html).toContain(
@@ -644,22 +644,22 @@ describe('가격대 알림 섹션', () => {
         );
 
         expect(text).toContain(
-            '종가가 알림 가격 US$200.00 이상으로 올라갔어요. (종가 US$201.25)'
+            '종가가 알림 가격 $200.00 이상으로 올라갔어요. (종가 $201.25)'
         );
     });
 
     it.each([
         {
             position: 'inside',
-            sentence: '알림 구간 US$178.00~US$181.50 안에 들어왔어요.',
+            sentence: '알림 구간 $178.00~$181.50 안에 들어왔어요.',
         },
         {
             position: 'below',
-            sentence: '알림 구간 US$178.00~US$181.50 아래로 내려왔어요.',
+            sentence: '알림 구간 $178.00~$181.50 아래로 내려왔어요.',
         },
         {
             position: 'above',
-            sentence: '알림 구간 US$178.00~US$181.50 위로 올라왔어요.',
+            sentence: '알림 구간 $178.00~$181.50 위로 올라왔어요.',
         },
     ] as const)(
         '구간 알림은 코어가 판정한 위치($position)에 맞는 문장을 쓴다',
@@ -712,7 +712,7 @@ describe('가격대 알림 섹션', () => {
     it('만든 날과 그때 가격, 이번 한 번으로 끝난다는 문구를 싣는다', () => {
         const text = textOf(priceAlertItem());
 
-        expect(text).toContain('알림을 만든 날 11월 20일, 그때 가격 US$190.50');
+        expect(text).toContain('알림을 만든 날 11월 20일, 그때 가격 $190.50');
         expect(text).toContain('가격대 알림은 한 번 알리면 끝나요.');
     });
 
@@ -989,16 +989,16 @@ describe('담은 종목에서 달라진 점 섹션', () => {
         ).text;
 
         expect(text).toContain(
-            '11월 24일에 지지선 US$180.00 이하로 내려와 마감했어요. (종가 US$178.50)'
+            '11월 24일에 지지선 $180.00 이하로 내려와 마감했어요. (종가 $178.50)'
         );
         expect(text).toContain(
-            '11월 24일에 지지선 US$180.00 위로 올라와 마감했어요. (종가 US$181.00)'
+            '11월 24일에 지지선 $180.00 위로 올라와 마감했어요. (종가 $181.00)'
         );
         expect(text).toContain(
-            '11월 24일에 저항선 US$190.00 이상으로 올라와 마감했어요. (종가 US$191.00)'
+            '11월 24일에 저항선 $190.00 이상으로 올라와 마감했어요. (종가 $191.00)'
         );
         expect(text).toContain(
-            '11월 24일에 저항선 US$190.00 아래로 내려와 마감했어요. (종가 US$189.00)'
+            '11월 24일에 저항선 $190.00 아래로 내려와 마감했어요. (종가 $189.00)'
         );
         expect(text).toContain('기준: 11월 20일 AI 분석의 지지선');
         expect(text).toContain('기준: 11월 20일 AI 분석의 저항선');
@@ -1011,12 +1011,12 @@ describe('담은 종목에서 달라진 점 섹션', () => {
         ]).text;
 
         expect(text).toContain(
-            '11월 24일에 진입 구간 US$170.00~US$175.00 안에서 마감했어요. (종가 US$172.00)'
+            '11월 24일에 진입 구간 $170.00~$175.00 안에서 마감했어요. (종가 $172.00)'
         );
-        expect(text).toContain('US$175.00 위에서 마감했어요.');
-        expect(text).toContain('US$175.00 아래에서 마감했어요.');
+        expect(text).toContain('$175.00 위에서 마감했어요.');
+        expect(text).toContain('$175.00 아래에서 마감했어요.');
         expect(text).toContain(
-            '11월 24일에 무효화 기준 US$165.00 이하에서 마감했어요. (종가 US$164.00)'
+            '11월 24일에 무효화 기준 $165.00 이하에서 마감했어요. (종가 $164.00)'
         );
         expect(text).toContain('기준: 11월 20일 AI 분석의 진입 구간');
         expect(text).toContain('기준: 11월 20일 AI 분석의 무효화 기준');

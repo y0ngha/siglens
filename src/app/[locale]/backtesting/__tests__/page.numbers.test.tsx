@@ -246,7 +246,7 @@ describe('/backtesting display rules', () => {
             /상반기|하반기|분기|올해|연초|월간|연간|YTD|\d{4}년\s*\d{1,2}월/
         );
         // 기간은 실행 전체(월 단위 범위) 하나만 적힌다.
-        expect(text).toContain('2024.11 – 2026.11');
+        expect(text).toContain('2024.11~2026.11');
     });
 
     it('has no claim words anywhere in the rendered page', async () => {

@@ -4954,5 +4954,6 @@
     "widgets.backtesting.record.row": "05f89d089b5c",
     "widgets.backtesting.record.scope": "37852c90e528",
     "widgets.chart.StockChart.referenceDistance": "af76f59a0ee5",
-    "widgets.chart.StockChart.referenceDistanceOf": "fda4c9e68bf9"
+    "widgets.chart.StockChart.referenceDistanceOf": "fda4c9e68bf9",
+    "widgets.backtesting.hero.period": "b3ff20ba671e"
 }

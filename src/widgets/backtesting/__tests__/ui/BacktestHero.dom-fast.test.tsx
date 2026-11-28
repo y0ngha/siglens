@@ -9,7 +9,7 @@ const STATS = makeStats({
 describe('BacktestHero', () => {
     it('renders the run period as months', () => {
         render(<BacktestHero stats={STATS} />);
-        expect(screen.getByText(/2024.11 – 2026.11/)).toBeInTheDocument();
+        expect(screen.getByText(/2024\.11~2026\.11/)).toBeInTheDocument();
     });
 
     it('renders the heading and the ticker count in the lead', () => {
