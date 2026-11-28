@@ -15,6 +15,7 @@ import type {
 } from '@/entities/chat-conversation/types';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { AI_RAISED_CONTROL } from '../aiSurfaceStyles';
@@ -92,7 +93,7 @@ export function SinceEarlierCard({
                         <SymbolCard
                             key={result.symbol}
                             result={result}
-                            name={labels[result.symbol] ?? result.symbol}
+                            name={labels[result.symbol]}
                             onAsk={onAsk}
                             asking={asking}
                         />
@@ -105,7 +106,7 @@ export function SinceEarlierCard({
 
 interface SymbolCardProps {
     readonly result: ChatSymbolChangesResult;
-    readonly name: string;
+    readonly name: string | undefined;
     readonly onAsk: (text: string) => void;
     readonly asking: boolean;
 }
@@ -140,13 +141,23 @@ function SymbolCardView({
     const [now] = useState(() => new Date());
     const [asked, setAsked] = useState(false);
     const analysisDate = formatTradingDate(result.analyzedDate, locale, now);
-    const askLabel = t('sinceEarlier.askLabel', { name });
+    // 라벨을 못 찾았거나 코드와 같은 이름은 이름이 없는 것으로 본다 — 코드만 보인다.
+    const code = displayTicker(result.symbol);
+    const trimmedName = name?.trim() ?? '';
+    const hasDistinctName =
+        trimmedName !== '' &&
+        trimmedName !== result.symbol &&
+        trimmedName !== code;
+    const askLabel = t('sinceEarlier.askLabel', {
+        name: hasDistinctName ? trimmedName : code,
+    });
     const handleAsk = (): void => {
         if (asked || asking) return;
         setAsked(true);
         onAsk(
             t('sinceEarlier.askPrompt', {
-                name,
+                hasName: hasDistinctName ? 'yes' : 'no',
+                name: trimmedName,
                 symbol: result.symbol,
                 date: analysisDate,
             })
@@ -158,7 +169,10 @@ function SymbolCardView({
             className={cn(SURFACE_CARD, 'p-4 text-secondary-200')}
         >
             <p id={titleId} className="text-sm font-medium text-secondary-100">
-                {t('sinceEarlier.title', { name, date: analysisDate })}
+                {t('sinceEarlier.title', {
+                    name: hasDistinctName ? trimmedName : code,
+                    date: analysisDate,
+                })}
             </p>
             {result.status === 'too_old' ? (
                 <p className="mt-2 text-sm leading-6 text-secondary-300">

@@ -6613,7 +6613,7 @@
                 "tooOld": "This analysis is too old to compare. Run a new one.",
                 "ask": "Ask what changed",
                 "askLabel": "Ask what changed for {name}",
-                "askPrompt": "What changed for {name} ({symbol}) since the {date} analysis?",
+                "askPrompt": "What changed for {hasName, select, yes {{name} ({symbol})} other {{symbol}}} since the {date} analysis?",
                 "announce": "Changes since the analysis are shown below"
             }
         }

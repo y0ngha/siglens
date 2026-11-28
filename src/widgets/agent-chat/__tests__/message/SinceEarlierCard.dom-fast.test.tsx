@@ -14,6 +14,7 @@ import type {
 } from '@/entities/chat-conversation/types';
 import { SinceEarlierCard } from '@/widgets/agent-chat/message/SinceEarlierCard';
 import en from '../../../../../messages/en.json';
+import ja from '../../../../../messages/ja.json';
 import ko from '../../../../../messages/ko.json';
 
 const CONVERSATION_ID = '11111111-1111-1111-1111-111111111111';
@@ -38,7 +39,7 @@ const changes = (over: Partial<ChatSymbolChanges> = {}): ChatSymbolChanges => ({
 function renderCard(
     results: ChatSymbolChangesResult[],
     props: Partial<React.ComponentProps<typeof SinceEarlierCard>> = {},
-    locale: 'ko' | 'en' = 'ko'
+    locale: 'ko' | 'en' | 'ja' = 'ko'
 ) {
     action.mockResolvedValue(results);
     const onAsk = vi.fn();
@@ -47,7 +48,7 @@ function renderCard(
         <QueryClientProvider client={new QueryClient()}>
             <NextIntlClientProvider
                 locale={locale}
-                messages={locale === 'en' ? en : ko}
+                messages={{ ko, en, ja }[locale]}
             >
                 <SinceEarlierCard
                     conversationId={CONVERSATION_ID}
@@ -355,7 +356,69 @@ describe('SinceEarlierCard', () => {
             fireEvent.click(button);
             expect(onAsk).toHaveBeenCalledTimes(1);
             expect(onAsk).toHaveBeenCalledWith(
-                '엔비디아(NVDA) 11월 18일 분석 이후 달라진 점을 알려 줘'
+                '엔비디아 (NVDA) 11월 18일 분석 이후 달라진 점을 알려 줘'
+            );
+        });
+
+        it('이름이 없는 종목은 코드만 쓴다(한국 종목은 접미사를 붙인 원문 심볼 그대로 보낸다)', async () => {
+            const { onAsk } = renderCard(
+                [changes({ symbol: '005930.KS', marketProfile: 'kr-equity' })],
+                { labels: {} }
+            );
+            const button = await screen.findByRole('button', {
+                name: '005930 달라진 점 물어보기',
+            });
+            fireEvent.click(button);
+            expect(onAsk).toHaveBeenCalledWith(
+                '005930.KS 11월 18일 분석 이후 달라진 점을 알려 줘'
+            );
+        });
+
+        it('이름이 없는 한국 종목의 제목은 접미사 없는 코드를 쓴다', async () => {
+            renderCard(
+                [changes({ symbol: '005930.KS', marketProfile: 'kr-equity' })],
+                { labels: {} }
+            );
+            const region = await screen.findByRole('region');
+            expect(region).toHaveAccessibleName(/^005930\b/);
+            expect(region).not.toHaveAccessibleName(/\.KS/);
+        });
+
+        it('이름이 코드와 같으면 코드만 쓴다', async () => {
+            const { onAsk } = renderCard([changes()], {
+                labels: { NVDA: 'NVDA' },
+            });
+            fireEvent.click(await screen.findByRole('button'));
+            expect(onAsk).toHaveBeenCalledWith(
+                'NVDA 11월 18일 분석 이후 달라진 점을 알려 줘'
+            );
+        });
+
+        it('한국 종목에 이름이 있으면 이름과 원문 심볼을 보낸다', async () => {
+            const { onAsk } = renderCard(
+                [changes({ symbol: '005930.KS', marketProfile: 'kr-equity' })],
+                { labels: { '005930.KS': '삼성전자' } }
+            );
+            const button = await screen.findByRole('button', {
+                name: '삼성전자 달라진 점 물어보기',
+            });
+            fireEvent.click(button);
+            expect(onAsk).toHaveBeenCalledWith(
+                '삼성전자 (005930.KS) 11월 18일 분석 이후 달라진 점을 알려 줘'
+            );
+        });
+
+        it('일본어는 전각 괄호로 이름과 코드를 묶고, 이름이 없으면 코드만 쓴다', async () => {
+            const named = renderCard([changes()], {}, 'ja');
+            fireEvent.click(await screen.findByRole('button'));
+            expect(named.onAsk).toHaveBeenCalledWith(
+                expect.stringMatching(/^엔비디아（NVDA）の/)
+            );
+            named.unmount();
+            const bare = renderCard([changes()], { labels: {} }, 'ja');
+            fireEvent.click(await screen.findByRole('button'));
+            expect(bare.onAsk).toHaveBeenCalledWith(
+                expect.stringMatching(/^NVDAの/)
             );
         });
 

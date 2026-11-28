@@ -122,7 +122,7 @@ describe('카드의 문구', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                '애플(AAPL) 종가가 $180.00 이하로 내려가면 메일로 알려 드려요.'
+                '애플 (AAPL) 종가가 $180.00 이하로 내려가면 메일로 알려 드려요.'
             )
         ).toBeInTheDocument();
         expect(
@@ -152,7 +152,7 @@ describe('카드의 문구', () => {
 
         expect(
             await screen.findByText(
-                '애플(AAPL) 종가가 $200.00 이상으로 올라가면 메일로 알려 드려요.'
+                '애플 (AAPL) 종가가 $200.00 이상으로 올라가면 메일로 알려 드려요.'
             )
         ).toBeInTheDocument();
     });
@@ -160,11 +160,11 @@ describe('카드의 문구', () => {
     it.each([
         [
             'from_above',
-            '애플(AAPL) 종가가 $178.00~$181.50 구간에 들어오거나 그 아래로 내려가면 메일로 알려 드려요.',
+            '애플 (AAPL) 종가가 $178.00~$181.50 구간에 들어오거나 그 아래로 내려가면 메일로 알려 드려요.',
         ],
         [
             'from_below',
-            '애플(AAPL) 종가가 $178.00~$181.50 구간에 들어오거나 그 위로 올라가면 메일로 알려 드려요.',
+            '애플 (AAPL) 종가가 $178.00~$181.50 구간에 들어오거나 그 위로 올라가면 메일로 알려 드려요.',
         ],
     ] as const)(
         '진입 구간(%s)은 닿거나 지나는 쪽을 말한다',
@@ -258,7 +258,7 @@ describe('카드의 문구', () => {
 
         expect(
             await screen.findByText(
-                '삼성전자(005930) 종가가 ₩65,000 이하로 내려가면 메일로 알려 드려요.'
+                '삼성전자 (005930) 종가가 ₩65,000 이하로 내려가면 메일로 알려 드려요.'
             )
         ).toBeInTheDocument();
     });
@@ -269,6 +269,20 @@ describe('카드의 문구', () => {
         expect(
             await screen.findByText(/^AAPL 종가가 \$180\.00 이하로/)
         ).toBeInTheDocument();
+    });
+
+    it('이름이 코드와 같으면 코드 하나만 쓴다', async () => {
+        open(MEMBER_READY, block({}, 'AAPL'));
+
+        expect(
+            await screen.findByText(/^AAPL 종가가 \$180\.00 이하로/)
+        ).toBeInTheDocument();
+    });
+
+    it('한국 종목이 이름 없이 오면 단축 코드만 쓴다', async () => {
+        open(MEMBER_READY, block({ symbol: '005930.KS', market: 'kr' }, null));
+
+        expect(await screen.findByText(/^005930 종가가/)).toBeInTheDocument();
     });
 
     it('투자 조언 문구가 없다(무엇이 울리는지만 말한다)', async () => {
@@ -292,7 +306,7 @@ describe('만든 뒤에는 저장된 값을 보인다', () => {
 
         expect(
             await screen.findByText(
-                '애플(AAPL) 종가가 $175.00 이하로 내려가면 메일로 알려 드려요.'
+                '애플 (AAPL) 종가가 $175.00 이하로 내려가면 메일로 알려 드려요.'
             )
         ).toBeInTheDocument();
         expect(

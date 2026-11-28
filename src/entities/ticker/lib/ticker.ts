@@ -75,6 +75,22 @@ export function shouldShowEnglishName(
 }
 
 /**
+ * 종목 표기의 단일 규칙 — `이름 (코드)`. 이름이 없거나(공백 포함) 코드와 같으면 코드 하나.
+ * 호출자가 원문 심볼(`000660.KS`)도 갖고 있으면 `rawSymbol`을 넘겨 그것과 같은 이름도 접는다.
+ * 메일(`reportSymbolLabel`)과 에이전트 카드가 같은 표기를 쓰도록 여기 하나만 둔다.
+ */
+export function formatSymbolLabel(
+    code: string,
+    name: string | null | undefined,
+    rawSymbol?: string
+): string {
+    const trimmed = name?.trim() ?? '';
+    return trimmed === '' || trimmed === code || trimmed === rawSymbol
+        ? code
+        : `${trimmed} (${code})`;
+}
+
+/**
  * 자산의 표준 표시 문자열.
  *
  * `locale`이 기본 로케일이 아니면 **한국어명을 앞세우지 않는다.** 예전에는

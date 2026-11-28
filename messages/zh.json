@@ -6613,7 +6613,7 @@
                 "tooOld": "距离该分析已过久，无法比较。请重新分析。",
                 "ask": "询问变化",
                 "askLabel": "询问变化（{name}）",
-                "askPrompt": "{name}（{symbol}）自{date}的分析以来有什么变化",
+                "askPrompt": "{hasName, select, yes {{name}（{symbol}）} other {{symbol}}}自{date}的分析以来有什么变化",
                 "announce": "分析以来的变化已显示在下方"
             }
         }

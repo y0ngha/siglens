@@ -3988,7 +3988,7 @@
                 "announce": "분석 이후 달라진 점을 아래에 보여 드려요",
                 "ask": "달라진 점 물어보기",
                 "askLabel": "{name} 달라진 점 물어보기",
-                "askPrompt": "{name}({symbol}) {date} 분석 이후 달라진 점을 알려 줘",
+                "askPrompt": "{hasName, select, yes {{name} ({symbol})} other {{symbol}}} {date} 분석 이후 달라진 점을 알려 줘",
                 "noneWithLevels": "그 뒤로 추세 판정, 새 신호, 분석 가격대 기준으로 달라진 점은 없어요 ({date} 종가)",
                 "noneWithoutLevels": "그 뒤로 추세 판정과 새 신호 기준으로 달라진 점은 없어요 ({date} 종가)",
                 "partialDays": "신호나 종가를 확인하지 못한 거래일이 {count}일 있어요",

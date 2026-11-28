@@ -144,6 +144,21 @@ describe('proposePriceAlertTool', () => {
     afterEach(() => vi.useRealTimers());
 
     describe('가격 기준', () => {
+        it('영문 이름이 티커와 같으면 카드 이름은 null(코드만 보인다)', async () => {
+            m.asset.mockResolvedValue({ symbol: 'AAPL', name: 'AAPL' });
+
+            const { emitted } = await propose(
+                { symbol: 'AAPL', basis: 'price_below', price: 180 },
+                MEMBER,
+                true,
+                'en'
+            );
+
+            const block = emitted[0]?.block;
+            if (!isChatPriceAlertProposalBlock(block)) throw new Error('block');
+            expect(block.name).toBeNull();
+        });
+
         it('가격 아래 알림을 제안만 한다 — 서명된 카드를 내고, 저장소에는 쓰지 않는다', async () => {
             const { result, emitted } = await propose({
                 symbol: 'aapl',
