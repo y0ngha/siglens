@@ -52,7 +52,9 @@ export const SINCE_EARLIER_NOTE =
     'trend_changed and plan_position_changed are read at those two closes only; level_crossed, plan_level_crossed and signal_started carry their own dates. ' +
     `Signals cover only ${CHAT_CHANGE_SIGNAL_TYPES.join(', ')}. ` +
     'level_crossed is the first close past the level; pastNow says whether the latest close is still past it. ' +
-    "plan_level_crossed is the same for the earlier plan's stop and entry-zone edges (pastNow false: closed past, then came back); no stop item does not mean the stop held. " +
+    "plan_level_crossed is the same for the earlier plan's stop and entry-zone edges (pastNow false: closed past, then came back). " +
+    "A stop item crossed down means that plan's invalidation broke on that date even if price is back now: say it broke, never that it held; plan_position_changed repeats the date as invalidationBrokenOn. " +
+    'No stop item does not mean the stop held. ' +
     'planNow and levelsBroken use the current price, planCheck the analysis-time price; none says whether an earlier level held. ' +
     'Each signal type is listed once, at its newest start; omittedSignals counts earlier starts that are not listed. ' +
     'omittedLevelCrossings counts further level crossings that are not listed. ' +
@@ -94,6 +96,12 @@ export type SinceEarlierChange =
           close: number;
           entryZone?: { low: number; high: number };
           invalidation?: number;
+          /**
+           * 기간 중 이전 계획의 손절가(= `invalidation`) 이하로 마감한 첫날(`plan_level_crossed` stop·`down` 항목의 `date`).
+           * 계획 위치는 두 끝 종가로만 읽어 `in_zone`처럼 보여도, 이 값이 있으면 그 사이 무효화 기준이 깨졌었다 —
+           * 같은 항목 안에 두어 `invalidation` 옆에서 "아직 지켜지고 있다"로 읽히지 않게 한다.
+           */
+          invalidationBrokenOn?: string;
       };
 
 /** 읽지 못해 "달라진 점 없음"이라고 말할 수 없는 부분. */
@@ -179,6 +187,10 @@ function toChange(
 }
 
 type SignalStarted = Extract<TechnicalChange, { kind: 'signal_started' }>;
+type PlanLevelCrossed = Extract<
+    SinceEarlierChange,
+    { kind: 'plan_level_crossed' }
+>;
 
 export interface BuildSinceEarlierInput {
     /** 대화에 먼저 보인 분석의 생성 시각(ISO). */
@@ -247,6 +259,23 @@ export function buildSinceEarlier({
             return keptCrossings.has(change) ? [toChange(change, guarded)] : [];
         return [toChange(change, guarded)];
     });
+    const stopCrossing = changes.find(
+        (change): change is PlanLevelCrossed =>
+            change.kind === 'plan_level_crossed' &&
+            change.level === 'stop' &&
+            change.direction === 'down'
+    );
+    // 계획 위치 항목은 두 끝 종가만 보고 `invalidation`을 함께 싣는다 — 그 사이 손절가 이하로 마감한 날이 있으면 같은
+    // 항목에 그 날짜를 붙인다(손절가는 늘 진입 구간 아래라 깨짐은 `down`이다 — `up`은 이미 아래에 있다가 올라온 것). 따로 떨어진 `plan_level_crossed`만으로는 답이 "무효화 기준은 지켜지고 있다"로 흘렀다.
+    const marked =
+        stopCrossing === undefined
+            ? changes
+            : changes.map(change =>
+                  change.kind === 'plan_position_changed' &&
+                  change.invalidation !== undefined
+                      ? { ...change, invalidationBrokenOn: stopCrossing.date }
+                      : change
+              );
     const omitted = crossings.length - keptCrossings.size;
     const omittedSignals = signalStarts.length - newestSignal.size;
     return {
@@ -255,7 +284,7 @@ export function buildSinceEarlier({
         toSessionDate: tradingDate(result.toTime),
         closeThen: result.closeFrom,
         closeNow: result.closeTo,
-        changes,
+        changes: marked,
         ...(omitted > 0 ? { omittedLevelCrossings: omitted } : {}),
         ...(omittedSignals > 0 ? { omittedSignals } : {}),
         ...(notMeasured.length > 0 ? { notMeasured } : {}),
