@@ -32,12 +32,13 @@ import {
 import { readPriceAlertReference } from '@/entities/mail-alert/server/priceAlertReference';
 import { staleKrListingDate } from '@/entities/ticker/lib/freshness';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { pickAssetName } from '@/entities/ticker/lib/ticker';
 import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import type { ToolExecutor } from '@/features/agent-tools/model';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { PriceAlertRecord } from '@/shared/db/types';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
 import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import type { AssetInfo } from '@/shared/lib/types';
@@ -219,11 +220,18 @@ function firesWhen(condition: PriceLevelCondition): string {
         : 'a daily close at or above the level';
 }
 
-/** 카드에 보일 종목명: 기본 로케일(한국어)은 한글 이름을 먼저, 그 밖에는 영문 이름. 종목을 못 읽었으면 `null`. */
-function cardName(asset: AssetInfo | null, locale: string): string | null {
+/**
+ * 카드에 보일 종목명 — 메일(`reportSymbolLabel`)과 같은 `pickAssetName` 규칙이다. 이름이 비었거나 티커와 같으면
+ * 카드가 코드 하나로 그리도록 `null`이다. 종목을 못 읽었어도 `null`.
+ */
+function cardName(
+    asset: AssetInfo | null,
+    symbol: string,
+    locale: Locale
+): string | null {
     if (asset === null) return null;
-    if (locale === DEFAULT_LOCALE) return asset.koreanName ?? asset.name;
-    return asset.name;
+    const picked = pickAssetName(asset, symbol, locale).trim();
+    return picked === '' || picked === symbol ? null : picked;
 }
 
 const NOT_CREATED_NOTE =
@@ -326,7 +334,7 @@ export const proposePriceAlertTool: ToolExecutor = async (
         kind: 'price_alert_proposal',
         proposal,
         token: signPriceAlertProposal(secret, proposal),
-        name: cardName(asset, ctx.locale),
+        name: cardName(asset, symbol, ctx.locale),
     };
     // 클라이언트가 같은 가드로 못 그리는 카드는 내보내지 않는다 — 모델이 "아래 버튼"이라고 말하면 안 된다(SA-24).
     if (!isChatPriceAlertProposalBlock(block)) {

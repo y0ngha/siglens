@@ -6614,7 +6614,7 @@
                 "tooOld": "分析から時間が経ちすぎて比較できません。新しく分析してみてください。",
                 "ask": "変化を質問する",
                 "askLabel": "{name}の変化を質問する",
-                "askPrompt": "{name}（{symbol}）の{date}の分析以降の変化を教えて",
+                "askPrompt": "{hasName, select, yes {{name}（{symbol}）} other {{symbol}}}の{date}の分析以降の変化を教えて",
                 "announce": "分析以降の変化を下に表示しました"
             }
         }
