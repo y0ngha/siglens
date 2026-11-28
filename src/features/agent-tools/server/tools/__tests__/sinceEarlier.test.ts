@@ -308,6 +308,13 @@ describe('buildSinceEarlier', () => {
         expect(SINCE_EARLIER_NOTE).toContain('two closes only');
         expect(SINCE_EARLIER_NOTE).toContain('omittedSignals');
         expect(SINCE_EARLIER_NOTE).toContain('compare closeNow');
+        expect(SINCE_EARLIER_NOTE).toContain('is back now');
+        expect(SINCE_EARLIER_NOTE).toContain(
+            'none says whether an earlier level held'
+        );
+        expect(SINCE_EARLIER_NOTE).toContain(
+            'planCheck the analysis-time price'
+        );
     });
 
     it('읽지 못한 부분은 notMeasured로 알려 빈 changes가 "변화 없음"으로 읽히지 않게 한다', () => {
@@ -406,8 +413,8 @@ describe('블록 크기', () => {
             comparedLevels: true,
             note: SINCE_EARLIER_NOTE,
         };
-        // CACHED_ANALYSIS_MAX_CHARS(16,000)의 약 18% — 넘으면 분석 본문이 그만큼 더 줄어든다.
-        expect(JSON.stringify(worst).length).toBeLessThan(3_000);
+        // CACHED_ANALYSIS_MAX_CHARS(16,000)의 약 20% — 넘으면 분석 본문이 그만큼 더 줄어든다. 가장 긴 모양의 실측은 3,156자(note 두 문장이 늘리기 전 상한 3,000).
+        expect(JSON.stringify(worst).length).toBeLessThan(3_200);
     });
 });
 
