@@ -29,7 +29,7 @@ features 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않�
 
 ## 에이전트 도구 문구
 
-도구 설명·스키마·라우팅 줄·도구별 규칙·결과 notes는 `agent-tools/spec`에만 두고, 모델이 보는 문구를 바꾸면 `AGENT_TOOLSET_VERSION`을 올린다.
+도구 설명·스키마·라우팅 줄·도구별 규칙·결과 notes는 `agent-tools/spec`에만 두고(core `domain/CLAUDE.md` DOM-9·15), 문구를 바꾸면 `AGENT_TOOLSET_VERSION`을 올린다.
 
 ## 데이터 접근
 
