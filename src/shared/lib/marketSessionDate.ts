@@ -153,7 +153,7 @@ function closeMinuteOn(spec: ScheduledSpec, isoDate: string): number {
 }
 
 /** 그 날짜에 거래가 있었는지 — 주말도 휴장도 아닌 날. */
-function isTradingDate(spec: ScheduledSpec, isoDate: string): boolean {
+export function isTradingDate(spec: ScheduledSpec, isoDate: string): boolean {
     if (spec.weekendDays.includes(isoWeekday(isoDate))) return false;
     return closeMinuteOn(spec, isoDate) > 0;
 }

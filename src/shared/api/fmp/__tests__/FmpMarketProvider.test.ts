@@ -2,7 +2,7 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
@@ -573,5 +573,138 @@ describe('FmpMarketProvider', () => {
             expect(snapshot.todayBar).toBeNull();
             expect(snapshot.quote).toMatchObject({ price: 150 });
         });
+    });
+});
+
+describe('FmpMarketProvider — 라이브 일봉 거래일 가드', () => {
+    const provider = new FmpMarketProvider();
+    const epoch = (iso: string): number => Date.parse(iso) / MS_PER_SECOND;
+    const utcDay = (isoDate: string): number => epoch(`${isoDate}T00:00:00Z`);
+    let warn: ReturnType<typeof vi.spyOn>;
+
+    /** EOD 행과 quote 행을 엔드포인트 이름으로 돌려준다(호출 순서에 기대지 않는다). */
+    function mockEndpoints(eodDates: string[], quoteTimestamp: number) {
+        mockFmpGet.mockImplementation(async (path: string) =>
+            path === 'quote'
+                ? [makeQuote(quoteTimestamp)]
+                : eodDates.map(date => makeOhlcvBar(date))
+        );
+    }
+
+    beforeEach(() => {
+        mockFmpGet.mockReset();
+        vi.useFakeTimers({ toFake: ['Date'] });
+        warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+        warn.mockRestore();
+    });
+
+    it('일요일 21:30 ET 체결 timestamp의 quote 봉은 이력에 붙이지 않는다', async () => {
+        vi.setSystemTime(new Date('2026-11-30T02:35:00Z'));
+        mockEndpoints(['2026-11-27'], epoch('2026-11-30T02:30:00Z'));
+
+        const bars = await provider.getBars({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+        });
+
+        expect(bars.map(b => b.time)).toEqual([utcDay('2026-11-27')]);
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('live daily bar dropped'),
+            'AAPL',
+            'non-trading-day',
+            '2026-11-29'
+        );
+    });
+
+    it('조회 시점 ET 날짜보다 뒤 날짜의 quote 봉은 붙이지 않는다', async () => {
+        vi.setSystemTime(new Date('2026-12-02T03:00:00Z')); // Tue 22:00 EST
+        mockEndpoints(['2026-12-01'], epoch('2026-12-02T15:00:00Z'));
+
+        const bars = await provider.getBars({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+        });
+
+        expect(bars.map(b => b.time)).toEqual([utcDay('2026-12-01')]);
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('live daily bar dropped'),
+            'AAPL',
+            'future-date',
+            '2026-12-02'
+        );
+    });
+
+    it('NYSE 휴장일 날짜의 quote 봉은 붙이지 않고 getTodayBar도 null이다', async () => {
+        vi.setSystemTime(new Date('2026-11-27T15:00:00Z'));
+        mockEndpoints(['2026-11-25'], epoch('2026-11-26T16:00:00Z'));
+
+        const bars = await provider.getBars({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+        });
+        expect(bars.map(b => b.time)).toEqual([utcDay('2026-11-25')]);
+        expect(await provider.getTodayBar('AAPL')).toBeNull();
+    });
+
+    it('평일 장중 quote 봉은 그대로 붙이고 로그를 남기지 않는다', async () => {
+        vi.setSystemTime(new Date('2026-12-01T15:00:00Z'));
+        mockEndpoints(['2026-11-30'], epoch('2026-12-01T15:00:00Z'));
+
+        const bars = await provider.getBars({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+        });
+
+        expect(bars.map(b => b.time)).toEqual([
+            utcDay('2026-11-30'),
+            utcDay('2026-12-01'),
+        ]);
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('EOD 행은 날짜가 주말·휴장일이어도 건드리지 않는다(quote 봉만 거른다)', async () => {
+        vi.setSystemTime(new Date('2026-12-01T15:00:00Z'));
+        mockEndpoints(
+            ['2026-11-30', '2026-11-29', '2026-11-26'], // FMP는 최신순
+            epoch('2026-12-01T15:00:00Z')
+        );
+
+        const bars = await provider.getBars({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+        });
+
+        expect(bars.map(b => b.time)).toEqual([
+            utcDay('2026-11-26'),
+            utcDay('2026-11-29'),
+            utcDay('2026-11-30'),
+            utcDay('2026-12-01'),
+        ]);
+    });
+
+    it('quote 봉이 걸러져도 시세(getQuote)는 그대로 돌려준다', async () => {
+        vi.setSystemTime(new Date('2026-11-30T02:35:00Z'));
+        mockEndpoints([], epoch('2026-11-30T02:30:00Z'));
+
+        const quote = await provider.getQuote('AAPL');
+
+        expect(quote?.price).toBe(150);
+    });
+
+    it('before가 있는 요청은 quote를 부르지 않아 가드가 개입하지 않는다', async () => {
+        vi.setSystemTime(new Date('2026-11-30T02:35:00Z'));
+        mockEndpoints(['2026-11-29'], epoch('2026-11-30T02:30:00Z'));
+
+        const bars = await provider.getBars({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            before: '2026-12-01T00:00:00Z',
+        });
+
+        expect(bars.map(b => b.time)).toEqual([utcDay('2026-11-29')]);
+        expect(warn).not.toHaveBeenCalled();
     });
 });
