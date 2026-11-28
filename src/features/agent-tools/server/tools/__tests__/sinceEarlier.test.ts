@@ -143,6 +143,13 @@ describe('buildSinceEarlier', () => {
             close: bars[bars.length - 1].close,
         });
         expect(plan).not.toHaveProperty('date');
+        // 분석 때 이미 손절가 아래였다가 올라온 것(`up`)은 깨짐이 아니라 붙지 않는다.
+        expect(
+            block?.changes.find(
+                c => c.kind === 'plan_level_crossed' && c.level === 'stop'
+            )
+        ).toMatchObject({ direction: 'up' });
+        expect(plan).not.toHaveProperty('invalidationBrokenOn');
     });
 
     it('free 등급은 가격대·계획이 비어 와서 추세·신호만 비교한다', () => {
@@ -242,7 +249,8 @@ describe('buildSinceEarlier', () => {
         const projection = earlierProjection();
         projection.actionRecommendation = {
             ...(projection.actionRecommendation as object),
-            entryPrices: [97, 98],
+            // 분석 때 종가(98.18)가 구간 안, 마지막 종가는 구간 위라 계획 위치 항목도 나온다.
+            entryPrices: [98, 99],
             stopLoss: 95,
             takeProfitPrices: [112],
         };
@@ -277,6 +285,16 @@ describe('buildSinceEarlier', () => {
             price: 95,
             direction: 'down',
             pastNow: false,
+        });
+        // 계획 위치 항목은 두 끝 종가로만 읽혀 `invalidation`이 "지켜진" 것처럼 보이므로, 깨진 날짜를 그 항목에도 붙인다.
+        const plan = member?.changes.find(
+            c => c.kind === 'plan_position_changed'
+        );
+        expect(plan).toMatchObject({
+            kind: 'plan_position_changed',
+            invalidation: 95,
+            invalidationBrokenOn:
+                stop?.kind === 'plan_level_crossed' ? stop.date : null,
         });
         const free = buildSinceEarlier({
             ...options,
@@ -395,8 +413,11 @@ describe('buildSinceEarlier', () => {
         );
         expect(SINCE_EARLIER_NOTE).toContain('plan_level_crossed');
         expect(SINCE_EARLIER_NOTE).toContain(
-            'no stop item does not mean the stop held'
+            'No stop item does not mean the stop held'
         );
+        // 손절가 아래 마감이 있었으면 지금 위에 있어도 "지켜지고 있다"고 쓰지 않는다 — 그 날짜는 계획 위치 항목에도 붙는다.
+        expect(SINCE_EARLIER_NOTE).toContain('never that it held');
+        expect(SINCE_EARLIER_NOTE).toContain('invalidationBrokenOn');
         expect(SINCE_EARLIER_NOTE).toContain(
             'none says whether an earlier level held'
         );
@@ -456,7 +477,7 @@ describe('buildSinceEarlier', () => {
 });
 
 describe('블록 크기', () => {
-    it('가장 긴 모양(계획 1 + 계획 경계 3 + 가격대 돌파 6 + 추세 1 + 신호 8, 소수 4자리 가격)이어도 3,900자 안이다', () => {
+    it('가장 긴 모양(계획 1 + 계획 경계 3 + 가격대 돌파 6 + 추세 1 + 신호 8, 소수 4자리 가격)이어도 4,100자 안이다', () => {
         const plan: SinceEarlierChange = {
             kind: 'plan_position_changed',
             from: 'below_zone',
@@ -465,6 +486,7 @@ describe('블록 크기', () => {
             close: 1234.5678,
             entryZone: { low: 1234.5678, high: 1244.5678 },
             invalidation: 1204.5678,
+            invalidationBrokenOn: '2026-11-13',
         };
         const level: SinceEarlierChange = {
             kind: 'level_crossed',
@@ -514,8 +536,8 @@ describe('블록 크기', () => {
             comparedLevels: true,
             note: SINCE_EARLIER_NOTE,
         };
-        // CACHED_ANALYSIS_MAX_CHARS(16,000)의 약 20% — 넘으면 분석 본문이 그만큼 더 줄어든다. 가장 긴 모양의 실측은 3,821자(계획 경계 3개·돌파마다 pastNow·note 두 문장이 늘기 전에는 3,156자, 상한 3,200). 상한은 실측 위 가장 작은 100 단위다.
-        expect(JSON.stringify(worst).length).toBeLessThan(3_900);
+        // CACHED_ANALYSIS_MAX_CHARS(16,000)의 약 20% — 넘으면 분석 본문이 그만큼 더 줄어든다. 가장 긴 모양의 실측은 4,057자(계획 위치의 invalidationBrokenOn과 note의 손절 깨짐 문장이 늘기 전에는 3,821자, 상한 3,900; 그 전 계획 경계 3개·돌파마다 pastNow가 늘기 전에는 3,156자). 상한은 실측 위 가장 작은 100 단위다.
+        expect(JSON.stringify(worst).length).toBeLessThan(4_100);
     });
 });
 
