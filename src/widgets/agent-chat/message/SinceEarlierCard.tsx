@@ -13,6 +13,7 @@ import type {
     ChatSymbolChanges,
     ChatSymbolChangesResult,
 } from '@/entities/chat-conversation/types';
+import { distinctSymbolName } from '@/entities/ticker/lib/ticker';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { displayTicker } from '@/shared/lib/displayTicker';
@@ -143,21 +144,17 @@ function SymbolCardView({
     const analysisDate = formatTradingDate(result.analyzedDate, locale, now);
     // 라벨을 못 찾았거나 코드와 같은 이름은 이름이 없는 것으로 본다 — 코드만 보인다.
     const code = displayTicker(result.symbol);
-    const trimmedName = name?.trim() ?? '';
-    const hasDistinctName =
-        trimmedName !== '' &&
-        trimmedName !== result.symbol &&
-        trimmedName !== code;
+    const distinctName = distinctSymbolName(code, name, result.symbol);
     const askLabel = t('sinceEarlier.askLabel', {
-        name: hasDistinctName ? trimmedName : code,
+        name: distinctName ?? code,
     });
     const handleAsk = (): void => {
         if (asked || asking) return;
         setAsked(true);
         onAsk(
             t('sinceEarlier.askPrompt', {
-                hasName: hasDistinctName ? 'yes' : 'no',
-                name: trimmedName,
+                hasName: distinctName === null ? 'no' : 'yes',
+                name: distinctName ?? '',
                 symbol: result.symbol,
                 date: analysisDate,
             })
@@ -170,7 +167,7 @@ function SymbolCardView({
         >
             <p id={titleId} className="text-sm font-medium text-secondary-100">
                 {t('sinceEarlier.title', {
-                    name: hasDistinctName ? trimmedName : code,
+                    name: distinctName ?? code,
                     date: analysisDate,
                 })}
             </p>

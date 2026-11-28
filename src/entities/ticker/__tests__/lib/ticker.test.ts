@@ -1,6 +1,7 @@
 import {
     buildDisplayName,
     deduplicateResults,
+    distinctSymbolName,
     formatSymbolLabel,
     isKoreanInput,
     pickAssetName,
@@ -429,6 +430,22 @@ describe('pickAssetName', () => {
         it('name도 koreanName도 없으면 name(빈 문자열)을 반환한다', () => {
             expect(pickAssetName({ name: '' }, '005930.KS', 'ja')).toBe('');
         });
+    });
+});
+
+describe('distinctSymbolName', () => {
+    it('공백을 걷어낸 이름을 돌려준다', () => {
+        expect(distinctSymbolName('AAPL', '  애플 ')).toBe('애플');
+    });
+
+    it.each([
+        ['빈 이름', ''],
+        ['공백뿐인 이름', '   '],
+        ['코드와 같은 이름', '005930'],
+        ['원문 심볼과 같은 이름', '005930.KS'],
+        ['없는 이름', undefined],
+    ])('%s은 null이다', (_label, name) => {
+        expect(distinctSymbolName('005930', name, '005930.KS')).toBeNull();
     });
 });
 

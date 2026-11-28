@@ -159,6 +159,25 @@ describe('proposePriceAlertTool', () => {
             expect(block.name).toBeNull();
         });
 
+        it('영문 로케일에서 영문 이름이 티커와 같고 한글명이 있으면 한글명을 쓴다(사이트 공통 pickAssetName 규칙)', async () => {
+            m.asset.mockResolvedValue({
+                symbol: 'AAPL',
+                name: 'AAPL',
+                koreanName: '애플',
+            });
+
+            const { emitted } = await propose(
+                { symbol: 'AAPL', basis: 'price_below', price: 180 },
+                MEMBER,
+                true,
+                'en'
+            );
+
+            const block = emitted[0]?.block;
+            if (!isChatPriceAlertProposalBlock(block)) throw new Error('block');
+            expect(block.name).toBe('애플');
+        });
+
         it('가격 아래 알림을 제안만 한다 — 서명된 카드를 내고, 저장소에는 쓰지 않는다', async () => {
             const { result, emitted } = await propose({
                 symbol: 'aapl',

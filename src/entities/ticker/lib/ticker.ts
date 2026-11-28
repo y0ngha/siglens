@@ -84,10 +84,23 @@ export function formatSymbolLabel(
     name: string | null | undefined,
     rawSymbol?: string
 ): string {
+    const distinct = distinctSymbolName(code, name, rawSymbol);
+    return distinct === null ? code : `${distinct} (${code})`;
+}
+
+/**
+ * {@link formatSymbolLabel}이 이름을 붙이는 조건만 따로 쓴다 — 공백을 걷어낸 이름이 비었거나 코드·원문 심볼과
+ * 같으면 `null`. ICU select처럼 "이름이 있는가"를 따로 넘겨야 하는 호출부가 같은 판정을 쓰게 한다.
+ */
+export function distinctSymbolName(
+    code: string,
+    name: string | null | undefined,
+    rawSymbol?: string
+): string | null {
     const trimmed = name?.trim() ?? '';
     return trimmed === '' || trimmed === code || trimmed === rawSymbol
-        ? code
-        : `${trimmed} (${code})`;
+        ? null
+        : trimmed;
 }
 
 /**
